@@ -1,0 +1,62 @@
+{
+  "FCF": {
+    "term": "FCF (Free Cash Flow / 自由现金流)",
+    "simple_name": "口袋现金",
+    "definition": "公司在支付完所有日常运营开销和购买设备/厂房等资本支出后，真正留在口袋里的真金白银现金。",
+    "analogy": "就像你每月领完工资、交完房租水电扣除日常花销后，真正能存进银行卡自由支配的净存款。"
+  },
+  "ARR": {
+    "term": "ARR (Annual Recurring Revenue / 年度经常性收入)",
+    "simple_name": "每年稳定锁定的订阅收入",
+    "definition": "订阅制软件或服务公司（SaaS）每年可以稳定重复收到的合同收入。",
+    "analogy": "就像健身房或 Netflix 每年稳定能从按月扣款的VIP会员身上收到的保底年费收入。"
+  },
+  "NRR": {
+    "term": "NRR (Net Revenue Retention / 净收入留存率)",
+    "simple_name": "老客户消费增长率",
+    "definition": "同一批老客户在一年后多花了多少钱。如果 >100%，说明老客户不但没流失，还买成了更高级的套餐。",
+    "analogy": "就像老顾客去年在你的餐馆消费100元，今年因为菜品好升级消费了120元，老客户留存率就是120%。"
+  },
+  "P/E": {
+    "term": "P/E (Price-to-Earnings Ratio / 市盈率)",
+    "simple_name": "回本年限",
+    "definition": "股票价格与每股净利润的比值。粗略代表以当前盈利速度买下公司需要多少年能赚回本金。",
+    "analogy": "如果你花 20 万元买下一家每年净赚 1 万元的奶茶店，P/E 就是 20 年（20倍）。"
+  },
+  "P/S": {
+    "term": "P/S (Price-to-Sales Ratio / 市销率)",
+    "simple_name": "营收倍数",
+    "definition": "股价与每股营业收入的比值。常用于尚未盈利的高增长科技公司估值。",
+    "analogy": "评估一家尚未赚钱但顾客盈门的店面时，按照它一年卖出多少总营业额来定出让身价。"
+  },
+  "DCF": {
+    "term": "DCF (Discounted Cash Flow / 现金流折现模型)",
+    "simple_name": "未来赚钱能力折现",
+    "definition": "把公司未来 10 年能赚到的所有现金流，按照资金利息成本折算成今天值多少钱的估值方法。",
+    "analogy": "明年的 100 块钱不如今天的 100 块钱值钱。DCF 就是把未来每年赚的钱打折换算成今天的总价值。"
+  },
+  "200D SMA": {
+    "term": "200-Day Moving Average (200日均线)",
+    "simple_name": "牛熊牛马生命线",
+    "definition": "过去 200 个交易日收盘价的平均值。机构投资者用来判定长期趋势的牛熊分界线。",
+    "analogy": "就像一个学生过去 200 天考试的平均分。股价低于 200日均线通常代表中长期处于低迷观察期。"
+  },
+  "50D SMA": {
+    "term": "50-Day Moving Average (50日均线)",
+    "simple_name": "中期动量线",
+    "definition": "过去 50 个交易日（约 10 周）的平均股价，代表中短期资金的回调或向上动量趋势。",
+    "analogy": "代表过去两个月买入这只股票的人的平均成本。"
+  },
+  "Order Book": {
+    "term": "Order Book (买卖盘口 / 微观流动性)",
+    "simple_name": "实时挂单队列",
+    "definition": "交易所中买方和卖方挂出的所有实时等待成交的价格与数量清单。",
+    "analogy": "拍卖会现场所有买家和卖家喊出的实时出价单与等待排队牌。"
+  },
+  "Risk-Reward Ratio": {
+    "term": "Risk-Reward Ratio (风险收益比)",
+    "simple_name": "盈亏赔率比",
+    "definition": "预期能赚取的潜在收益与可能面临的最大亏损风险的比值。通常 > 2.0 才值得考虑买入。",
+    "analogy": "冒着损失 1 块钱的风险去搏取赚 2.5 块钱的机会，盈亏赔率比就是 2.5。"
+  }
+}
