@@ -14,7 +14,12 @@ Phase 1 foundation for the US & Canada AI Investment Platform has been successfu
 - **Pricing Engine** ([pricing_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/pricing_engine.py)): 5-year P/E percentiles, 2-stage DCF valuation model, 50D/200D SMAs, and concrete Buy Zone price brackets.
 - **Multi-Agent Arena** ([agent_arena.py](file:///c:/Users/drunk/Projects/ai-investment/backend/agents/agent_arena.py)): 🐂 Bull Agent vs. 🐻 Bear Agent refereed by 👨‍⚖️ CIO Agent with empirical proof validation.
 
-### 2. Frontend & Beginner Accessibility (`/frontend`)
+### 3. Architecture Refactoring & Quality Improvements
+- **Pydantic Settings & Configuration** ([config.py](file:///c:/Users/drunk/Projects/ai-investment/backend/config.py)): Environment variable management, cache TTL, and API key loading.
+- **Strongly-Typed Domain Schemas** ([schemas.py](file:///c:/Users/drunk/Projects/ai-investment/backend/models/schemas.py)): Comprehensive Pydantic models for all API requests and responses.
+- **Modular FastAPI Routers**: Decoupled routes into [`backend/routers/macro.py`](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/macro.py), [`backend/routers/stock.py`](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/stock.py), and [`backend/routers/debate.py`](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/debate.py).
+- **Typed Frontend Client**: Centralized API client ([client.ts](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/api/client.ts)) and TypeScript interfaces ([types/index.ts](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/types/index.ts)).
+
 - **Interactive Jargon Dictionary** ([jargon_dictionary.json](file:///c:/Users/drunk/Projects/ai-investment/frontend/data/jargon_dictionary.json) & [JargonTooltip.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/JargonTooltip.tsx)): 50+ financial terms with instant hover tooltips and everyday plain-language analogies.
 - **Macro Hero Bar** ([MacroScannerBar.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/MacroScannerBar.tsx)): Visual economic cycle status indicator and sector overweight/underweight lists.
 - **Pricing & Technical Chart** ([PricingChart.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/PricingChart.tsx)): Recharts visualization of 50D/200D SMAs, DCF Fair Value line, and green Buy Zone container.
