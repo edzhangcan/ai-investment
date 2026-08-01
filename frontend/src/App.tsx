@@ -3,24 +3,24 @@ import { MacroScannerBar } from './components/MacroScannerBar';
 import { PricingChart } from './components/PricingChart';
 import { DebateArena } from './components/DebateArena';
 import { JargonTooltip } from './components/JargonTooltip';
-import { Search, Sparkles, RefreshCw, Layers, ShieldCheck, HelpCircle } from 'lucide-react';
+import { StockAnalysisResponse } from './types';
+import { fetchStockAnalysis } from './api/client';
+import { Search, Sparkles, RefreshCw, ShieldCheck, HelpCircle } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [ticker, setTicker] = useState('NVDA');
   const [searchInput, setSearchInput] = useState('NVDA');
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<StockAnalysisResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPlainTalk, setIsPlainTalk] = useState(false);
 
-  const fetchAnalysis = async (symbol: string) => {
+  const loadStockData = async (symbol: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/stock/${symbol}`);
-      if (!res.ok) throw new Error("API call failed");
-      const json = await res.json();
-      setData(json);
+      const response = await fetchStockAnalysis(symbol);
+      setData(response);
     } catch (e) {
-      // Fallback mock data if server isn't running locally yet
+      // Fallback mock payload if backend API is not running locally
       setData({
         stock: {
           symbol: symbol.toUpperCase(),
@@ -32,26 +32,39 @@ export const App: React.FC = () => {
           fifty_day_sma: 122.10,
           two_hundred_day_sma: 98.40,
           pe_ratio: 48.2,
+          ps_ratio: 24.5,
+          ev_ebitda: 41.0,
           free_cash_flow: 60800000000,
+          operating_cash_flow: 64000000000,
+          net_income: 60000000000,
+          total_revenue: 115000000000,
+          revenue_growth: 0.985,
+          rsi_14: 62.4,
           source: "Empirical Fallback Feed"
         },
         macro: {
           cycle_stage: "Overheat / Late Expansion (过热期)",
+          cycle_code: "OVERHEAT",
           plain_explanation: "通胀仍处高位，北美央行保持高利率。资金流向能把成本转嫁给客户的强现金流公司与能源/金融板块。",
-          fed_sentiment: { tone: "Hawkish (偏鹰派)", score: 0.45 },
+          us_indicators: {},
+          ca_indicators: {},
+          fed_sentiment: { score: 0.45, tone: "Hawkish (偏鹰派)", hawkish_signals_detected: 4, dovish_signals_detected: 1 },
+          boc_sentiment: { score: 0.20, tone: "Neutral / Wait-and-See", hawkish_signals_detected: 2, dovish_signals_detected: 2 },
           recommended_overweights: ["Energy & Oil (能源与石油)", "Financials & Banks (金融与银行)"],
           recommended_underweights: ["Unprofitable Tech (未盈利科技)", "High-Yield Bonds (高收益债)"]
         },
         fundamentals: {
           symbol: symbol.toUpperCase(),
+          free_cash_flow: 60800000000,
           fcf_yield_pct: 4.8,
           cash_conversion_ratio: 95.2,
           fcf_quality: "High Quality (真金白银现金流)",
           moat_rating: "Wide Moat (宽护城河)",
           moat_sources: ["Cost Advantage (规模成本优势)", "Platform Network Effects (平台网络效应)"],
           guidance_shift_deltas: [
-            { year: "2025 vs 2024", added_disclaimer: "Added 'supply chain normalization constraints' in MD&A." }
-          ]
+            { year: "2025 vs 2024", added_disclaimer: "Added 'supply chain normalization constraints' in Item 7 MD&A.", severity: "Moderate Caution" }
+          ],
+          arr_nrr_metrics: { arr_estimate: "$51.75B", nrr_estimate: "118%" }
         },
         pricing: {
           symbol: symbol.toUpperCase(),
@@ -61,13 +74,16 @@ export const App: React.FC = () => {
           two_hundred_day_sma: 98.40,
           pe_ratio: 48.2,
           valuation_status: "Premium / High Multiple (高估值区间)",
+          valuation_percentile: 85,
           dcf_fair_value: 125.00,
           ideal_buy_range_min: 98.40,
           ideal_buy_range_max: 108.50,
           action_status: "PULLBACK_WATCH (回调观察期)",
-          timing_advice: "当前股价处于中短期均线下方，建议耐心等待回调至 safe buy zone ($98.40 - $108.50) 再分批介入。"
+          timing_advice: "当前股价处于中短期均线下方，建议耐心等待回调至 safe buy zone ($98.40 - $108.50) 再分批介入。",
+          rsi_14: 62.4
         },
         debate: {
+          symbol: symbol.toUpperCase(),
           bull_argument: {
             agent: "Bull Agent (多头分析师 🐂)",
             key_points: [
@@ -87,7 +103,7 @@ export const App: React.FC = () => {
           cio_verdict: {
             agent: "CIO Agent (投委会主席 👨‍⚖️)",
             verdict: "HOLD / WATCH (观望/等待回调)",
-            position_sizing_advice: "0% 新新增资金 (已持有者可继续持有)",
+            position_sizing_advice: "0% 新增资金 (已持有者可继续持有)",
             recommended_buy_bracket: "$98.40 - $108.50 USD",
             risk_reward_ratio: 2.4,
             judge_summary: "当前股价处于过度延伸状态，赔率不佳。建议设置 $108.50 价格提醒，等待回调至 200日均线附近再行分批建仓。",
@@ -101,7 +117,7 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAnalysis(ticker);
+    loadStockData(ticker);
   }, [ticker]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -113,11 +129,11 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8 selection:bg-emerald-500 selection:text-slate-950">
-      {/* Background Gradient Orbs */}
+      {/* Ambient background glows */}
       <div className="fixed top-0 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="fixed bottom-0 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-6xl mx-mx-auto relative z-10">
+      <div className="max-w-6xl mx-auto relative z-10">
         
         {/* Navigation Header */}
         <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-800">
