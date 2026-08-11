@@ -1,0 +1,114 @@
+{
+  "FCF": {
+    "term_en": "Free Cash Flow (FCF)",
+    "term_zh": "自由现金流 (口袋净现金)",
+    "definition_en": "The actual spendable cash remaining in a company's bank account after paying all operating expenses and capital expenditures (CapEx).",
+    "definition_zh": "公司在扣除所有日常运营开销和购买设备/厂房等资本支出后，真正落在银行卡里的净现金。",
+    "analogy_en": "Like your net savings deposited into your bank account after paying monthly rent, utilities, groceries, and debt payments.",
+    "analogy_zh": "就像你每月领完工资、交完房租水电扣除日常花销后，真正能存进银行卡自由支配的存折净余额。"
+  },
+  "PE": {
+    "term_en": "Price-to-Earnings Ratio (P/E)",
+    "term_zh": "市盈率 (回本年限)",
+    "definition_en": "The ratio of current stock price to annual net earnings per share. Represents roughly how many years it would take for company profits to recoup your investment cost.",
+    "definition_zh": "股票价格与每股净利润的比值。粗略代表按当前盈利速度买下公司需要多少年能赚回本金。",
+    "analogy_en": "If you buy a coffee shop for $200,000 that generates $10,000 in net profit per year, the P/E ratio is 20 years (20x).",
+    "analogy_zh": "如果你花 20 万元买下一家每年净赚 1 万元的奶茶店，P/E 就是 20 年（20倍）。"
+  },
+  "PS": {
+    "term_en": "Price-to-Sales Ratio (P/S)",
+    "term_zh": "市销率 (营收倍数)",
+    "definition_en": "Ratio of market capitalization to total annual revenue. Used for high-growth tech companies prior to net profitability.",
+    "definition_zh": "股价与每股营业收入的比值。常用于尚未盈利的高增长科技公司估值。",
+    "analogy_en": "Evaluating a busy new store based on its gross annual register sales before subtracting store operating expenses.",
+    "analogy_zh": "评估一家尚未赚钱但顾客盈门的店面时，按照它一年卖出多少总营业额来定出让身价。"
+  },
+  "DCF": {
+    "term_en": "Discounted Cash Flow (DCF)",
+    "term_zh": "DCF 现金流折现内在价值",
+    "definition_en": "A valuation model that projects a company's future cash flows over 10 years and discounts them back to present-day dollars using a cost of capital interest rate.",
+    "definition_zh": "把公司未来 10 年能赚到的所有现金流，按照资金利息成本折算成今天值多少钱的估值方法。",
+    "analogy_en": "A dollar received next year is worth less than a dollar today due to interest rates and inflation. DCF calculates total present value.",
+    "analogy_zh": "明年的 100 块钱不如今天的 100 块钱值钱。DCF 就是把未来每年赚的钱打折换算成今天的总价值。"
+  },
+  "SMA200": {
+    "term_en": "200-Day Simple Moving Average (200D SMA)",
+    "term_zh": "200日移动平均线 (牛熊底线支撑)",
+    "definition_en": "The average closing price over the past 200 trading days (~10 months). Institutional investors use this line to judge long-term bull vs. bear trend support.",
+    "definition_zh": "过去 200 个交易日收盘价的平均值。机构投资者用来判定长期趋势的牛熊分界线与回调底线。",
+    "analogy_en": "Like a student's 10-month average exam score. Stock prices falling near the 200D MA often present technical support levels.",
+    "analogy_zh": "就像一个学生过去 200 天考试的平均分。股价低于 200日均线通常代表中长期处于低迷观察期。"
+  },
+  "SMA50": {
+    "term_en": "50-Day Simple Moving Average (50D SMA)",
+    "term_zh": "50日移动平均线 (中线成本线)",
+    "definition_en": "The average stock price over the past 50 trading days (~10 weeks), reflecting medium-term buyer momentum.",
+    "definition_zh": "过去 50 个交易日（约 10 周）的平均股价，代表中短期资金的回调或向上动量趋势。",
+    "analogy_en": "The average break-even cost for investors who bought the stock over the past two months.",
+    "analogy_zh": "代表过去两个月买入这只股票的人的平均成本。"
+  },
+  "RiskReward": {
+    "term_en": "Risk-Reward Ratio",
+    "term_zh": "风险收益赔率比",
+    "definition_en": "The ratio of potential upside gain to potential downside loss. A ratio of 2.0x or higher means you expect $2.00+ upside per $1.00 risk.",
+    "definition_zh": "预期能赚取的潜在收益与可能面临的最大亏损风险的比值。通常 > 2.0 才值得考虑买入。",
+    "analogy_en": "Risking $1.00 in a game where winning pays $2.50. High risk-reward ratios provide a strong margin of safety.",
+    "analogy_zh": "冒着损失 1 块钱的风险去搏取赚 2.5 块钱的机会，盈亏赔率比就是 2.5。"
+  },
+  "MacroCycle": {
+    "term_en": "Macro Economic Cycle Scanner",
+    "term_zh": "宏观经济周期扫描仪",
+    "definition_en": "Monitors GDP growth, CPI inflation, yield spreads, and central bank press releases to classify North American markets into Recovery, Overheat, Stagflation, or Recession.",
+    "definition_zh": "监测通胀、GDP、美联储/加拿大央行利率决议，将经济阶段划分为复苏、过热、滞胀、衰退。",
+    "analogy_en": "Like checking the weather forecast before dressing. You wear a raincoat during Stagflation and sunglasses during Recovery.",
+    "analogy_zh": "就像出门前看天气预报。滞胀期带雨伞（防守避险），复苏期穿轻便运动鞋（进攻成长）。"
+  },
+  "FedSentiment": {
+    "term_en": "Central Bank (Fed) NLP Sentiment",
+    "term_zh": "央行 (美联储/加央行) 情绪解码",
+    "definition_en": "NLP sentiment algorithm scoring hawkish (+ interest rate hikes) vs. dovish (- interest rate cuts) signals in press release transcripts.",
+    "definition_zh": "通过 NLP 自然语言算法深度解析央行新闻发布会措辞，判断央行倾向加息（鹰派）还是降息（鸽派）。",
+    "analogy_en": "Listening to the referee's strictness before a match to anticipate how aggressive the players can be.",
+    "analogy_zh": "就像裁判在上场前表明本场吹罚尺度。鹰派代表裁判管得严（紧缩资金），鸽派代表放宽吹罚（注入流动性）。"
+  },
+  "BullAgent": {
+    "term_en": "Bull Agent (🐂)",
+    "term_zh": "多头分析师 (看好理由)",
+    "definition_en": "Evaluates competitive moats, cash flow quality, structural growth drivers, and upside valuation catalysts.",
+    "definition_zh": "重点发掘公司的核心竞争壁垒、高现金流质量、行业增长催化剂与估值上涨空间。",
+    "analogy_en": "The optimistic team partner searching for expansion opportunities and market leadership.",
+    "analogy_zh": "辩论场上的看好派辩手，专门寻找公司的商业亮点、垄断护城河与翻倍潜力。"
+  },
+  "BearAgent": {
+    "term_en": "Bear Agent (🐻)",
+    "term_zh": "空头分析师 (风险隐患)",
+    "definition_en": "Scrutinizes overvaluation risks, macro headwinds, 200D MA support gaps, and guidance warning disclaimers in SEC/SEDAR filings.",
+    "definition_zh": "严苛审查高市盈率泡沫、宏观高利率逆风、技术面破位风险与高管财报措辞甩锅警告。",
+    "analogy_en": "The cautious auditor searching for hidden balance sheet flaws, debt risks, and overextended stock prices.",
+    "analogy_zh": "辩论场上的唱衰派辩手，专门帮投资者挑刺避坑，防止买在历史最高位被套。"
+  },
+  "CIOVerdict": {
+    "term_en": "CIO Agent Verdict (👨‍⚖️)",
+    "term_zh": "CIO 投委会主席裁决",
+    "definition_en": "Impartial referee enforcing empirical evidence, calculating Risk-Reward odds ratios, and issuing strict BUY / HOLD / PASS decisions.",
+    "definition_zh": "不带偏见的裁判长，强制两方辩手出示数据铁证，计算赔率比，给出最终买入/观望/放弃建仓指令。",
+    "analogy_en": "The chief investment officer who approves capital allocation only when the margin of safety is clear.",
+    "analogy_zh": "基金公司的投资总监，只有在确定赔率划算、价格进入打折安全区时才批准打款下单。"
+  },
+  "GuidanceShift": {
+    "term_en": "5-Yr Guidance Shift Deltas",
+    "term_zh": "5年财报前瞻措辞变动",
+    "definition_en": "Text diffing algorithm comparing Item 7 (MD&A) risk disclaimers across 5 consecutive years of 10-K/10-Q annual filings.",
+    "definition_zh": "对比 5 年财报中高管对未来业绩的前瞻表述变动，捕捉悄悄加入的避责词汇（如‘供应链承压’、‘利润率挤压’）。",
+    "analogy_en": "Detecting when a company executive subtly alters their tone from 'strong tailwinds' to 'macro uncertainty' before earnings crash.",
+    "analogy_zh": "就像观察一个人讲话从‘信心满满’悄悄变成‘大环境不佳’，提防高管提前甩锅。"
+  },
+  "MoatRating": {
+    "term_en": "Morningstar Economic Moat Rating",
+    "term_zh": "晨星护城河评级",
+    "definition_en": "Evaluates 5 moat sources: Network Effects, Switching Costs, Cost Advantage, Intangible Assets, and Efficient Scale.",
+    "definition_zh": "评估公司是否拥有同业难以抄袭的 5 大护城河（网络效应、转换成本、规模成本、专利/品牌、高效规模）。",
+    "analogy_en": "A wide moat is like a castle surrounded by a deep river filled with crocodiles, stopping rival companies from stealing customers.",
+    "analogy_zh": "宽护城河就像城堡周围充满鳄鱼的深水护城河，对手就算知道你赚钱也无法轻易抢走你的客户。"
+  }
+}

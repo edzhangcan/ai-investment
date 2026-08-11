@@ -1,0 +1,22 @@
+# Python
+backend/venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+
+# Database & SQLite
+*.db
+*.sqlite
+backend/investment_platform.db
+
+# Node / React / Next.js
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
