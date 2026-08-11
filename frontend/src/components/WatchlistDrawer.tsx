@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Star, X, Trash2, Plus, Bell, TrendingUp, ShieldCheck } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export interface WatchlistItem {
   id?: number;
@@ -13,13 +14,16 @@ interface WatchlistDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectTicker: (symbol: string) => void;
+  onWatchlistChange?: () => void;
 }
 
 export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   isOpen,
   onClose,
   onSelectTicker,
+  onWatchlistChange,
 }) => {
+  const { t } = useLanguage();
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [newSymbol, setNewSymbol] = useState('');
@@ -74,12 +78,14 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
         setNewSymbol('');
         setNewName('');
         setNewTarget('');
+        if (onWatchlistChange) onWatchlistChange();
       }
     } catch (e) {
       setItems([...items, { ...payload, id: Date.now() }]);
       setNewSymbol('');
       setNewName('');
       setNewTarget('');
+      if (onWatchlistChange) onWatchlistChange();
     }
   };
 
@@ -87,8 +93,10 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
     try {
       await fetch(`http://127.0.0.1:8000/api/watchlist/${symbol}`, { method: 'DELETE' });
       setItems(items.filter((i) => i.symbol !== symbol));
+      if (onWatchlistChange) onWatchlistChange();
     } catch (e) {
       setItems(items.filter((i) => i.symbol !== symbol));
+      if (onWatchlistChange) onWatchlistChange();
     }
   };
 
@@ -103,10 +111,10 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
             <div className="flex items-center gap-2.5">
               <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
               <h2 className="text-base font-bold text-slate-100">
-                自选股与价格提醒 (Watchlist)
+                {t.watchlistTitle}
               </h2>
             </div>
-            <button onClick={onClose} aria-label="关闭自选股抽屉" className="p-1 text-slate-400 hover:text-slate-200">
+            <button onClick={onClose} aria-label="Close Watchlist Drawer" className="p-1 text-slate-400 hover:text-slate-200">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -115,21 +123,21 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
           <form onSubmit={handleAdd} className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 mb-6 space-y-3">
             <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
-              <span>关注新股票与设置买入提醒</span>
+              <span>{t.addFocusAndAlert}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
                 value={newSymbol}
                 onChange={(e) => setNewSymbol(e.target.value)}
-                placeholder="代码 ($AAPL, $TD.TO)"
+                placeholder={t.tickerPlaceholder}
                 className="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
               />
               <input
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="公司名称 (可选)"
+                placeholder={t.companyPlaceholder}
                 className="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -140,7 +148,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                   step="0.01"
                   value={newTarget}
                   onChange={(e) => setNewTarget(e.target.value)}
-                  placeholder="目标买入价 ($)"
+                  placeholder={t.targetPricePlaceholder}
                   className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
                 />
               </div>
@@ -149,22 +157,22 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                 step="0.5"
                 value={newAlloc}
                 onChange={(e) => setNewAlloc(e.target.value)}
-                placeholder="建议仓位 (%)"
+                placeholder={t.allocPlaceholder}
                 className="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs py-2 rounded-xl transition-all shadow-md"
+              className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs py-2 rounded-xl transition-all shadow-md cursor-pointer"
             >
-              添加关注与价格提醒
+              {t.addWatchlistBtn}
             </button>
           </form>
 
           {/* Watchlist Item Cards */}
           <div className="space-y-3">
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              已关注标的 ({items.length})
+              {t.starredItems} ({items.length})
             </div>
 
             {items.map((item) => (
@@ -192,19 +200,19 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                     {item.target_buy_price && (
                       <span className="text-emerald-400 flex items-center gap-1 font-semibold">
                         <Bell className="w-3 h-3 text-amber-400" />
-                        目标价: ${item.target_buy_price}
+                        {t.targetPrice}: ${item.target_buy_price}
                       </span>
                     )}
                     <span className="text-indigo-300 font-semibold">
-                      建议仓位: {item.portfolio_allocation_pct}%
+                      {t.suggestedAlloc}: {item.portfolio_allocation_pct}%
                     </span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleDelete(item.symbol)}
-                  aria-label={`删除 ${item.symbol}`}
-                  className="p-2 text-slate-500 hover:text-rose-400 transition-colors opacity-80 group-hover:opacity-100"
+                  aria-label={`Delete ${item.symbol}`}
+                  className="p-2 text-slate-500 hover:text-rose-400 transition-colors opacity-80 group-hover:opacity-100 cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -216,7 +224,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
         {/* Footer info */}
         <div className="mt-6 pt-4 border-t border-slate-800 text-[11px] text-slate-500 flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>本地 SQLite 数据库 WAL 模式持久化存储</span>
+          <span>{t.dbStorageNotice}</span>
         </div>
       </div>
     </div>

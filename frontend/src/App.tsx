@@ -8,11 +8,14 @@ import { BilingualHoverCard } from './components/BilingualHoverCard';
 import { CommandPalette } from './components/CommandPalette';
 import { WatchlistDrawer } from './components/WatchlistDrawer';
 import { NotificationToast } from './components/NotificationToast';
+import { LanguageSelector } from './components/LanguageSelector';
+import { useLanguage } from './context/LanguageContext';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
 import { fetchStockAnalysis, fetchMacroDashboard } from './api/client';
 import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command } from 'lucide-react';
 
 export const App: React.FC = () => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'macro' | 'stock'>('macro');
   const [ticker, setTicker] = useState('NVDA');
   const [searchInput, setSearchInput] = useState('NVDA');
@@ -22,9 +25,22 @@ export const App: React.FC = () => {
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [isPlainTalk, setIsPlainTalk] = useState(false);
   
-  // UI Drawers & Command Palette state
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
+  const [watchlistSymbols, setWatchlistSymbols] = useState<Set<string>>(new Set(['NVDA', 'SHOP.TO']));
+
+  // Fetch watchlist symbols from database
+  const fetchWatchlistSymbols = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/watchlist');
+      if (res.ok) {
+        const items = await res.json();
+        setWatchlistSymbols(new Set(items.map((i: any) => i.symbol.toUpperCase())));
+      }
+    } catch (e) {
+      console.warn("Failed to fetch watchlist symbols:", e);
+    }
+  };
 
   // Load Macro & Recommendations Dashboard
   const loadDashboard = async () => {
@@ -55,6 +71,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     loadDashboard();
+    fetchWatchlistSymbols();
   }, []);
 
   useEffect(() => {
@@ -76,22 +93,36 @@ export const App: React.FC = () => {
     setActiveTab('stock');
   };
 
-  const handleStarCurrentStock = async () => {
-    if (!stockData || !stockData.stock) return;
-    try {
-      await fetch('http://127.0.0.1:8000/api/watchlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          symbol: stockData.stock.symbol,
-          company_name: stockData.stock.company_name,
-          target_buy_price: stockData.pricing.ideal_buy_range_max,
-          portfolio_allocation_pct: 3.5,
-        }),
-      });
-      setIsWatchlistOpen(true);
-    } catch (e) {
-      setIsWatchlistOpen(true);
+  const toggleWatchlist = async (symbol: string, companyName: string, targetPrice?: number) => {
+    const sym = symbol.toUpperCase();
+    const isStarred = watchlistSymbols.has(sym);
+    const nextSet = new Set(watchlistSymbols);
+
+    if (isStarred) {
+      nextSet.delete(sym);
+      setWatchlistSymbols(nextSet);
+      try {
+        await fetch(`http://127.0.0.1:8000/api/watchlist/${sym}`, { method: 'DELETE' });
+      } catch (e) {
+        console.warn("Watchlist delete failed:", e);
+      }
+    } else {
+      nextSet.add(sym);
+      setWatchlistSymbols(nextSet);
+      try {
+        await fetch('http://127.0.0.1:8000/api/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol: sym,
+            company_name: companyName,
+            target_buy_price: targetPrice,
+            portfolio_allocation_pct: 3.5,
+          }),
+        });
+      } catch (e) {
+        console.warn("Watchlist add failed:", e);
+      }
     }
   };
 
@@ -124,6 +155,7 @@ export const App: React.FC = () => {
           setSearchInput(sym);
           setActiveTab('stock');
         }}
+        onWatchlistChange={fetchWatchlistSymbols}
       />
 
       {/* Notification Toast for Triggered Buy-Zone Price Alerts */}
@@ -145,33 +177,35 @@ export const App: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-300 bg-clip-text text-transparent">
-                Antigravity AI 宏观智能投资分析平台
+                {t.appTitle}
               </h1>
               <p className="text-xs text-slate-400">
-                US & Canadian Markets (美股 & 加股) | Macro-First & Top Stock Recommendation Engine
+                {t.appSubtitle}
               </p>
             </div>
           </div>
 
-          {/* Search Form, Command Palette Trigger & Watchlist */}
-          <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <form onSubmit={handleSearch} className="relative flex-1 md:w-60">
+          {/* Search Form, Language Selector, Command Palette & Watchlist */}
+          <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
+            <form onSubmit={handleSearch} className="relative flex-1 md:w-56">
               <input
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="搜索个股 ($NVDA, $SHOP.TO)"
+                placeholder={t.searchPlaceholder}
                 className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all"
               />
-              <button type="submit" aria-label="搜索股票" className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-400">
+              <button type="submit" aria-label={t.searchButton} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-400">
                 <Search className="w-4 h-4" />
               </button>
             </form>
 
+            <LanguageSelector />
+
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-slate-300 transition-all flex items-center gap-1 text-xs font-semibold"
-              title="按 Ctrl+K 唤起快捷搜索命令"
+              title="Ctrl+K Command Palette"
             >
               <Command className="w-4 h-4 text-emerald-400" />
               <span className="hidden sm:inline font-mono">Ctrl+K</span>
@@ -180,10 +214,10 @@ export const App: React.FC = () => {
             <button
               onClick={() => setIsWatchlistOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl text-amber-400 transition-all flex items-center gap-1 text-xs font-semibold"
-              title="打开自选股与价格提醒抽屉"
+              title={t.watchlistTitle}
             >
               <Star className="w-4 h-4 fill-amber-400" />
-              <span className="hidden sm:inline">自选</span>
+              <span className="hidden sm:inline">Watchlist</span>
             </button>
 
             <button
@@ -195,7 +229,7 @@ export const App: React.FC = () => {
               }`}
             >
               <HelpCircle className="w-3.5 h-3.5" />
-              <span>{isPlainTalk ? '通俗白话: 开' : '白话: 关'}</span>
+              <span>{isPlainTalk ? t.plainTalkOn : t.plainTalkOff}</span>
             </button>
           </div>
         </header>
@@ -212,7 +246,7 @@ export const App: React.FC = () => {
               }`}
             >
               <LayoutDashboard className="w-4 h-4" />
-              <span>📊 1. Macro Scan & Top Stock Picks (宏观 dashboard & 推荐)</span>
+              <span>📊 1. {t.tabMacro}</span>
             </button>
 
             <button
@@ -224,7 +258,7 @@ export const App: React.FC = () => {
               }`}
             >
               <LineChart className="w-4 h-4" />
-              <span>🔍 2. Single Stock Deep-Dive (${ticker})</span>
+              <span>🔍 2. {t.tabStock} (${ticker})</span>
             </button>
           </div>
         </div>
@@ -261,6 +295,8 @@ export const App: React.FC = () => {
                   recommendations={dashboardData.recommendations}
                   onSelectStock={handleSelectRecommendedStock}
                   isPlainTalk={isPlainTalk}
+                  watchlistSymbols={watchlistSymbols}
+                  onToggleWatchlist={toggleWatchlist}
                 />
               </>
             )
@@ -302,14 +338,23 @@ export const App: React.FC = () => {
                         <span className="px-2 py-0.5 bg-slate-800 text-emerald-400 rounded text-xs font-bold border border-slate-700">
                           {stockData.stock.symbol} ({stockData.stock.market})
                         </span>
-                        <button
-                          onClick={handleStarCurrentStock}
-                          className="p-1.5 bg-slate-800 hover:bg-amber-500/20 text-amber-400 rounded-lg border border-slate-700 hover:border-amber-500/40 transition-all ml-2 flex items-center gap-1 text-xs"
-                          title="添加到自选股与价格提醒"
-                        >
-                          <Star className="w-3.5 h-3.5 fill-amber-400" />
-                          <span>关注</span>
-                        </button>
+                        {(() => {
+                          const isCurrentStarred = stockData?.stock?.symbol ? watchlistSymbols.has(stockData.stock.symbol.toUpperCase()) : false;
+                          return (
+                            <button
+                              onClick={() => toggleWatchlist(stockData.stock.symbol, stockData.stock.company_name, stockData.pricing.ideal_buy_range_max)}
+                              className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ml-2 ${
+                                isCurrentStarred
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30 shadow-md shadow-amber-500/10'
+                                  : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-amber-500/40 hover:text-amber-300'
+                              }`}
+                              title={isCurrentStarred ? "已在自选股中 (点击取消关注)" : "添加到自选股与价格提醒"}
+                            >
+                              <Star className={`w-3.5 h-3.5 ${isCurrentStarred ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} />
+                              <span>{isCurrentStarred ? '✓ 已关注' : '+ 关注'}</span>
+                            </button>
+                          );
+                        })()}
                       </div>
                       <div className="text-xs text-slate-400 flex items-center gap-3">
                         <span>Source: <span className="text-slate-300">{stockData.stock.source}</span></span>
