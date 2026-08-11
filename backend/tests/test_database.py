@@ -61,3 +61,28 @@ def test_watchlist_crud_operations(client: TestClient):
     # 4. Verify Empty
     get_res_empty = client.get("/api/watchlist")
     assert len(get_res_empty.json()) == 0
+
+def test_watchlist_validation_errors(client: TestClient):
+    # Negative target buy price should trigger 422 Unprocessable Entity
+    invalid_res = client.post(
+        "/api/watchlist",
+        json={
+            "symbol": "AAPL",
+            "company_name": "Apple Inc.",
+            "target_buy_price": -50.0,
+            "portfolio_allocation_pct": 5.0
+        }
+    )
+    assert invalid_res.status_code == 422
+
+    # Allocation > 100% should trigger 422 Unprocessable Entity
+    invalid_alloc = client.post(
+        "/api/watchlist",
+        json={
+            "symbol": "AAPL",
+            "company_name": "Apple Inc.",
+            "target_buy_price": 150.0,
+            "portfolio_allocation_pct": 150.0
+        }
+    )
+    assert invalid_alloc.status_code == 422

@@ -6,7 +6,7 @@ Allows starring stocks, setting target buy price alert thresholds, and tracking 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.database import get_session
 from backend.models.db_models import UserWatchlistDB
@@ -14,10 +14,10 @@ from backend.models.db_models import UserWatchlistDB
 router = APIRouter(prefix="/api/watchlist", tags=["User Watchlist"])
 
 class WatchlistCreateSchema(BaseModel):
-    symbol: str
-    company_name: str
-    target_buy_price: Optional[float] = None
-    portfolio_allocation_pct: float = 0.0
+    symbol: str = Field(min_length=1, max_length=15, description="Stock ticker symbol")
+    company_name: str = Field(min_length=1, max_length=100, description="Company name")
+    target_buy_price: Optional[float] = Field(default=None, gt=0, description="Target buy price threshold")
+    portfolio_allocation_pct: float = Field(default=0.0, ge=0.0, le=100.0, description="Recommended portfolio allocation percentage")
 
 class WatchlistResponseSchema(BaseModel):
     id: int

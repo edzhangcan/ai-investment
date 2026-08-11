@@ -4,12 +4,14 @@ Loads environment variables and sets default platform configurations.
 """
 
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
+
     APP_NAME: str = "AI-Assisted Investment & Multi-Agent Debate Platform"
     ENV: str = os.getenv("ENV", "development")
     DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
@@ -24,7 +26,5 @@ class Settings(BaseSettings):
     DEFAULT_WACC: float = 0.08  # 8% Discount rate for DCF
     DEFAULT_TERMINAL_GROWTH: float = 0.03  # 3% Terminal growth
 
-    class Config:
-        case_sensitive = True
-
 settings = Settings()
+

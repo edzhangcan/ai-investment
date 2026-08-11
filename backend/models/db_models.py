@@ -4,7 +4,10 @@ SQLModel Database Entities for Local SQLite Persistence
 
 from sqlmodel import SQLModel, Field
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
+
+def get_utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 class CompanyDB(SQLModel, table=True):
     __tablename__ = "companies"
@@ -14,7 +17,7 @@ class CompanyDB(SQLModel, table=True):
     currency: str  # "USD" or "CAD"
     industry_sector: str = "Technology"
     last_price: float = 0.0
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=get_utc_now)
 
 class MacroSnapshotDB(SQLModel, table=True):
     __tablename__ = "macro_snapshots"
@@ -25,7 +28,7 @@ class MacroSnapshotDB(SQLModel, table=True):
     boc_tone: str
     cpi_yoy: float
     yield_spread: float
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=get_utc_now)
 
 class GuidanceShiftDB(SQLModel, table=True):
     __tablename__ = "guidance_shifts"
@@ -34,7 +37,7 @@ class GuidanceShiftDB(SQLModel, table=True):
     year_pair: str
     disclaimer: str
     severity: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=get_utc_now)
 
 class UserWatchlistDB(SQLModel, table=True):
     __tablename__ = "user_watchlists"
@@ -43,7 +46,7 @@ class UserWatchlistDB(SQLModel, table=True):
     company_name: str
     target_buy_price: Optional[float] = None
     portfolio_allocation_pct: float = 0.0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=get_utc_now)
 
 class DebateTranscriptDB(SQLModel, table=True):
     __tablename__ = "debate_transcripts"
@@ -54,4 +57,4 @@ class DebateTranscriptDB(SQLModel, table=True):
     cio_verdict: str
     risk_reward_ratio: float
     judge_summary: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=get_utc_now)
