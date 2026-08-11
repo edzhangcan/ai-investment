@@ -1,38 +1,46 @@
-# Walkthrough - Comprehensive Code Quality Audit & System Health Report
+# Walkthrough - Phase 2 Wrap-up: Full SEC EDGAR 10-K & SEDAR+ Text Mining Pipeline
 
-We have performed a full end-to-end **Code Quality & Architecture Audit** across both the backend Python services and the frontend React application on branch `feature/phase2-multicategory-recommendations` (`5eaecca`).
-
----
-
-## Code Quality Audit Findings & Enhancements
-
-### 1. Frontend Architecture & React Code Quality
-- **React Error Boundary** ([ErrorBoundary.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/ErrorBoundary.tsx)): Added a top-level React ErrorBoundary wrapping the `<LanguageProvider>` and `<App />` tree in [main.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/main.tsx). Prevents white-screen crashes on unexpected client exceptions and provides graceful user recovery.
-- **Strict TypeScript 5.0+ Typing** ([index.ts](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/types/index.ts)): Zero `any` leaks in core response types; full type safety for language mode switches (`en` | `zh` | `hybrid`).
-- **UI/UX Visual Engineering**: Verified glassmorphism, responsive TailwindCSS styling, WCAG accessibility, and hover layovers across all components.
-
-### 2. Backend Engineering & Python Standards
-- **Python 3.11+ Standards**: Clean type hints, strict dataclass / dictionary schema isolation, and modular router structure (`macro`, `stock`, `watchlist`, `alerts`, `debate`).
-- **SQLite Persistence & WAL Mode** ([database.py](file:///c:/Users/drunk/Projects/ai-investment/backend/database.py)): Write-Ahead Logging (WAL) enabled for non-blocking concurrent database reads.
-- **Multi-Category Mutual Exclusivity**: Enforces 0 overlap across Category 1 (Sector Champions), Category 2 (Market Leaders), and Category 3 (Hidden Gold Nuggets).
-
-### 3. Automated Test Suite Verification
-- **Pytest Test Suite**: `21/21 passed` in `18.04s` (100% Green).
-- **Vite Frontend Build**: `0 TypeScript compilation errors` (`npm run build` succeeded in 5.26s).
+We have completed the **Full SEC EDGAR 10-K & SEDAR+ Text Mining Pipeline**, successfully concluding all core intelligence objectives of **Phase 2** on branch `main` (`8722d5f`).
 
 ---
 
-## System Status
+## What Was Built
 
-| Component | Status | Port / Location | Notes |
-| :--- | :--- | :--- | :--- |
-| **Backend API** | 🟢 Running | `http://127.0.0.1:8000` | FastAPI server active |
-| **Frontend Web** | 🟢 Running | `http://localhost:3000` | Vite React dev server active |
-| **Database** | 🟢 Active | `sqlite:///./investment_platform.db` | WAL Mode enabled |
-| **Test Suite** | 🟢 21/21 Pass | `backend/tests/` | 100% Pass Rate |
+### 1. Backend Text Mining Engine (`SECTextMiner`)
+- **`sec_text_miner.py`** ([sec_text_miner.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/sec_text_miner.py)):
+  - Parses 5-year historical MD&A filings (Item 7 for US SEC 10-K, Annual MD&A for Canadian SEDAR+).
+  - Calculates Levenshtein string distance & Cosine similarity ratio between consecutive filing years (2021–2025).
+  - Extracts inserted & removed management risk disclaimers.
+  - Tracks Year-over-Year (YoY) frequency trends for key risk keywords (`AI CapEx`, `export controls`, `supply chain`, `foreign exchange`, `macro uncertainty`).
+  - Supports multi-language output (`en`, `zh`, `hybrid`).
+
+### 2. REST API Endpoint
+- **`GET /api/stock/{ticker}/filings/mining?lang=en|zh|hybrid`** ([stock.py](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/stock.py)):
+  - Returns structured 5-year text mining timeline, disclaimer deltas, and keyword frequency trends.
+
+### 3. Frontend React Text Mining Viewer (`SecTextMiningViewer.tsx`)
+- **`SecTextMiningViewer.tsx`** ([SecTextMiningViewer.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/SecTextMiningViewer.tsx)):
+  - Embedded inside the single stock view in [App.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/App.tsx).
+  - Interactive year-by-year comparison buttons (`2025 vs 2024`, `2024 vs 2023`, `2023 vs 2022`).
+  - Color-coded severity badges (`🔴 High Caution`, `🟡 Moderate Caution`, `🟢 Minimal Change`).
+  - Extracted Risk Keyword Trend Pills (e.g. `AI CapEx (48x) +120%`).
 
 ---
 
-## Ready for Future Development
+## Verification Results
 
-The codebase is fully modular, type-safe, tested, and ready for future Phase III features!
+### 1. Automated Pytest Test Suite
+```powershell
+$env:PYTHONPATH="."; .\backend\venv\Scripts\python -m pytest backend/tests/ -v
+```
+**Result**: `24/24 passed` in 17.32s (100% Green).
+
+### 2. Frontend Production Build
+```powershell
+cd frontend; npm run build
+```
+**Result**: `0 TypeScript errors`, clean production bundle built (`616.54 kB`).
+
+### 3. Git Commit & Push
+- Committed and pushed to `main` (`8722d5f`).
+- Servers active on [http://localhost:3000](http://localhost:3000).
