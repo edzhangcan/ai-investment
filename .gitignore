@@ -5,6 +5,11 @@ __pycache__/
 .pytest_cache/
 .env
 
+# Database & SQLite
+*.db
+*.sqlite
+backend/investment_platform.db
+
 # Node / React / Next.js
 frontend/node_modules/
 frontend/dist/
