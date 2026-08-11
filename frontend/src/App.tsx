@@ -258,7 +258,7 @@ export const App: React.FC = () => {
                 />
 
                 <RecommendedStocksGrid
-                  recommendations={dashboardData.recommendations.recommended_stocks}
+                  recommendations={dashboardData.recommendations}
                   onSelectStock={handleSelectRecommendedStock}
                   isPlainTalk={isPlainTalk}
                 />
