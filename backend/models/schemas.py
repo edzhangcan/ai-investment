@@ -14,15 +14,15 @@ class StockDataSchema(BaseModel):
     previous_close: float
     fifty_day_sma: float
     two_hundred_day_sma: float
-    pe_ratio: float
-    ps_ratio: float
-    ev_ebitda: float
-    free_cash_flow: float
-    operating_cash_flow: float
-    net_income: float
-    total_revenue: float
-    revenue_growth: float
-    rsi_14: float
+    pe_ratio: Optional[float] = None
+    ps_ratio: Optional[float] = None
+    ev_ebitda: Optional[float] = None
+    free_cash_flow: Optional[float] = None
+    operating_cash_flow: Optional[float] = None
+    net_income: Optional[float] = None
+    total_revenue: Optional[float] = None
+    revenue_growth: Optional[float] = None
+    rsi_14: float = 50.0
     source: str
 
 class SentimentSchema(BaseModel):
@@ -56,7 +56,7 @@ class MoatFactorScoreSchema(BaseModel):
 
 class FundamentalAnalysisSchema(BaseModel):
     symbol: str
-    free_cash_flow: float
+    free_cash_flow: Optional[float] = None
     fcf_yield_pct: float
     cash_conversion_ratio: float
     fcf_quality: str
@@ -65,7 +65,7 @@ class FundamentalAnalysisSchema(BaseModel):
     moat_scores: List[MoatFactorScoreSchema] = Field(default_factory=list)
     guidance_shift_deltas: List[GuidanceDeltaSchema]
     guidance_drift_score: float = 0.0
-    arr_nrr_metrics: Dict[str, str]
+    arr_nrr_metrics: Dict[str, Any] = Field(default_factory=dict)
 
 class PricingAnalysisSchema(BaseModel):
     symbol: str
@@ -73,7 +73,7 @@ class PricingAnalysisSchema(BaseModel):
     currency: str
     fifty_day_sma: float
     two_hundred_day_sma: float
-    pe_ratio: float
+    pe_ratio: Optional[float] = None
     valuation_status: str
     valuation_percentile: int
     dcf_fair_value: float
@@ -107,6 +107,29 @@ class DebateSchema(BaseModel):
     bull_argument: BullArgumentSchema
     bear_argument: BearArgumentSchema
     cio_verdict: CIOVerdictSchema
+
+class StockRecommendationSchema(BaseModel):
+    symbol: str
+    company_name: str
+    market: str
+    currency: str
+    current_price: float
+    previous_close: float
+    company_background: str
+    why_recommend_rationale: str
+    macro_alignment_tag: str
+    category_badge: str  # "SECTOR_OVERWEIGHT", "OVERALL_LEADER", "GOLD_NUGGET"
+    total_recommendation_score: float
+    key_catalysts: List[str]
+    key_metrics: Dict[str, Any]
+    downside_risk_summary: str
+    action_status: str
+
+class CategorizedRecommendationsSchema(BaseModel):
+    macro_context: Dict[str, Any]
+    sector_overweight_stocks: List[StockRecommendationSchema]
+    overall_recommended_stocks: List[StockRecommendationSchema]
+    gold_nugget_stocks: List[StockRecommendationSchema]
 
 class StockAnalysisResponseSchema(BaseModel):
     stock: StockDataSchema

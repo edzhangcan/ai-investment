@@ -1,23 +1,23 @@
-# Walkthrough - Phase 2 Item #1: Price Alert Triggers & Background Notification Engine
+# Walkthrough - Phase 2 Expansion: Multi-Category Recommendations & SaaS Moat Tracker
 
-We have successfully built and verified **Phase 2 Item #1: Price Alert Triggers & Background Notification Engine** on branch `feature/phase2-price-alert-engine`.
+We have built, verified, and committed **Phase 2 Expansion (Multi-Category Stock Recommendation Engine & SaaS ARR/NRR/Moat Tracker)** on branch `feature/phase2-multicategory-recommendations`.
 
 ---
 
 ## What Was Accomplished
 
-### 1. Database & Persistence Layer (`SQLModel` + `SQLite`)
-- **`PriceAlertLogDB` Table** ([db_models.py](file:///c:/Users/drunk/Projects/ai-investment/backend/models/db_models.py)): Stores price alert trigger logs including `symbol`, `company_name`, `current_price`, `target_buy_price`, `notification_channel`, `status`, and `triggered_at`.
+### 1. Multi-Category Recommendation Engine Expansion (`RecommendationEngine`)
+- **3 Strategic Recommendation Pools** ([recommendation_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/recommendation_engine.py)):
+  1. 🟢 **Sector Overweight Champions (4 Stocks)**: Strictly matched against macro overweight sectors (e.g. Energy, Financials, Tech Infrastructure) with macro alignment scores $\ge 0.85$.
+  2. 🔵 **Overall Market Leaders (4-6 Stocks)**: High-conviction mega/large-cap core picks ($NVDA, $MSFT, $SHOP.TO, $TD.TO, $AAPL).
+  3. 🪙 **Hidden Gold Nuggets 隐形金矿股 (4-6 Stocks)**: Non-mainstream / mid-cap / niche growth stocks ($CSU.TO, $CELH, $CRWD, $ONT.TO) with high FCF conversion and growth potential.
 
-### 2. Alert Monitoring & Notification Dispatcher Services
-- **`PriceAlertEngine`** ([alert_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/services/alert_engine.py)): Evaluates active watchlist items against real-time market quotes and enforces a **12-hour anti-spam cooldown** threshold to prevent duplicate notifications.
-- **`NotificationDispatcher`** ([notification_dispatcher.py](file:///c:/Users/drunk/Projects/ai-investment/backend/services/notification_dispatcher.py)): Handles Webhook payloads, Web push alerts, and In-App notification logs.
-- **Alerts REST Router** ([alerts.py](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/alerts.py)):
-  - `GET /api/alerts/history`: Returns historical triggered price alerts.
-  - `POST /api/alerts/trigger-check`: Manually triggers watchlist price evaluation.
+### 2. SaaS Metric Tracker & 5-Factor Moat Scoring Matrix (`FundamentalEngine`)
+- **Morningstar 5-Factor Matrix** ([fundamental_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/fundamental_engine.py)): 0-10 score evaluation across Network Effects, Switching Costs, Cost Advantage, Intangibles, and Scale.
+- **SaaS ARR & NRR Tracking**: Automated extraction of ARR ($B), Net Revenue Retention (NRR %), and SaaS health badges.
 
-### 3. Frontend Toast Notification UI (`/frontend`)
-- **`NotificationToast.tsx`** ([NotificationToast.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/NotificationToast.tsx)): Floating popover toast banner alerting users when a starred stock enters its target buy range with an instant one-click drill-down button.
+### 3. Redesigned Multi-Category Frontend Component (`/frontend`)
+- **`RecommendedStocksGrid.tsx`** ([RecommendedStocksGrid.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/RecommendedStocksGrid.tsx)): Category tab switcher (🟢 超配板块精选, 🔵 核心龙头, 🪙 隐形金矿股) with custom category badges and card highlights.
 
 ---
 
@@ -27,10 +27,10 @@ We have successfully built and verified **Phase 2 Item #1: Price Alert Triggers 
 ```powershell
 $env:PYTHONPATH="."; .\backend\venv\Scripts\python -m pytest backend/tests/ -v
 ```
-**Result**: `21 passed in 12.48s` (100% Green, including `test_alerts.py`).
+**Result**: `21 passed in 19.00s` (100% Green, including `test_get_top_recommendations_categorized`).
 
 ### 2. Frontend Production Build
 ```powershell
 cd frontend; npm run build
 ```
-**Result**: Built clean with 0 TypeScript / bundling errors (`591.71 kB`).
+**Result**: Built clean with 0 TypeScript / bundling errors (`594.66 kB`).

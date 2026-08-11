@@ -46,16 +46,23 @@ export interface GuidanceDelta {
   severity: string;
 }
 
+export interface MoatFactorScore {
+  factor_name: string;
+  score: number;
+  status: string;
+}
+
 export interface FundamentalData {
   symbol: string;
-  free_cash_flow: number;
+  free_cash_flow?: number | null;
   fcf_yield_pct: number;
   cash_conversion_ratio: number;
   fcf_quality: string;
   moat_rating: string;
   moat_sources: string[];
+  moat_scores?: MoatFactorScore[];
   guidance_shift_deltas: GuidanceDelta[];
-  arr_nrr_metrics: Record<string, string>;
+  arr_nrr_metrics: Record<string, any>;
 }
 
 export interface PricingData {
@@ -64,7 +71,7 @@ export interface PricingData {
   currency: string;
   fifty_day_sma: number;
   two_hundred_day_sma: number;
-  pe_ratio: number;
+  pe_ratio?: number | null;
   valuation_status: string;
   valuation_percentile: number;
   dcf_fair_value: number;
@@ -129,10 +136,11 @@ export interface StockRecommendation {
   company_background: string;
   why_recommend_rationale: string;
   macro_alignment_tag: string;
+  category_badge?: string;
   total_recommendation_score: number;
   key_catalysts: string[];
   key_metrics: {
-    pe_ratio: number;
+    pe_ratio: number | string;
     free_cash_flow_b: number;
     fcf_quality: string;
     moat_rating: string;
@@ -144,20 +152,24 @@ export interface StockRecommendation {
   action_status: string;
 }
 
+export interface CategorizedRecommendationsPayload {
+  macro_context: {
+    cycle_stage: string;
+    cycle_code: string;
+    plain_explanation: string;
+  };
+  sector_overweight_stocks?: StockRecommendation[];
+  overall_recommended_stocks?: StockRecommendation[];
+  gold_nugget_stocks?: StockRecommendation[];
+  recommended_stocks?: StockRecommendation[];
+}
+
 export interface MacroDashboardResponse {
   macro_assessment: MacroData;
   policy_news: PolicyNewsItem[];
   empirical_supporting_facts: SupportingFact[];
   credible_sources: string[];
-  recommendations: {
-    macro_context: {
-      cycle_stage: string;
-      cycle_code: string;
-      plain_explanation: string;
-    };
-    recommended_stocks_count: number;
-    recommended_stocks: StockRecommendation[];
-  };
+  recommendations: CategorizedRecommendationsPayload;
 }
 
 export interface StockAnalysisResponse {
@@ -167,4 +179,3 @@ export interface StockAnalysisResponse {
   pricing: PricingData;
   debate: DebateData;
 }
-
