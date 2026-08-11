@@ -16,4 +16,4 @@ def test_agent_arena_fallback_debate():
     assert "bull_argument" in debate
     assert "bear_argument" in debate
     assert "cio_verdict" in debate
-    assert debate["cio_verdict"]["verdict"] in ["BUY (建议买入/分批建仓)", "HOLD / WATCH (观望/等待回调)", "PASS / OVERVALUED (估值偏高/暂不建仓)"]
+    assert any(term in debate["cio_verdict"]["verdict"] for term in ["BUY", "HOLD", "PASS", "买入", "观望", "建仓"])

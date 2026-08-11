@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { BilingualHoverCard } from './BilingualHoverCard';
+import { useLanguage } from '../context/LanguageContext';
 import { Target, CheckCircle2, Sliders, Calendar } from 'lucide-react';
 
 interface PricingChartProps {
@@ -9,6 +10,7 @@ interface PricingChartProps {
 }
 
 export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlainTalk = false }) => {
+  const { t } = useLanguage();
   const [timeframe, setTimeframe] = useState<'1M' | '3M' | '6M' | '1Y' | '5Y'>('1Y');
   const [show50D, setShow50D] = useState(true);
   const [show200D, setShow200D] = useState(true);
@@ -52,10 +54,10 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
         <div>
           <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold">
             <Target className="w-4 h-4 text-emerald-400" />
-            <span>Pricing & Technical Overlay (估值与择时器)</span>
+            <span>Pricing & Technical Overlay</span>
           </div>
           <h3 className="text-base font-bold text-slate-100 mt-1">
-            Ideal Buy Range: <span className="text-emerald-400">${buyMin} – ${buyMax} {currency}</span>
+            {t.idealBuyRange}: <span className="text-emerald-400">${buyMin} – ${buyMax} {currency}</span>
           </h3>
         </div>
 
@@ -93,7 +95,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
         <div className="flex items-center gap-3">
           <span className="text-slate-400 font-semibold flex items-center gap-1">
             <Sliders className="w-3.5 h-3.5 text-indigo-400" />
-            <span>图表图层 (Layers):</span>
+            <span>Chart Overlays:</span>
           </span>
 
           <label className="flex items-center gap-1.5 cursor-pointer text-indigo-300">
@@ -128,7 +130,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
         </div>
 
         <div className="text-slate-300 font-medium">
-          当前市价: <span className="font-bold text-slate-100">${currentPrice} {currency}</span>
+          Current Price: <span className="font-bold text-slate-100">${currentPrice} {currency}</span>
         </div>
       </div>
 
@@ -141,31 +143,38 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
         </div>
       </div>
 
-      {/* Recharts Area Container */}
+      {/* Chart Canvas */}
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
-              <linearGradient id="priceColor" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
                 <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
               </linearGradient>
             </defs>
-            <XAxis dataKey="month" stroke="#64748b" fontSize={11} />
-            <YAxis domain={['auto', 'auto']} stroke="#64748b" fontSize={11} />
-            <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px' }} />
-            
-            {show200D && (
-              <ReferenceLine y={twoHundredSma} stroke="#6366f1" strokeDasharray="3 3" label={{ value: '200D MA Support', fill: '#818cf8', fontSize: 10 }} />
-            )}
-            {show50D && (
-              <ReferenceLine y={fiftySma} stroke="#818cf8" strokeDasharray="2 2" label={{ value: '50D MA', fill: '#c7d2fe', fontSize: 10 }} />
-            )}
+
+            <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} />
+            <YAxis domain={['auto', 'auto']} stroke="#64748b" fontSize={11} tickLine={false} />
+
+            <Tooltip
+              contentStyle={{ backgroundColor: '#090d16', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px' }}
+              itemStyle={{ color: '#34d399' }}
+            />
+
+            {/* Ideal Buy Zone Band */}
+            <ReferenceLine y={buyMax} stroke="#10b981" strokeDasharray="3 3" label={{ value: `Buy Ceiling ($${buyMax})`, fill: '#10b981', fontSize: 10 }} />
+            <ReferenceLine y={buyMin} stroke="#059669" strokeDasharray="3 3" label={{ value: `Buy Floor ($${buyMin})`, fill: '#059669', fontSize: 10 }} />
+
+            {/* DCF Fair Value Anchor */}
             {showDCF && (
-              <ReferenceLine y={dcfFairValue} stroke="#f59e0b" strokeDasharray="5 5" label={{ value: 'DCF Intrinsic Line', fill: '#fbbf24', fontSize: 10 }} />
+              <ReferenceLine y={dcfFairValue} stroke="#f59e0b" strokeWidth={2} label={{ value: `DCF ($${dcfFairValue})`, fill: '#f59e0b', fontSize: 10, position: 'right' }} />
             )}
 
-            <Area type="monotone" dataKey="Price" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#priceColor)" />
+            <Area type="monotone" dataKey="Price" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#priceGradient)" />
+
+            {show50D && <Area type="monotone" dataKey="50D_SMA" stroke="#818cf8" strokeWidth={1.5} strokeDasharray="4 4" fill="none" />}
+            {show200D && <Area type="monotone" dataKey="200D_SMA" stroke="#6366f1" strokeWidth={2} strokeDasharray="2 2" fill="none" />}
           </AreaChart>
         </ResponsiveContainer>
       </div>

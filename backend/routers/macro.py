@@ -1,5 +1,5 @@
 """
-Macro Economy & Dashboard Router
+Macro Economy & Dashboard Router with multi-language support (en, zh, hybrid)
 """
 
 from fastapi import APIRouter
@@ -9,19 +9,19 @@ from backend.engines.recommendation_engine import RecommendationEngine
 router = APIRouter(prefix="/api/macro", tags=["Macro Engine & Dashboard"])
 
 @router.get("")
-def get_macro_analysis():
+def get_macro_analysis(lang: str = "en"):
     """Returns current US & Canada economic cycle status and sector rotation weights."""
-    return MacroEngine.analyze_macro_environment()
+    return MacroEngine.analyze_macro_environment(lang=lang)
 
 @router.get("/dashboard")
-def get_macro_dashboard(force_refresh: bool = False):
+def get_macro_dashboard(force_refresh: bool = False, lang: str = "en"):
     """
     Returns complete Macro Dashboard payload:
     Macro cycle assessment, empirical indicator proof array, policy news feed,
     and TOP 3-5 macro-driven stock recommendations with 'Why Invest Now' rationale.
     """
-    macro_data = MacroEngine.analyze_macro_environment()
-    recommendations_data = RecommendationEngine.get_top_recommendations(force_refresh=force_refresh)
+    macro_data = MacroEngine.analyze_macro_environment(lang=lang)
+    recommendations_data = RecommendationEngine.get_top_recommendations(force_refresh=force_refresh, lang=lang)
 
     return {
         "macro_assessment": macro_data,

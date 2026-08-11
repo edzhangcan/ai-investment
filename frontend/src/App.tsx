@@ -15,7 +15,7 @@ import { fetchStockAnalysis, fetchMacroDashboard } from './api/client';
 import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'macro' | 'stock'>('macro');
   const [ticker, setTicker] = useState('NVDA');
   const [searchInput, setSearchInput] = useState('NVDA');
@@ -46,7 +46,7 @@ export const App: React.FC = () => {
   const loadDashboard = async () => {
     setLoadingDashboard(true);
     try {
-      const res = await fetchMacroDashboard();
+      const res = await fetchMacroDashboard(language);
       setDashboardData(res);
     } catch (e) {
       console.warn("Macro dashboard fetch failed:", e);
@@ -59,7 +59,7 @@ export const App: React.FC = () => {
   const loadStockData = async (symbol: string) => {
     setLoadingStock(true);
     try {
-      const response = await fetchStockAnalysis(symbol);
+      const response = await fetchStockAnalysis(symbol, language);
       setStockData(response);
     } catch (e) {
       console.warn(`Stock data fetch failed for ${symbol}:`, e);
@@ -72,11 +72,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     loadDashboard();
     fetchWatchlistSymbols();
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     loadStockData(ticker);
-  }, [ticker]);
+  }, [ticker, language]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
