@@ -1,31 +1,28 @@
-# Walkthrough - Internationalization (i18n) & Multi-Language Support System
+# Walkthrough - Full End-to-End Multi-Language (i18n) Engine Synchronization
 
-We have completed the **Major Refactoring for Multi-Language Support (i18n)** on branch `feature/phase2-multicategory-recommendations` (`22923a4`).
+We have completed the **Full End-to-End Dynamic Content Localization** across both backend intelligence engines and frontend React components on branch `feature/phase2-multicategory-recommendations` (`7657a74`).
 
 ---
 
 ## What Was Accomplished
 
-### 1. Multi-Language Context & Translation Engine (`/frontend/src`)
-- **`translations.ts`** ([translations.ts](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/i18n/translations.ts)): Comprehensive dictionary supporting 3 distinct language modes:
-  1. 🌐 **English (`en` - Default)**: Full English interface, metrics, titles, rationales, and tooltips.
-  2. 🇨🇳 **Simplified Chinese (`zh`)**: Pure Simplified Chinese interface, explanations, and metrics.
-  3. 🔀 **Hybrid Mode (`hybrid`)**: Simplified Chinese narrative + English financial terms in parentheses (e.g. `自由现金流 (Free Cash Flow)`, `市盈率 (P/E Ratio)`, `窄护城河 (Narrow Moat)`).
-- **`LanguageContext.tsx`** ([LanguageContext.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/context/LanguageContext.tsx)): Global context provider persisting language preference in browser `localStorage` (`ai_investment_lang_mode`).
+### 1. Dynamic Backend Content Localization (`/backend/engines` & `/backend/routers`)
+- **`MacroEngine.analyze_macro_environment(lang)`** ([macro_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/macro_engine.py)):
+  - Returns localized `cycle_stage`, `plain_explanation`, `recommended_overweights`, `recommended_underweights`, and empirical indicators for `en`, `zh`, and `hybrid`.
+- **`RecommendationEngine.get_top_recommendations(lang)`** ([recommendation_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/recommendation_engine.py)):
+  - Returns localized `company_background`, `why_recommend_rationale`, and `macro_alignment_tag` for all stocks across `en`, `zh`, and `hybrid`.
+- **`MultiAgentArena.run_debate(..., lang)`** ([agent_arena.py](file:///c:/Users/drunk/Projects/ai-investment/backend/agents/agent_arena.py)):
+  - Generates localized agent titles (e.g. `Bull Agent 🐂` vs `多头分析师 🐂`), Bull/Bear key points, upside catalysts, downside risks, and CIO Verdicts (`BUY`, `建议买入 (分批建仓)`, `建议买入 (BUY - Accumulate)`).
+- **`FundamentalEngine.evaluate_fundamentals(..., lang)`** ([fundamental_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/fundamental_engine.py)):
+  - Localizes `fcf_quality`, Morningstar `moat_rating` (`Wide Moat` vs `宽护城河`), and MD&A guidance shift deltas.
+- **REST Endpoints**:
+  - `/api/macro/dashboard?lang=en|zh|hybrid`
+  - `/api/stock/{ticker}?lang=en|zh|hybrid`
 
-### 2. Language Selector UI Dropdown Component (`LanguageSelector.tsx`)
-- **`LanguageSelector.tsx`** ([LanguageSelector.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/LanguageSelector.tsx)): Sleek glassmorphic language switcher pill in top navigation header:
-  - 🌐 **English (Default)** (`EN`)
-  - 🇨🇳 **简体中文** (`中文`)
-  - 🔀 **混合模式 (Hybrid)** (`中/英`)
-
-### 3. Component Internationalization Upgrades
-- Upgraded components to consume `useLanguage()` hooks:
-  - [App.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/App.tsx) (Navigation bar, Search placeholder, Star buttons, PlainTalk toggle)
-  - [RecommendedStocksGrid.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/RecommendedStocksGrid.tsx) (Category tabs, card headers, metrics grid, action buttons)
-  - [MacroDashboard.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/MacroDashboard.tsx) (Macro cycle stage, indicators table, news stream)
-  - [DebateArena.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/DebateArena.tsx) (Bull/Bear case cards, CIO Verdict)
-  - [WatchlistDrawer.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/WatchlistDrawer.tsx) (Watchlist drawer, add form, persistent storage labels)
+### 2. Frontend React Integration (`/frontend/src`)
+- **`client.ts`** ([client.ts](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/api/client.ts)): Passes `lang=${language}` query parameter on all API requests.
+- **`App.tsx`** ([App.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/App.tsx)): Listens to `language` state changes and triggers instant re-fetching for both Macro Dashboard and Stock Analysis tabs.
+- **`PricingChart.tsx`** ([PricingChart.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/PricingChart.tsx)): Replaced remaining hardcoded labels with `t.idealBuyRange` and localized chart overlays.
 
 ---
 
@@ -35,14 +32,14 @@ We have completed the **Major Refactoring for Multi-Language Support (i18n)** on
 ```powershell
 cd frontend; npm run build
 ```
-**Result**: `0 errors`, clean production bundle built (`607.74 kB`).
+**Result**: `0 errors`, clean production bundle built (`608.24 kB`).
 
 ### 2. Backend Pytest Suite
 ```powershell
 $env:PYTHONPATH="."; .\backend\venv\Scripts\python -m pytest backend/tests/ -v
 ```
-**Result**: `21 passed in 17.39s` (100% Green).
+**Result**: `21 passed in 16.02s` (100% Green).
 
 ### 3. Git Commit
-- Committed to branch `feature/phase2-multicategory-recommendations` (`22923a4`).
-- Servers running on [http://localhost:3000](http://localhost:3000).
+- Committed to branch `feature/phase2-multicategory-recommendations` (`7657a74`).
+- Backend & Frontend servers active on [http://localhost:3000](http://localhost:3000).
