@@ -1,29 +1,32 @@
-# Walkthrough - Phase 2 Wrap-up: Full SEC EDGAR 10-K & SEDAR+ Text Mining Pipeline
+# Walkthrough - Slimmed Recommendation Cards & 8-Stock Category Expansion
 
-We have completed the **Full SEC EDGAR 10-K & SEDAR+ Text Mining Pipeline**, successfully concluding all core intelligence objectives of **Phase 2** on branch `main` (`8722d5f`).
+We have completed the **Slimmed Stock Recommendation Cards & 8-Stock Category Expansion** feature, successfully deployed and pushed to branch `main` (`001aaf0`).
 
 ---
 
 ## What Was Built
 
-### 1. Backend Text Mining Engine (`SECTextMiner`)
-- **`sec_text_miner.py`** ([sec_text_miner.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/sec_text_miner.py)):
-  - Parses 5-year historical MD&A filings (Item 7 for US SEC 10-K, Annual MD&A for Canadian SEDAR+).
-  - Calculates Levenshtein string distance & Cosine similarity ratio between consecutive filing years (2021–2025).
-  - Extracts inserted & removed management risk disclaimers.
-  - Tracks Year-over-Year (YoY) frequency trends for key risk keywords (`AI CapEx`, `export controls`, `supply chain`, `foreign exchange`, `macro uncertainty`).
-  - Supports multi-language output (`en`, `zh`, `hybrid`).
+### 1. Compact 4-Column Stock Recommendation Grid
+- **`RecommendedStocksGrid.tsx`** ([RecommendedStocksGrid.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/RecommendedStocksGrid.tsx)):
+  - Redesigned into a sleek, space-efficient 4-column responsive grid (`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`).
+  - Slimmed cards focus on key high-level metrics: Flag, Ticker Symbol, Company Name, Recommendation Score (out of 100), Star Watchlist Toggle, Price, FCF ($B), P/E, Moat rating, and Buy zone.
+  - Category selector buttons now display **(8)** stocks per pool (e.g. `🟢 超配板块精选 (8)`).
 
-### 2. REST API Endpoint
-- **`GET /api/stock/{ticker}/filings/mining?lang=en|zh|hybrid`** ([stock.py](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/stock.py)):
-  - Returns structured 5-year text mining timeline, disclaimer deltas, and keyword frequency trends.
+### 2. Single Stock Deep-Dive Overview Banner
+- **`App.tsx`** ([App.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/App.tsx)):
+  - Added a dedicated **Single Stock Overview Card** positioned right above the Pricing Chart in the stock analysis view.
+  - Displays full detailed prose upon selecting any recommended stock:
+    - 🚀 **Why Invest Now Rationale** (`why_recommend_rationale`)
+    - 🏛️ **Company Core Business Background** (`company_background`)
+    - ⚡ **Growth Catalysts & Revenue Drivers** (`key_catalysts`)
 
-### 3. Frontend React Text Mining Viewer (`SecTextMiningViewer.tsx`)
-- **`SecTextMiningViewer.tsx`** ([SecTextMiningViewer.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/SecTextMiningViewer.tsx)):
-  - Embedded inside the single stock view in [App.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/App.tsx).
-  - Interactive year-by-year comparison buttons (`2025 vs 2024`, `2024 vs 2023`, `2023 vs 2022`).
-  - Color-coded severity badges (`🔴 High Caution`, `🟡 Moderate Caution`, `🟢 Minimal Change`).
-  - Extracted Risk Keyword Trend Pills (e.g. `AI CapEx (48x) +120%`).
+### 3. Expanded Stock Universe & 8-Stock Category Pools
+- **`recommendation_engine.py`** ([recommendation_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/recommendation_engine.py)):
+  - Expanded `STOCK_UNIVERSE` to **24+ stocks** across US & Canadian equities.
+  - Selection pipeline selects **8 distinct, non-overlapping stocks** for each category pool:
+    - 🟢 **Sector Champions (8 stocks)**: $SU.TO, $ENB.TO, $CNQ.TO, $XOM, $TD.TO, $RY.TO, $BNS.TO, $JPM
+    - 🔵 **Market Leaders (8 stocks)**: $ABX.TO, $TECK.B.TO, $NTR.TO, $NVDA, $AAPL, $SHOP.TO, $MSFT, $GOOGL
+    - 🪙 **Hidden Gold Nuggets (8 stocks)**: $CSU.TO, $CELH, $CRWD, $ONT.TO, $TOI.V, $PANW, $SNPS, $AMZN
 
 ---
 
@@ -33,14 +36,14 @@ We have completed the **Full SEC EDGAR 10-K & SEDAR+ Text Mining Pipeline**, suc
 ```powershell
 $env:PYTHONPATH="."; .\backend\venv\Scripts\python -m pytest backend/tests/ -v
 ```
-**Result**: `24/24 passed` in 17.32s (100% Green).
+**Result**: **`24/24 passed`** in 23.90s (100% Green). Zero overlap across all 24 recommended stocks verified.
 
 ### 2. Frontend Production Build
 ```powershell
 cd frontend; npm run build
 ```
-**Result**: `0 TypeScript errors`, clean production bundle built (`616.54 kB`).
+**Result**: **`0 TypeScript errors`**, clean production bundle built (`617.08 kB`).
 
 ### 3. Git Commit & Push
-- Committed and pushed to `main` (`8722d5f`).
+- Committed and pushed to `main` (`001aaf0`).
 - Servers active on [http://localhost:3000](http://localhost:3000).
