@@ -1,6 +1,6 @@
 """
 FastAPI Main Application Server
-Modular router architecture powering macro scanning, fundamental review, pricing engine, multi-agent debate, and SQLModel persistence.
+Modular router architecture powering macro scanning, fundamental review, pricing engine, multi-agent debate, price alerts, and SQLModel persistence.
 """
 
 import os
@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
 from backend.database import init_db
-from backend.routers import macro, stock, debate, watchlist
+from backend.routers import macro, stock, debate, watchlist, alerts
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="Backend service powering macro scanning, fundamental review, pricing engine, and multi-agent debate for US & CA equities.",
+    description="Backend service powering macro scanning, fundamental review, pricing engine, multi-agent debate, and price alerts for US & CA equities.",
     version="1.0.0",
     debug=settings.DEBUG,
     lifespan=lifespan
@@ -46,6 +46,7 @@ app.include_router(macro.router)
 app.include_router(stock.router)
 app.include_router(debate.router)
 app.include_router(watchlist.router)
+app.include_router(alerts.router)
 
 @app.get("/api/health")
 def health_check():

@@ -279,3 +279,9 @@ class DataProviderManager:
             "current_price": None,
             "error": f"NO DATA FOUND: No real-time market data feed found for symbol '{normalized_symbol}'. Please verify ticker symbol (e.g. $XEQT.TO, $NVDA, $SHOP.TO, $AAPL)."
         }
+
+    def get_stock_quote(self, symbol: str) -> Dict[str, Any]:
+        """Convenience method returning stock data dictionary."""
+        return self.get_stock_data(symbol)
+
+data_provider_manager = DataProviderManager()

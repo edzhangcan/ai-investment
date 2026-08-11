@@ -58,3 +58,15 @@ class DebateTranscriptDB(SQLModel, table=True):
     risk_reward_ratio: float
     judge_summary: str
     created_at: datetime = Field(default_factory=get_utc_now)
+
+class PriceAlertLogDB(SQLModel, table=True):
+    __tablename__ = "price_alert_logs"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    symbol: str = Field(index=True)
+    company_name: str
+    current_price: float
+    target_buy_price: float
+    notification_channel: str = "IN_APP"  # "IN_APP", "WEBHOOK", "EMAIL"
+    status: str = "TRIGGERED"
+    message: str = ""
+    triggered_at: datetime = Field(default_factory=get_utc_now)

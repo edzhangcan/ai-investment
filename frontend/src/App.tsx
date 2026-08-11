@@ -7,6 +7,7 @@ import { DebateArena } from './components/DebateArena';
 import { BilingualHoverCard } from './components/BilingualHoverCard';
 import { CommandPalette } from './components/CommandPalette';
 import { WatchlistDrawer } from './components/WatchlistDrawer';
+import { NotificationToast } from './components/NotificationToast';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
 import { fetchStockAnalysis, fetchMacroDashboard } from './api/client';
 import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command } from 'lucide-react';
@@ -118,6 +119,15 @@ export const App: React.FC = () => {
       <WatchlistDrawer
         isOpen={isWatchlistOpen}
         onClose={() => setIsWatchlistOpen(false)}
+        onSelectTicker={(sym) => {
+          setTicker(sym);
+          setSearchInput(sym);
+          setActiveTab('stock');
+        }}
+      />
+
+      {/* Notification Toast for Triggered Buy-Zone Price Alerts */}
+      <NotificationToast
         onSelectTicker={(sym) => {
           setTicker(sym);
           setSearchInput(sym);
