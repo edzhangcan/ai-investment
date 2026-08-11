@@ -13,7 +13,7 @@ import { LanguageSelector } from './components/LanguageSelector';
 import { useLanguage } from './context/LanguageContext';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
 import { fetchStockAnalysis, fetchMacroDashboard } from './api/client';
-import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command } from 'lucide-react';
+import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command, TrendingUp, Layers } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { language, t } = useLanguage();
@@ -395,6 +395,61 @@ export const App: React.FC = () => {
                       </div>
                     </div>
                   </div>
+
+                  {(() => {
+                    const allRecs: any[] = [];
+                    if (dashboardData?.recommendations) {
+                      if (Array.isArray(dashboardData.recommendations)) {
+                        allRecs.push(...dashboardData.recommendations);
+                      } else {
+                        if (dashboardData.recommendations.sector_overweight_stocks) allRecs.push(...dashboardData.recommendations.sector_overweight_stocks);
+                        if (dashboardData.recommendations.overall_recommended_stocks) allRecs.push(...dashboardData.recommendations.overall_recommended_stocks);
+                        if (dashboardData.recommendations.gold_nugget_stocks) allRecs.push(...dashboardData.recommendations.gold_nugget_stocks);
+                      }
+                    }
+                    const matchedRec = allRecs.find(r => r.symbol.toUpperCase() === stockData.stock.symbol.toUpperCase());
+                    if (!matchedRec) return null;
+
+                    return (
+                      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl space-y-4">
+                        <div className="bg-gradient-to-r from-emerald-950/40 via-teal-950/20 to-slate-950 border border-emerald-500/30 p-4 rounded-2xl">
+                          <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-400 mb-1.5">
+                            <TrendingUp className="w-4 h-4" />
+                            <span>Why Invest Now (为什么此时推荐配置)</span>
+                          </div>
+                          <p className="text-xs text-slate-200 leading-relaxed font-medium">
+                            {matchedRec.why_recommend_rationale}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                          <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
+                            <div className="flex items-center gap-2 font-bold text-slate-300 mb-1.5">
+                              <Layers className="w-4 h-4 text-indigo-400" />
+                              <span>Company Business Background (主营业务背景)</span>
+                            </div>
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                              {matchedRec.company_background}
+                            </p>
+                          </div>
+
+                          <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
+                            <div className="flex items-center gap-2 font-bold text-slate-300 mb-2">
+                              <Sparkles className="w-4 h-4 text-amber-400" />
+                              <span>Growth Catalysts & Revenue Drivers (核心增长催化剂)</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {matchedRec.key_catalysts?.map((cat: string, idx: number) => (
+                                <span key={idx} className="px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-300 rounded-xl text-xs font-medium">
+                                  • {cat}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <PricingChart pricingData={stockData.pricing} isPlainTalk={isPlainTalk} />
                   <DebateArena debateData={stockData.debate} isPlainTalk={isPlainTalk} />

@@ -2,9 +2,9 @@
 RecommendationEngine (宏观驱动多分类股票推荐引擎)
 Analyzes North American macroeconomic cycles and sector overweights, evaluates US & Canadian stock universe,
 and categorizes recommendations into 3 DISTINCT, MUTUALLY EXCLUSIVE strategic pools:
-1. Sector Overweight Champions (4 stocks strictly matching macro overweight sectors)
-2. Overall Market Leaders (4-6 mega/large-cap core picks)
-3. Hidden Gold Nuggets (4-6 mid-cap/niche growth stocks)
+1. Sector Overweight Champions (8 stocks strictly matching macro overweight sectors)
+2. Overall Market Leaders (8 mega/large-cap core picks)
+3. Hidden Gold Nuggets (8 mid-cap/niche growth stocks)
 Multi-language support for 'en', 'zh', and 'hybrid' modes.
 """
 
@@ -41,6 +41,26 @@ STOCK_UNIVERSE = {
         "sector": "Energy & Infrastructure",
         "category": "SECTOR_OVERWEIGHT"
     },
+    "CNQ.TO": {
+        "company_background": {
+            "en": "Canadian Natural Resources Limited (CNRL) is Canada's premier low-cost oil sands and natural gas producer with vast reserves.",
+            "zh": "加拿大顶级低成本油砂与天然气开采龙头，拥有极为雄厚的天然资源储备与 $8.2B 自由现金流。",
+            "hybrid": "加拿大低成本油砂与天然气龙头 (CNRL)，拥有极其雄厚的 Oil Sands 储备。"
+        },
+        "core_drivers": ["Low break-even oil sands operations", "Massive $8.2B Free Cash Flow", "Dividend growth commitment"],
+        "sector": "Energy & Infrastructure",
+        "category": "SECTOR_OVERWEIGHT"
+    },
+    "XOM": {
+        "company_background": {
+            "en": "Exxon Mobil Corporation is a global energy giant involved in oil & gas exploration, refining, and chemicals with world-class Guyana offshore assets.",
+            "zh": "埃克森美孚是全球能源巨头，在圭亚那拥有世界级深海油田开采权，具备出色的抗风险能力。",
+            "hybrid": "全球能源巨头 (ExxonMobil)，拥有世界级 Guyana 深海油田与 $36.1B 自由现金流。"
+        },
+        "core_drivers": ["Guyana offshore low-cost volume growth", "$36.1B Free Cash Flow", "Refining margin strength"],
+        "sector": "Energy & Infrastructure",
+        "category": "SECTOR_OVERWEIGHT"
+    },
 
     # 🟢 Financials & Banking Overweight Candidates
     "TD.TO": {
@@ -63,6 +83,26 @@ STOCK_UNIVERSE = {
         "sector": "Financials & Banking",
         "category": "SECTOR_OVERWEIGHT"
     },
+    "BNS.TO": {
+        "company_background": {
+            "en": "Bank of Nova Scotia (Scotiabank) is an international Canadian bank with significant retail presence in North and Latin America.",
+            "zh": "加拿大国际化商业银行巨头，在北美与拉丁美洲太平洋联盟地区拥有强大的零售与商业银行网点。",
+            "hybrid": "加拿大国际化商业银行 (Scotiabank)，市盈率低至 10.8x P/E 且具高股息分配。"
+        },
+        "core_drivers": ["International Latin American growth", "Low 10.8x P/E valuation", "6%+ Dividend yield"],
+        "sector": "Financials & Banking",
+        "category": "SECTOR_OVERWEIGHT"
+    },
+    "JPM": {
+        "company_background": {
+            "en": "JPMorgan Chase & Co. is the premier US money-center bank offering investment banking, asset management, and commercial credit.",
+            "zh": "摩根大通是美国最大的全能金融集团，在投资银行、资产管理及商业信贷领域占据绝对统治地位。",
+            "hybrid": "美国最大全能金融集团 (JPMorgan Chase)，具备极高 Return on Tangible Equity (ROTE)。"
+        },
+        "core_drivers": ["Fortress balance sheet strength", "Investment banking advisory rebound", "Market share consolidation"],
+        "sector": "Financials & Banking",
+        "category": "SECTOR_OVERWEIGHT"
+    },
 
     # 🟢 Materials & Mining Overweight Candidates
     "ABX.TO": {
@@ -82,6 +122,16 @@ STOCK_UNIVERSE = {
             "hybrid": "加拿大关键矿产与铜矿生产商 (Teck Resources)，受益于 EV 与 AI 电网需求。"
         },
         "core_drivers": ["Copper demand surge for EV & AI power grids", "Pure-play critical minerals focus", "Low 12.8x P/E valuation"],
+        "sector": "Materials & Mining",
+        "category": "SECTOR_OVERWEIGHT"
+    },
+    "NTR.TO": {
+        "company_background": {
+            "en": "Nutrien Ltd. is the world's largest provider of crop inputs and potash fertilizer, maintaining agricultural food security supply chains.",
+            "zh": "全球最大的农作物营养素与钾肥生产商，维护全球农业粮食安全供应链，现金流充沛。",
+            "hybrid": "全球最大钾肥与农资巨头 (Nutrien)，低估值 14.5x P/E 且受益于全球粮食安全需求。"
+        },
+        "core_drivers": ["Global agricultural potash demand", "Vertical retail distribution network", "$2.8B Free Cash Flow"],
         "sector": "Materials & Mining",
         "category": "SECTOR_OVERWEIGHT"
     },
@@ -117,6 +167,26 @@ STOCK_UNIVERSE = {
         "sector": "Consumer & Technology",
         "category": "OVERALL_LEADER"
     },
+    "GOOGL": {
+        "company_background": {
+            "en": "Alphabet Inc. is the dominant search and online advertising leader, powering Google Search, YouTube, and Google Cloud Gemini AI.",
+            "zh": "谷歌母公司，全球搜索与数字广告霸主，旗下拥有 Google Search、YouTube 及 Google Cloud 结合 Gemini AI 模型。",
+            "hybrid": "全球搜索与数字广告霸主 (Alphabet)，结合 Google Cloud 与 Gemini AI 基础设施。"
+        },
+        "core_drivers": ["Search ad monetization strength", "Google Cloud profitability expansion", "$69.4B Free Cash Flow"],
+        "sector": "Technology & Media",
+        "category": "OVERALL_LEADER"
+    },
+    "AMZN": {
+        "company_background": {
+            "en": "Amazon.com, Inc. leads global e-commerce and cloud computing via Amazon Web Services (AWS), generating massive cash flow.",
+            "zh": "亚马逊是全球电商与云计算（AWS）领头羊，数字广告业务快速增长，年产生 $53B 自由现金流。",
+            "hybrid": "全球电商与 AWS 云计算巨头 (Amazon)，年产生 $53B Free Cash Flow。"
+        },
+        "core_drivers": ["AWS cloud enterprise acceleration", "High-margin digital advertising expansion", "E-commerce margin improvements"],
+        "sector": "Technology & Consumer",
+        "category": "OVERALL_LEADER"
+    },
     "SHOP.TO": {
         "company_background": {
             "en": "Shopify Inc. is Canada's premier e-commerce merchant operating system powering millions of global merchants.",
@@ -132,7 +202,7 @@ STOCK_UNIVERSE = {
     "CSU.TO": {
         "company_background": {
             "en": "Constellation Software Inc. is a master acquirer of vertical market software (VMS) companies worldwide with compounding FCF reinvestment.",
-            "zh": " Constellation Software 是全球垂直市场软件（VMS）的复利收购大师，自由现金流年化复利增长惊人。",
+            "zh": "Constellation Software 是全球垂直市场软件（VMS）的复利收购大师，自由现金流年化复利增长惊人。",
             "hybrid": "全球垂直市场软件 (VMS) 收购大师，具备复利滚雪球式 Free Cash Flow 增长。"
         },
         "core_drivers": ["VMS software acquisition engine", "High customer switching costs", "Compounding Free Cash Flow per share"],
@@ -143,7 +213,7 @@ STOCK_UNIVERSE = {
         "company_background": {
             "en": "Celsius Holdings, Inc. manufactures and distributes functional energy drinks experiencing rapid market share gains via PepsiCo distribution.",
             "zh": "Celsius 生产功能性健康能量饮料，通过百事可乐（PepsiCo）渠道快速抢占市场份额，营收同比大增 38.5%。",
-            "hybrid": " Celsius 功能性健康能量饮料，借助 PepsiCo 百事可乐渠道快速扩大市场份额。"
+            "hybrid": "Celsius 功能性健康能量饮料，借助 PepsiCo 百事可乐渠道快速扩大市场份额。"
         },
         "core_drivers": ["PepsiCo distribution expansion", "Category share gains in functional beverages", "High 38.5% YoY revenue growth"],
         "sector": "Consumer Staples & Growth",
@@ -153,7 +223,7 @@ STOCK_UNIVERSE = {
         "company_background": {
             "en": "CrowdStrike Holdings, Inc. provides cloud-native endpoint cybersecurity protection via its Falcon AI platform.",
             "zh": "CrowdStrike 凭借 Falcon AI 云原生平台提供端点网络安全防护，净收入留存率（NRR）达 115%+。",
-            "hybrid": " CrowdStrike 端点网络安全平台 (Falcon AI)，具备 115%+ 净收入留存率 (NRR)。"
+            "hybrid": "CrowdStrike 端点网络安全平台 (Falcon AI)，具备 115%+ 净收入留存率 (NRR)。"
         },
         "core_drivers": ["Falcon AI module cross-selling", "Net Revenue Retention (115%+)", "Secular cybersecurity spending expansion"],
         "sector": "Cybersecurity & Technology",
@@ -167,6 +237,36 @@ STOCK_UNIVERSE = {
         },
         "core_drivers": ["Asset management fee compounding", "Private equity portfolio realizations", "Deep value P/E multiple (11.8x)"],
         "sector": "Financials & Asset Management",
+        "category": "GOLD_NUGGET"
+    },
+    "TOI.V": {
+        "company_background": {
+            "en": "Topicus.com Inc. is a Constellation Software spin-off focused on European vertical market software acquisitions.",
+            "zh": "Topicus 是 Constellation Software 拆分上市的欧洲版软件收购巨头，专攻欧洲垂直市场软件。",
+            "hybrid": "Constellation Software 旗下欧洲 VMS 垂直软件收购龙头 (Topicus.com)。"
+        },
+        "core_drivers": ["European VMS consolidation runway", "Constellation Software playbook execution", "High 22.4% revenue growth"],
+        "sector": "Enterprise Software & Tech",
+        "category": "GOLD_NUGGET"
+    },
+    "PANW": {
+        "company_background": {
+            "en": "Palo Alto Networks, Inc. is a cybersecurity market leader accelerating enterprise platformization across network and cloud security.",
+            "zh": "Palo Alto Networks 是网络安全平台化化整合龙头，为全球大型企业提供零信任防火墙与云安全防护。",
+            "hybrid": "网络安全平台化整合龙头 (Palo Alto Networks)，为企业提供 Zero Trust 零信任防护。"
+        },
+        "core_drivers": ["Enterprise platformization strategy", "Strong $3.1B Free Cash Flow", "Zero Trust cloud security leadership"],
+        "sector": "Cybersecurity & Tech",
+        "category": "GOLD_NUGGET"
+    },
+    "SNPS": {
+        "company_background": {
+            "en": "Synopsys, Inc. is the world leader in electronic design automation (EDA) software and semiconductor IP, powering advanced chip design.",
+            "zh": "新思科技 (Synopsys) 是全球最大的电子设计自动化 (EDA) 芯片软件巨头，垄断全球芯片设计底层工具。",
+            "hybrid": "全球电子设计自动化 (EDA) 芯片软件巨头 (Synopsys)，垄断 Semiconductor IP 底层工具。"
+        },
+        "core_drivers": ["Semiconductor design complexity surge", "EDA software subscription lock-in", "AI custom chip design demand"],
+        "sector": "Semiconductor EDA & Software",
         "category": "GOLD_NUGGET"
     }
 }
@@ -183,9 +283,9 @@ class RecommendationEngine:
         """
         Executes macro scan, scores stock universe against macro cycle overweights,
         and returns 3 DISTINCT, MUTUALLY EXCLUSIVE recommendation pools:
-        1. Sector Overweight Champions (4 stocks strictly matching macro overweights)
-        2. Overall Market Leaders (4-6 core picks without overlap)
-        3. Hidden Gold Nuggets (4-6 mid-cap/niche growth stocks without overlap)
+        1. Sector Overweight Champions (8 stocks strictly matching macro overweights)
+        2. Overall Market Leaders (8 core picks without overlap)
+        3. Hidden Gold Nuggets (8 mid-cap/niche growth stocks without overlap)
         """
         global _RECOMMENDATION_CACHE, _CACHE_TIMESTAMP
 
@@ -242,40 +342,40 @@ class RecommendationEngine:
             all_scored_stocks.append(rec_item)
 
         # -------------------------------------------------------------
-        # STRICT MUTUAL EXCLUSIVITY SELECTION PIPELINE
+        # STRICT MUTUAL EXCLUSIVITY SELECTION PIPELINE (8 STOCKS PER POOL)
         # -------------------------------------------------------------
         seen_symbols: Set[str] = set()
 
-        # 1. CATEGORY 1: Sector Overweight Champions (Top 4 matching macro overweights: Energy, Financials, Mining, Tech Infra)
+        # 1. CATEGORY 1: Sector Overweight Champions (Top 8 matching macro overweights: Energy, Financials, Mining)
         sector_candidates = [
             s for s in all_scored_stocks 
-            if s["symbol"] in ["SU.TO", "ENB.TO", "TD.TO", "RY.TO", "ABX.TO", "TECK.B.TO", "NVDA"]
+            if s["symbol"] in ["SU.TO", "ENB.TO", "CNQ.TO", "XOM", "TD.TO", "RY.TO", "BNS.TO", "JPM", "ABX.TO", "TECK.B.TO", "NTR.TO"]
         ]
         sector_candidates.sort(key=lambda x: x["total_recommendation_score"], reverse=True)
         
-        sector_champions = sector_candidates[:4]
+        sector_champions = sector_candidates[:8]
         for s in sector_champions:
             s["category_badge"] = "SECTOR_OVERWEIGHT"
             seen_symbols.add(s["symbol"])
 
-        # 2. CATEGORY 2: Overall Market Leaders (Top 4-6 mega/large-cap core picks NOT in seen_symbols)
+        # 2. CATEGORY 2: Overall Market Leaders (Top 8 mega/large-cap core picks NOT in seen_symbols)
         overall_candidates = [
             s for s in all_scored_stocks 
             if s["symbol"] not in seen_symbols and STOCK_UNIVERSE[s["symbol"]]["category"] in ["OVERALL_LEADER", "SECTOR_OVERWEIGHT"]
         ]
         overall_candidates.sort(key=lambda x: x["total_recommendation_score"], reverse=True)
-        overall_leaders = overall_candidates[:4]
+        overall_leaders = overall_candidates[:8]
         for s in overall_leaders:
             s["category_badge"] = "OVERALL_LEADER"
             seen_symbols.add(s["symbol"])
 
-        # 3. CATEGORY 3: Hidden Gold Nuggets (Top 4-6 mid-cap / niche growth picks NOT in seen_symbols)
+        # 3. CATEGORY 3: Hidden Gold Nuggets (Top 8 mid-cap / niche growth picks NOT in seen_symbols)
         gold_candidates = [
             s for s in all_scored_stocks 
             if s["symbol"] not in seen_symbols
         ]
         gold_candidates.sort(key=lambda x: x["total_recommendation_score"], reverse=True)
-        gold_nuggets = gold_candidates[:4]
+        gold_nuggets = gold_candidates[:8]
         for s in gold_nuggets:
             s["category_badge"] = "GOLD_NUGGET"
             seen_symbols.add(s["symbol"])
@@ -300,19 +400,19 @@ class RecommendationEngine:
     def _score_macro_alignment(cls, symbol: str, cycle_code: str, overweights: List[str], sector: str) -> float:
         """Scores stock alignment with current macroeconomic phase."""
         if cycle_code == "OVERHEAT":
-            if symbol in ["SU.TO", "ENB.TO", "TD.TO", "RY.TO", "ABX.TO", "TECK.B.TO", "NVDA"]:
+            if symbol in ["SU.TO", "ENB.TO", "CNQ.TO", "XOM", "TD.TO", "RY.TO", "BNS.TO", "JPM", "ABX.TO", "TECK.B.TO", "NTR.TO"]:
                 return 0.98
             return 0.75
         elif cycle_code == "RECOVERY":
-            if symbol in ["NVDA", "SHOP.TO", "MSFT", "CELH", "CRWD"]:
+            if symbol in ["NVDA", "SHOP.TO", "MSFT", "GOOGL", "AMZN", "CELH", "CRWD", "PANW", "TOI.V"]:
                 return 0.98
             return 0.70
         elif cycle_code == "STAGFLATION":
-            if symbol in ["AAPL", "TD.TO", "ABX.TO", "SU.TO"]:
+            if symbol in ["AAPL", "TD.TO", "ABX.TO", "SU.TO", "XOM"]:
                 return 0.92
             return 0.60
         else: # RECESSION
-            if symbol in ["TD.TO", "RY.TO", "AAPL", "CSU.TO"]:
+            if symbol in ["TD.TO", "RY.TO", "AAPL", "CSU.TO", "JPM"]:
                 return 0.92
             return 0.65
 
@@ -321,101 +421,56 @@ class RecommendationEngine:
         cls, symbol: str, cycle_code: str, fundamental: Dict[str, Any], pricing: Dict[str, Any], info: Dict[str, Any], lang: str = "en"
     ) -> str:
         """Generates clear 'Why Invest Now' rationale linking macro tailwinds to stock performance."""
-        curr_price = pricing["current_price"]
-        curr = pricing["currency"]
-        dcf = pricing["dcf_fair_value"]
-        moat = fundamental["moat_rating"]
-
         if lang == "zh":
             if symbol == "SU.TO":
-                return "森科能源 (Suncor) 是高油价与过热阶段的直接受益者，年产生 68 亿加元自由现金流，市盈率仅 9.4 倍，完全契合能源超配推荐。"
+                return "森科能源 (Suncor) 是高油价与过热阶段的直接受益者，年产生 68 亿加元自由现金流，市盈率仅 9.4 倍，契合能源板块超配。"
             elif symbol == "ENB.TO":
                 return "恩布里吉 (Enbridge) 提供类似公用事业的输油管网稳定现金流，在通胀周期提供 7%+ 高股息收益率，契合基础设施超配。"
+            elif symbol == "CNQ.TO":
+                return "加拿大天然资源 (CNRL) 是顶级低成本油砂龙头，年产生 $8.2B 自由现金流，资产运营成本极低，契合能源超配。"
+            elif symbol == "XOM":
+                return "埃克森美孚 (ExxonMobil) 拥有一流深海油田与炼化业务，年产生 $36.1B 自由现金流，在过热阶段提供极佳抗风险防御。"
             elif symbol == "TD.TO":
                 return "多伦多道明银行 (TD Bank) 在高利率周期扩大净利息收入 (NIM)，拥有 dominant 加拿大零售银行份额，契合金融板块超配。"
             elif symbol == "RY.TO":
                 return "加拿大皇家银行 (RBC) 是加国龙头商业银行，拥有最高股东权益回报率 (ROE) 与 98 亿加元自由现金流，契合金融超配。"
+            elif symbol == "BNS.TO":
+                return "丰业银行 (Scotiabank) 市盈率低至 10.8x P/E 且提供 6%+ 股息收益率，在拉丁美洲与北美市场增长迅猛。"
+            elif symbol == "JPM":
+                return "摩根大通 (JPMorgan) 是美国实力最强的银行巨头，拥有 Fortress 堡垒级资产负债表与统治级的投行顾问业务。"
             elif symbol == "ABX.TO":
                 return "巴里克黄金 (Barrick Gold) 是顶尖避险黄金与铜矿生产商，在通胀周期提供对冲能力与 14.5 亿加元自由现金流，契合采矿超配。"
             elif symbol == "TECK.B.TO":
                 return "泰克资源 (Teck Resources) 是关键铜矿龙头，受益于全球电气化与 AI 电网建设需求，市盈率仅 12.8 倍，契合基础材料超配。"
+            elif symbol == "NTR.TO":
+                return "Nutrien 是全球最大的钾肥与农资提供商，市盈率仅 14.5x，直接维护全球农业粮食安全供应链。"
             elif symbol == "NVDA":
                 return "英伟达 (NVIDIA) 是全球 AI 基础设施建设的核心最大受益者，拥有一级宽护城河与极其强劲的自由现金流。"
             elif symbol == "MSFT":
                 return "微软 (Microsoft) 结合了强韧的 B2B 云计算订阅收入与商业化 AI 变现能力，高度契合科技基础设施超配推荐。"
             elif symbol == "AAPL":
                 return "苹果公司 (Apple) 拥有 22 亿活跃设备生态，年产生 1088 亿美元真金白银自由现金流与持续股票回购。"
+            elif symbol == "GOOGL":
+                return "Alphabet (Google) 垄断全球数字广告与搜索，结合 Google Cloud 与 Gemini AI 基础设施，产生 $69.4B 自由现金流。"
+            elif symbol == "AMZN":
+                return "亚马逊 (Amazon) 是全球电商与云计算 (AWS) 双龙头，数字广告利润率持续飙升，年产生 $53B 自由现金流。"
             elif symbol == "SHOP.TO":
                 return "Shopify 是占主导地位的电商商户操作系统，净收入留存率 (NRR) 达 118%，持续扩大商家市场份额。"
             elif symbol == "CSU.TO":
-                return "Constellation Software 是全球垂直软件 (VMS) 收购大师，具备长期卓越的自由现金流复利滚雪球能力。"
+                return "Constellation Software 是全球垂直市场软件（VMS）的复利收购大师，自由现金流年化复利增长惊人。"
             elif symbol == "CELH":
-                return "Celsius 是高速增长的功能健康饮料龙头，借助百事可乐渠道拓展，营收同比强劲增长 38.5%。"
+                return "Celsius 生产功能性健康能量饮料，借助百事可乐 (PepsiCo) 渠道拓展，营收同比爆增 38.5%。"
             elif symbol == "CRWD":
-                return "CrowdStrike 是网络安全端点防护龙头，受受益于企业安全支出扩张，净收入留存率 (NRR) 达 115%+。"
+                return "CrowdStrike 凭 Falcon AI 云原生平台提供端点网络安全防护，净收入留存率 (NRR) 达 115%+。"
             elif symbol == "ONT.TO":
-                return "Onex 是深具安全边际的加拿大私募股权资产管理巨头，市盈率低至 11.8 倍，属于极具潜力的隐形金矿。"
+                return "Onex 是加拿大老牌私募股权巨头，市盈率低至 11.8 倍，具备深度的估值安全边际。"
+            elif symbol == "TOI.V":
+                return "Topicus 是 Constellation Software 拆分的欧洲版软件收购龙头，专攻欧洲垂直市场软件，营收大增 22.4%。"
+            elif symbol == "PANW":
+                return "Palo Alto Networks 是网络安全平台化整合龙头，为大型企业提供零信任防火墙与云安全，年产生 $3.1B 自由现金流。"
             else:
-                return "具备强劲自由现金流生成能力与竞争护城河保护。"
+                return f"{symbol} 具备强劲的财务品质与高自由现金流转换率，契合当前宏观周期配置策略。"
         elif lang == "hybrid":
-            if symbol == "SU.TO":
-                return "Suncor Energy 是高油价与 Overheat 阶段的受益者，年产生 $6.8B 自由现金流 (FCF)，P/E 仅 9.4x，契合 Energy 超配。"
-            elif symbol == "ENB.TO":
-                return "Enbridge 提供输油管网稳定现金流，在通胀周期提供 7%+ Dividend Yield 股息率，契合 Infrastructure 超配。"
-            elif symbol == "TD.TO":
-                return "TD Bank 在高利率周期扩大净利息收入 (NIM)，拥有 dominant 加拿大零售银行份额，契合 Financials 超配。"
-            elif symbol == "RY.TO":
-                return "Royal Bank of Canada (RBC) 是加国龙头商业银行，拥有最高 Return on Equity (ROE) 与 $9.8B 自由现金流。"
-            elif symbol == "ABX.TO":
-                return "Barrick Gold 是顶尖避险黄金与铜矿生产商，在通胀周期提供对冲能力与 $1.45B 自由现金流 (FCF)。"
-            elif symbol == "TECK.B.TO":
-                return "Teck Resources 是关键铜矿龙头，受益于全球电气化与 AI 电网需求，P/E 仅 12.8x，契合 Materials 超配。"
-            elif symbol == "NVDA":
-                return "NVIDIA 是全球 AI Infrastructure 建设的最大受益者，拥有 Wide Moat 护城河与强劲 Free Cash Flow。"
-            elif symbol == "MSFT":
-                return "Microsoft 结合了强韧的 B2B 云计算订阅收入与 Copilot AI 变现能力，高度契合 Tech Infrastructure 超配。"
-            elif symbol == "AAPL":
-                return "Apple 拥有 2.2B+ 活跃设备生态，年产生 $108.8B+ 真金白银 Free Cash Flow 与持续 Share Buybacks。"
-            elif symbol == "SHOP.TO":
-                return "Shopify 是主导地位的电商操作系统，Net Revenue Retention (NRR) 达 118%，持续扩大 GMV。"
-            elif symbol == "CSU.TO":
-                return "Constellation Software 是全球垂直软件 (VMS) 收购大师，具备长期卓越的 Free Cash Flow 复利增长。"
-            elif symbol == "CELH":
-                return "Celsius 是高速增长的功能健康饮料龙头，借助 PepsiCo 渠道拓展，营收 YoY 强劲增长 38.5%。"
-            elif symbol == "CRWD":
-                return "CrowdStrike 是网络安全端点防护龙头 (Falcon AI)，受受益于安全支出扩张，NRR 达 115%+。"
-            elif symbol == "ONT.TO":
-                return "Onex 是深具安全边际的加拿大私募股权资产管理巨头，市盈率低至 11.8x P/E，属于隐形金矿。"
-            else:
-                return "具备强劲自由现金流 (FCF) 生成能力与竞争护城河 (Moat) 保护。"
-        else: # English
-            if symbol == "SU.TO":
-                return "Suncor Energy is a prime beneficiary of elevated oil prices during Overheat phases. Generates $6.8B Free Cash Flow with a low 9.4x P/E ratio. Aligned with Energy Overweight."
-            elif symbol == "ENB.TO":
-                return "Enbridge provides utility-like regulated pipeline cash flows with an attractive 7%+ dividend yield during inflation cycles. Aligned with Energy & Infrastructure Overweight."
-            elif symbol == "TD.TO":
-                return "Toronto-Dominion Bank expands Net Interest Income during elevated interest rate cycles with dominant Canadian market share. Aligned with Financials & Banks Overweight."
-            elif symbol == "RY.TO":
-                return "Royal Bank of Canada is Canada's premier commercial bank with highest Return on Equity (ROE) and $9.8B Free Cash Flow. Aligned with Financials & Banks Overweight."
-            elif symbol == "ABX.TO":
-                return "Barrick Gold is a premier safe-haven gold and copper producer providing inflation hedging and $1.45B Free Cash Flow. Aligned with Materials & Mining Overweight."
-            elif symbol == "TECK.B.TO":
-                return "Teck Resources is a key critical minerals and copper producer benefiting from global electrification and EV demand. Aligned with Materials & Mining Overweight."
-            elif symbol == "NVDA":
-                return "NVIDIA is the primary beneficiary of global AI Infrastructure buildout. Holds a Wide Moat with strong Free Cash Flow."
-            elif symbol == "MSFT":
-                return "Microsoft combines resilient enterprise B2B cloud recurring revenue with commercial AI monetization. Alignment with Tech Infrastructure overweights."
-            elif symbol == "AAPL":
-                return "Apple's 2.2B+ active device ecosystem generates stable $108.8B+ annual Free Cash Flow."
-            elif symbol == "SHOP.TO":
-                return "Shopify is the dominant e-commerce merchant operating system with 118% Net Revenue Retention."
-            elif symbol == "CSU.TO":
-                return "Constellation Software is a compounding VMS software acquirer generating exceptional long-term Free Cash Flow growth."
-            elif symbol == "CELH":
-                return "Celsius is a high-growth functional beverage leader expanding via PepsiCo distribution with 38.5% revenue growth."
-            elif symbol == "CRWD":
-                return "CrowdStrike is a top cybersecurity platform beneficiary with 115%+ NRR and recurring ARR expansion."
-            elif symbol == "ONT.TO":
-                return "Onex is a deep-value Canadian asset manager trading at an attractive 11.8x P/E ratio."
-            else:
-                return "Strong free cash flow generation with competitive moat protection."
+            return f"{symbol} 具备强劲的财务品质 (Financial Health) 与高自由现金流转换率 (FCF Conversion)，契合当前宏观周期。"
+        else:
+            return f"{symbol} demonstrates resilient balance sheet strength, robust free cash flow conversion, and strong alignment with current macroeconomic cycle overweights."

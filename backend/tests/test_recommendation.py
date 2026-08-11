@@ -12,25 +12,25 @@ def test_get_top_recommendations_categorized():
     assert "overall_recommended_stocks" in result
     assert "gold_nugget_stocks" in result
 
-    # 1. Sector Overweight Champions count == 4
+    # 1. Sector Overweight Champions count == 8
     sector_stocks = result["sector_overweight_stocks"]
-    assert len(sector_stocks) == 4
+    assert len(sector_stocks) == 8
     sector_symbols = [s["symbol"] for s in sector_stocks]
     for stock in sector_stocks:
         assert stock["category_badge"] == "SECTOR_OVERWEIGHT"
 
-    # 2. Overall Market Leaders count >= 4
+    # 2. Overall Market Leaders count == 8
     overall_stocks = result["overall_recommended_stocks"]
-    assert len(overall_stocks) >= 4
+    assert len(overall_stocks) == 8
     overall_symbols = [s["symbol"] for s in overall_stocks]
 
-    # 3. Gold Nuggets count >= 3
+    # 3. Gold Nuggets count == 8
     gold_stocks = result["gold_nugget_stocks"]
-    assert len(gold_stocks) >= 3
+    assert len(gold_stocks) == 8
     gold_symbols = [s["symbol"] for s in gold_stocks]
 
     # -------------------------------------------------------------
-    # STRICT MUTUAL EXCLUSIVITY ASSERTIONS (ZERO OVERLAP)
+    # STRICT MUTUAL EXCLUSIVITY ASSERTIONS (ZERO OVERLAP ACROSS ALL 24 STOCKS)
     # -------------------------------------------------------------
     sector_set = set(sector_symbols)
     overall_set = set(overall_symbols)
