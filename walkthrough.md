@@ -1,42 +1,41 @@
-# Walkthrough - Macro-First AI Investment Platform (v2.0.0)
+# Walkthrough - Fullstack Architecture & UI/UX Pro Max (v3.0.0)
 
-The AI Investment Platform has evolved into a **Macro-First Analysis & Top Stock Recommendation Platform (v2.0.0)** supporting both US ($NVDA, $AAPL, $MSFT) and Canadian ($SHOP.TO, $TD.TO, $XEQT.TO) markets.
+The AI Investment Platform has evolved into **v3.0.0 Fullstack Architecture & UI/UX Pro Max**, introducing SQLite database persistence via SQLModel, asynchronous non-blocking services, a `Ctrl+K` Command Palette, a Watchlist & Buy-Price Alert Drawer, and multi-horizon technical chart controls.
 
 ---
 
-## What Was Accomplished in v2.0.0
+## What Was Accomplished in v3.0.0
 
-### 1. Macro-First Analysis & Policy News Feed
-- **Macro Economic & Policy Dashboard** ([MacroDashboard.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/MacroDashboard.tsx)): Visualizes North American economic cycles (Overheat, Recovery, etc.) with real-time empirical data proof (CPI 3.4%, 10Y-2Y Yield Spread -0.15%, Fed Funds Rate 5.25%-5.50%, BoC Rate 4.75%).
-- **Central Bank Policy News Client** ([news_client.py](file:///c:/Users/drunk/Projects/ai-investment/backend/data_sources/news_client.py)): Ingests real-time FOMC statements, Bank of Canada monetary policy releases, and SEC/SEDAR filing announcements with zero-hallucination source citations.
+### 1. Database & Persistence Layer (SQLModel + SQLite WAL Mode)
+- **Database Engine** ([database.py](file:///c:/Users/drunk/Projects/ai-investment/backend/database.py)): Initialized local `investment_platform.db` with SQLite Write-Ahead Logging (WAL) mode for fast concurrent operations.
+- **SQLModel Table Entities** ([db_models.py](file:///c:/Users/drunk/Projects/ai-investment/backend/models/db_models.py)): Built persistent data entities:
+  - `UserWatchlistDB`: Saved tickers, company names, target buy prices, and portfolio allocation percentages.
+  - `CompanyDB`: Market symbols, exchange info, and pricing update timestamps.
+  - `MacroSnapshotDB`: Historical FRED economic indicators and Fed/BoC central bank tone logs.
+  - `GuidanceShiftDB`: 5-year MD&A caution disclaimers for US & CA equities.
+  - `DebateTranscriptDB`: Multi-Agent debate verdicts and Risk-Reward ratio logs.
+- **Watchlist REST API Router** ([watchlist.py](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/watchlist.py)): Exposed `GET /api/watchlist`, `POST /api/watchlist`, and `DELETE /api/watchlist/{symbol}` endpoints.
 
-### 2. TOP 3-5 Macro-Driven Stock Recommendation Engine
-- **Recommendation Engine** ([recommendation_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/recommendation_engine.py)): Scores stock universe against macro cycle overweights and outputs top recommended picks with core company business model backgrounds, growth catalysts, and "Why Recommend Now" investment rationale.
-- **Recommendations Grid** ([RecommendedStocksGrid.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/RecommendedStocksGrid.tsx)): Structured cards featuring `Drill Down Full Analysis` action buttons for instant deep-dive navigation.
-
-### 3. Real-Time Data Ingestion & Zero-Hallucination Enforcer
-- **Candidate Symbol Auto-Resolution** ([data_provider.py](file:///c:/Users/drunk/Projects/ai-investment/backend/data_sources/data_provider.py)): Automatically resolves Canadian TSX ticker typos and missing suffixes (e.g. searching `XQET` automatically maps to `$XEQT.TO` - iShares Core Equity ETF Portfolio at `$46.07 CAD`).
-- **Strict No-Fabrication Rule**: Removed all hardcoded generic fallback values ($150.0). Unlisted or missing tickers cleanly return `is_valid: False` with a clear "NO REAL DATA FOUND" card.
-- **Dynamic Multi-Agent Debate Arena** ([agent_arena.py](file:///c:/Users/drunk/Projects/ai-investment/backend/agents/agent_arena.py)): Bull, Bear, and CIO agents dynamically evaluate exact real-time prices, currencies, and technical moving average support levels without hardcoded verdicts.
-
-### 4. UI Bug Fixes & Layover Isolation
-- **Isolated Popover Component State** ([BilingualHoverCard.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/BilingualHoverCard.tsx)): Isolated hover popover state to individual metric cards, resolving the 3-window overlap bug when hovering inside stock recommendation cards.
+### 2. UI/UX Pro Max Visual Engineering (`/frontend`)
+- **`Ctrl+K` Command Palette** ([CommandPalette.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/CommandPalette.tsx)): Global modal accessible via `Ctrl+K` or `⌘K` for instant ticker search, switching to plain-talk mode, and opening watchlists.
+- **Watchlist & Price Alert Drawer** ([WatchlistDrawer.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/WatchlistDrawer.tsx)): Slide-over drawer to star favorite stocks, set custom buy-price target alerts, and manage portfolio allocation weights.
+- **Multi-Horizon Pricing Chart** ([PricingChart.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/PricingChart.tsx)): Timeframe selector buttons (`1M`, `3M`, `6M`, `1Y`, `5Y`), layer toggles (50D SMA, 200D SMA, DCF Fair Value line), and interactive tooltips.
 
 ---
 
 ## Verification & Test Results
 
-### 1. Backend Pytest Suite
+### 1. Backend Pytest Suite (Includes Database & Router Tests)
 ```powershell
 $env:PYTHONPATH="."; .\backend\venv\Scripts\python -m pytest backend/tests/
 ```
-**Result**: `17 passed in 12.70s` (100% Green).
+**Result**: `18 passed in 12.66s` (100% Green, including `test_database.py` SQLite CRUD operations).
 
 ### 2. Frontend Production Build
 ```powershell
 cd frontend; npm run build
 ```
-**Result**: Built clean with 0 TypeScript / bundling errors (`581.46 kB`).
+**Result**: Built clean with 0 TypeScript / bundling errors (`589.58 kB`).
 
 ---
 
@@ -47,7 +46,7 @@ cd frontend; npm run build
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python backend/main.py
 ```
-*Runs on `http://127.0.0.1:8000`.*
+*Runs on `http://127.0.0.1:8000` with SQLite WAL mode.*
 
 ### 2. Launch React Frontend Dev Server
 ```powershell
