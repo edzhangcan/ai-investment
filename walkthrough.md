@@ -1,62 +1,57 @@
-# Walkthrough - Phase 1 Foundation & System Execution
+# Walkthrough - Macro-First AI Investment Platform (v2.0.0)
 
-Phase 1 foundation for the US & Canada AI Investment Platform has been successfully built and verified!
-
----
-
-## What Was Accomplished
-
-### 1. Backend Service (`/backend`)
-- **FastAPI Core & Provider Fallback** ([main.py](file:///c:/Users/drunk/Projects/ai-investment/backend/main.py)): REST endpoints `/api/health`, `/api/macro`, `/api/stock/{ticker}` and WebSocket route `/ws/debate/{ticker}`.
-- **Resilient Data Provider** ([data_provider.py](file:///c:/Users/drunk/Projects/ai-investment/backend/data_sources/data_provider.py)): Dual-feed architecture (`yfinance` + empirical fallback feeds for US & CA equities).
-- **Macro Engine** ([macro_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/macro_engine.py)): Economic cycle classifier (Recovery, Overheat, Stagflation, Recession), Central Bank Hawkishness NLP Decoder, and Sector Rotation mapper.
-- **Fundamental Engine** ([fundamental_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/fundamental_engine.py)): Free Cash Flow quality scoring, Morningstar Moats, and 5-year guidance MD&A wording shift tracker.
-- **Pricing Engine** ([pricing_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/pricing_engine.py)): 5-year P/E percentiles, 2-stage DCF valuation model, 50D/200D SMAs, and concrete Buy Zone price brackets.
-- **Multi-Agent Arena** ([agent_arena.py](file:///c:/Users/drunk/Projects/ai-investment/backend/agents/agent_arena.py)): 🐂 Bull Agent vs. 🐻 Bear Agent refereed by 👨‍⚖️ CIO Agent with empirical proof validation.
-
-### 3. Architecture Refactoring & Quality Improvements
-- **Pydantic Settings & Configuration** ([config.py](file:///c:/Users/drunk/Projects/ai-investment/backend/config.py)): Environment variable management, cache TTL, and API key loading.
-- **Strongly-Typed Domain Schemas** ([schemas.py](file:///c:/Users/drunk/Projects/ai-investment/backend/models/schemas.py)): Comprehensive Pydantic models for all API requests and responses.
-- **Modular FastAPI Routers**: Decoupled routes into [`backend/routers/macro.py`](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/macro.py), [`backend/routers/stock.py`](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/stock.py), and [`backend/routers/debate.py`](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/debate.py).
-- **Typed Frontend Client**: Centralized API client ([client.ts](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/api/client.ts)) and TypeScript interfaces ([types/index.ts](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/types/index.ts)).
-
-- **Interactive Jargon Dictionary** ([jargon_dictionary.json](file:///c:/Users/drunk/Projects/ai-investment/frontend/data/jargon_dictionary.json) & [JargonTooltip.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/JargonTooltip.tsx)): 50+ financial terms with instant hover tooltips and everyday plain-language analogies.
-- **Macro Hero Bar** ([MacroScannerBar.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/MacroScannerBar.tsx)): Visual economic cycle status indicator and sector overweight/underweight lists.
-- **Pricing & Technical Chart** ([PricingChart.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/PricingChart.tsx)): Recharts visualization of 50D/200D SMAs, DCF Fair Value line, and green Buy Zone container.
-- **Multi-Agent Debate Arena UI** ([DebateArena.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/DebateArena.tsx)): Debate theater for Bull, Bear, and CIO verdict callouts.
-- **Global Plain-Talk Toggle** ([App.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/App.tsx)): Header switch to toggle plain-talk explanations.
+The AI Investment Platform has evolved into a **Macro-First Analysis & Top Stock Recommendation Platform (v2.0.0)** supporting both US ($NVDA, $AAPL, $MSFT) and Canadian ($SHOP.TO, $TD.TO, $XEQT.TO) markets.
 
 ---
 
-## Verification & Testing Results
+## What Was Accomplished in v2.0.0
 
-### Automated Tests
-1. **Backend Engine Pytest Suite**:
-   ```powershell
-   $env:PYTHONPATH="."; .\backend\venv\Scripts\python -m pytest backend/tests/test_engines.py
-   ```
-   **Result**: `5 passed in 8.98s` (100% Green).
+### 1. Macro-First Analysis & Policy News Feed
+- **Macro Economic & Policy Dashboard** ([MacroDashboard.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/MacroDashboard.tsx)): Visualizes North American economic cycles (Overheat, Recovery, etc.) with real-time empirical data proof (CPI 3.4%, 10Y-2Y Yield Spread -0.15%, Fed Funds Rate 5.25%-5.50%, BoC Rate 4.75%).
+- **Central Bank Policy News Client** ([news_client.py](file:///c:/Users/drunk/Projects/ai-investment/backend/data_sources/news_client.py)): Ingests real-time FOMC statements, Bank of Canada monetary policy releases, and SEC/SEDAR filing announcements with zero-hallucination source citations.
 
-2. **Frontend Production Build**:
-   ```powershell
-   cd frontend; npm run build
-   ```
-   **Result**: Built clean with 0 TypeScript / bundling errors (`dist/assets/index-HPl6kFyB.js`).
+### 2. TOP 3-5 Macro-Driven Stock Recommendation Engine
+- **Recommendation Engine** ([recommendation_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/recommendation_engine.py)): Scores stock universe against macro cycle overweights and outputs top recommended picks with core company business model backgrounds, growth catalysts, and "Why Recommend Now" investment rationale.
+- **Recommendations Grid** ([RecommendedStocksGrid.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/RecommendedStocksGrid.tsx)): Structured cards featuring `Drill Down Full Analysis` action buttons for instant deep-dive navigation.
+
+### 3. Real-Time Data Ingestion & Zero-Hallucination Enforcer
+- **Candidate Symbol Auto-Resolution** ([data_provider.py](file:///c:/Users/drunk/Projects/ai-investment/backend/data_sources/data_provider.py)): Automatically resolves Canadian TSX ticker typos and missing suffixes (e.g. searching `XQET` automatically maps to `$XEQT.TO` - iShares Core Equity ETF Portfolio at `$46.07 CAD`).
+- **Strict No-Fabrication Rule**: Removed all hardcoded generic fallback values ($150.0). Unlisted or missing tickers cleanly return `is_valid: False` with a clear "NO REAL DATA FOUND" card.
+- **Dynamic Multi-Agent Debate Arena** ([agent_arena.py](file:///c:/Users/drunk/Projects/ai-investment/backend/agents/agent_arena.py)): Bull, Bear, and CIO agents dynamically evaluate exact real-time prices, currencies, and technical moving average support levels without hardcoded verdicts.
+
+### 4. UI Bug Fixes & Layover Isolation
+- **Isolated Popover Component State** ([BilingualHoverCard.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/BilingualHoverCard.tsx)): Isolated hover popover state to individual metric cards, resolving the 3-window overlap bug when hovering inside stock recommendation cards.
+
+---
+
+## Verification & Test Results
+
+### 1. Backend Pytest Suite
+```powershell
+$env:PYTHONPATH="."; .\backend\venv\Scripts\python -m pytest backend/tests/
+```
+**Result**: `17 passed in 12.70s` (100% Green).
+
+### 2. Frontend Production Build
+```powershell
+cd frontend; npm run build
+```
+**Result**: Built clean with 0 TypeScript / bundling errors (`581.46 kB`).
 
 ---
 
 ## How to Run Locally
 
-### 1. Launch Backend Service
+### 1. Launch FastAPI Backend Service
 ```powershell
-# Single simple command (PowerShell or CMD)
+$env:PYTHONPATH="."
 .\backend\venv\Scripts\python backend/main.py
 ```
+*Runs on `http://127.0.0.1:8000`.*
 
-
-### 2. Launch Frontend Dev Server
+### 2. Launch React Frontend Dev Server
 ```powershell
 cd frontend
 npm run dev
 ```
-Open `http://localhost:3000` in your browser to interact with the platform!
+*Runs on `http://localhost:3000`.*

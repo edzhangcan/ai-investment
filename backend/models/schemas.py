@@ -46,6 +46,13 @@ class GuidanceDeltaSchema(BaseModel):
     year: str
     added_disclaimer: str
     severity: str
+    key_hedging_phrases: List[str] = Field(default_factory=list)
+    sentiment_delta_score: float = 0.0
+
+class MoatFactorScoreSchema(BaseModel):
+    factor_name: str
+    score: float  # 0.0 to 10.0
+    status: str   # "Strong Moat", "Moderate Moat", "Weak / None"
 
 class FundamentalAnalysisSchema(BaseModel):
     symbol: str
@@ -55,7 +62,9 @@ class FundamentalAnalysisSchema(BaseModel):
     fcf_quality: str
     moat_rating: str
     moat_sources: List[str]
+    moat_scores: List[MoatFactorScoreSchema] = Field(default_factory=list)
     guidance_shift_deltas: List[GuidanceDeltaSchema]
+    guidance_drift_score: float = 0.0
     arr_nrr_metrics: Dict[str, str]
 
 class PricingAnalysisSchema(BaseModel):

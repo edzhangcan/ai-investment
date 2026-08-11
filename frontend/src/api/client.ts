@@ -8,7 +8,14 @@ export async function fetchMacroAnalysis(): Promise<MacroData> {
   return res.json();
 }
 
+export async function fetchMacroDashboard(): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/macro/dashboard`);
+  if (!res.ok) throw new Error(`Macro Dashboard API failed: ${res.statusText}`);
+  return res.json();
+}
+
 export async function fetchStockAnalysis(symbol: string): Promise<StockAnalysisResponse> {
+
   const normalizedSymbol = symbol.trim().toUpperCase();
   const res = await fetch(`${API_BASE_URL}/api/stock/${normalizedSymbol}`);
   if (!res.ok) throw new Error(`Stock API failed: ${res.statusText}`);

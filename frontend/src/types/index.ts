@@ -1,21 +1,23 @@
 export interface StockData {
+  is_valid?: boolean;
+  error?: string;
   symbol: string;
   company_name: string;
   market: 'US' | 'CA';
-  currency: 'USD' | 'CAD';
-  current_price: number;
-  previous_close: number;
-  fifty_day_sma: number;
-  two_hundred_day_sma: number;
-  pe_ratio: number;
-  ps_ratio: number;
-  ev_ebitda: number;
-  free_cash_flow: number;
-  operating_cash_flow: number;
-  net_income: number;
-  total_revenue: number;
-  revenue_growth: number;
-  rsi_14: number;
+  currency: 'USD' | 'CAD' | string;
+  current_price?: number | null;
+  previous_close?: number | null;
+  fifty_day_sma?: number | null;
+  two_hundred_day_sma?: number | null;
+  pe_ratio?: number | null;
+  ps_ratio?: number | null;
+  ev_ebitda?: number | null;
+  free_cash_flow?: number | null;
+  operating_cash_flow?: number | null;
+  net_income?: number | null;
+  total_revenue?: number | null;
+  revenue_growth?: number | null;
+  rsi_14?: number | null;
   source: string;
 }
 
@@ -102,6 +104,62 @@ export interface DebateData {
   cio_verdict: CIOVerdict;
 }
 
+export interface PolicyNewsItem {
+  title: string;
+  source: string;
+  date: string;
+  url: string;
+  summary: string;
+}
+
+export interface SupportingFact {
+  indicator: string;
+  value: string;
+  source: string;
+  impact: string;
+}
+
+export interface StockRecommendation {
+  symbol: string;
+  company_name: string;
+  market: 'US' | 'CA';
+  currency: 'USD' | 'CAD';
+  current_price: number;
+  previous_close: number;
+  company_background: string;
+  why_recommend_rationale: string;
+  macro_alignment_tag: string;
+  total_recommendation_score: number;
+  key_catalysts: string[];
+  key_metrics: {
+    pe_ratio: number;
+    free_cash_flow_b: number;
+    fcf_quality: string;
+    moat_rating: string;
+    two_hundred_day_sma: number;
+    dcf_fair_value: number;
+    ideal_buy_range: string;
+  };
+  downside_risk_summary: string;
+  action_status: string;
+}
+
+export interface MacroDashboardResponse {
+  macro_assessment: MacroData;
+  policy_news: PolicyNewsItem[];
+  empirical_supporting_facts: SupportingFact[];
+  credible_sources: string[];
+  recommendations: {
+    macro_context: {
+      cycle_stage: string;
+      cycle_code: string;
+      plain_explanation: string;
+    };
+    recommended_stocks_count: number;
+    recommended_stocks: StockRecommendation[];
+  };
+}
+
 export interface StockAnalysisResponse {
   stock: StockData;
   macro: MacroData;
@@ -109,3 +167,4 @@ export interface StockAnalysisResponse {
   pricing: PricingData;
   debate: DebateData;
 }
+
