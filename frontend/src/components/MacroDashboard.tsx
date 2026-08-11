@@ -8,7 +8,7 @@ interface MacroDashboardProps {
   macroData: MacroData;
   policyNews?: PolicyNewsItem[];
   supportingFacts?: SupportingFact[];
-  credibleSources?: string[];
+  credibleSources?: (string | { name: string; domain?: string; type?: string })[];
   isPlainTalk: boolean;
 }
 
@@ -55,7 +55,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
     }
   ];
 
-  const sourcesList: string[] = credibleSources.length > 0 ? credibleSources : [
+  const sourcesList: any[] = credibleSources.length > 0 ? credibleSources : [
     "Federal Reserve Economic Data (FRED) - St. Louis Fed",
     "SEC EDGAR 10-K / 10-Q Corporate Filing Database",
     "Bank of Canada Monetary Policy Report (MPR)",
@@ -207,11 +207,14 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
           <span>{t.credibleSources}:</span>
         </div>
         <div className="flex flex-wrap gap-2 text-[10px]">
-          {sourcesList.map((src, idx) => (
-            <span key={idx} className="px-2 py-0.5 bg-slate-950 rounded text-slate-400 border border-slate-800">
-              {src}
-            </span>
-          ))}
+          {sourcesList.map((src: any, idx: number) => {
+            const label = typeof src === 'string' ? src : (src.name || src.domain || 'Official Source');
+            return (
+              <span key={idx} className="px-2 py-0.5 bg-slate-950 rounded text-slate-400 border border-slate-800">
+                {label}
+              </span>
+            );
+          })}
         </div>
       </div>
     </div>

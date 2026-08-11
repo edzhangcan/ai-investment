@@ -168,7 +168,7 @@ export interface MacroDashboardResponse {
   macro_assessment: MacroData;
   policy_news: PolicyNewsItem[];
   empirical_supporting_facts: SupportingFact[];
-  credible_sources: string[];
+  credible_sources: (string | { name: string; domain?: string; type?: string })[];
   recommendations: CategorizedRecommendationsPayload;
 }
 
