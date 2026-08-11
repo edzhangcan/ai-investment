@@ -8,6 +8,7 @@ from backend.data_sources.news_client import NewsClient
 from backend.engines.macro_engine import MacroEngine
 from backend.engines.pricing_engine import PricingEngine
 from backend.engines.fundamental_engine import FundamentalEngine
+from backend.engines.sec_text_miner import SECTextMiner
 from backend.agents.agent_arena import MultiAgentArena
 
 router = APIRouter(prefix="/api/stock", tags=["Stock Analyzer"])
@@ -44,3 +45,13 @@ def get_stock_news(ticker: str):
     if not ticker or len(ticker.strip()) == 0:
         raise HTTPException(status_code=400, detail="Ticker symbol cannot be empty")
     return NewsClient.fetch_stock_news(ticker.strip().upper())
+
+@router.get("/{ticker}/filings/mining")
+def get_sec_text_mining(ticker: str, lang: str = "en"):
+    """
+    Executes historical 5-year SEC EDGAR 10-K & SEDAR+ MD&A text mining diffing,
+    extracting added/removed disclaimers and keyword frequency trends.
+    """
+    if not ticker or len(ticker.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Ticker symbol cannot be empty")
+    return SECTextMiner.mine_filings_mda(ticker.strip().upper(), lang=lang)

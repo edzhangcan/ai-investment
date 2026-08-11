@@ -7,6 +7,7 @@ import { DebateArena } from './components/DebateArena';
 import { BilingualHoverCard } from './components/BilingualHoverCard';
 import { CommandPalette } from './components/CommandPalette';
 import { WatchlistDrawer } from './components/WatchlistDrawer';
+import { SecTextMiningViewer } from './components/SecTextMiningViewer';
 import { NotificationToast } from './components/NotificationToast';
 import { LanguageSelector } from './components/LanguageSelector';
 import { useLanguage } from './context/LanguageContext';
@@ -397,6 +398,7 @@ export const App: React.FC = () => {
 
                   <PricingChart pricingData={stockData.pricing} isPlainTalk={isPlainTalk} />
                   <DebateArena debateData={stockData.debate} isPlainTalk={isPlainTalk} />
+                  <SecTextMiningViewer symbol={stockData.stock.symbol} />
 
                   <div className={`bg-slate-900/80 border rounded-2xl p-5 backdrop-blur-xl shadow-xl transition-all ${
                     isPlainTalk ? 'border-amber-500/40 ring-1 ring-amber-500/20' : 'border-slate-800'
