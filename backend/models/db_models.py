@@ -77,6 +77,8 @@ class WhatsAppConfigDB(SQLModel, table=True):
     phone_number: str = Field(default="+14165550199")
     bot_phone_number: str = Field(default="+14155238886")
     optin_keyword: str = Field(default="join invest-9821")
+    twilio_account_sid: str = Field(default="")
+    twilio_auth_token: str = Field(default="")
     is_verified: bool = Field(default=False)
     verification_status: str = Field(default="PENDING_OPT_IN")
     morning_digest_enabled: bool = Field(default=True)

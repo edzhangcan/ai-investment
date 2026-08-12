@@ -15,6 +15,8 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
   const [phoneNumber, setPhoneNumber] = useState<string>('+14165550199');
   const [botPhoneNumber, setBotPhoneNumber] = useState<string>('+14155238886');
   const [optinKeyword, setOptinKeyword] = useState<string>('join invest-9821');
+  const [twilioAccountSid, setTwilioAccountSid] = useState<string>('');
+  const [twilioAuthToken, setTwilioAuthToken] = useState<string>('');
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [verificationStatus, setVerificationStatus] = useState<string>('PENDING_OPT_IN');
 
@@ -39,6 +41,8 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
         setPhoneNumber(json.phone_number || '+14165550199');
         setBotPhoneNumber(json.bot_phone_number || '+14155238886');
         setOptinKeyword(json.optin_keyword || 'join invest-9821');
+        setTwilioAccountSid(json.twilio_account_sid || '');
+        setTwilioAuthToken(json.twilio_auth_token || '');
         setIsVerified(json.is_verified || false);
         setVerificationStatus(json.verification_status || 'PENDING_OPT_IN');
         setMorningDigest(json.morning_digest_enabled);
@@ -107,6 +111,8 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
           phone_number: phoneNumber,
           bot_phone_number: botPhoneNumber,
           optin_keyword: optinKeyword,
+          twilio_account_sid: twilioAccountSid,
+          twilio_auth_token: twilioAuthToken,
           morning_digest_enabled: morningDigest,
           buy_alert_enabled: buyAlert,
           sell_alert_enabled: sellAlert,
@@ -301,18 +307,57 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
           </div>
         </div>
 
-        {/* Step 3: Recipient Phone & Alert Toggles */}
-        <div className="mb-6 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-          <label className="block text-xs font-bold text-slate-300 mb-2">
-            Your WhatsApp Recipient Phone Number
-          </label>
-          <input
-            type="text"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder="+1 (416) 555-0199"
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm font-mono font-bold text-emerald-300 focus:outline-none focus:border-emerald-500 transition-all"
-          />
+        {/* Step 3: Recipient Phone & Twilio Credentials */}
+        <div className="mb-6 bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-300 mb-1.5">
+              Your WhatsApp Recipient Phone Number
+            </label>
+            <input
+              type="text"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+1 (416) 555-0199"
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm font-mono font-bold text-emerald-300 focus:outline-none focus:border-emerald-500 transition-all"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-slate-800/80">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                <span>Twilio API Credentials (Optional for Live SMS Delivery)</span>
+              </label>
+              <span className="text-[10px] text-slate-500 font-mono">🔒 Stored in Local SQLite</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <span className="text-[11px] text-slate-400 block mb-1">Twilio Account SID</span>
+                <input
+                  type="password"
+                  value={twilioAccountSid}
+                  onChange={(e) => setTwilioAccountSid(e.target.value)}
+                  placeholder="ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <span className="text-[11px] text-slate-400 block mb-1">Twilio Auth Token</span>
+                <input
+                  type="password"
+                  value={twilioAuthToken}
+                  onChange={(e) => setTwilioAuthToken(e.target.value)}
+                  placeholder="••••••••••••••••••••••••••••••••"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 transition-all"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-2">
+              Keys remain private on your machine and are never committed to GitHub or public servers.
+            </p>
+          </div>
         </div>
 
         {/* 3 Alert Mechanism Toggles */}

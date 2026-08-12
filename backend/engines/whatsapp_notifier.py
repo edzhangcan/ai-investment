@@ -29,14 +29,17 @@ class WhatsAppNotifier:
         cls,
         recipient_phone: str,
         bot_phone: str,
-        message_body: str
+        message_body: str,
+        account_sid: str = "",
+        auth_token: str = ""
     ) -> Dict[str, Any]:
         """
-        Dispatches live outbound WhatsApp message via Twilio REST API HTTP POST if credentials exist in settings.
+        Dispatches live outbound WhatsApp message via Twilio REST API HTTP POST.
+        Prioritizes user's saved database credentials, falling back to backend settings.
         Falls back cleanly to mock API response if TWILIO_ACCOUNT_SID is not set.
         """
-        account_sid = settings.TWILIO_ACCOUNT_SID.strip()
-        auth_token = settings.TWILIO_AUTH_TOKEN.strip()
+        account_sid = account_sid.strip() or settings.TWILIO_ACCOUNT_SID.strip()
+        auth_token = auth_token.strip() or settings.TWILIO_AUTH_TOKEN.strip()
         from_phone = bot_phone.strip() or settings.TWILIO_WHATSAPP_NUMBER.strip()
 
         # Format phone numbers with whatsapp: prefix
@@ -44,10 +47,10 @@ class WhatsAppNotifier:
         formatted_to = recipient_phone if recipient_phone.startswith("whatsapp:") else f"whatsapp:{recipient_phone}"
 
         if not account_sid or not auth_token:
-            logger.info("Twilio API keys not set in backend/.env. Operating in Mock API mode.")
+            logger.info("Twilio API keys not configured. Operating in Mock API mode.")
             return {
                 "delivery": "MOCK_SIMULATED",
-                "note": "To send real WhatsApp messages to your physical phone, add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN to backend/.env",
+                "note": "To send real WhatsApp messages to your physical phone, enter your Twilio Account SID and Auth Token in the app settings.",
                 "sid": "SM_MOCK_123456789"
             }
 
@@ -87,7 +90,9 @@ class WhatsAppNotifier:
         cls,
         recipient_phone: str = "+14165550199",
         bot_phone: str = "+14155238886",
-        lang: str = "en"
+        lang: str = "en",
+        account_sid: str = "",
+        auth_token: str = ""
     ) -> Dict[str, Any]:
         """
         Pushes instant auto-reply when user texts the WhatsApp join keyword.
@@ -107,7 +112,7 @@ class WhatsAppNotifier:
                 f"🔗 Dashboard: http://localhost:3000"
             )
 
-        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body)
+        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body, account_sid=account_sid, auth_token=auth_token)
         return {
             "status": "success",
             "channel": "WHATSAPP",
@@ -123,7 +128,9 @@ class WhatsAppNotifier:
         recipient_phone: str = "+14165550199",
         bot_phone: str = "+14155238886",
         lang: str = "en",
-        is_verified: bool = True
+        is_verified: bool = True,
+        account_sid: str = "",
+        auth_token: str = ""
     ) -> Dict[str, Any]:
         """
         Formats and dispatches 8:00 AM EST Daily Morning Macro & News Digest.
@@ -188,7 +195,9 @@ class WhatsAppNotifier:
         bot_phone: str = "+14155238886",
         buy_stocks: Optional[List[Dict[str, Any]]] = None,
         lang: str = "en",
-        is_verified: bool = True
+        is_verified: bool = True,
+        account_sid: str = "",
+        auth_token: str = ""
     ) -> Dict[str, Any]:
         """
         Bundles all Watchlist stocks currently in BUY Zone into 1 single WhatsApp message.
@@ -261,7 +270,7 @@ class WhatsAppNotifier:
                     f"   • 🔗 Deep-Dive Report: http://localhost:3000?stock={sym}\n\n"
                 )
 
-        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body)
+        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body, account_sid=account_sid, auth_token=auth_token)
         return {
             "status": "success",
             "channel": "WHATSAPP",
@@ -279,7 +288,9 @@ class WhatsAppNotifier:
         bot_phone: str = "+14155238886",
         sell_stocks: Optional[List[Dict[str, Any]]] = None,
         lang: str = "en",
-        is_verified: bool = True
+        is_verified: bool = True,
+        account_sid: str = "",
+        auth_token: str = ""
     ) -> Dict[str, Any]:
         """
         Bundles all Watchlist stocks currently in DANGER / SELL Zone into 1 single WhatsApp message.
@@ -334,7 +345,7 @@ class WhatsAppNotifier:
                     f"   • 🔗 Deep-Dive Report: http://localhost:3000?stock={sym}\n\n"
                 )
 
-        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body)
+        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body, account_sid=account_sid, auth_token=auth_token)
         return {
             "status": "success",
             "channel": "WHATSAPP",
@@ -350,7 +361,9 @@ class WhatsAppNotifier:
         cls,
         recipient_phone: str = "+14165550199",
         bot_phone: str = "+14155238886",
-        lang: str = "en"
+        lang: str = "en",
+        account_sid: str = "",
+        auth_token: str = ""
     ) -> Dict[str, Any]:
         """
         Sends an instant WhatsApp test verification payload via Twilio API (or mock mode if no API keys).
@@ -368,7 +381,7 @@ class WhatsAppNotifier:
                 f"You will receive daily 8:00 AM EST macro digests and bundled watchlist buy/sell alerts."
             )
 
-        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body)
+        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body, account_sid=account_sid, auth_token=auth_token)
         return {
             "status": "success",
             "channel": "WHATSAPP",
