@@ -59,20 +59,22 @@ def get_whatsapp_config(session: Session = Depends(get_session)):
 
 @router.post("/config")
 def save_whatsapp_config(req: WhatsAppConfigRequest, session: Session = Depends(get_session)):
-    """Saves/updates WhatsApp config and alert toggles."""
+    """Saves/updates WhatsApp config and alert toggles safely into SQLite."""
     config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
     if not config:
         config = WhatsAppConfigDB(id=1)
 
-    config.phone_number = req.phone_number.strip()
-    if req.bot_phone_number:
+    if req.phone_number and req.phone_number.strip():
+        config.phone_number = req.phone_number.strip()
+    if req.bot_phone_number and req.bot_phone_number.strip():
         config.bot_phone_number = req.bot_phone_number.strip()
-    if req.optin_keyword:
+    if req.optin_keyword and req.optin_keyword.strip():
         config.optin_keyword = req.optin_keyword.strip()
-    if req.twilio_account_sid is not None:
+    if req.twilio_account_sid is not None and req.twilio_account_sid.strip():
         config.twilio_account_sid = req.twilio_account_sid.strip()
-    if req.twilio_auth_token is not None:
+    if req.twilio_auth_token is not None and req.twilio_auth_token.strip():
         config.twilio_auth_token = req.twilio_auth_token.strip()
+    
     config.morning_digest_enabled = req.morning_digest_enabled
     config.buy_alert_enabled = req.buy_alert_enabled
     config.sell_alert_enabled = req.sell_alert_enabled

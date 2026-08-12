@@ -122,9 +122,12 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
         })
       });
       if (res.ok) {
+        await fetchConfig();
         setFeedback({
           type: 'success',
-          message: language === 'zh' ? 'WhatsApp 通知设置已保存！' : 'WhatsApp alert settings saved!'
+          message: language === 'zh'
+            ? 'WhatsApp 通知设置与 Twilio 密钥已成功写入本地 SQLite 数据库！'
+            : 'WhatsApp alert settings and Twilio keys saved to local SQLite database!'
         });
       }
     } catch (e) {
@@ -439,14 +442,23 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-indigo-400" />
-                <span>Twilio API Credentials (Optional for Live SMS Delivery)</span>
+                <span>Twilio API Credentials (Optional for Live SMS/WhatsApp Delivery)</span>
               </label>
-              <span className="text-[10px] text-slate-500 font-mono">🔒 Stored in Local SQLite</span>
+              <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                🔒 Stored in Local SQLite
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
               <div>
-                <span className="text-[11px] text-slate-400 block mb-1">Twilio Account SID</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-slate-400">Twilio Account SID</span>
+                  {twilioAccountSid ? (
+                    <span className="text-[10px] text-emerald-400 font-extrabold font-mono">✓ Configured ({twilioAccountSid.substring(0, 4)}...)</span>
+                  ) : (
+                    <span className="text-[10px] text-slate-500 font-mono">Not set (Mock mode)</span>
+                  )}
+                </div>
                 <input
                   type="password"
                   value={twilioAccountSid}
@@ -457,7 +469,14 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
               </div>
 
               <div>
-                <span className="text-[11px] text-slate-400 block mb-1">Twilio Auth Token</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-slate-400">Twilio Auth Token</span>
+                  {twilioAuthToken ? (
+                    <span className="text-[10px] text-emerald-400 font-extrabold font-mono">✓ Configured (••••)</span>
+                  ) : (
+                    <span className="text-[10px] text-slate-500 font-mono">Not set (Mock mode)</span>
+                  )}
+                </div>
                 <input
                   type="password"
                   value={twilioAuthToken}
@@ -467,6 +486,9 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
                 />
               </div>
             </div>
+            <p className="text-[11px] text-slate-500">
+              Keys remain private inside your local database (<code className="text-slate-400">backend/investment_platform.db</code>) and are never uploaded to GitHub or external servers.
+            </p>
           </div>
         </div>
 
