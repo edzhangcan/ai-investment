@@ -6,10 +6,16 @@ Delivers 3 core WhatsApp notification mechanisms:
 3. Bundled Watchlist DANGER / SELL Zone Alert (gathers all profit-taking/stop-loss stocks into 1 message).
 Multi-language support for 'en', 'zh', and 'hybrid' modes.
 Strict verification enforcement for Meta/Twilio WhatsApp 1-on-1 Opt-In rules.
+Integrates live HTTP dispatch to Twilio REST API when credentials exist in backend/.env.
 """
 
 import logging
+import urllib.request
+import urllib.parse
+import base64
+import json
 from typing import Dict, Any, List, Optional
+from backend.config import settings
 from backend.engines.macro_engine import MacroEngine
 from backend.data_sources.data_provider import DataProviderManager
 
@@ -19,9 +25,68 @@ class WhatsAppNotifier:
     """Dispatches formatted WhatsApp alert payloads."""
 
     @classmethod
+    def _dispatch_to_twilio(
+        cls,
+        recipient_phone: str,
+        bot_phone: str,
+        message_body: str
+    ) -> Dict[str, Any]:
+        """
+        Dispatches live outbound WhatsApp message via Twilio REST API HTTP POST if credentials exist in settings.
+        Falls back cleanly to mock API response if TWILIO_ACCOUNT_SID is not set.
+        """
+        account_sid = settings.TWILIO_ACCOUNT_SID.strip()
+        auth_token = settings.TWILIO_AUTH_TOKEN.strip()
+        from_phone = bot_phone.strip() or settings.TWILIO_WHATSAPP_NUMBER.strip()
+
+        # Format phone numbers with whatsapp: prefix
+        formatted_from = from_phone if from_phone.startswith("whatsapp:") else f"whatsapp:{from_phone}"
+        formatted_to = recipient_phone if recipient_phone.startswith("whatsapp:") else f"whatsapp:{recipient_phone}"
+
+        if not account_sid or not auth_token:
+            logger.info("Twilio API keys not set in backend/.env. Operating in Mock API mode.")
+            return {
+                "delivery": "MOCK_SIMULATED",
+                "note": "To send real WhatsApp messages to your physical phone, add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN to backend/.env",
+                "sid": "SM_MOCK_123456789"
+            }
+
+        try:
+            url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
+            data = urllib.parse.urlencode({
+                "From": formatted_from,
+                "To": formatted_to,
+                "Body": message_body
+            }).encode("utf-8")
+
+            auth_string = f"{account_sid}:{auth_token}"
+            base64_auth = base64.b64encode(auth_string.encode("utf-8")).decode("utf-8")
+
+            req = urllib.request.Request(url, data=data, headers={
+                "Authorization": f"Basic {base64_auth}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            })
+
+            with urllib.request.urlopen(req) as resp:
+                resp_data = json.loads(resp.read().decode("utf-8"))
+                logger.info(f"Twilio WhatsApp message dispatched! SID: {resp_data.get('sid')}")
+                return {
+                    "delivery": "TWILIO_DELIVERED",
+                    "sid": resp_data.get("sid"),
+                    "status": resp_data.get("status")
+                }
+        except Exception as e:
+            logger.error(f"Failed to dispatch Twilio WhatsApp message: {e}")
+            return {
+                "delivery": "TWILIO_FAILED",
+                "error": str(e)
+            }
+
+    @classmethod
     def send_optin_confirmation_reply(
         cls,
         recipient_phone: str = "+14165550199",
+        bot_phone: str = "+14155238886",
         lang: str = "en"
     ) -> Dict[str, Any]:
         """
@@ -42,12 +107,13 @@ class WhatsAppNotifier:
                 f"🔗 Dashboard: http://localhost:3000"
             )
 
-        logger.info(f"Dispatched WhatsApp Opt-In Confirmation Reply to {recipient_phone}")
+        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body)
         return {
             "status": "success",
             "channel": "WHATSAPP",
             "recipient_phone": recipient_phone,
             "message_type": "OPTIN_CONFIRMATION",
+            "delivery_details": dispatch_res,
             "message_body": msg_body
         }
 
@@ -55,6 +121,7 @@ class WhatsAppNotifier:
     def send_morning_macro_digest(
         cls,
         recipient_phone: str = "+14165550199",
+        bot_phone: str = "+14155238886",
         lang: str = "en",
         is_verified: bool = True
     ) -> Dict[str, Any]:
@@ -104,12 +171,13 @@ class WhatsAppNotifier:
 
             msg_body += f"\n🔗 View Full Interactive Analysis: http://localhost:3000"
 
-        logger.info(f"Dispatched WhatsApp Morning Digest to {recipient_phone}")
+        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body)
         return {
             "status": "success",
             "channel": "WHATSAPP",
             "recipient_phone": recipient_phone,
             "message_type": "MORNING_DIGEST",
+            "delivery_details": dispatch_res,
             "message_body": msg_body
         }
 
@@ -117,6 +185,7 @@ class WhatsAppNotifier:
     def send_bundled_buy_zone_alert(
         cls,
         recipient_phone: str = "+14165550199",
+        bot_phone: str = "+14155238886",
         buy_stocks: Optional[List[Dict[str, Any]]] = None,
         lang: str = "en",
         is_verified: bool = True
@@ -192,13 +261,14 @@ class WhatsAppNotifier:
                     f"   • 🔗 Deep-Dive Report: http://localhost:3000?stock={sym}\n\n"
                 )
 
-        logger.info(f"Dispatched WhatsApp Bundled Buy Zone Alert for {len(buy_stocks)} stocks to {recipient_phone}")
+        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body)
         return {
             "status": "success",
             "channel": "WHATSAPP",
             "recipient_phone": recipient_phone,
             "message_type": "BUNDLED_BUY_ALERT",
             "stock_count": len(buy_stocks),
+            "delivery_details": dispatch_res,
             "message_body": msg_body
         }
 
@@ -206,6 +276,7 @@ class WhatsAppNotifier:
     def send_bundled_sell_zone_alert(
         cls,
         recipient_phone: str = "+14165550199",
+        bot_phone: str = "+14155238886",
         sell_stocks: Optional[List[Dict[str, Any]]] = None,
         lang: str = "en",
         is_verified: bool = True
@@ -263,13 +334,14 @@ class WhatsAppNotifier:
                     f"   • 🔗 Deep-Dive Report: http://localhost:3000?stock={sym}\n\n"
                 )
 
-        logger.info(f"Dispatched WhatsApp Bundled Sell Zone Alert for {len(sell_stocks)} stocks to {recipient_phone}")
+        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body)
         return {
             "status": "success",
             "channel": "WHATSAPP",
             "recipient_phone": recipient_phone,
             "message_type": "BUNDLED_SELL_ALERT",
             "stock_count": len(sell_stocks),
+            "delivery_details": dispatch_res,
             "message_body": msg_body
         }
 
@@ -277,10 +349,11 @@ class WhatsAppNotifier:
     def send_test_message(
         cls,
         recipient_phone: str = "+14165550199",
+        bot_phone: str = "+14155238886",
         lang: str = "en"
     ) -> Dict[str, Any]:
         """
-        Sends an instant WhatsApp test verification payload.
+        Sends an instant WhatsApp test verification payload via Twilio API (or mock mode if no API keys).
         """
         if lang == "zh":
             msg_body = (
@@ -295,11 +368,12 @@ class WhatsAppNotifier:
                 f"You will receive daily 8:00 AM EST macro digests and bundled watchlist buy/sell alerts."
             )
 
-        logger.info(f"Dispatched WhatsApp Test Message to {recipient_phone}")
+        dispatch_res = cls._dispatch_to_twilio(recipient_phone=recipient_phone, bot_phone=bot_phone, message_body=msg_body)
         return {
             "status": "success",
             "channel": "WHATSAPP",
             "recipient_phone": recipient_phone,
             "message_type": "TEST_VERIFICATION",
+            "delivery_details": dispatch_res,
             "message_body": msg_body
         }

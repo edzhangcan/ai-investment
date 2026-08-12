@@ -150,25 +150,28 @@ def trigger_whatsapp_test(req: TriggerAlertRequest, session: Session = Depends(g
     """Sends instant test WhatsApp message."""
     config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
     phone = req.recipient_phone or (config.phone_number if config else "+14165550199")
-    return WhatsAppNotifier.send_test_message(recipient_phone=phone, lang=req.lang)
+    bot_phone = config.bot_phone_number if config else "+14155238886"
+    return WhatsAppNotifier.send_test_message(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang)
 
 @router.post("/trigger-digest")
 def trigger_morning_digest(req: TriggerAlertRequest, session: Session = Depends(get_session)):
     """Triggers 8:00 AM EST Daily Morning Macro & News Digest."""
     config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
     phone = req.recipient_phone or (config.phone_number if config else "+14165550199")
+    bot_phone = config.bot_phone_number if config else "+14155238886"
     is_verified = config.is_verified if config else True
-    return WhatsAppNotifier.send_morning_macro_digest(recipient_phone=phone, lang=req.lang, is_verified=is_verified)
+    return WhatsAppNotifier.send_morning_macro_digest(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified)
 
 @router.post("/trigger-alerts")
 def trigger_bundled_alerts(req: TriggerAlertRequest, session: Session = Depends(get_session)):
     """Scans watchlist and dispatches bundled Buy/Sell zone WhatsApp alerts."""
     config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
     phone = req.recipient_phone or (config.phone_number if config else "+14165550199")
+    bot_phone = config.bot_phone_number if config else "+14155238886"
     is_verified = config.is_verified if config else True
 
-    buy_res = WhatsAppNotifier.send_bundled_buy_zone_alert(recipient_phone=phone, lang=req.lang, is_verified=is_verified)
-    sell_res = WhatsAppNotifier.send_bundled_sell_zone_alert(recipient_phone=phone, lang=req.lang, is_verified=is_verified)
+    buy_res = WhatsAppNotifier.send_bundled_buy_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified)
+    sell_res = WhatsAppNotifier.send_bundled_sell_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified)
     return {
         "status": "success",
         "buy_alert": buy_res,

@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     FRED_API_KEY: str = os.getenv("FRED_API_KEY", "")
+
+    # Twilio WhatsApp REST API Credentials
+    TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID", "")
+    TWILIO_AUTH_TOKEN: str = os.getenv("TWILIO_AUTH_TOKEN", "")
+    TWILIO_WHATSAPP_NUMBER: str = os.getenv("TWILIO_WHATSAPP_NUMBER", "+14155238886")
     
     # Defaults & Cache Settings
     DEFAULT_CACHE_TTL_SECONDS: int = 300  # 5 minutes
