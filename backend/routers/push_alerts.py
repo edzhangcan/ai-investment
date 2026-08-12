@@ -1,6 +1,6 @@
 """
 Push Alerts REST API Router
-Endpoints to get, update, and test Discord Webhook Push Notification configurations.
+Endpoints to get, update, and test 4 Multi-Type Discord Webhook Push Notifications.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -20,6 +20,7 @@ class PushAlertConfigRequest(BaseModel):
 
 class PushAlertTestRequest(BaseModel):
     discord_webhook_url: str
+    lang: str = "en"
 
 @router.get("/config")
 def get_push_alert_config(session: Session = Depends(get_session)):
@@ -63,12 +64,12 @@ def save_push_alert_config(req: PushAlertConfigRequest, session: Session = Depen
 
 @router.post("/test")
 def test_push_alert_channel(req: PushAlertTestRequest):
-    """Dispatches an instant test embed to verify Discord Webhook URL connectivity."""
+    """Dispatches an instant connection test embed to verify Discord Webhook URL."""
     url = req.discord_webhook_url.strip()
     if not url or not url.startswith("http"):
         raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
 
-    res = PushNotifier.test_discord_connection(url)
+    res = PushNotifier.test_discord_connection(url, lang=req.lang)
     if not res.get("success"):
         raise HTTPException(status_code=400, detail=res.get("error", "Discord test failed"))
 
@@ -77,3 +78,55 @@ def test_push_alert_channel(req: PushAlertTestRequest):
         "message": "Instant test notification sent to Discord server channel!",
         "details": res
     }
+
+@router.post("/test/macro-digest")
+def test_macro_digest_alert(req: PushAlertTestRequest):
+    """1. Tests Daily 8:00 AM EST Macro & Policy Newsletter Digest."""
+    url = req.discord_webhook_url.strip()
+    if not url or not url.startswith("http"):
+        raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
+
+    res = PushNotifier.send_macro_digest_alert(url, lang=req.lang)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Macro digest dispatch failed"))
+
+    return {"success": True, "message": "Daily Macro & Policy Digest sent to Discord!", "details": res}
+
+@router.post("/test/bundled-buy")
+def test_bundled_buy_alert(req: PushAlertTestRequest):
+    """2. Tests Bundled Watchlist Buy-In Notification (Single Combined Embed)."""
+    url = req.discord_webhook_url.strip()
+    if not url or not url.startswith("http"):
+        raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
+
+    res = PushNotifier.send_bundled_buy_alert(url, lang=req.lang)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Bundled buy alert dispatch failed"))
+
+    return {"success": True, "message": "Bundled Watchlist Buy-In alert sent to Discord!", "details": res}
+
+@router.post("/test/sell-danger")
+def test_sell_danger_alert(req: PushAlertTestRequest):
+    """3. Tests Watchlist Sell & Danger Zone Risk Alert."""
+    url = req.discord_webhook_url.strip()
+    if not url or not url.startswith("http"):
+        raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
+
+    res = PushNotifier.send_sell_danger_alert(url, lang=req.lang)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Sell danger alert dispatch failed"))
+
+    return {"success": True, "message": "Watchlist Sell & Danger alert sent to Discord!", "details": res}
+
+@router.post("/test/gold-nuggets")
+def test_gold_nuggets_alert(req: PushAlertTestRequest):
+    """4. Tests Gold Nuggets Discovery Alerts (8:00 AM & 12:00 PM EST)."""
+    url = req.discord_webhook_url.strip()
+    if not url or not url.startswith("http"):
+        raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
+
+    res = PushNotifier.send_gold_nuggets_alert(url, lang=req.lang)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Gold nuggets dispatch failed"))
+
+    return {"success": True, "message": "Gold Nuggets Discovery alert sent to Discord!", "details": res}

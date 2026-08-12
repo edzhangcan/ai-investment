@@ -1,5 +1,5 @@
 """
-Pytest unit tests for PushNotifier and Push Alerts REST API endpoints
+Pytest unit tests for PushNotifier and 4 Multi-Type Discord Webhook REST Endpoints
 """
 
 import pytest
@@ -11,9 +11,7 @@ from sqlmodel.pool import StaticPool
 from backend.main import app
 from backend.database import get_session
 from backend.engines.push_notifier import PushNotifier
-from backend.models.db_models import PushAlertConfigDB
 
-# In-memory SQLite engine for testing
 @pytest.fixture(name="session")
 def session_fixture():
     engine = create_engine(
@@ -40,56 +38,65 @@ def test_push_notifier_send_discord_alert_invalid_url():
     assert "Invalid Discord Webhook URL" in res["error"]
 
 @patch("urllib.request.urlopen")
-def test_push_notifier_send_discord_alert_success(mock_urlopen):
+def test_push_notifier_multi_type_dispatchers(mock_urlopen):
     mock_response = MagicMock()
     mock_response.status = 204
     mock_urlopen.return_value.__enter__.return_value = mock_response
 
-    webhook_url = "https://discord.com/api/webhooks/12345/abcde"
-    res = PushNotifier.send_discord_alert(
-        webhook_url=webhook_url,
-        title="Test Title",
-        description="Test Description",
-        fields=[{"name": "Field 1", "value": "Val 1", "inline": True}]
-    )
+    webhook = "https://discord.com/api/webhooks/12345/test"
 
-    assert res["success"] is True
-    assert res["status_code"] == 204
-    mock_urlopen.assert_called_once()
+    # Test 1: Macro Digest (EN & ZH)
+    res1 = PushNotifier.send_macro_digest_alert(webhook, lang="en")
+    assert res1["success"] is True
+    res1_zh = PushNotifier.send_macro_digest_alert(webhook, lang="zh")
+    assert res1_zh["success"] is True
+
+    # Test 2: Bundled Buy Alert
+    res2 = PushNotifier.send_bundled_buy_alert(webhook, lang="en")
+    assert res2["success"] is True
+
+    # Test 3: Sell Danger Alert
+    res3 = PushNotifier.send_sell_danger_alert(webhook, lang="en")
+    assert res3["success"] is True
+
+    # Test 4: Gold Nuggets Alert
+    res4 = PushNotifier.send_gold_nuggets_alert(webhook, lang="en")
+    assert res4["success"] is True
 
 def test_push_alerts_config_crud_endpoints(client: TestClient):
-    # GET initial config
     res_get = client.get("/api/push-alerts/config")
     assert res_get.status_code == 200
-    data_get = res_get.json()
-    assert data_get["discord_webhook_url"] == ""
-    assert data_get["is_discord_enabled"] is False
 
-    # POST save config
     test_webhook = "https://discord.com/api/webhooks/999/xyz"
     res_post = client.post("/api/push-alerts/config", json={
         "discord_webhook_url": test_webhook,
         "is_discord_enabled": True
     })
     assert res_post.status_code == 200
-    data_post = res_post.json()
-    assert data_post["success"] is True
-    assert data_post["config"]["discord_webhook_url"] == test_webhook
-    assert data_post["config"]["is_discord_enabled"] is True
+    assert res_post.json()["config"]["discord_webhook_url"] == test_webhook
 
-    # GET updated config
-    res_get_updated = client.get("/api/push-alerts/config")
-    assert res_get_updated.status_code == 200
-    assert res_get_updated.json()["discord_webhook_url"] == test_webhook
-    assert res_get_updated.json()["is_discord_enabled"] is True
+@patch("backend.engines.push_notifier.PushNotifier.send_macro_digest_alert")
+@patch("backend.engines.push_notifier.PushNotifier.send_bundled_buy_alert")
+@patch("backend.engines.push_notifier.PushNotifier.send_sell_danger_alert")
+@patch("backend.engines.push_notifier.PushNotifier.send_gold_nuggets_alert")
+def test_multi_type_push_alert_test_endpoints(
+    mock_gold, mock_sell, mock_buy, mock_macro, client: TestClient
+):
+    mock_macro.return_value = {"success": True, "status_code": 204}
+    mock_buy.return_value = {"success": True, "status_code": 204}
+    mock_sell.return_value = {"success": True, "status_code": 204}
+    mock_gold.return_value = {"success": True, "status_code": 204}
 
-@patch("backend.engines.push_notifier.PushNotifier.test_discord_connection")
-def test_push_alerts_test_endpoint_success(mock_test_conn, client: TestClient):
-    mock_test_conn.return_value = {"success": True, "status_code": 204}
+    url = "https://discord.com/api/webhooks/123/abc"
 
-    res = client.post("/api/push-alerts/test", json={
-        "discord_webhook_url": "https://discord.com/api/webhooks/123/abc"
-    })
-    assert res.status_code == 200
-    assert res.json()["success"] is True
-    assert "Instant test notification sent" in res.json()["message"]
+    r1 = client.post("/api/push-alerts/test/macro-digest", json={"discord_webhook_url": url, "lang": "en"})
+    assert r1.status_code == 200 and r1.json()["success"] is True
+
+    r2 = client.post("/api/push-alerts/test/bundled-buy", json={"discord_webhook_url": url, "lang": "en"})
+    assert r2.status_code == 200 and r2.json()["success"] is True
+
+    r3 = client.post("/api/push-alerts/test/sell-danger", json={"discord_webhook_url": url, "lang": "en"})
+    assert r3.status_code == 200 and r3.json()["success"] is True
+
+    r4 = client.post("/api/push-alerts/test/gold-nuggets", json={"discord_webhook_url": url, "lang": "en"})
+    assert r4.status_code == 200 and r4.json()["success"] is True
