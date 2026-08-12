@@ -47,36 +47,46 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
       setCurrentStep(0);
       setProgress(0);
 
-      // Smoothly advance progress up to 92% while waiting for real API load
+      // Asymptotic decelerating progress algorithm — continuously micro-steps so it NEVER freezes
       const interval = setInterval(() => {
         setProgress((prev) => {
-          if (prev >= 92) return 92;
-          const next = prev + 1;
-          
-          // Calculate step based on progress for comfortable reading speed
-          if (next >= 70) setCurrentStep(3);
-          else if (next >= 45) setCurrentStep(2);
-          else if (next >= 20) setCurrentStep(1);
+          if (prev >= 98) return 98;
+
+          // Smoothly decelerating delta
+          let delta = 2.5;
+          if (prev >= 90) delta = 0.2;
+          else if (prev >= 75) delta = 0.5;
+          else if (prev >= 50) delta = 1.0;
+          else if (prev >= 25) delta = 1.8;
+
+          const next = Math.min(98, prev + delta);
+
+          // Update active step comfortably based on progress milestone
+          if (next >= 75) setCurrentStep(3);
+          else if (next >= 50) setCurrentStep(2);
+          else if (next >= 25) setCurrentStep(1);
           else setCurrentStep(0);
 
           return next;
         });
-      }, 75);
+      }, 70);
 
       return () => clearInterval(interval);
     } else {
-      // API call completed! Instantly hit 100% and hide overlay immediately
+      // Real API load complete — snap to 100% and unmount immediately
       setProgress(100);
       setCurrentStep(LOADING_STEPS.length - 1);
       const timer = setTimeout(() => {
         setIsVisible(false);
-      }, 150); // 150ms brief pulse at 100% then instant dismiss
+      }, 100);
 
       return () => clearTimeout(timer);
     }
   }, [isLoading]);
 
   if (!isVisible) return null;
+
+  const displayPercent = Math.round(progress);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl transition-opacity duration-200">
@@ -103,8 +113,8 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
         {/* Progress bar */}
         <div className="w-full h-2 bg-slate-800 rounded-full mb-6 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-150 ease-out"
-            style={{ width: `${progress}%` }}
+            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-100 ease-out"
+            style={{ width: `${displayPercent}%` }}
           />
         </div>
 
@@ -113,7 +123,7 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
           {LOADING_STEPS.map((step, idx) => {
             const StepIcon = step.icon;
             const isActive = idx === currentStep;
-            const isCompleted = idx < currentStep || progress === 100;
+            const isCompleted = idx < currentStep || displayPercent === 100;
 
             return (
               <div
@@ -148,8 +158,8 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
         {/* Footer percentage */}
         <div className="mt-6 flex items-center justify-between text-[11px]">
           <span className="text-slate-500 font-medium">Step {Math.min(currentStep + 1, LOADING_STEPS.length)} of {LOADING_STEPS.length}</span>
-          <span className="font-extrabold bg-gradient-to-r from-emerald-400 to-indigo-400 bg-clip-text text-transparent">
-            {progress}%
+          <span className="font-extrabold bg-gradient-to-r from-emerald-400 to-indigo-400 bg-clip-text text-transparent font-mono">
+            {displayPercent}%
           </span>
         </div>
       </div>
