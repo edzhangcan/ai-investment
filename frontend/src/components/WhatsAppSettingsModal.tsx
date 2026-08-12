@@ -12,11 +12,11 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
   onClose,
 }) => {
   const { language, t } = useLanguage();
-  const [phoneNumber, setPhoneNumber] = useState<string>('+14165550199');
-  const [botPhoneNumber, setBotPhoneNumber] = useState<string>('+14155238886');
-  const [optinKeyword, setOptinKeyword] = useState<string>('join invest-9821');
-  const [twilioAccountSid, setTwilioAccountSid] = useState<string>('');
-  const [twilioAuthToken, setTwilioAuthToken] = useState<string>('');
+  const [phoneNumber, setPhoneNumber] = useState<string>(() => localStorage.getItem('wa_phone_number') || '+14165550199');
+  const [botPhoneNumber, setBotPhoneNumber] = useState<string>(() => localStorage.getItem('wa_bot_phone_number') || '+14155238886');
+  const [optinKeyword, setOptinKeyword] = useState<string>(() => localStorage.getItem('wa_optin_keyword') || 'join invest-9821');
+  const [twilioAccountSid, setTwilioAccountSid] = useState<string>(() => localStorage.getItem('wa_twilio_account_sid') || '');
+  const [twilioAuthToken, setTwilioAuthToken] = useState<string>(() => localStorage.getItem('wa_twilio_auth_token') || '');
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [verificationStatus, setVerificationStatus] = useState<string>('PENDING_OPT_IN');
 
@@ -39,11 +39,11 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
       const res = await fetch('http://127.0.0.1:8000/api/whatsapp/config');
       if (res.ok) {
         const json = await res.json();
-        setPhoneNumber(json.phone_number || '+14165550199');
-        setBotPhoneNumber(json.bot_phone_number || '+14155238886');
-        setOptinKeyword(json.optin_keyword || 'join invest-9821');
-        setTwilioAccountSid(json.twilio_account_sid || '');
-        setTwilioAuthToken(json.twilio_auth_token || '');
+        if (json.phone_number) { setPhoneNumber(json.phone_number); localStorage.setItem('wa_phone_number', json.phone_number); }
+        if (json.bot_phone_number) { setBotPhoneNumber(json.bot_phone_number); localStorage.setItem('wa_bot_phone_number', json.bot_phone_number); }
+        if (json.optin_keyword) { setOptinKeyword(json.optin_keyword); localStorage.setItem('wa_optin_keyword', json.optin_keyword); }
+        if (json.twilio_account_sid) { setTwilioAccountSid(json.twilio_account_sid); localStorage.setItem('wa_twilio_account_sid', json.twilio_account_sid); }
+        if (json.twilio_auth_token) { setTwilioAuthToken(json.twilio_auth_token); localStorage.setItem('wa_twilio_auth_token', json.twilio_auth_token); }
         setIsVerified(json.is_verified || false);
         setVerificationStatus(json.verification_status || 'PENDING_OPT_IN');
         setMorningDigest(json.morning_digest_enabled);
@@ -106,6 +106,12 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
     setSaving(true);
     setFeedback(null);
     try {
+      localStorage.setItem('wa_phone_number', phoneNumber);
+      localStorage.setItem('wa_bot_phone_number', botPhoneNumber);
+      localStorage.setItem('wa_optin_keyword', optinKeyword);
+      if (twilioAccountSid) localStorage.setItem('wa_twilio_account_sid', twilioAccountSid);
+      if (twilioAuthToken) localStorage.setItem('wa_twilio_auth_token', twilioAuthToken);
+
       const res = await fetch('http://127.0.0.1:8000/api/whatsapp/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

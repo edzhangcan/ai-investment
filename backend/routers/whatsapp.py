@@ -41,10 +41,10 @@ def get_whatsapp_config(session: Session = Depends(get_session)):
         config = WhatsAppConfigDB(
             id=1,
             phone_number="+14165550199",
-            bot_phone_number="+14155238886",
+            bot_phone_number=settings.TWILIO_WHATSAPP_NUMBER or "+14155238886",
             optin_keyword="join invest-9821",
-            twilio_account_sid="",
-            twilio_auth_token="",
+            twilio_account_sid=settings.TWILIO_ACCOUNT_SID or "",
+            twilio_auth_token=settings.TWILIO_AUTH_TOKEN or "",
             is_verified=False,
             verification_status="PENDING_OPT_IN",
             morning_digest_enabled=True,
@@ -62,7 +62,14 @@ def save_whatsapp_config(req: WhatsAppConfigRequest, session: Session = Depends(
     """Saves/updates WhatsApp config and alert toggles safely into SQLite."""
     config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
     if not config:
-        config = WhatsAppConfigDB(id=1)
+        config = WhatsAppConfigDB(
+            id=1,
+            phone_number=req.phone_number.strip() if req.phone_number else "+14165550199",
+            bot_phone_number=req.bot_phone_number.strip() if req.bot_phone_number else "+14155238886",
+            optin_keyword=req.optin_keyword.strip() if req.optin_keyword else "join invest-9821",
+            twilio_account_sid=req.twilio_account_sid.strip() if req.twilio_account_sid else "",
+            twilio_auth_token=req.twilio_auth_token.strip() if req.twilio_auth_token else ""
+        )
 
     if req.phone_number and req.phone_number.strip():
         config.phone_number = req.phone_number.strip()
