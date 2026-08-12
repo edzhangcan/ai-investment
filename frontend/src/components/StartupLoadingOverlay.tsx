@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Activity, Database, Newspaper, TrendingUp, Cpu } from 'lucide-react';
 
 interface StartupLoadingOverlayProps {
@@ -40,45 +40,41 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(isLoading);
+  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     if (isLoading) {
       setIsVisible(true);
       setCurrentStep(0);
       setProgress(0);
+      startTimeRef.current = Date.now();
 
-      // Asymptotic decelerating progress algorithm — continuously micro-steps so it NEVER freezes
+      // Smooth progress animation spanning ~4.5 seconds evenly
       const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 98) return 98;
+        const elapsed = Date.now() - startTimeRef.current;
+        
+        // Logarithmic smooth curve mapping elapsed time (0 -> 4500ms) to progress (0 -> 94%)
+        let targetProgress = Math.min(94, Math.floor((1 - Math.exp(-elapsed / 1800)) * 95));
+        
+        setProgress(targetProgress);
 
-          // Smoothly decelerating delta
-          let delta = 2.5;
-          if (prev >= 90) delta = 0.2;
-          else if (prev >= 75) delta = 0.5;
-          else if (prev >= 50) delta = 1.0;
-          else if (prev >= 25) delta = 1.8;
+        // Update active step comfortably based on progress thresholds
+        if (targetProgress >= 72) setCurrentStep(3);
+        else if (targetProgress >= 48) setCurrentStep(2);
+        else if (targetProgress >= 24) setCurrentStep(1);
+        else setCurrentStep(0);
 
-          const next = Math.min(98, prev + delta);
-
-          // Update active step comfortably based on progress milestone
-          if (next >= 75) setCurrentStep(3);
-          else if (next >= 50) setCurrentStep(2);
-          else if (next >= 25) setCurrentStep(1);
-          else setCurrentStep(0);
-
-          return next;
-        });
-      }, 70);
+      }, 50);
 
       return () => clearInterval(interval);
     } else {
-      // Real API load complete — snap to 100% and unmount immediately
+      // API call finished! Instantly snap progress to 100% and render interface immediately
       setProgress(100);
       setCurrentStep(LOADING_STEPS.length - 1);
+      
       const timer = setTimeout(() => {
         setIsVisible(false);
-      }, 100);
+      }, 120); // 120ms quick finish transition
 
       return () => clearTimeout(timer);
     }
@@ -89,7 +85,7 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
   const displayPercent = Math.round(progress);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl transition-opacity duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl transition-opacity duration-150">
       {/* Ambient glow effects */}
       <div className="absolute top-1/4 left-1/3 w-80 h-80 bg-emerald-600/15 rounded-full blur-3xl animate-pulse pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-indigo-600/15 rounded-full blur-3xl animate-pulse pointer-events-none" />
@@ -113,7 +109,7 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
         {/* Progress bar */}
         <div className="w-full h-2 bg-slate-800 rounded-full mb-6 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-100 ease-out"
+            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-200 ease-out"
             style={{ width: `${displayPercent}%` }}
           />
         </div>
