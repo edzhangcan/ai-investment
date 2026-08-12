@@ -465,8 +465,8 @@ export const App: React.FC = () => {
 
                   <PricingChart pricingData={stockData.pricing} isPlainTalk={isPlainTalk} />
                   <DebateArena debateData={stockData.debate} isPlainTalk={isPlainTalk} />
-                  <SecTextMiningViewer symbol={stockData.stock.symbol} />
-                  <BacktestViewer symbol={stockData.stock.symbol} />
+                  <SecTextMiningViewer symbol={stockData.stock.symbol} isPlainTalk={isPlainTalk} />
+                  <BacktestViewer symbol={stockData.stock.symbol} isPlainTalk={isPlainTalk} />
 
                   <div className={`bg-slate-900/80 border rounded-2xl p-5 backdrop-blur-xl shadow-xl transition-all ${
                     isPlainTalk ? 'border-amber-500/40 ring-1 ring-amber-500/20' : 'border-slate-800'
@@ -513,6 +513,7 @@ export const App: React.FC = () => {
           isOpen={isPortfolioCalculatorOpen}
           onClose={() => setIsPortfolioCalculatorOpen(false)}
           onSelectStock={(sym) => handleSelectRecommendedStock(sym)}
+          isPlainTalk={isPlainTalk}
         />
       </div>
     </div>

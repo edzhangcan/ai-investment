@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { BilingualHoverCard } from './BilingualHoverCard';
 import { Calculator, X, DollarSign, ShieldAlert, CheckCircle2, Sliders, ArrowRight, PieChart, Coins } from 'lucide-react';
 
 interface PortfolioCalculatorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectStock?: (symbol: string) => void;
+  isPlainTalk?: boolean;
 }
 
 interface PositionBreakdownItem {
@@ -40,6 +42,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
   isOpen,
   onClose,
   onSelectStock,
+  isPlainTalk = false
 }) => {
   const { language, t } = useLanguage();
   const [cashBalance, setCashBalance] = useState<number>(50000);
@@ -98,7 +101,9 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
           </span>
           <div>
             <h2 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-300 bg-clip-text text-transparent">
-              Portfolio Position Sizing & Rebalancing Calculator
+              <BilingualHoverCard termKey="PositionSizing" isPlainTalk={isPlainTalk}>
+                Portfolio Position Sizing & Rebalancing Calculator
+              </BilingualHoverCard>
             </h2>
             <p className="text-xs text-slate-400">
               Risk-adjusted dollar allocations & exact share counts based on CIO position sizing models

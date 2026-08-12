@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { BilingualHoverCard } from './BilingualHoverCard';
 import { LineChart as ChartIcon, TrendingUp, ShieldAlert, Award, Calendar, Compass, RefreshCw } from 'lucide-react';
 
 interface BacktestViewerProps {
   symbol: string;
+  isPlainTalk?: boolean;
 }
 
 interface EquityPoint {
@@ -40,7 +42,7 @@ interface BacktestResponsePayload {
   annual_breakdown: AnnualBreakdownItem[];
 }
 
-export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
+export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainTalk = false }) => {
   const { language, t } = useLanguage();
   const [benchmark, setBenchmark] = useState<'SPY' | 'XIU.TO'>(symbol.endsWith('.TO') ? 'XIU.TO' : 'SPY');
   const [data, setData] = useState<BacktestResponsePayload | null>(null);
@@ -77,9 +79,6 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
 
   if (!data) return null;
 
-  const maxVal = Math.max(...data.equity_curve.map(p => Math.max(p.value, p.benchmark_value)));
-  const minVal = Math.min(...data.equity_curve.map(p => Math.min(p.value, p.benchmark_value)));
-
   return (
     <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-2xl mb-8">
       {/* Header */}
@@ -89,8 +88,10 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
             <span className="p-2 bg-gradient-to-tr from-emerald-500 to-indigo-500 rounded-xl text-slate-950 shadow-md">
               <ChartIcon className="w-5 h-5" />
             </span>
-            <h3 className="text-xl font-extrabold text-slate-100">
-              5-Year Historical Quantitative Backtest (2021 – 2025)
+            <h3 className="text-xl font-extrabold text-slate-100 flex items-center gap-2">
+              <BilingualHoverCard termKey="Backtest" isPlainTalk={isPlainTalk}>
+                5-Year Historical Quantitative Backtest (2021 – 2025)
+              </BilingualHoverCard>
             </h3>
           </div>
           <p className="text-xs text-slate-400">
@@ -132,25 +133,41 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
       {/* 4 Quantitative Metric Badges */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-          <div className="text-[11px] text-slate-400 font-semibold mb-1">CAGR (年化复利)</div>
+          <div className="text-[11px] text-slate-400 font-semibold mb-1">
+            <BilingualHoverCard termKey="CAGR" isPlainTalk={isPlainTalk}>
+              CAGR (年化复利)
+            </BilingualHoverCard>
+          </div>
           <div className="text-lg font-extrabold text-emerald-400">+{data.cagr_pct}%</div>
           <div className="text-[10px] text-slate-500 mt-0.5">Vs {data.benchmark}: +{data.benchmark_cagr_pct}%</div>
         </div>
 
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-          <div className="text-[11px] text-slate-400 font-semibold mb-1">Sharpe Ratio (夏普比率)</div>
+          <div className="text-[11px] text-slate-400 font-semibold mb-1">
+            <BilingualHoverCard termKey="SharpeRatio" isPlainTalk={isPlainTalk}>
+              Sharpe Ratio (夏普比率)
+            </BilingualHoverCard>
+          </div>
           <div className="text-lg font-extrabold text-indigo-300">{data.sharpe_ratio}</div>
           <div className="text-[10px] text-slate-500 mt-0.5">Risk-free rate: 3.5%</div>
         </div>
 
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-          <div className="text-[11px] text-slate-400 font-semibold mb-1">Max Drawdown (最大回撤)</div>
+          <div className="text-[11px] text-slate-400 font-semibold mb-1">
+            <BilingualHoverCard termKey="MaxDrawdown" isPlainTalk={isPlainTalk}>
+              Max Drawdown (最大回撤)
+            </BilingualHoverCard>
+          </div>
           <div className="text-lg font-extrabold text-rose-400">-{data.max_drawdown_pct}%</div>
           <div className="text-[10px] text-slate-500 mt-0.5">Peak-to-trough risk</div>
         </div>
 
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-          <div className="text-[11px] text-slate-400 font-semibold mb-1">Win Rate (胜率)</div>
+          <div className="text-[11px] text-slate-400 font-semibold mb-1">
+            <BilingualHoverCard termKey="WinRate" isPlainTalk={isPlainTalk}>
+              Win Rate (胜率)
+            </BilingualHoverCard>
+          </div>
           <div className="text-lg font-extrabold text-amber-300">{data.win_rate_pct}%</div>
           <div className="text-[10px] text-slate-500 mt-0.5">Outperformed benchmark</div>
         </div>
@@ -164,7 +181,11 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
               <th className="p-3.5">Filing Year</th>
               <th className="p-3.5 text-emerald-400 font-bold">{symbol} Return</th>
               <th className="p-3.5 text-slate-300">{data.benchmark} Return</th>
-              <th className="p-3.5 text-right font-bold">Alpha (超额收益)</th>
+              <th className="p-3.5 text-right font-bold">
+                <BilingualHoverCard termKey="Alpha" isPlainTalk={isPlainTalk}>
+                  Alpha (超额收益)
+                </BilingualHoverCard>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/80">

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { BilingualHoverCard } from './BilingualHoverCard';
 import { FileText, Search, TrendingUp, AlertTriangle, ShieldCheck, Database, FileDiff } from 'lucide-react';
 
 interface SecTextMiningViewerProps {
   symbol: string;
+  isPlainTalk?: boolean;
 }
 
 interface MiningTimelineEntry {
@@ -23,7 +25,7 @@ interface MiningDataPayload {
   text_mining_timeline: MiningTimelineEntry[];
 }
 
-export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol }) => {
+export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol, isPlainTalk = false }) => {
   const { language, t } = useLanguage();
   const [data, setData] = useState<MiningDataPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,9 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
               <FileDiff className="w-5 h-5" />
             </span>
             <h3 className="text-xl font-extrabold text-slate-100">
-              5-Year SEC 10-K & SEDAR+ Text Mining Pipeline
+              <BilingualHoverCard termKey="SEC10K" isPlainTalk={isPlainTalk}>
+                5-Year SEC 10-K & SEDAR+ Text Mining Pipeline
+              </BilingualHoverCard>
             </h3>
           </div>
           <p className="text-xs text-slate-400">
