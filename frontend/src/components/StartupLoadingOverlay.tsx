@@ -40,41 +40,55 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(isLoading);
-  const startTimeRef = useRef<number>(Date.now());
+  const isApiDoneRef = useRef(false);
+
+  useEffect(() => {
+    isApiDoneRef.current = !isLoading;
+  }, [isLoading]);
 
   useEffect(() => {
     if (isLoading) {
       setIsVisible(true);
       setCurrentStep(0);
       setProgress(0);
-      startTimeRef.current = Date.now();
 
-      // Smooth progress animation spanning ~4.5 seconds evenly
+      // Smooth progress animation: advances smoothly over ~1.2 seconds to 100%
+      const totalDuration = 1200; // 1.2s total smooth load
+      const intervalMs = 30;
+      const totalTicks = totalDuration / intervalMs;
+      let currentTick = 0;
+
       const interval = setInterval(() => {
-        const elapsed = Date.now() - startTimeRef.current;
+        currentTick++;
+        const pct = Math.min(100, Math.round((currentTick / totalTicks) * 100));
         
-        // Logarithmic smooth curve mapping elapsed time (0 -> 4500ms) to progress (0 -> 94%)
-        let targetProgress = Math.min(94, Math.floor((1 - Math.exp(-elapsed / 1800)) * 95));
-        
-        setProgress(targetProgress);
+        // If API is still running at tick end, hold smoothly at 92% until API resolves
+        let displayPct = pct;
+        if (pct >= 92 && !isApiDoneRef.current) {
+          displayPct = 92;
+        }
 
-        // Update active step comfortably based on progress thresholds
-        if (targetProgress >= 72) setCurrentStep(3);
-        else if (targetProgress >= 48) setCurrentStep(2);
-        else if (targetProgress >= 24) setCurrentStep(1);
+        setProgress(displayPct);
+
+        if (displayPct >= 75) setCurrentStep(3);
+        else if (displayPct >= 50) setCurrentStep(2);
+        else if (displayPct >= 25) setCurrentStep(1);
         else setCurrentStep(0);
 
-      }, 50);
+        if (pct >= 100 && isApiDoneRef.current) {
+          clearInterval(interval);
+          setTimeout(() => setIsVisible(false), 100);
+        }
+      }, intervalMs);
 
       return () => clearInterval(interval);
     } else {
-      // API call finished! Instantly snap progress to 100% and render interface immediately
+      // Fast path if already loaded
       setProgress(100);
       setCurrentStep(LOADING_STEPS.length - 1);
-      
       const timer = setTimeout(() => {
         setIsVisible(false);
-      }, 120); // 120ms quick finish transition
+      }, 100);
 
       return () => clearTimeout(timer);
     }
@@ -109,7 +123,7 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
         {/* Progress bar */}
         <div className="w-full h-2 bg-slate-800 rounded-full mb-6 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-200 ease-out"
+            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-100 ease-out"
             style={{ width: `${displayPercent}%` }}
           />
         </div>

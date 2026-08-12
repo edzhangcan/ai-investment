@@ -586,8 +586,13 @@ class DataProviderManager:
     """Manages resilient data fetching for equities with real-time yfinance ingestion."""
 
     @staticmethod
-    def get_stock_data(symbol: str) -> Dict[str, Any]:
+    def get_stock_data(symbol: str, force_refresh: bool = False) -> Dict[str, Any]:
         normalized_symbol = symbol.upper().strip()
+
+        # 0. Fast-path: Return empirical baseline store immediately unless force_refresh=True
+        if not force_refresh and normalized_symbol in FALLBACK_STOCK_DATA:
+            logger.info(f"Fast-path returning empirical baseline store for {normalized_symbol}")
+            return FALLBACK_STOCK_DATA[normalized_symbol]
         
         # Build candidate symbol list (e.g. XQET -> [XEQT.TO, XQET, XQET.TO])
         candidates: List[str] = []
