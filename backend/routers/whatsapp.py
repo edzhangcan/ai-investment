@@ -14,6 +14,7 @@ router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp Messaging"])
 
 class WhatsAppConfigRequest(BaseModel):
     phone_number: str = Field("+14165550199", description="Recipient WhatsApp Phone Number with country code")
+    bot_phone_number: str = Field("+14155238886", description="Sender Bot WhatsApp Phone Number")
     optin_keyword: str = Field("join invest-9821", description="Twilio Sandbox Join Keyword")
     morning_digest_enabled: bool = Field(True, description="Enable daily 8:00 AM EST Macro & News digest")
     buy_alert_enabled: bool = Field(True, description="Enable bundled Watchlist BUY zone alerts")
@@ -37,6 +38,7 @@ def get_whatsapp_config(session: Session = Depends(get_session)):
         config = WhatsAppConfigDB(
             id=1,
             phone_number="+14165550199",
+            bot_phone_number="+14155238886",
             optin_keyword="join invest-9821",
             is_verified=False,
             verification_status="PENDING_OPT_IN",
@@ -58,6 +60,8 @@ def save_whatsapp_config(req: WhatsAppConfigRequest, session: Session = Depends(
         config = WhatsAppConfigDB(id=1)
 
     config.phone_number = req.phone_number.strip()
+    if req.bot_phone_number:
+        config.bot_phone_number = req.bot_phone_number.strip()
     if req.optin_keyword:
         config.optin_keyword = req.optin_keyword.strip()
     config.morning_digest_enabled = req.morning_digest_enabled

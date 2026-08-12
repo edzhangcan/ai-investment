@@ -13,6 +13,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
 }) => {
   const { language, t } = useLanguage();
   const [phoneNumber, setPhoneNumber] = useState<string>('+14165550199');
+  const [botPhoneNumber, setBotPhoneNumber] = useState<string>('+14155238886');
   const [optinKeyword, setOptinKeyword] = useState<string>('join invest-9821');
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [verificationStatus, setVerificationStatus] = useState<string>('PENDING_OPT_IN');
@@ -27,8 +28,8 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const botPhoneNumber = '+14155238886';
-  const whatsappDeepLink = `https://wa.me/14155238886?text=${encodeURIComponent(optinKeyword)}`;
+  const cleanBotPhone = botPhoneNumber.replace(/[^0-9]/g, '');
+  const whatsappDeepLink = `https://wa.me/${cleanBotPhone}?text=${encodeURIComponent(optinKeyword)}`;
 
   const fetchConfig = async () => {
     try {
@@ -36,6 +37,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
       if (res.ok) {
         const json = await res.json();
         setPhoneNumber(json.phone_number || '+14165550199');
+        setBotPhoneNumber(json.bot_phone_number || '+14155238886');
         setOptinKeyword(json.optin_keyword || 'join invest-9821');
         setIsVerified(json.is_verified || false);
         setVerificationStatus(json.verification_status || 'PENDING_OPT_IN');
@@ -103,6 +105,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone_number: phoneNumber,
+          bot_phone_number: botPhoneNumber,
           optin_keyword: optinKeyword,
           morning_digest_enabled: morningDigest,
           buy_alert_enabled: buyAlert,
@@ -235,9 +238,15 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
 
           <div className="space-y-2 mb-4 text-xs text-slate-300">
             <div className="flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-slate-400">1. Bot Phone Number:</span>
+              <span className="text-slate-400">1. Twilio Bot Number:</span>
               <div className="flex items-center gap-2 font-mono font-bold text-emerald-400">
-                <span>{botPhoneNumber}</span>
+                <input
+                  type="text"
+                  value={botPhoneNumber}
+                  onChange={(e) => setBotPhoneNumber(e.target.value)}
+                  placeholder="+14155238886"
+                  className="bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500"
+                />
                 <button
                   onClick={() => copyToClipboard(botPhoneNumber, 'phone')}
                   className="p-1 hover:text-slate-100 transition-colors cursor-pointer"
