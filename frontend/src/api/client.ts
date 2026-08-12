@@ -40,11 +40,11 @@ export async function savePushAlertConfig(discordWebhookUrl: string, isDiscordEn
   return res.json();
 }
 
-export async function testDiscordWebhook(discordWebhookUrl: string): Promise<any> {
+export async function testDiscordWebhook(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
   const res = await fetch(`${API_BASE_URL}/api/push-alerts/test`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl })
+    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, lang })
   });
   if (!res.ok) {
     const err = await res.json();
@@ -52,3 +52,56 @@ export async function testDiscordWebhook(discordWebhookUrl: string): Promise<any
   }
   return res.json();
 }
+
+export async function testMacroDigestAlert(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/push-alerts/test/macro-digest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, lang })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Macro digest test alert failed');
+  }
+  return res.json();
+}
+
+export async function testBundledBuyAlert(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/push-alerts/test/bundled-buy`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, lang })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Bundled buy test alert failed');
+  }
+  return res.json();
+}
+
+export async function testSellDangerAlert(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/push-alerts/test/sell-danger`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, lang })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Sell danger test alert failed');
+  }
+  return res.json();
+}
+
+export async function testGoldNuggetsAlert(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/push-alerts/test/gold-nuggets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, lang })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Gold nuggets test alert failed');
+  }
+  return res.json();
+}
+

@@ -92,6 +92,39 @@ export interface Translations {
   suggestedAlloc: string;
   deleteItem: string;
   dbStorageNotice: string;
+
+  // Discord Push Alert Modal
+  discordModalTitle: string;
+  discordModalSubtitle: string;
+  discordZeroKycBadge: string;
+  discordGuideTitle: string;
+  discordGuideStep1: string;
+  discordGuideStep2: string;
+  discordGuideStep3: string;
+  discordChannelStatus: string;
+  discordConnected: string;
+  discordNotConfigured: string;
+  discordWebhookInputLabel: string;
+  discordEnableToggleTitle: string;
+  discordEnableToggleDesc: string;
+  discordTestChannelsTitle: string;
+  discordTestChannelsSub: string;
+  discordTestMacroBtn: string;
+  discordTestBuyBtn: string;
+  discordTestSellBtn: string;
+  discordTestGoldBtn: string;
+  discordConnTestBtn: string;
+  discordSaveConfigBtn: string;
+  discordSavingBtn: string;
+  discordSavedSuccess: string;
+  discordSaveFailed: string;
+  discordEnterUrlFirst: string;
+  discordConnTestSuccess: string;
+  discordMacroSuccess: string;
+  discordBuySuccess: string;
+  discordSellSuccess: string;
+  discordGoldSuccess: string;
+  discordDispatchFailed: string;
 }
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
@@ -180,6 +213,38 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     suggestedAlloc: "Suggested Alloc",
     deleteItem: "Delete",
     dbStorageNotice: "SQLite WAL Mode Persistent Database",
+
+    discordModalTitle: "Discord Push Alerts",
+    discordModalSubtitle: "Receive real-time 4 multi-type alerts directly in your Discord server.",
+    discordZeroKycBadge: "Zero-KYC",
+    discordGuideTitle: "30-Second Discord Setup Guide",
+    discordGuideStep1: "Open Discord → Channel Settings (⚙️) → Integrations.",
+    discordGuideStep2: "Click Webhooks → New Webhook.",
+    discordGuideStep3: "Click Copy Webhook URL and paste it below.",
+    discordChannelStatus: "Channel Status:",
+    discordConnected: "Discord Connected",
+    discordNotConfigured: "Not Configured",
+    discordWebhookInputLabel: "Discord Webhook URL",
+    discordEnableToggleTitle: "Enable Discord Webhook Alerts",
+    discordEnableToggleDesc: "Automatically dispatch rich embeds for Macro, Buy-In, Danger Risk, & Gold Nuggets.",
+    discordTestChannelsTitle: "Test Alert Channels",
+    discordTestChannelsSub: "Click to send sample embed",
+    discordTestMacroBtn: "1. Macro Digest",
+    discordTestBuyBtn: "2. Bundled Buy-In",
+    discordTestSellBtn: "3. Sell / Danger Risk",
+    discordTestGoldBtn: "4. Gold Nuggets",
+    discordConnTestBtn: "Connection Test",
+    discordSaveConfigBtn: "Save Configuration",
+    discordSavingBtn: "Saving...",
+    discordSavedSuccess: "✅ Discord Webhook configuration saved successfully!",
+    discordSaveFailed: "❌ Save failed:",
+    discordEnterUrlFirst: "⚠️ Please enter a valid Discord Webhook URL first.",
+    discordConnTestSuccess: "🧪 Connection test alert sent! Check your Discord channel.",
+    discordMacroSuccess: "📊 Daily Macro & Policy Digest alert sent to Discord!",
+    discordBuySuccess: "🟢 Bundled Buy-In Watchlist alert sent to Discord!",
+    discordSellSuccess: "🔴 Watchlist Sell & Danger Zone alert sent to Discord!",
+    discordGoldSuccess: "💡 Gold Nuggets Discovery alert sent to Discord!",
+    discordDispatchFailed: "❌ Alert dispatch failed:",
   },
 
   zh: {
@@ -267,6 +332,38 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     suggestedAlloc: "建议仓位",
     deleteItem: "删除",
     dbStorageNotice: "本地 SQLite 数据库 WAL 模式持久化存储",
+
+    discordModalTitle: "Discord 实时推送警报",
+    discordModalSubtitle: "在您的 Discord 服务器中实时接收 4 种多类型投资与风控提醒。",
+    discordZeroKycBadge: "Zero-KYC 免认证",
+    discordGuideTitle: "30秒 Discord 快速设置指南",
+    discordGuideStep1: "打开 Discord → 频道设置 (⚙️) → 整合 (Integrations)。",
+    discordGuideStep2: "点击 Webhooks → 新建 Webhook (New Webhook)。",
+    discordGuideStep3: "点击 复制 Webhook URL (Copy Webhook URL) 并粘贴在下方。",
+    discordChannelStatus: "通道连接状态:",
+    discordConnected: "Discord 已连接",
+    discordNotConfigured: "未配置通道",
+    discordWebhookInputLabel: "Discord Webhook 地址 (URL)",
+    discordEnableToggleTitle: "开启 Discord Webhook 自动推送",
+    discordEnableToggleDesc: "当触发宏观新闻、买入区间、卖出风控或淘金股时自动发送富文本 Embed 卡片。",
+    discordTestChannelsTitle: "测试推送通道 (4大类型)",
+    discordTestChannelsSub: "点击测试发送对应警报 Embed",
+    discordTestMacroBtn: "1. 宏观政策简报",
+    discordTestBuyBtn: "2. 观察列表买入",
+    discordTestSellBtn: "3. 卖出与风险预警",
+    discordTestGoldBtn: "4. 淘金金矿股",
+    discordConnTestBtn: "连通性测试",
+    discordSaveConfigBtn: "保存配置",
+    discordSavingBtn: "保存中...",
+    discordSavedSuccess: "✅ Discord Webhook 配置保存成功！",
+    discordSaveFailed: "❌ 保存失败:",
+    discordEnterUrlFirst: "⚠️ 请先输入有效的 Discord Webhook URL。",
+    discordConnTestSuccess: "🧪 连通性测试警报已发送！请检查您的 Discord 频道。",
+    discordMacroSuccess: "📊 每日宏观经济与政策简报已发送至 Discord！",
+    discordBuySuccess: "🟢 观察列表买入信号汇总已发送至 Discord！",
+    discordSellSuccess: "🔴 观察列表卖出与危险区间预警已发送至 Discord！",
+    discordGoldSuccess: "💡 淘金组合 (Gold Nuggets) 发现提醒已发送至 Discord！",
+    discordDispatchFailed: "❌ 警报发送失败:",
   },
 
   hybrid: {
@@ -354,5 +451,37 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     suggestedAlloc: "建议仓位 (Suggested Alloc)",
     deleteItem: "删除",
     dbStorageNotice: "本地 SQLite 数据库 WAL 模式持久化存储",
+
+    discordModalTitle: "Discord 推送警报 (Push Alerts)",
+    discordModalSubtitle: "在 Discord 服务器中实时接收 4 种多类型投资 alert。",
+    discordZeroKycBadge: "Zero-KYC 免认证",
+    discordGuideTitle: "30秒 Discord 快速设置指南 (Setup Guide)",
+    discordGuideStep1: "打开 Discord → 频道设置 (⚙️) → 整合 (Integrations)。",
+    discordGuideStep2: "点击 Webhooks → 新建 Webhook (New Webhook)。",
+    discordGuideStep3: "点击 Copy Webhook URL 并粘贴在下方。",
+    discordChannelStatus: "通道连接状态 (Channel Status):",
+    discordConnected: "Discord 已连接 (Connected)",
+    discordNotConfigured: "未配置 (Not Configured)",
+    discordWebhookInputLabel: "Discord Webhook URL",
+    discordEnableToggleTitle: "开启 Discord Webhook 自动推送",
+    discordEnableToggleDesc: "触发 Macro, Buy-In, Danger Risk, & Gold Nuggets 时自动发送 Embed 卡片。",
+    discordTestChannelsTitle: "测试推送通道 (Test Channels)",
+    discordTestChannelsSub: "点击测试发送对应警报 Embed",
+    discordTestMacroBtn: "1. 宏观简报 (Macro)",
+    discordTestBuyBtn: "2. 买入汇总 (Buy-In)",
+    discordTestSellBtn: "3. 卖出风控 (Sell Risk)",
+    discordTestGoldBtn: "4. 淘金组合 (Gold Nuggets)",
+    discordConnTestBtn: "连通性测试 (Conn Test)",
+    discordSaveConfigBtn: "保存配置 (Save)",
+    discordSavingBtn: "保存中...",
+    discordSavedSuccess: "✅ Discord Webhook 配置保存成功！",
+    discordSaveFailed: "❌ 保存失败:",
+    discordEnterUrlFirst: "⚠️ 请先输入有效的 Discord Webhook URL。",
+    discordConnTestSuccess: "🧪 连通性测试警报已发送！请检查 Discord 频道。",
+    discordMacroSuccess: "📊 每日宏观简报已发送至 Discord！",
+    discordBuySuccess: "🟢 观察列表买入信号汇总已发送至 Discord！",
+    discordSellSuccess: "🔴 观察列表卖出与危险预警已发送至 Discord！",
+    discordGoldSuccess: "💡 Gold Nuggets 发现提醒已发送至 Discord！",
+    discordDispatchFailed: "❌ 警报发送失败:",
   }
 };
