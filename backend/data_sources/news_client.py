@@ -120,12 +120,13 @@ class NewsClient:
     """Real-time financial and macroeconomic policy news ingestion client."""
 
     @classmethod
-    def fetch_macro_news(cls) -> List[Dict[str, Any]]:
+    def fetch_macro_news(cls, force_refresh: bool = False) -> List[Dict[str, Any]]:
         """Fetches up-to-date central bank and macroeconomic news items with caching."""
         cache_key = "MACRO_POLICY_NEWS"
-        cached = cls._get_from_cache(cache_key)
-        if cached:
-            return cached
+        if not force_refresh:
+            cached = cls._get_from_cache(cache_key)
+            if cached:
+                return cached
 
         # Attempt live Google News RSS ingestion for FOMC & BoC keywords
         try:

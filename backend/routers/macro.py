@@ -9,9 +9,9 @@ from backend.engines.recommendation_engine import RecommendationEngine
 router = APIRouter(prefix="/api/macro", tags=["Macro Engine & Dashboard"])
 
 @router.get("")
-def get_macro_analysis(lang: str = "en"):
+def get_macro_analysis(force_refresh: bool = False, lang: str = "en"):
     """Returns current US & Canada economic cycle status and sector rotation weights."""
-    return MacroEngine.analyze_macro_environment(lang=lang)
+    return MacroEngine.analyze_macro_environment(force_refresh=force_refresh, lang=lang)
 
 @router.get("/dashboard")
 def get_macro_dashboard(force_refresh: bool = False, lang: str = "en"):
@@ -20,7 +20,7 @@ def get_macro_dashboard(force_refresh: bool = False, lang: str = "en"):
     Macro cycle assessment, empirical indicator proof array, policy news feed,
     and TOP 3-5 macro-driven stock recommendations with 'Why Invest Now' rationale.
     """
-    macro_data = MacroEngine.analyze_macro_environment(lang=lang)
+    macro_data = MacroEngine.analyze_macro_environment(force_refresh=force_refresh, lang=lang)
     recommendations_data = RecommendationEngine.get_top_recommendations(force_refresh=force_refresh, lang=lang)
 
     return {
