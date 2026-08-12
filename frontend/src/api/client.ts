@@ -20,3 +20,35 @@ export async function fetchStockAnalysis(symbol: string, lang: string = "en"): P
   if (!res.ok) throw new Error(`Stock API failed: ${res.statusText}`);
   return res.json();
 }
+
+export async function fetchPushAlertConfig(): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/push-alerts/config`);
+  if (!res.ok) throw new Error(`Fetch push alert config failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function savePushAlertConfig(discordWebhookUrl: string, isDiscordEnabled: boolean): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/push-alerts/config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      discord_webhook_url: discordWebhookUrl,
+      is_discord_enabled: isDiscordEnabled
+    })
+  });
+  if (!res.ok) throw new Error(`Save push alert config failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function testDiscordWebhook(discordWebhookUrl: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/push-alerts/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Discord test notification failed');
+  }
+  return res.json();
+}

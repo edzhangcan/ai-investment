@@ -61,12 +61,13 @@ class PriceAlertEngine:
                         session.commit()
                         session.refresh(log_entry)
 
-                        # Dispatch alert notification
+                        # Dispatch alert notification (In-App + Discord Webhook)
                         dispatch_res = await dispatcher.dispatch_price_alert(
                             symbol=item.symbol,
                             company_name=item.company_name,
                             current_price=current_price,
-                            target_buy_price=item.target_buy_price
+                            target_buy_price=item.target_buy_price,
+                            session=session
                         )
 
                         triggered_results.append({
