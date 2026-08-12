@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from backend.database import get_session
 from backend.models.db_models import WhatsAppConfigDB
 from backend.engines.whatsapp_notifier import WhatsAppNotifier
+from backend.config import settings
 
 router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp Messaging"])
 
