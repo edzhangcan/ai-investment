@@ -248,6 +248,39 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
                 {feedback.details.message_body}
               </div>
             )}
+
+            {/* Helper box for Twilio Error 572002 (Trial Account Verified Numbers) */}
+            {feedback.message?.includes('572002') && (
+              <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-[11px] text-amber-200 mt-2 space-y-1.5">
+                <div className="font-bold flex items-center gap-1.5 text-amber-300">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Twilio Trial Account Action Needed:</span>
+                </div>
+                <p>
+                  Your Twilio Account is in <strong>Trial Mode</strong>. Twilio requires recipient numbers to be added as a Verified Caller ID or opted in via WhatsApp sandbox before sending live messages.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <a
+                    href="https://console.twilio.com/us1/develop/phone-numbers/manage/verified"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-lg text-amber-200 font-bold transition-all text-[10px]"
+                  >
+                    <span>1. Add to Twilio Verified Caller IDs</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
+                    href={whatsappDeepLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 rounded-lg text-emerald-200 font-bold transition-all text-[10px]"
+                  >
+                    <span>2. Send "{optinKeyword}" from Phone</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
