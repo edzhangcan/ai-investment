@@ -66,7 +66,14 @@ class PriceAlertLogDB(SQLModel, table=True):
     company_name: str
     current_price: float
     target_buy_price: float
-    notification_channel: str = "IN_APP"  # "IN_APP", "WEBHOOK"
+    notification_channel: str = "IN_APP"  # "IN_APP", "DISCORD", "TELEGRAM"
     status: str = "TRIGGERED"
     message: str = ""
     triggered_at: datetime = Field(default_factory=get_utc_now)
+
+class PushAlertConfigDB(SQLModel, table=True):
+    __tablename__ = "push_alert_configs"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    discord_webhook_url: Optional[str] = Field(default=None)
+    is_discord_enabled: bool = Field(default=False)
+    updated_at: datetime = Field(default_factory=get_utc_now)
