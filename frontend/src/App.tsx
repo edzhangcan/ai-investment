@@ -12,6 +12,7 @@ import { PortfolioCalculator } from './components/PortfolioCalculator';
 import { BacktestViewer } from './components/BacktestViewer';
 import { NotificationToast } from './components/NotificationToast';
 import { LanguageSelector } from './components/LanguageSelector';
+import { StartupLoadingOverlay } from './components/StartupLoadingOverlay';
 import { useLanguage } from './context/LanguageContext';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
 import { fetchStockAnalysis, fetchMacroDashboard } from './api/client';
@@ -132,6 +133,9 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8 selection:bg-emerald-500 selection:text-slate-950">
+      {/* Startup Loading Overlay */}
+      <StartupLoadingOverlay isLoading={loadingDashboard} />
+
       {/* Ambient background glows */}
       <div className="fixed top-0 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="fixed bottom-0 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -189,61 +193,81 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Search Form, Language Selector, Command Palette & Watchlist */}
-          <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
-            <form onSubmit={handleSearch} className="relative flex-1 md:w-56">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={t.searchPlaceholder}
-                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all"
-              />
-              <button type="submit" aria-label={t.searchButton} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-400">
-                <Search className="w-4 h-4" />
+          {/* Purpose-Grouped Toolbar */}
+          <div className="flex items-center gap-1 w-full md:w-auto flex-wrap">
+
+            {/* Cluster 1: Search & Quick Navigation */}
+            <div className="flex items-center gap-1.5 flex-1 md:flex-none">
+              <form onSubmit={handleSearch} className="relative flex-1 md:w-52">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder={t.searchPlaceholder}
+                  className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all"
+                />
+                <button type="submit" aria-label={t.searchButton} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-400">
+                  <Search className="w-4 h-4" />
+                </button>
+              </form>
+              <button
+                onClick={() => setIsCommandPaletteOpen(true)}
+                className="p-2 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-slate-300 transition-all flex items-center gap-1 text-xs font-semibold"
+                title="Quick Search (Ctrl+K)"
+              >
+                <Command className="w-4 h-4 text-emerald-400" />
+                <span className="hidden sm:inline font-mono text-[10px]">⌘K</span>
               </button>
-            </form>
+            </div>
 
-            <LanguageSelector />
+            {/* Cluster Separator */}
+            <div className="hidden md:block w-px h-6 bg-slate-700/60 mx-1" />
 
-            <button
-              onClick={() => setIsCommandPaletteOpen(true)}
-              className="p-2 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-slate-300 transition-all flex items-center gap-1 text-xs font-semibold"
-              title="Ctrl+K Command Palette"
-            >
-              <Command className="w-4 h-4 text-emerald-400" />
-              <span className="hidden sm:inline font-mono">Ctrl+K</span>
-            </button>
+            {/* Cluster 2: Investment Analysis Tools */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setIsWatchlistOpen(true)}
+                className="p-2 bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl text-amber-400 transition-all flex items-center gap-1 text-xs font-semibold relative"
+                title={t.watchlistTitle}
+              >
+                <Star className="w-4 h-4 fill-amber-400" />
+                <span className="hidden sm:inline">Watchlist</span>
+                {watchlistSymbols.size > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-slate-950 text-[9px] font-extrabold rounded-full shadow-lg">
+                    {watchlistSymbols.size}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setIsPortfolioCalculatorOpen(true)}
+                className="p-2 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-indigo-300 transition-all flex items-center gap-1 text-xs font-semibold"
+                title="Portfolio Sizing Calculator"
+              >
+                <Calculator className="w-4 h-4 text-indigo-400" />
+                <span className="hidden sm:inline">Calculator</span>
+              </button>
+            </div>
 
-            <button
-              onClick={() => setIsWatchlistOpen(true)}
-              className="p-2 bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl text-amber-400 transition-all flex items-center gap-1 text-xs font-semibold"
-              title={t.watchlistTitle}
-            >
-              <Star className="w-4 h-4 fill-amber-400" />
-              <span className="hidden sm:inline">Watchlist</span>
-            </button>
+            {/* Cluster Separator */}
+            <div className="hidden md:block w-px h-6 bg-slate-700/60 mx-1" />
 
-            <button
-              onClick={() => setIsPortfolioCalculatorOpen(true)}
-              className="p-2 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-indigo-300 transition-all flex items-center gap-1 text-xs font-semibold"
-              title="Portfolio Sizing Calculator"
-            >
-              <Calculator className="w-4 h-4 text-indigo-400" />
-              <span className="hidden sm:inline">Calculator</span>
-            </button>
+            {/* Cluster 3: Preferences & Accessibility */}
+            <div className="flex items-center gap-1.5">
+              <LanguageSelector />
+              <button
+                onClick={() => setIsPlainTalk(!isPlainTalk)}
+                className={`px-2.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shrink-0 ${
+                  isPlainTalk
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+                title={isPlainTalk ? 'Switch to Professional Mode' : 'Switch to Plain Talk Mode'}
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{isPlainTalk ? t.plainTalkOn : t.plainTalkOff}</span>
+              </button>
+            </div>
 
-            <button
-              onClick={() => setIsPlainTalk(!isPlainTalk)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shrink-0 ${
-                isPlainTalk
-                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
-              <span>{isPlainTalk ? t.plainTalkOn : t.plainTalkOff}</span>
-            </button>
           </div>
         </header>
 
@@ -302,6 +326,10 @@ export const App: React.FC = () => {
                   supportingFacts={dashboardData.empirical_supporting_facts}
                   credibleSources={dashboardData.credible_sources}
                   isPlainTalk={isPlainTalk}
+                  onRefreshMacro={async () => {
+                    const res = await fetchMacroDashboard(language, true);
+                    setDashboardData(res);
+                  }}
                 />
 
                 <RecommendedStocksGrid

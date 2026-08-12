@@ -18,7 +18,7 @@ class MacroEngine:
     DOVISH_KEYWORDS = ["easing", "rate cuts", "slowdown", "softening", "transitory", "rate reduction", "accommodative", "cooling"]
 
     @classmethod
-    def analyze_macro_environment(cls, lang: str = "en") -> Dict[str, Any]:
+    def analyze_macro_environment(cls, force_refresh: bool = False, lang: str = "en") -> Dict[str, Any]:
         """Provides full macro state including indicators, cycle classification, policy news, and empirical proofs."""
         raw_data = MacroDataClient.get_latest_macro_data()
         us_macro = raw_data["us_macro"]
@@ -128,7 +128,7 @@ class MacroEngine:
         ]
 
         # Fetch Real-Time Policy News Feed
-        policy_news = NewsClient.fetch_macro_news()
+        policy_news = NewsClient.fetch_macro_news(force_refresh=force_refresh)
 
         # Credible Sources Registry
         credible_sources = [

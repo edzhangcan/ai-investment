@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MacroData, PolicyNewsItem, SupportingFact } from '../types';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
-import { Globe, TrendingUp, ShieldAlert, ExternalLink, Newspaper, Database, CheckCircle2 } from 'lucide-react';
+import { Globe, TrendingUp, ShieldAlert, ExternalLink, Newspaper, Database, CheckCircle2, RefreshCw } from 'lucide-react';
 
 interface MacroDashboardProps {
   macroData: MacroData;
@@ -10,6 +10,7 @@ interface MacroDashboardProps {
   supportingFacts?: SupportingFact[];
   credibleSources?: (string | { name: string; domain?: string; type?: string })[];
   isPlainTalk: boolean;
+  onRefreshMacro?: () => Promise<void>;
 }
 
 export const MacroDashboard: React.FC<MacroDashboardProps> = ({
@@ -17,9 +18,27 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
   policyNews = [],
   supportingFacts = [],
   credibleSources = [],
-  isPlainTalk
+  isPlainTalk,
+  onRefreshMacro
 }) => {
   const { t } = useLanguage();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshToast, setRefreshToast] = useState<string | null>(null);
+
+  const handleRefresh = async () => {
+    if (!onRefreshMacro || isRefreshing) return;
+    setIsRefreshing(true);
+    setRefreshToast(null);
+    try {
+      await onRefreshMacro();
+      setRefreshToast('✅ Macro data & policy news refreshed successfully!');
+    } catch {
+      setRefreshToast('⚠️ Refresh encountered an issue. Using cached data.');
+    } finally {
+      setIsRefreshing(false);
+      setTimeout(() => setRefreshToast(null), 4000);
+    }
+  };
 
   // Fallback empirical facts if not provided
   const factsList: SupportingFact[] = supportingFacts.length > 0 ? supportingFacts : [
@@ -164,11 +183,35 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
         </div>
       </div>
 
+      {/* Refresh Toast Notification */}
+      {refreshToast && (
+        <div className={`mb-4 px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all animate-pulse ${
+          refreshToast.startsWith('✅')
+            ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+            : 'bg-amber-950/40 border-amber-500/40 text-amber-300'
+        }`}>
+          {refreshToast}
+        </div>
+      )}
+
       {/* Central Bank Policy & Economic News */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-200 mb-3 uppercase tracking-wider">
-          <Newspaper className="w-4 h-4 text-indigo-400" />
-          <span>{t.policyNews}</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
+            <Newspaper className="w-4 h-4 text-indigo-400" />
+            <span>{t.policyNews}</span>
+          </div>
+          {onRefreshMacro && (
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-400/50 text-indigo-300 hover:text-indigo-200 rounded-xl text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refresh Macro Data & Policy News"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>{isRefreshing ? 'Refreshing...' : 'Refresh News'}</span>
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {newsList.map((item, idx) => (
