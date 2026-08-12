@@ -1,4 +1,4 @@
-# RICE Prioritized Remaining Backlog & Phase Roadmap (Updated v3.1.0)
+# RICE Prioritized Remaining Backlog & Phase Roadmap (Updated v3.2.0)
 
 This document outlines the remaining backlog for the **AI-Assisted Investment & Multi-Agent Debate Platform**, prioritized using the **RICE Framework** (Reach $\times$ Impact $\times$ Confidence / Effort) and grouped logically into execution phases.
 
@@ -10,18 +10,18 @@ $$\text{RICE Score} = \frac{\text{Reach (0-100)} \times \text{Impact (0.25-3.0)}
 
 ---
 
-## 🏆 RICE Prioritization Master Table (Updated v3.1.0)
+## 🏆 RICE Prioritization Master Table (Updated v3.2.0)
 
 | Rank | Backlog Item | Phase | Status | Reach | Impact | Confidence | Effort | **RICE Score** |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| -- | **Multi-Category Stock Recommendation Engine (3 Pools, Zero Overlap)** | Phase 2 | **✅ DONE (v3.1.0)** | 100 | 3.0 | 95% | 3 | ~~95.00~~ |
+| -- | **Full SEC EDGAR 10-K & SEDAR+ Text Mining Pipeline** | Phase 2 | **✅ DONE (v3.2.0)** | 80 | 2.0 | 90% | 5 | ~~28.80~~ |
+| -- | **Slimmed Recommendation Cards & 8-Stock Pool Expansion (24 Stocks)** | Phase 2 | **✅ DONE (v3.2.0)** | 100 | 3.0 | 95% | 3 | ~~95.00~~ |
 | -- | **End-to-End Internationalization (i18n) Engine (EN / 中文 / Hybrid)** | Phase 2 | **✅ DONE (v3.1.0)** | 100 | 3.0 | 95% | 3 | ~~95.00~~ |
 | -- | **Price Alert Triggers & Notification Engine** | Phase 2 | **✅ DONE (v3.0.0)** | 90 | 3.0 | 90% | 4 | ~~60.75~~ |
 | -- | **React ErrorBoundary & Production Quality Audit** | Phase 4 | **✅ DONE (v3.1.0)** | 100 | 2.0 | 100% | 1 | ~~200.00~~ |
 | **#1** | **GitHub Actions CI/CD Pipeline & Docker Containerization** | Phase 4 | **NEXT** | 100 | 1.0 | 100% | 2 | **50.00** |
 | **#2** | **Portfolio Position Sizing & Rebalancing Calculator** | Phase 3 | Pending | 75 | 2.0 | 85% | 3 | **42.50** |
 | **#3** | **Exportable PDF / Styled Markdown Investment Memos** | Phase 4 | Pending | 50 | 1.5 | 90% | 2 | **33.75** |
-| **#4** | **Full SEC EDGAR 10-K & SEDAR+ Text Mining Pipeline** | Phase 2 | Pending | 80 | 2.0 | 90% | 5 | **28.80** |
 
 ---
 
@@ -29,15 +29,16 @@ $$\text{RICE Score} = \frac{\text{Reach (0-100)} \times \text{Impact (0.25-3.0)}
 
 ```mermaid
 graph TD
-    subgraph Completed Milestones v3.1.0
+    subgraph Completed Milestones v3.2.0
         F1[FastAPI + React Monorepo]
         F2[Macro Scanner & Policy News]
-        F3[Multi-Category Recommendation Engine DONE]
+        F3[Multi-Category Recommendation Engine 8-Stock Pools DONE]
         F4[End-to-End i18n System EN/ZH/Hybrid DONE]
         F5[Multi-Agent Debate Arena]
         F6[SQLite DB & Watchlist Drawer]
         F7[Price Alert Engine DONE]
-        F8[React ErrorBoundary DONE]
+        F8[Full SEC 10-K & SEDAR Text Mining Pipeline DONE]
+        F9[React ErrorBoundary DONE]
     end
 
     subgraph Phase 4 Production DevOps NEXT
@@ -52,14 +53,9 @@ graph TD
         P4_2[Exportable PDF/MD Investment Memos RICE 33.75]
     end
 
-    subgraph Phase 2 Deep SEC Data Mining
-        P2_1[Full SEC 10-K & SEDAR Text Mining Pipeline RICE 28.80]
-    end
-
-    F4 --> P4_1
+    F8 --> P4_1
     P4_1 --> P3_1
     P3_1 --> P4_2
-    P4_2 --> P2_1
 ```
 
 ---
@@ -83,9 +79,3 @@ graph TD
 - **User Story**:  
   > *As an investor, I want to export the complete stock analysis report, Bull/Bear debate, and CIO verdict into a styled PDF/Markdown investment memo with one click.*
 - **Scope**: HTML-to-PDF print memo exporter component.
-
-### 🟢 #4 Full SEC EDGAR 10-K & SEDAR+ Text Mining Pipeline (RICE 28.80)
-- **Phase**: Phase 2 Deep Data Mining
-- **User Story**:  
-  > *As an investor, I want deep automated text diffing across 5 consecutive years of 10-K MD&A sections so that subtle management warning shifts are highlighted automatically.*
-- **Scope**: SEC EDGAR API XML/HTML parser with Levenshtein/Cosine similarity text diffing.
