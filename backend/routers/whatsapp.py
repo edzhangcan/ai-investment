@@ -18,6 +18,7 @@ class WhatsAppConfigRequest(BaseModel):
     optin_keyword: str = Field("join invest-9821", description="Twilio Sandbox Join Keyword")
     twilio_account_sid: Optional[str] = Field("", description="Twilio Account SID (AC...)")
     twilio_auth_token: Optional[str] = Field("", description="Twilio Auth Token")
+    twilio_content_sid: Optional[str] = Field("", description="Optional Twilio Content SID (HX...)")
     morning_digest_enabled: bool = Field(True, description="Enable daily 8:00 AM EST Macro & News digest")
     buy_alert_enabled: bool = Field(True, description="Enable bundled Watchlist BUY zone alerts")
     sell_alert_enabled: bool = Field(True, description="Enable bundled Watchlist DANGER/SELL zone alerts")
@@ -45,6 +46,7 @@ def get_whatsapp_config(session: Session = Depends(get_session)):
             optin_keyword="join invest-9821",
             twilio_account_sid=settings.TWILIO_ACCOUNT_SID or "",
             twilio_auth_token=settings.TWILIO_AUTH_TOKEN or "",
+            twilio_content_sid="",
             is_verified=False,
             verification_status="PENDING_OPT_IN",
             morning_digest_enabled=True,
@@ -68,7 +70,8 @@ def save_whatsapp_config(req: WhatsAppConfigRequest, session: Session = Depends(
             bot_phone_number=req.bot_phone_number.strip() if req.bot_phone_number else "+14155238886",
             optin_keyword=req.optin_keyword.strip() if req.optin_keyword else "join invest-9821",
             twilio_account_sid=req.twilio_account_sid.strip() if req.twilio_account_sid else "",
-            twilio_auth_token=req.twilio_auth_token.strip() if req.twilio_auth_token else ""
+            twilio_auth_token=req.twilio_auth_token.strip() if req.twilio_auth_token else "",
+            twilio_content_sid=req.twilio_content_sid.strip() if req.twilio_content_sid else ""
         )
 
     if req.phone_number and req.phone_number.strip():
@@ -81,6 +84,8 @@ def save_whatsapp_config(req: WhatsAppConfigRequest, session: Session = Depends(
         config.twilio_account_sid = req.twilio_account_sid.strip()
     if req.twilio_auth_token is not None and req.twilio_auth_token.strip():
         config.twilio_auth_token = req.twilio_auth_token.strip()
+    if req.twilio_content_sid is not None:
+        config.twilio_content_sid = req.twilio_content_sid.strip()
     
     config.morning_digest_enabled = req.morning_digest_enabled
     config.buy_alert_enabled = req.buy_alert_enabled
@@ -126,7 +131,8 @@ async def handle_incoming_whatsapp_webhook(
                 bot_phone=config.bot_phone_number,
                 lang=config.lang,
                 account_sid=config.twilio_account_sid,
-                auth_token=config.twilio_auth_token
+                auth_token=config.twilio_auth_token,
+                content_sid=config.twilio_content_sid
             )
             return {
                 "status": "success",
@@ -165,7 +171,8 @@ def simulate_whatsapp_optin(
         bot_phone=config.bot_phone_number,
         lang=req.lang,
         account_sid=config.twilio_account_sid,
-        auth_token=config.twilio_auth_token
+        auth_token=config.twilio_auth_token,
+        content_sid=config.twilio_content_sid
     )
     return {
         "status": "success",
@@ -183,18 +190,19 @@ def trigger_whatsapp_test(req: TriggerAlertRequest, session: Session = Depends(g
     bot_phone = config.bot_phone_number if config else "+14155238886"
     sid = config.twilio_account_sid if config else ""
     token = config.twilio_auth_token if config else ""
+    csid = config.twilio_content_sid if config else ""
     is_verified = config.is_verified if config else True
 
     m_type = (req.message_type or "TEST_VERIFICATION").upper()
 
     if m_type == "MORNING_DIGEST":
-        return WhatsAppNotifier.send_morning_macro_digest(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token)
+        return WhatsAppNotifier.send_morning_macro_digest(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token, content_sid=csid)
     elif m_type == "BUNDLED_BUY_ALERT":
-        return WhatsAppNotifier.send_bundled_buy_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token)
+        return WhatsAppNotifier.send_bundled_buy_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token, content_sid=csid)
     elif m_type == "BUNDLED_SELL_ALERT":
-        return WhatsAppNotifier.send_bundled_sell_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token)
+        return WhatsAppNotifier.send_bundled_sell_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token, content_sid=csid)
     else:
-        return WhatsAppNotifier.send_test_message(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, account_sid=sid, auth_token=token)
+        return WhatsAppNotifier.send_test_message(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, account_sid=sid, auth_token=token, content_sid=csid)
 
 @router.post("/trigger-digest")
 def trigger_morning_digest(req: TriggerAlertRequest, session: Session = Depends(get_session)):
@@ -204,8 +212,9 @@ def trigger_morning_digest(req: TriggerAlertRequest, session: Session = Depends(
     bot_phone = config.bot_phone_number if config else "+14155238886"
     sid = config.twilio_account_sid if config else ""
     token = config.twilio_auth_token if config else ""
+    csid = config.twilio_content_sid if config else ""
     is_verified = config.is_verified if config else True
-    return WhatsAppNotifier.send_morning_macro_digest(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token)
+    return WhatsAppNotifier.send_morning_macro_digest(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token, content_sid=csid)
 
 @router.post("/trigger-alerts")
 def trigger_bundled_alerts(req: TriggerAlertRequest, session: Session = Depends(get_session)):
@@ -215,10 +224,11 @@ def trigger_bundled_alerts(req: TriggerAlertRequest, session: Session = Depends(
     bot_phone = config.bot_phone_number if config else "+14155238886"
     sid = config.twilio_account_sid if config else ""
     token = config.twilio_auth_token if config else ""
+    csid = config.twilio_content_sid if config else ""
     is_verified = config.is_verified if config else True
 
-    buy_res = WhatsAppNotifier.send_bundled_buy_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token)
-    sell_res = WhatsAppNotifier.send_bundled_sell_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token)
+    buy_res = WhatsAppNotifier.send_bundled_buy_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token, content_sid=csid)
+    sell_res = WhatsAppNotifier.send_bundled_sell_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token, content_sid=csid)
     return {
         "status": "success",
         "buy_alert": buy_res,

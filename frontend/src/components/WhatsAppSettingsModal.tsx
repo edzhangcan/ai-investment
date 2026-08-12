@@ -17,6 +17,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
   const [optinKeyword, setOptinKeyword] = useState<string>(() => localStorage.getItem('wa_optin_keyword') || 'join invest-9821');
   const [twilioAccountSid, setTwilioAccountSid] = useState<string>(() => localStorage.getItem('wa_twilio_account_sid') || '');
   const [twilioAuthToken, setTwilioAuthToken] = useState<string>(() => localStorage.getItem('wa_twilio_auth_token') || '');
+  const [twilioContentSid, setTwilioContentSid] = useState<string>(() => localStorage.getItem('wa_twilio_content_sid') || '');
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [verificationStatus, setVerificationStatus] = useState<string>('PENDING_OPT_IN');
 
@@ -44,6 +45,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
         if (json.optin_keyword) { setOptinKeyword(json.optin_keyword); localStorage.setItem('wa_optin_keyword', json.optin_keyword); }
         if (json.twilio_account_sid) { setTwilioAccountSid(json.twilio_account_sid); localStorage.setItem('wa_twilio_account_sid', json.twilio_account_sid); }
         if (json.twilio_auth_token) { setTwilioAuthToken(json.twilio_auth_token); localStorage.setItem('wa_twilio_auth_token', json.twilio_auth_token); }
+        if (json.twilio_content_sid) { setTwilioContentSid(json.twilio_content_sid); localStorage.setItem('wa_twilio_content_sid', json.twilio_content_sid); }
         setIsVerified(json.is_verified || false);
         setVerificationStatus(json.verification_status || 'PENDING_OPT_IN');
         setMorningDigest(json.morning_digest_enabled);
@@ -111,6 +113,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
       localStorage.setItem('wa_optin_keyword', optinKeyword);
       if (twilioAccountSid) localStorage.setItem('wa_twilio_account_sid', twilioAccountSid);
       if (twilioAuthToken) localStorage.setItem('wa_twilio_auth_token', twilioAuthToken);
+      if (twilioContentSid) localStorage.setItem('wa_twilio_content_sid', twilioContentSid);
 
       const res = await fetch('http://127.0.0.1:8000/api/whatsapp/config', {
         method: 'POST',
@@ -121,6 +124,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
           optin_keyword: optinKeyword,
           twilio_account_sid: twilioAccountSid,
           twilio_auth_token: twilioAuthToken,
+          twilio_content_sid: twilioContentSid,
           morning_digest_enabled: morningDigest,
           buy_alert_enabled: buyAlert,
           sell_alert_enabled: sellAlert,
@@ -278,6 +282,23 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
                     <span>2. Send "{optinKeyword}" from Phone</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
+                </div>
+              </div>
+            )}
+
+            {/* Helper box for Twilio Error 21654 (ContentSid Required) */}
+            {feedback.message?.includes('21654') && (
+              <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-[11px] text-amber-200 mt-2 space-y-1.5">
+                <div className="font-bold flex items-center gap-1.5 text-amber-300">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Twilio Error 21654: Meta ContentSid Required Solution:</span>
+                </div>
+                <p>
+                  Meta/Twilio requires a pre-approved <strong>Content Template SID</strong> when sending via paid WhatsApp Business Profiles outside an active 24h chat window.
+                </p>
+                <div className="text-[10px] space-y-1 text-slate-300 pt-1">
+                  <div>• <strong>Solution 1 (Recommended for Testing)</strong>: Change Twilio Bot Number above to the free Twilio Sandbox number (<code>+14155238886</code>), which does not enforce ContentSid templates.</div>
+                  <div>• <strong>Solution 2</strong>: Or enter your approved <strong>Twilio Content SID (HX...)</strong> in the API Credentials section below.</div>
                 </div>
               </div>
             )}
@@ -489,14 +510,14 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] text-slate-400">Twilio Account SID</span>
                   {twilioAccountSid ? (
-                    <span className="text-[10px] text-emerald-400 font-extrabold font-mono">✓ Configured ({twilioAccountSid.substring(0, 4)}...)</span>
+                    <span className="text-[10px] text-emerald-400 font-extrabold font-mono">✓ Configured</span>
                   ) : (
-                    <span className="text-[10px] text-slate-500 font-mono">Not set (Mock mode)</span>
+                    <span className="text-[10px] text-slate-500 font-mono">Mock mode</span>
                   )}
                 </div>
                 <input
@@ -512,9 +533,9 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] text-slate-400">Twilio Auth Token</span>
                   {twilioAuthToken ? (
-                    <span className="text-[10px] text-emerald-400 font-extrabold font-mono">✓ Configured (••••)</span>
+                    <span className="text-[10px] text-emerald-400 font-extrabold font-mono">✓ Configured</span>
                   ) : (
-                    <span className="text-[10px] text-slate-500 font-mono">Not set (Mock mode)</span>
+                    <span className="text-[10px] text-slate-500 font-mono">Mock mode</span>
                   )}
                 </div>
                 <input
@@ -522,6 +543,24 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
                   value={twilioAuthToken}
                   onChange={(e) => setTwilioAuthToken(e.target.value)}
                   placeholder="••••••••••••••••••••••••••••••••"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-slate-400">Content SID (Optional)</span>
+                  {twilioContentSid ? (
+                    <span className="text-[10px] text-emerald-400 font-extrabold font-mono">✓ Configured</span>
+                  ) : (
+                    <span className="text-[10px] text-slate-500 font-mono">Not set</span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={twilioContentSid}
+                  onChange={(e) => setTwilioContentSid(e.target.value)}
+                  placeholder="HXb5b6257d..."
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500 transition-all"
                 />
               </div>
