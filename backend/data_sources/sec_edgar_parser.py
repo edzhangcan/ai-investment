@@ -4,9 +4,10 @@ Pulls 10-K / 10-Q financial statements (Operating Cash Flow, CapEx, Net Income, 
 and extracts Item 7 Management's Discussion and Analysis (MD&A) disclosures.
 """
 
-import requests
 import json
 import logging
+import urllib.request
+import urllib.error
 from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -46,12 +47,13 @@ class SECEdgarParser:
 
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik.zfill(10)}.json"
         try:
-            resp = requests.get(url, headers=SEC_HEADERS, timeout=8)
-            if resp.status_code == 200:
-                return resp.json()
-            else:
-                logger.warning(f"SEC EDGAR API status code {resp.status_code} for CIK {cik}")
-                return None
+            req = urllib.request.Request(url, headers=SEC_HEADERS)
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                if resp.status == 200:
+                    return json.loads(resp.read().decode('utf-8'))
+                else:
+                    logger.warning(f"SEC EDGAR API status code {resp.status} for CIK {cik}")
+                    return None
         except Exception as e:
             logger.warning(f"Failed to fetch SEC EDGAR facts for {symbol}: {e}")
             return None
@@ -60,12 +62,14 @@ class SECEdgarParser:
     def _lookup_cik(cls, symbol: str) -> Optional[str]:
         """Looks up CIK from SEC company tickers JSON."""
         try:
-            resp = requests.get("https://www.sec.gov/files/company_tickers.json", headers=SEC_HEADERS, timeout=5)
-            if resp.status_code == 200:
-                data = resp.json()
-                for entry in data.values():
-                    if entry.get("ticker") == symbol:
-                        return str(entry.get("cik_str"))
+            headers = {"User-Agent": "AntigravityAI AdminContact@antigravity.ai", "Host": "www.sec.gov"}
+            req = urllib.request.Request("https://www.sec.gov/files/company_tickers.json", headers=headers)
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                if resp.status == 200:
+                    data = json.loads(resp.read().decode('utf-8'))
+                    for entry in data.values():
+                        if entry.get("ticker") == symbol:
+                            return str(entry.get("cik_str"))
         except Exception as e:
             logger.warning(f"CIK lookup error for {symbol}: {e}")
         return None

@@ -6,7 +6,8 @@ with 15-minute TTL caching and credible source citations.
 
 import time
 import logging
-import requests
+import urllib.request
+import urllib.parse
 import xml.etree.ElementTree as ET
 from typing import Dict, Any, List, Optional
 
@@ -176,12 +177,14 @@ class NewsClient:
     @classmethod
     def _fetch_google_news_rss(cls, query: str) -> List[Dict[str, Any]]:
         """Parses Google News RSS feed for live news items."""
-        url = f"https://news.google.com/rss/search?q={requests.utils.quote(query)}&hl=en-US&gl=US&ceid=US:en"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code != 200:
-            return []
+        url = f"https://news.google.com/rss/search?q={urllib.parse.quote(query)}&hl=en-US&gl=US&ceid=US:en"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status != 200:
+                return []
+            content = resp.read()
 
-        root = ET.fromstring(resp.content)
+        root = ET.fromstring(content)
         items = []
         for item in root.findall(".//item")[:4]:
             title = item.find("title").text if item.find("title") is not None else "Financial Update"
