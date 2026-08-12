@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { MessageSquare, X, Send, CheckCircle2, BellRing, Sun, ShieldAlert, Sparkles, Phone, Copy, ExternalLink, RefreshCw, ShieldCheck, Clock } from 'lucide-react';
+import { MessageSquare, X, Send, CheckCircle2, BellRing, Sun, ShieldAlert, Sparkles, Phone, Copy, ExternalLink, RefreshCw, ShieldCheck, Clock, FileText, AlertTriangle } from 'lucide-react';
 
 interface WhatsAppSettingsModalProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [verificationStatus, setVerificationStatus] = useState<string>('PENDING_OPT_IN');
 
+  const [selectedMessageType, setSelectedMessageType] = useState<string>('TEST_VERIFICATION');
   const [morningDigest, setMorningDigest] = useState<boolean>(true);
   const [buyAlert, setBuyAlert] = useState<boolean>(true);
   const [sellAlert, setSellAlert] = useState<boolean>(true);
@@ -28,7 +29,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
   const [testing, setTesting] = useState<boolean>(false);
   const [simulating, setSimulating] = useState<boolean>(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string; details?: any } | null>(null);
 
   const cleanBotPhone = botPhoneNumber.replace(/[^0-9]/g, '');
   const whatsappDeepLink = `https://wa.me/${cleanBotPhone}?text=${encodeURIComponent(optinKeyword)}`;
@@ -87,7 +88,8 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
           type: 'success',
           message: language === 'zh'
             ? '模拟验证成功！手机号已成功激活 1 对 1 WhatsApp 通知。'
-            : 'Simulated Opt-In successful! Phone number verified for WhatsApp alerts.'
+            : 'Simulated Opt-In successful! Phone number verified for WhatsApp alerts.',
+          details: json
         });
       }
     } catch (e) {
@@ -135,7 +137,8 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
     }
   };
 
-  const handleSendTestMessage = async () => {
+  const handleSendTestMessage = async (msgType?: string) => {
+    const targetType = msgType || selectedMessageType;
     setTesting(true);
     setFeedback(null);
     try {
@@ -144,16 +147,34 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recipient_phone: phoneNumber,
+          message_type: targetType,
           lang: language
         })
       });
       if (res.ok) {
-        setFeedback({
-          type: 'success',
-          message: language === 'zh'
-            ? '测试消息已成功推送至 WhatsApp！'
-            : 'Test message sent to WhatsApp successfully!'
-        });
+        const json = await res.json();
+        const delivery = json.delivery_details?.delivery;
+        const sid = json.delivery_details?.sid;
+
+        if (delivery === 'TWILIO_DELIVERED') {
+          setFeedback({
+            type: 'success',
+            message: `✅ Pushed live to phone via Twilio! Message SID: ${sid}`,
+            details: json
+          });
+        } else if (delivery === 'TWILIO_FAILED') {
+          setFeedback({
+            type: 'error',
+            message: `❌ Twilio API Error: ${json.delivery_details?.error || 'Failed to dispatch'}`,
+            details: json
+          });
+        } else {
+          setFeedback({
+            type: 'info',
+            message: `ℹ️ Dispatched payload in Mock Mode. (Add Twilio Account SID & Auth Token to push directly to physical phone)`,
+            details: json
+          });
+        }
       }
     } catch (e) {
       setFeedback({
@@ -169,7 +190,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-slate-100">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-slate-100">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -185,23 +206,38 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
           </span>
           <div>
             <h2 className="text-xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-300 bg-clip-text text-transparent">
-              WhatsApp 1-on-1 Opt-In & Alert Settings
+              WhatsApp 1-on-1 Opt-In & Alert Controls
             </h2>
             <p className="text-xs text-slate-400">
-              Compliant 2-way opt-in for daily 8:00 AM EST Macro Digest & bundled Watchlist alerts
+              Select alert payload type, test live dispatch, and manage 2-way verification settings
             </p>
           </div>
         </div>
 
-        {/* Feedback Alert Banner */}
+        {/* Feedback & Result Inspector Banner */}
         {feedback && (
-          <div className={`p-3.5 rounded-2xl mb-5 text-xs font-semibold flex items-center gap-2 border ${
+          <div className={`p-4 rounded-2xl mb-6 text-xs font-semibold border space-y-2 ${
             feedback.type === 'success'
               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              : feedback.type === 'info'
+              ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
               : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
           }`}>
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{feedback.message}</span>
+            <div className="flex items-center gap-2 font-bold">
+              {feedback.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+              <span>{feedback.message}</span>
+            </div>
+
+            {/* Render Sent Message Text Preview if available */}
+            {feedback.details?.message_body && (
+              <div className="bg-slate-950/90 p-3 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300 whitespace-pre-wrap max-h-40 overflow-y-auto mt-2">
+                <div className="text-[10px] text-slate-500 font-extrabold uppercase mb-1 flex items-center gap-1">
+                  <FileText className="w-3 h-3" />
+                  <span>Dispatched Message Body Preview:</span>
+                </div>
+                {feedback.details.message_body}
+              </div>
+            )}
           </div>
         )}
 
@@ -235,11 +271,89 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
           </div>
         </div>
 
-        {/* Step 2: Opt-In Instructions & Action Deep Link */}
+        {/* Step 2: Test Payload Type Selection Grid */}
+        <div className="mb-6 bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
+          <label className="text-xs font-extrabold uppercase tracking-wider text-slate-300 block mb-3 flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span>Select WhatsApp Alert Payload to Push</span>
+          </label>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {/* Payload 1: Morning 8:00 AM Digest */}
+            <button
+              onClick={() => { setSelectedMessageType('MORNING_DIGEST'); handleSendTestMessage('MORNING_DIGEST'); }}
+              disabled={testing || !isVerified}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                selectedMessageType === 'MORNING_DIGEST'
+                  ? 'bg-amber-500/10 border-amber-500/50 text-amber-200'
+                  : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300'
+              }`}
+            >
+              <Sun className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-xs font-bold block text-slate-100">🌅 8:00 AM Macro Digest</span>
+                <span className="text-[11px] text-slate-400">Daily cycle status, Fed stance & top news.</span>
+              </div>
+            </button>
+
+            {/* Payload 2: Bundled Buy Zone Alert */}
+            <button
+              onClick={() => { setSelectedMessageType('BUNDLED_BUY_ALERT'); handleSendTestMessage('BUNDLED_BUY_ALERT'); }}
+              disabled={testing || !isVerified}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                selectedMessageType === 'BUNDLED_BUY_ALERT'
+                  ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-200'
+                  : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300'
+              }`}
+            >
+              <BellRing className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-xs font-bold block text-slate-100">🟢 Bundled BUY Zone Alert</span>
+                <span className="text-[11px] text-slate-400">Bundles all Watchlist buy stocks into 1 msg.</span>
+              </div>
+            </button>
+
+            {/* Payload 3: Bundled Sell Zone Alert */}
+            <button
+              onClick={() => { setSelectedMessageType('BUNDLED_SELL_ALERT'); handleSendTestMessage('BUNDLED_SELL_ALERT'); }}
+              disabled={testing || !isVerified}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                selectedMessageType === 'BUNDLED_SELL_ALERT'
+                  ? 'bg-rose-500/10 border-rose-500/50 text-rose-200'
+                  : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300'
+              }`}
+            >
+              <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-xs font-bold block text-slate-100">🔴 Bundled SELL Zone Alert</span>
+                <span className="text-[11px] text-slate-400">Bundles stop-loss / risk stocks into 1 msg.</span>
+              </div>
+            </button>
+
+            {/* Payload 4: Instant Verification Test */}
+            <button
+              onClick={() => { setSelectedMessageType('TEST_VERIFICATION'); handleSendTestMessage('TEST_VERIFICATION'); }}
+              disabled={testing || !isVerified}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                selectedMessageType === 'TEST_VERIFICATION'
+                  ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-200'
+                  : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300'
+              }`}
+            >
+              <Send className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-xs font-bold block text-slate-100">⚡ Instant Test Message</span>
+                <span className="text-[11px] text-slate-400">Verifies recipient connection.</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Step 3: Opt-In Instructions & Action Deep Link */}
         <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 mb-6">
           <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
             <Phone className="w-4 h-4 text-emerald-400" />
-            <span>1-Time WhatsApp Opt-In Instructions</span>
+            <span>Twilio Sandbox & Opt-In Configuration</span>
           </h4>
 
           <div className="space-y-2 mb-4 text-xs text-slate-300">
@@ -284,7 +398,6 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons: wa.me Deep Link & Simulate Opt-in */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
               href={whatsappDeepLink}
@@ -307,7 +420,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
           </div>
         </div>
 
-        {/* Step 3: Recipient Phone & Twilio Credentials */}
+        {/* Step 4: Recipient Phone & Twilio Credentials */}
         <div className="mb-6 bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-1.5">
@@ -354,88 +467,18 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
                 />
               </div>
             </div>
-            <p className="text-[11px] text-slate-500 mt-2">
-              Keys remain private on your machine and are never committed to GitHub or public servers.
-            </p>
-          </div>
-        </div>
-
-        {/* 3 Alert Mechanism Toggles */}
-        <div className="space-y-3 mb-6">
-          <label className="text-xs font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
-            Automated Alert Mechanisms
-          </label>
-
-          <div className="flex items-center justify-between p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800">
-            <div className="flex items-start gap-2.5">
-              <Sun className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-              <div>
-                <span className="text-xs font-bold text-slate-200 block">
-                  Morning Macro & News Digest (8:00 AM EST)
-                </span>
-                <span className="text-[11px] text-slate-400 block">
-                  Daily macro cycle status, Fed/BoC sentiment & top policy news.
-                </span>
-              </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={morningDigest}
-              onChange={(e) => setMorningDigest(e.target.checked)}
-              className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800">
-            <div className="flex items-start gap-2.5">
-              <BellRing className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-              <div>
-                <span className="text-xs font-bold text-slate-200 block">
-                  Bundled Watchlist BUY Zone Alert
-                </span>
-                <span className="text-[11px] text-slate-400 block">
-                  Gathers all Watchlist stocks entering BUY Zone into 1 message.
-                </span>
-              </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={buyAlert}
-              onChange={(e) => setBuyAlert(e.target.checked)}
-              className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800">
-            <div className="flex items-start gap-2.5">
-              <ShieldAlert className="w-4 h-4 text-rose-400 mt-0.5 shrink-0" />
-              <div>
-                <span className="text-xs font-bold text-slate-200 block">
-                  Bundled DANGER / SELL Zone Alert
-                </span>
-                <span className="text-[11px] text-slate-400 block">
-                  Gathers all Watchlist stocks entering SELL/stop-loss zones into 1 message.
-                </span>
-              </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={sellAlert}
-              onChange={(e) => setSellAlert(e.target.checked)}
-              className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
-            />
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800">
           <button
-            onClick={handleSendTestMessage}
+            onClick={() => handleSendTestMessage()}
             disabled={testing || !isVerified}
             className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 border border-emerald-500/30 cursor-pointer disabled:opacity-40"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>{testing ? 'Sending Test...' : 'Send Test WhatsApp Message'}</span>
+            <span>{testing ? 'Pushing WhatsApp Payload...' : 'Push Selected WhatsApp Alert'}</span>
           </button>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">

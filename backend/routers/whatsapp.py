@@ -25,6 +25,7 @@ class WhatsAppConfigRequest(BaseModel):
 
 class TriggerAlertRequest(BaseModel):
     recipient_phone: Optional[str] = None
+    message_type: Optional[str] = Field("TEST_VERIFICATION", description="Message type: TEST_VERIFICATION, MORNING_DIGEST, BUNDLED_BUY_ALERT, BUNDLED_SELL_ALERT")
     lang: str = Field("en", description="Target language")
 
 class SimulateOptInRequest(BaseModel):
@@ -111,7 +112,13 @@ async def handle_incoming_whatsapp_webhook(
             session.commit()
             session.refresh(config)
 
-            reply = WhatsAppNotifier.send_optin_confirmation_reply(recipient_phone=config.phone_number, lang=config.lang)
+            reply = WhatsAppNotifier.send_optin_confirmation_reply(
+                recipient_phone=config.phone_number,
+                bot_phone=config.bot_phone_number,
+                lang=config.lang,
+                account_sid=config.twilio_account_sid,
+                auth_token=config.twilio_auth_token
+            )
             return {
                 "status": "success",
                 "verified": True,
@@ -144,7 +151,13 @@ def simulate_whatsapp_optin(
     session.commit()
     session.refresh(config)
 
-    reply = WhatsAppNotifier.send_optin_confirmation_reply(recipient_phone=config.phone_number, lang=req.lang)
+    reply = WhatsAppNotifier.send_optin_confirmation_reply(
+        recipient_phone=config.phone_number,
+        bot_phone=config.bot_phone_number,
+        lang=req.lang,
+        account_sid=config.twilio_account_sid,
+        auth_token=config.twilio_auth_token
+    )
     return {
         "status": "success",
         "verified": True,
@@ -155,13 +168,24 @@ def simulate_whatsapp_optin(
 
 @router.post("/test")
 def trigger_whatsapp_test(req: TriggerAlertRequest, session: Session = Depends(get_session)):
-    """Sends instant test WhatsApp message."""
+    """Sends test WhatsApp message of the selected payload type."""
     config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
     phone = req.recipient_phone or (config.phone_number if config else "+14165550199")
     bot_phone = config.bot_phone_number if config else "+14155238886"
     sid = config.twilio_account_sid if config else ""
     token = config.twilio_auth_token if config else ""
-    return WhatsAppNotifier.send_test_message(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, account_sid=sid, auth_token=token)
+    is_verified = config.is_verified if config else True
+
+    m_type = (req.message_type or "TEST_VERIFICATION").upper()
+
+    if m_type == "MORNING_DIGEST":
+        return WhatsAppNotifier.send_morning_macro_digest(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token)
+    elif m_type == "BUNDLED_BUY_ALERT":
+        return WhatsAppNotifier.send_bundled_buy_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token)
+    elif m_type == "BUNDLED_SELL_ALERT":
+        return WhatsAppNotifier.send_bundled_sell_zone_alert(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, is_verified=is_verified, account_sid=sid, auth_token=token)
+    else:
+        return WhatsAppNotifier.send_test_message(recipient_phone=phone, bot_phone=bot_phone, lang=req.lang, account_sid=sid, auth_token=token)
 
 @router.post("/trigger-digest")
 def trigger_morning_digest(req: TriggerAlertRequest, session: Session = Depends(get_session)):
