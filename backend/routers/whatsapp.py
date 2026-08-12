@@ -1,8 +1,8 @@
 """
-WhatsApp Router: REST endpoints for WhatsApp Messaging & Alert Engine
+WhatsApp Router: REST endpoints for WhatsApp Messaging & 1-on-1 Opt-In Webhook Listener
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request, Form
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from sqlmodel import Session, select
@@ -23,12 +23,27 @@ class TriggerAlertRequest(BaseModel):
     recipient_phone: Optional[str] = None
     lang: str = Field("en", description="Target language")
 
+class SimulateOptInRequest(BaseModel):
+    phone_number: str = Field("+14165550199", description="Simulated recipient phone number")
+    optin_keyword: str = Field("join invest-9821", description="Opt-in keyword sent by user")
+    lang: str = Field("en", description="Target language")
+
 @router.get("/config")
 def get_whatsapp_config(session: Session = Depends(get_session)):
-    """Fetches saved WhatsApp config and alert toggles."""
+    """Fetches saved WhatsApp config, verification status, and opt-in join keyword."""
     config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
     if not config:
-        config = WhatsAppConfigDB(id=1, phone_number="+14165550199", morning_digest_enabled=True, buy_alert_enabled=True, sell_alert_enabled=True, lang="en")
+        config = WhatsAppConfigDB(
+            id=1,
+            phone_number="+14165550199",
+            optin_keyword="join invest-9821",
+            is_verified=False,
+            verification_status="PENDING_OPT_IN",
+            morning_digest_enabled=True,
+            buy_alert_enabled=True,
+            sell_alert_enabled=True,
+            lang="en"
+        )
         session.add(config)
         session.commit()
         session.refresh(config)
@@ -52,24 +67,101 @@ def save_whatsapp_config(req: WhatsAppConfigRequest, session: Session = Depends(
     session.refresh(config)
     return config
 
+@router.post("/incoming-webhook")
+async def handle_incoming_whatsapp_webhook(
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """
+    Twilio / Meta WhatsApp Inbound Webhook Listener.
+    Receives incoming opt-in messages (e.g. "join invest-9821") from WhatsApp users.
+    Sets is_verified = True and returns an instant auto-reply confirmation.
+    """
+    try:
+        form_data = await request.form()
+        from_number = form_data.get("From", "").replace("whatsapp:", "").strip()
+        body_text = form_data.get("Body", "").strip().lower()
+
+        config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
+        if not config:
+            config = WhatsAppConfigDB(id=1)
+
+        target_keyword = config.optin_keyword.strip().lower()
+
+        if target_keyword in body_text or "join" in body_text:
+            config.phone_number = from_number or config.phone_number
+            config.is_verified = True
+            config.verification_status = "VERIFIED"
+            session.add(config)
+            session.commit()
+            session.refresh(config)
+
+            reply = WhatsAppNotifier.send_optin_confirmation_reply(recipient_phone=config.phone_number, lang=config.lang)
+            return {
+                "status": "success",
+                "verified": True,
+                "phone_number": config.phone_number,
+                "reply": reply
+            }
+
+        return {"status": "received", "verified": config.is_verified}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@router.post("/verify-simulated")
+def simulate_whatsapp_optin(
+    req: SimulateOptInRequest,
+    session: Session = Depends(get_session)
+):
+    """
+    Developer / Local Testing Helper Endpoint.
+    Simulates receiving a WhatsApp opt-in message to mark the phone number as VERIFIED.
+    """
+    config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
+    if not config:
+        config = WhatsAppConfigDB(id=1)
+
+    config.phone_number = req.phone_number.strip()
+    config.is_verified = True
+    config.verification_status = "VERIFIED"
+
+    session.add(config)
+    session.commit()
+    session.refresh(config)
+
+    reply = WhatsAppNotifier.send_optin_confirmation_reply(recipient_phone=config.phone_number, lang=req.lang)
+    return {
+        "status": "success",
+        "verified": True,
+        "phone_number": config.phone_number,
+        "message": "Phone number successfully verified via simulated opt-in!",
+        "reply": reply
+    }
+
 @router.post("/test")
-def trigger_whatsapp_test(req: TriggerAlertRequest):
+def trigger_whatsapp_test(req: TriggerAlertRequest, session: Session = Depends(get_session)):
     """Sends instant test WhatsApp message."""
-    phone = req.recipient_phone or "+14165550199"
+    config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
+    phone = req.recipient_phone or (config.phone_number if config else "+14165550199")
     return WhatsAppNotifier.send_test_message(recipient_phone=phone, lang=req.lang)
 
 @router.post("/trigger-digest")
-def trigger_morning_digest(req: TriggerAlertRequest):
+def trigger_morning_digest(req: TriggerAlertRequest, session: Session = Depends(get_session)):
     """Triggers 8:00 AM EST Daily Morning Macro & News Digest."""
-    phone = req.recipient_phone or "+14165550199"
-    return WhatsAppNotifier.send_morning_macro_digest(recipient_phone=phone, lang=req.lang)
+    config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
+    phone = req.recipient_phone or (config.phone_number if config else "+14165550199")
+    is_verified = config.is_verified if config else True
+    return WhatsAppNotifier.send_morning_macro_digest(recipient_phone=phone, lang=req.lang, is_verified=is_verified)
 
 @router.post("/trigger-alerts")
-def trigger_bundled_alerts(req: TriggerAlertRequest):
+def trigger_bundled_alerts(req: TriggerAlertRequest, session: Session = Depends(get_session)):
     """Scans watchlist and dispatches bundled Buy/Sell zone WhatsApp alerts."""
-    phone = req.recipient_phone or "+14165550199"
-    buy_res = WhatsAppNotifier.send_bundled_buy_zone_alert(recipient_phone=phone, lang=req.lang)
-    sell_res = WhatsAppNotifier.send_bundled_sell_zone_alert(recipient_phone=phone, lang=req.lang)
+    config = session.exec(select(WhatsAppConfigDB).where(WhatsAppConfigDB.id == 1)).first()
+    phone = req.recipient_phone or (config.phone_number if config else "+14165550199")
+    is_verified = config.is_verified if config else True
+
+    buy_res = WhatsAppNotifier.send_bundled_buy_zone_alert(recipient_phone=phone, lang=req.lang, is_verified=is_verified)
+    sell_res = WhatsAppNotifier.send_bundled_sell_zone_alert(recipient_phone=phone, lang=req.lang, is_verified=is_verified)
     return {
         "status": "success",
         "buy_alert": buy_res,

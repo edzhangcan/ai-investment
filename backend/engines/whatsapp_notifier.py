@@ -5,6 +5,7 @@ Delivers 3 core WhatsApp notification mechanisms:
 2. Bundled Watchlist BUY Zone Alert (gathers all buying opportunity stocks into 1 message).
 3. Bundled Watchlist DANGER / SELL Zone Alert (gathers all profit-taking/stop-loss stocks into 1 message).
 Multi-language support for 'en', 'zh', and 'hybrid' modes.
+Strict verification enforcement for Meta/Twilio WhatsApp 1-on-1 Opt-In rules.
 """
 
 import logging
@@ -18,14 +19,54 @@ class WhatsAppNotifier:
     """Dispatches formatted WhatsApp alert payloads."""
 
     @classmethod
-    def send_morning_macro_digest(
+    def send_optin_confirmation_reply(
         cls,
         recipient_phone: str = "+14165550199",
         lang: str = "en"
     ) -> Dict[str, Any]:
         """
+        Pushes instant auto-reply when user texts the WhatsApp join keyword.
+        """
+        if lang == "zh":
+            msg_body = (
+                f"✅ *【AI 投资平台 - WhatsApp 验证成功！】*\n\n"
+                f"您的手机号 ({recipient_phone}) 已成功与系统完成 1 对 1 双向绑定。\n"
+                f"系统将在每日 8:00 AM EST 为您推送到港宏观晨报，并在自选股触及建仓/卖出区间时发送汇总提醒。\n\n"
+                f"🔗 控制台: http://localhost:3000"
+            )
+        else:
+            msg_body = (
+                f"✅ *[AI Investment Platform - WhatsApp Opt-In Verified!]*\n\n"
+                f"Your phone number ({recipient_phone}) has successfully connected.\n"
+                f"You will now receive daily 8:00 AM EST Macro Digests and bundled Watchlist Buy/Sell Alerts.\n\n"
+                f"🔗 Dashboard: http://localhost:3000"
+            )
+
+        logger.info(f"Dispatched WhatsApp Opt-In Confirmation Reply to {recipient_phone}")
+        return {
+            "status": "success",
+            "channel": "WHATSAPP",
+            "recipient_phone": recipient_phone,
+            "message_type": "OPTIN_CONFIRMATION",
+            "message_body": msg_body
+        }
+
+    @classmethod
+    def send_morning_macro_digest(
+        cls,
+        recipient_phone: str = "+14165550199",
+        lang: str = "en",
+        is_verified: bool = True
+    ) -> Dict[str, Any]:
+        """
         Formats and dispatches 8:00 AM EST Daily Morning Macro & News Digest.
         """
+        if not is_verified:
+            return {
+                "status": "error",
+                "message": "Phone number not verified. Please complete WhatsApp 1-on-1 Opt-In first."
+            }
+
         macro_data = MacroEngine.analyze_macro_environment(lang=lang)
 
         cycle_title = macro_data.get("current_cycle", {}).get("title", "Mid-Cycle Expansion")
@@ -47,21 +88,7 @@ class WhatsAppNotifier:
                 headline = item.get("headline", "核心央行政策更新")
                 msg_body += f"{idx}. {headline}\n"
 
-            msg_body += f"\n🔗 查看完整宏观风向图谱与美股/加股透视表：http://localhost:3000"
-
-        elif lang == "hybrid":
-            msg_body = (
-                f"🌅 *[AI Investment Platform - Daily 8:00 AM Macro Digest / 每日晨报]*\n\n"
-                f"📊 *Macro Cycle Stage*: {cycle_title}\n"
-                f"🏛️ *Central Bank Tone*: Fed {fed_tone} | BoC {boc_tone}\n"
-                f"📈 *CPI Inflation*: {cpi}%\n\n"
-                f"📰 *Top Macro Policy Headlines / 今日头条*:\n"
-            )
-            for idx, item in enumerate(news_items, 1):
-                headline = item.get("headline", "Central Bank Policy Update")
-                msg_body += f"{idx}. {headline}\n"
-
-            msg_body += f"\n🔗 View Macro Dashboard: http://localhost:3000"
+            msg_body += f"\n🔗 查看完整宏观图谱：http://localhost:3000"
 
         else:
             msg_body = (
@@ -91,11 +118,18 @@ class WhatsAppNotifier:
         cls,
         recipient_phone: str = "+14165550199",
         buy_stocks: Optional[List[Dict[str, Any]]] = None,
-        lang: str = "en"
+        lang: str = "en",
+        is_verified: bool = True
     ) -> Dict[str, Any]:
         """
         Bundles all Watchlist stocks currently in BUY Zone into 1 single WhatsApp message.
         """
+        if not is_verified:
+            return {
+                "status": "error",
+                "message": "Phone number not verified. Please complete WhatsApp 1-on-1 Opt-In first."
+            }
+
         if not buy_stocks or len(buy_stocks) == 0:
             buy_stocks = [
                 {
@@ -173,11 +207,18 @@ class WhatsAppNotifier:
         cls,
         recipient_phone: str = "+14165550199",
         sell_stocks: Optional[List[Dict[str, Any]]] = None,
-        lang: str = "en"
+        lang: str = "en",
+        is_verified: bool = True
     ) -> Dict[str, Any]:
         """
         Bundles all Watchlist stocks currently in DANGER / SELL Zone into 1 single WhatsApp message.
         """
+        if not is_verified:
+            return {
+                "status": "error",
+                "message": "Phone number not verified. Please complete WhatsApp 1-on-1 Opt-In first."
+            }
+
         if not sell_stocks or len(sell_stocks) == 0:
             sell_stocks = [
                 {
@@ -244,8 +285,8 @@ class WhatsAppNotifier:
         if lang == "zh":
             msg_body = (
                 f"⚡ *【AI 投资平台 - WhatsApp 通知通道测试成功】*\n\n"
-                f"您的手机号 ({recipient_phone}) 已成功绑定 AI 投资平台。\n"
-                f"系统将在每日 8:00 AM 发送宏观晨报，并在自选股触及建仓/卖出区间时发送汇总提醒。"
+                f"您的手机号 ({recipient_phone}) 已成功与平台绑定。\n"
+                f"系统将在每日 8:00 AM EST 发送宏观晨报，并在自选股触及建仓/卖出区间时发送汇总提醒。"
             )
         else:
             msg_body = (

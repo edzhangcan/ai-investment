@@ -1,18 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { MessageSquare, X, Send, CheckCircle2, BellRing, Sun, ShieldAlert, Sparkles, Phone, Globe } from 'lucide-react';
+import { MessageSquare, X, Send, CheckCircle2, BellRing, Sun, ShieldAlert, Sparkles, Phone, Copy, ExternalLink, RefreshCw, ShieldCheck, Clock } from 'lucide-react';
 
 interface WhatsAppSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-interface WhatsAppConfigPayload {
-  phone_number: string;
-  morning_digest_enabled: boolean;
-  buy_alert_enabled: boolean;
-  sell_alert_enabled: boolean;
-  lang: string;
 }
 
 export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
@@ -21,12 +13,22 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
 }) => {
   const { language, t } = useLanguage();
   const [phoneNumber, setPhoneNumber] = useState<string>('+14165550199');
+  const [optinKeyword, setOptinKeyword] = useState<string>('join invest-9821');
+  const [isVerified, setIsVerified] = useState<boolean>(false);
+  const [verificationStatus, setVerificationStatus] = useState<string>('PENDING_OPT_IN');
+
   const [morningDigest, setMorningDigest] = useState<boolean>(true);
   const [buyAlert, setBuyAlert] = useState<boolean>(true);
   const [sellAlert, setSellAlert] = useState<boolean>(true);
+
   const [saving, setSaving] = useState<boolean>(false);
   const [testing, setTesting] = useState<boolean>(false);
+  const [simulating, setSimulating] = useState<boolean>(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const botPhoneNumber = '+14155238886';
+  const whatsappDeepLink = `https://wa.me/14155238886?text=${encodeURIComponent(optinKeyword)}`;
 
   const fetchConfig = async () => {
     try {
@@ -34,6 +36,9 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
       if (res.ok) {
         const json = await res.json();
         setPhoneNumber(json.phone_number || '+14165550199');
+        setOptinKeyword(json.optin_keyword || 'join invest-9821');
+        setIsVerified(json.is_verified || false);
+        setVerificationStatus(json.verification_status || 'PENDING_OPT_IN');
         setMorningDigest(json.morning_digest_enabled);
         setBuyAlert(json.buy_alert_enabled);
         setSellAlert(json.sell_alert_enabled);
@@ -48,6 +53,46 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
       fetchConfig();
     }
   }, [isOpen]);
+
+  const copyToClipboard = (text: string, keyName: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(keyName);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handleSimulateOptIn = async () => {
+    setSimulating(true);
+    setFeedback(null);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/whatsapp/verify-simulated', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone_number: phoneNumber,
+          optin_keyword: optinKeyword,
+          lang: language
+        })
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIsVerified(true);
+        setVerificationStatus('VERIFIED');
+        setFeedback({
+          type: 'success',
+          message: language === 'zh'
+            ? '模拟验证成功！手机号已成功激活 1 对 1 WhatsApp 通知。'
+            : 'Simulated Opt-In successful! Phone number verified for WhatsApp alerts.'
+        });
+      }
+    } catch (e) {
+      setFeedback({
+        type: 'error',
+        message: language === 'zh' ? '模拟验证失败。' : 'Simulated opt-in failed.'
+      });
+    } finally {
+      setSimulating(false);
+    }
+  };
 
   const handleSaveConfig = async () => {
     setSaving(true);
@@ -67,13 +112,13 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
       if (res.ok) {
         setFeedback({
           type: 'success',
-          message: language === 'zh' ? 'WhatsApp 通知设置已成功保存！' : 'WhatsApp alert settings saved successfully!'
+          message: language === 'zh' ? 'WhatsApp 通知设置已保存！' : 'WhatsApp alert settings saved!'
         });
       }
     } catch (e) {
       setFeedback({
         type: 'error',
-        message: language === 'zh' ? '保存失败，请检查网络连接。' : 'Failed to save settings.'
+        message: language === 'zh' ? '保存失败。' : 'Failed to save settings.'
       });
     } finally {
       setSaving(false);
@@ -114,7 +159,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl p-6 md:p-8 relative text-slate-100">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-slate-100">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -130,10 +175,10 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
           </span>
           <div>
             <h2 className="text-xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-300 bg-clip-text text-transparent">
-              WhatsApp Notification Settings
+              WhatsApp 1-on-1 Opt-In & Alert Settings
             </h2>
             <p className="text-xs text-slate-400">
-              8:00 AM EST Morning Macro Digest & Bundled Watchlist Buy/Sell Alerts
+              Compliant 2-way opt-in for daily 8:00 AM EST Macro Digest & bundled Watchlist alerts
             </p>
           </div>
         </div>
@@ -150,11 +195,100 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
           </div>
         )}
 
-        {/* Phone Number Field */}
-        <div className="mb-6 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-          <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
+        {/* Step 1: Verification Status Badge Card */}
+        <div className={`p-4 rounded-2xl border mb-6 ${
+          isVerified
+            ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
+            : 'bg-amber-950/40 border-amber-500/40 text-amber-200'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-extrabold text-xs">
+              {isVerified ? (
+                <>
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  <span>WhatsApp Verified & Active ({phoneNumber})</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-5 h-5 text-amber-400 animate-pulse" />
+                  <span>Awaiting WhatsApp 1-on-1 Opt-In Message</span>
+                </>
+              )}
+            </div>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
+              isVerified
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+            }`}>
+              {isVerified ? 'VERIFIED' : 'PENDING'}
+            </span>
+          </div>
+        </div>
+
+        {/* Step 2: Opt-In Instructions & Action Deep Link */}
+        <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 mb-6">
+          <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-1.5">
             <Phone className="w-4 h-4 text-emerald-400" />
-            <span>Recipient WhatsApp Phone Number</span>
+            <span>1-Time WhatsApp Opt-In Instructions</span>
+          </h4>
+
+          <div className="space-y-2 mb-4 text-xs text-slate-300">
+            <div className="flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+              <span className="text-slate-400">1. Bot Phone Number:</span>
+              <div className="flex items-center gap-2 font-mono font-bold text-emerald-400">
+                <span>{botPhoneNumber}</span>
+                <button
+                  onClick={() => copyToClipboard(botPhoneNumber, 'phone')}
+                  className="p-1 hover:text-slate-100 transition-colors cursor-pointer"
+                  title="Copy Phone Number"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+              <span className="text-slate-400">2. Verification Keyword:</span>
+              <div className="flex items-center gap-2 font-mono font-bold text-amber-300">
+                <span>{optinKeyword}</span>
+                <button
+                  onClick={() => copyToClipboard(optinKeyword, 'keyword')}
+                  className="p-1 hover:text-slate-100 transition-colors cursor-pointer"
+                  title="Copy Join Keyword"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons: wa.me Deep Link & Simulate Opt-in */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <a
+              href={whatsappDeepLink}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>Open in WhatsApp App</span>
+            </a>
+
+            <button
+              onClick={handleSimulateOptIn}
+              disabled={simulating}
+              className="px-4 py-2.5 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${simulating ? 'animate-spin' : ''}`} />
+              <span>Simulate Opt-In (Dev Test)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Step 3: Recipient Phone & Alert Toggles */}
+        <div className="mb-6 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
+          <label className="block text-xs font-bold text-slate-300 mb-2">
+            Your WhatsApp Recipient Phone Number
           </label>
           <input
             type="text"
@@ -163,9 +297,6 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
             placeholder="+1 (416) 555-0199"
             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm font-mono font-bold text-emerald-300 focus:outline-none focus:border-emerald-500 transition-all"
           />
-          <p className="text-[11px] text-slate-500 mt-1.5">
-            Include country code (e.g. 🇨🇦 +1 for Canada, 🇺🇸 +1 for US).
-          </p>
         </div>
 
         {/* 3 Alert Mechanism Toggles */}
@@ -174,8 +305,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
             Automated Alert Mechanisms
           </label>
 
-          {/* Toggle 1: Morning 8:00 AM Digest */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all">
+          <div className="flex items-center justify-between p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800">
             <div className="flex items-start gap-2.5">
               <Sun className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
               <div>
@@ -195,8 +325,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
             />
           </div>
 
-          {/* Toggle 2: Bundled BUY Zone Alert */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all">
+          <div className="flex items-center justify-between p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800">
             <div className="flex items-start gap-2.5">
               <BellRing className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
               <div>
@@ -216,8 +345,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
             />
           </div>
 
-          {/* Toggle 3: Bundled DANGER / SELL Zone Alert */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all">
+          <div className="flex items-center justify-between p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800">
             <div className="flex items-start gap-2.5">
               <ShieldAlert className="w-4 h-4 text-rose-400 mt-0.5 shrink-0" />
               <div>
@@ -242,8 +370,8 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800">
           <button
             onClick={handleSendTestMessage}
-            disabled={testing}
-            className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 border border-emerald-500/30 cursor-pointer disabled:opacity-50"
+            disabled={testing || !isVerified}
+            className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 border border-emerald-500/30 cursor-pointer disabled:opacity-40"
           >
             <Send className="w-3.5 h-3.5" />
             <span>{testing ? 'Sending Test...' : 'Send Test WhatsApp Message'}</span>
@@ -254,7 +382,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
               onClick={onClose}
               className="flex-1 sm:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-all cursor-pointer"
             >
-              Cancel
+              Close
             </button>
             <button
               onClick={handleSaveConfig}

@@ -75,6 +75,9 @@ class WhatsAppConfigDB(SQLModel, table=True):
     __tablename__ = "whatsapp_configs"
     id: Optional[int] = Field(default=1, primary_key=True)
     phone_number: str = Field(default="+14165550199")
+    optin_keyword: str = Field(default="join invest-9821")
+    is_verified: bool = Field(default=False)
+    verification_status: str = Field(default="PENDING_OPT_IN")
     morning_digest_enabled: bool = Field(default=True)
     buy_alert_enabled: bool = Field(default=True)
     sell_alert_enabled: bool = Field(default=True)
