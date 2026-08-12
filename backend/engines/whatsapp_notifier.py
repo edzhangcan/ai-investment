@@ -12,8 +12,10 @@ Integrates live HTTP dispatch to Twilio REST API when credentials exist in backe
 import logging
 import urllib.request
 import urllib.parse
+import urllib.error
 import base64
 import json
+import re
 from typing import Dict, Any, List, Optional
 from backend.config import settings
 from backend.engines.macro_engine import MacroEngine
@@ -23,6 +25,15 @@ logger = logging.getLogger(__name__)
 
 class WhatsAppNotifier:
     """Dispatches formatted WhatsApp alert payloads."""
+
+    @classmethod
+    def _clean_e164(cls, phone_str: str) -> str:
+        """Sanitizes raw user phone input into strict Twilio E.164 format (+14165550199)."""
+        raw = phone_str.replace("whatsapp:", "").strip()
+        cleaned = re.sub(r"[^\d+]", "", raw)
+        if cleaned and not cleaned.startswith("+"):
+            cleaned = "+" + cleaned
+        return cleaned
 
     @classmethod
     def _dispatch_to_twilio(
@@ -40,11 +51,13 @@ class WhatsAppNotifier:
         """
         account_sid = account_sid.strip() or settings.TWILIO_ACCOUNT_SID.strip()
         auth_token = auth_token.strip() or settings.TWILIO_AUTH_TOKEN.strip()
-        from_phone = bot_phone.strip() or settings.TWILIO_WHATSAPP_NUMBER.strip()
+        from_raw = bot_phone.strip() or settings.TWILIO_WHATSAPP_NUMBER.strip()
 
-        # Format phone numbers with whatsapp: prefix
-        formatted_from = from_phone if from_phone.startswith("whatsapp:") else f"whatsapp:{from_phone}"
-        formatted_to = recipient_phone if recipient_phone.startswith("whatsapp:") else f"whatsapp:{recipient_phone}"
+        clean_from = cls._clean_e164(from_raw)
+        clean_to = cls._clean_e164(recipient_phone)
+
+        formatted_from = f"whatsapp:{clean_from}"
+        formatted_to = f"whatsapp:{clean_to}"
 
         if not account_sid or not auth_token:
             logger.info("Twilio API keys not configured. Operating in Mock API mode.")
@@ -78,6 +91,20 @@ class WhatsAppNotifier:
                     "sid": resp_data.get("sid"),
                     "status": resp_data.get("status")
                 }
+        except urllib.error.HTTPError as e:
+            error_text = e.read().decode("utf-8") if e.fp else str(e)
+            logger.error(f"Twilio HTTP Error {e.code}: {error_text}")
+            try:
+                err_json = json.loads(error_text)
+                detail_msg = f"Twilio Error {err_json.get('code')}: {err_json.get('message')}"
+            except Exception:
+                detail_msg = f"HTTP {e.code}: {error_text}"
+            return {
+                "delivery": "TWILIO_FAILED",
+                "error": detail_msg,
+                "http_code": e.code,
+                "twilio_details": error_text
+            }
         except Exception as e:
             logger.error(f"Failed to dispatch Twilio WhatsApp message: {e}")
             return {

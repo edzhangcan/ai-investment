@@ -166,9 +166,10 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
             details: json
           });
         } else if (delivery === 'TWILIO_FAILED') {
+          const errDetail = json.delivery_details?.error || 'Failed to dispatch';
           setFeedback({
             type: 'error',
-            message: `❌ Twilio API Error: ${json.delivery_details?.error || 'Failed to dispatch'}`,
+            message: `❌ Twilio API Error: ${errDetail}`,
             details: json
           });
         } else {
