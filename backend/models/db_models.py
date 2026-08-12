@@ -66,24 +66,7 @@ class PriceAlertLogDB(SQLModel, table=True):
     company_name: str
     current_price: float
     target_buy_price: float
-    notification_channel: str = "IN_APP"  # "IN_APP", "WHATSAPP", "WEBHOOK"
+    notification_channel: str = "IN_APP"  # "IN_APP", "WEBHOOK"
     status: str = "TRIGGERED"
     message: str = ""
     triggered_at: datetime = Field(default_factory=get_utc_now)
-
-class WhatsAppConfigDB(SQLModel, table=True):
-    __tablename__ = "whatsapp_configs"
-    id: Optional[int] = Field(default=1, primary_key=True)
-    phone_number: str = Field(default="+14165550199")
-    bot_phone_number: str = Field(default="+14155238886")
-    optin_keyword: str = Field(default="join invest-9821")
-    twilio_account_sid: str = Field(default="")
-    twilio_auth_token: str = Field(default="")
-    twilio_content_sid: str = Field(default="")
-    is_verified: bool = Field(default=False)
-    verification_status: str = Field(default="PENDING_OPT_IN")
-    morning_digest_enabled: bool = Field(default=True)
-    buy_alert_enabled: bool = Field(default=True)
-    sell_alert_enabled: bool = Field(default=True)
-    lang: str = Field(default="en")
-    updated_at: datetime = Field(default_factory=get_utc_now)
