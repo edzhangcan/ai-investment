@@ -8,12 +8,13 @@ import { BilingualHoverCard } from './components/BilingualHoverCard';
 import { CommandPalette } from './components/CommandPalette';
 import { WatchlistDrawer } from './components/WatchlistDrawer';
 import { SecTextMiningViewer } from './components/SecTextMiningViewer';
+import { PortfolioCalculator } from './components/PortfolioCalculator';
 import { NotificationToast } from './components/NotificationToast';
 import { LanguageSelector } from './components/LanguageSelector';
 import { useLanguage } from './context/LanguageContext';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
 import { fetchStockAnalysis, fetchMacroDashboard } from './api/client';
-import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command, TrendingUp, Layers } from 'lucide-react';
+import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command, TrendingUp, Layers, Calculator } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { language, t } = useLanguage();
@@ -28,6 +29,7 @@ export const App: React.FC = () => {
   
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
+  const [isPortfolioCalculatorOpen, setIsPortfolioCalculatorOpen] = useState(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<Set<string>>(new Set(['NVDA', 'SHOP.TO']));
 
   // Fetch watchlist symbols from database
@@ -219,6 +221,15 @@ export const App: React.FC = () => {
             >
               <Star className="w-4 h-4 fill-amber-400" />
               <span className="hidden sm:inline">Watchlist</span>
+            </button>
+
+            <button
+              onClick={() => setIsPortfolioCalculatorOpen(true)}
+              className="p-2 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-indigo-300 transition-all flex items-center gap-1 text-xs font-semibold"
+              title="Portfolio Sizing Calculator"
+            >
+              <Calculator className="w-4 h-4 text-indigo-400" />
+              <span className="hidden sm:inline">Calculator</span>
             </button>
 
             <button
@@ -496,6 +507,11 @@ export const App: React.FC = () => {
             )
           )
         )}
+        <PortfolioCalculator
+          isOpen={isPortfolioCalculatorOpen}
+          onClose={() => setIsPortfolioCalculatorOpen(false)}
+          onSelectStock={(sym) => handleSelectRecommendedStock(sym)}
+        />
       </div>
     </div>
   );

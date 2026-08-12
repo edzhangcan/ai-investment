@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
 from backend.database import init_db
-from backend.routers import macro, stock, debate, watchlist, alerts
+from backend.routers import macro, stock, debate, watchlist, alerts, portfolio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,6 +47,7 @@ app.include_router(stock.router)
 app.include_router(debate.router)
 app.include_router(watchlist.router)
 app.include_router(alerts.router)
+app.include_router(portfolio.router)
 
 @app.get("/api/health")
 def health_check():
