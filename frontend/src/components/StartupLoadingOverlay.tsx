@@ -39,51 +39,52 @@ const LOADING_STEPS = [
 export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ isLoading }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [isVisible, setIsVisible] = useState(isLoading);
 
   useEffect(() => {
-    if (!isLoading) return;
+    if (isLoading) {
+      setIsVisible(true);
+      setCurrentStep(0);
+      setProgress(0);
 
-    setCurrentStep(0);
-    setProgress(0);
+      // Smoothly advance progress up to 92% while waiting for real API load
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 92) return 92;
+          const next = prev + 1;
+          
+          // Calculate step based on progress for comfortable reading speed
+          if (next >= 70) setCurrentStep(3);
+          else if (next >= 45) setCurrentStep(2);
+          else if (next >= 20) setCurrentStep(1);
+          else setCurrentStep(0);
 
-    // Simulate stepped progress through the 4 stages
-    const stepDuration = 1200; // ms per step
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        const next = prev + 1;
-        if (next >= 100) {
-          clearInterval(progressInterval);
-          return 100;
-        }
-        return next;
-      });
-    }, 50);
+          return next;
+        });
+      }, 75);
 
-    const stepInterval = setInterval(() => {
-      setCurrentStep((prev) => {
-        if (prev >= LOADING_STEPS.length - 1) {
-          clearInterval(stepInterval);
-          return LOADING_STEPS.length - 1;
-        }
-        return prev + 1;
-      });
-    }, stepDuration);
+      return () => clearInterval(interval);
+    } else {
+      // API call completed! Instantly hit 100% and hide overlay immediately
+      setProgress(100);
+      setCurrentStep(LOADING_STEPS.length - 1);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+      }, 150); // 150ms brief pulse at 100% then instant dismiss
 
-    return () => {
-      clearInterval(progressInterval);
-      clearInterval(stepInterval);
-    };
+      return () => clearTimeout(timer);
+    }
   }, [isLoading]);
 
-  if (!isLoading) return null;
+  if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl transition-opacity duration-200">
       {/* Ambient glow effects */}
       <div className="absolute top-1/4 left-1/3 w-80 h-80 bg-emerald-600/15 rounded-full blur-3xl animate-pulse pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-indigo-600/15 rounded-full blur-3xl animate-pulse pointer-events-none" />
 
-      <div className="relative w-full max-w-lg mx-4 bg-slate-900/80 border border-slate-700/60 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
+      <div className="relative w-full max-w-lg mx-4 bg-slate-900/90 border border-slate-700/60 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="p-3 bg-gradient-to-tr from-emerald-500 to-indigo-500 rounded-2xl shadow-lg shadow-emerald-500/20">
@@ -102,7 +103,7 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
         {/* Progress bar */}
         <div className="w-full h-2 bg-slate-800 rounded-full mb-6 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-300 ease-out"
+            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-150 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -112,15 +113,14 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
           {LOADING_STEPS.map((step, idx) => {
             const StepIcon = step.icon;
             const isActive = idx === currentStep;
-            const isCompleted = idx < currentStep;
-            const isPending = idx > currentStep;
+            const isCompleted = idx < currentStep || progress === 100;
 
             return (
               <div
                 key={idx}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-500 ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-300 ${
                   isActive
-                    ? `${step.bgColor} ${step.borderColor} shadow-lg`
+                    ? `${step.bgColor} ${step.borderColor} shadow-lg scale-[1.01]`
                     : isCompleted
                     ? 'bg-slate-800/40 border-slate-700/40'
                     : 'bg-slate-950/30 border-slate-800/30 opacity-40'
