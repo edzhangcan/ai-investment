@@ -20,3 +20,9 @@ frontend/.next/
 Thumbs.db
 .vscode/
 .idea/
+
+# Internal Documentation & Artifacts (Do Not Push)
+/docs/
+
+# AI Agent Skills & Workspace Configurations (Do Not Push)
+/.agents/
