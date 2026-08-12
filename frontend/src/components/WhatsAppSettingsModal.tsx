@@ -103,6 +103,7 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone_number: phoneNumber,
+          optin_keyword: optinKeyword,
           morning_digest_enabled: morningDigest,
           buy_alert_enabled: buyAlert,
           sell_alert_enabled: sellAlert,
@@ -248,9 +249,15 @@ export const WhatsAppSettingsModal: React.FC<WhatsAppSettingsModalProps> = ({
             </div>
 
             <div className="flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-slate-400">2. Verification Keyword:</span>
+              <span className="text-slate-400">2. Twilio Sandbox Keyword:</span>
               <div className="flex items-center gap-2 font-mono font-bold text-amber-300">
-                <span>{optinKeyword}</span>
+                <input
+                  type="text"
+                  value={optinKeyword}
+                  onChange={(e) => setOptinKeyword(e.target.value)}
+                  placeholder="join code-bear"
+                  className="bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400"
+                />
                 <button
                   onClick={() => copyToClipboard(optinKeyword, 'keyword')}
                   className="p-1 hover:text-slate-100 transition-colors cursor-pointer"
