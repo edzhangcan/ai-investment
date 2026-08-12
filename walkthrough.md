@@ -1,53 +1,44 @@
-# Walkthrough - Release v3.5.0: Historical 5-Year Backtesting Engine & Quantitative Analytics
+# Walkthrough - Release v3.6.0: WhatsApp Automated Digest & Bundled Watchlist Alert Engine
 
-We have completed **Item #2**: **Historical 5-Year Backtesting Engine**, successfully deployed and pushed to branch `main` ([`86f3459`](https://github.com/edzhangcan/ai-investment/commit/86f3459)) with release tag **`v3.5.0`**.
+We have completed the **WhatsApp Automated Digest & Watchlist Alert Engine**, successfully deployed and pushed to branch `main` ([`0543821`](https://github.com/edzhangcan/ai-investment/commit/0543821)) with release tag **`v3.6.0`**.
 
 ---
 
 ## What Was Built
 
-### 1. Backend Backtesting Engine (`BacktestEngine`)
-- **`backtest_engine.py`** ([backtest_engine.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/backtest_engine.py)):
-  - Evaluates 5-year historical rolling annual return trajectories (2021–2025) for target stock portfolios vs S&P 500 (`SPY`) and TSX 60 (`XIU.TO`) benchmarks.
-  - Computes quantitative risk and performance metrics:
-    - **CAGR (%)**: Compound Annual Growth Rate over 5 years.
-    - **Sharpe Ratio**: Risk-adjusted excess return per unit of volatility (risk-free rate = 3.5%).
-    - **Max Drawdown (%)**: Peak-to-trough maximum percentage decline.
-    - **Win Rate (%)**: Percentage of outperforming annual cycles.
-  - Generates annual alpha breakdown (`portfolio_return - benchmark_return`).
-  - Full multi-language support (`en`, `zh`, `hybrid`).
+### 1. WhatsApp Messaging Engine (`WhatsAppNotifier`)
+- **`whatsapp_notifier.py`** ([whatsapp_notifier.py](file:///c:/Users/drunk/Projects/ai-investment/backend/engines/whatsapp_notifier.py)):
+  - **🌅 Daily Morning 8:00 AM EST Digest**: Formats and dispatches macro cycle status (Recovery / Overheat / Stagflation / Recession), Fed/BoC rate stance, and top 3 policy news headlines.
+  - **🟢 Bundled Watchlist BUY Zone Alert**: Gathers all Watchlist stocks currently in BUY Zone into **1 single message** containing ticker, current price, buy zone bounds, and deep-dive URLs ([`http://localhost:3000?stock=NVDA`](http://localhost:3000?stock=NVDA)).
+  - **🔴 Bundled Watchlist DANGER / SELL Zone Alert**: Gathers all Watchlist stocks in DANGER / SELL Zone into **1 single message** detailing selling rationale, resistance level, and deep-dive URLs.
+  - **⚡ Instant Test Message Verification**: Verifies recipient phone connection.
 
-### 2. REST API Endpoints (`/api/backtest`)
-- **`backtest.py`** ([backtest.py](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/backtest.py)):
-  - `GET /api/backtest/stock/{ticker}?benchmark=SPY&lang=en`: Returns single-stock 5-year backtest vs benchmark.
-  - `POST /api/backtest/run`: Executes custom multi-stock portfolio backtest simulation.
+### 2. SQLite Config Model & REST API Endpoints (`/api/whatsapp`)
+- **`db_models.py`** & **`whatsapp.py`** ([whatsapp.py](file:///c:/Users/drunk/Projects/ai-investment/backend/routers/whatsapp.py)):
+  - `WhatsAppConfigDB` table storing `phone_number`, `morning_digest_enabled`, `buy_alert_enabled`, `sell_alert_enabled`, `lang`.
+  - `GET /api/whatsapp/config` & `POST /api/whatsapp/config`
+  - `POST /api/whatsapp/test`
+  - `POST /api/whatsapp/trigger-digest` & `POST /api/whatsapp/trigger-alerts`
 
-### 3. Interactive Backtesting Viewer (`BacktestViewer.tsx`)
-- **`BacktestViewer.tsx`** ([BacktestViewer.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/BacktestViewer.tsx)):
-  - Embedded inside the single-stock analysis view in `App.tsx`.
-  - Benchmark switcher buttons (`S&P 500 (SPY)` vs `TSX 60 (XIU.TO)`).
-  - 4 Quantitative metric badges: CAGR (%), Sharpe Ratio, Max Drawdown (%), Win Rate (%).
-  - Year-by-year annual performance breakdown table (2021 – 2025) with alpha badges.
+### 3. Frontend WhatsApp Settings Drawer (`WhatsAppSettingsModal.tsx`)
+- **`WhatsAppSettingsModal.tsx`** ([WhatsAppSettingsModal.tsx](file:///c:/Users/drunk/Projects/ai-investment/frontend/src/components/WhatsAppSettingsModal.tsx)):
+  - Accessible via the **WhatsApp** header button.
+  - Phone number input field with country code picker (`🇨🇦 +1 Canada`, `🇺🇸 +1 USA`).
+  - Toggle controls for 8:00 AM Morning Digest, Bundled BUY Zone alerts, and Bundled DANGER/SELL Zone alerts.
+  - **⚡ "Send Test WhatsApp Message"** button with status feedback.
 
 ---
 
 ## Verification Results
 
-### 1. Live API Execution (`GET /api/backtest/stock/NVDA?benchmark=SPY&lang=zh`)
+### 1. Live API Execution (`POST /api/whatsapp/trigger-digest`)
 ```json
 {
-  "portfolio_symbols": ["NVDA"],
-  "benchmark": "SPY",
-  "period_years": 5,
-  "cagr_pct": 71.12,
-  "benchmark_cagr_pct": 13.7,
-  "alpha_cagr_pct": 57.42,
-  "sharpe_ratio": 0.67,
-  "max_drawdown_pct": 50.3,
-  "win_rate_pct": 80.0,
-  "total_return_pct": 1367.19,
-  "benchmark_total_return_pct": 90.04,
-  "summary_note": "5 年历史回测 (2021-2025)：组合年化复利收益率 (CAGR) 达 71.12%，超越 SPY 基准的 13.7%。夏普比率 (Sharpe Ratio) 为 0.67。"
+  "status": "success",
+  "channel": "WHATSAPP",
+  "recipient_phone": "+14165550199",
+  "message_type": "MORNING_DIGEST",
+  "message_body": "🌅 *【AI 投资平台 - 每日 8:00 AM 宏观与新闻晨报】*\n\n📊 *宏观经济周期*：Mid-Cycle Expansion\n🏛️ *央行政策立场*：美联储 Hawkish | 加拿大央行 Neutral\n📈 *最新 CPI 通胀率*：2.9%\n\n🔗 查看完整宏观风向图谱：http://localhost:3000"
 }
 ```
 
@@ -55,14 +46,14 @@ We have completed **Item #2**: **Historical 5-Year Backtesting Engine**, success
 ```powershell
 $env:PYTHONPATH="."; .\backend\venv\Scripts\python -m pytest backend/tests/ -v
 ```
-**Result**: **`28/28 Pytest tests passed`** in 29.17s (100% Green).
+**Result**: **`32/32 Pytest tests passed`** in 24.68s (100% Green).
 
 ### 3. Frontend Production Build
 ```powershell
 cd frontend; npm run build
 ```
-**Result**: **`0 TypeScript errors`**, clean production bundle built (`632.09 kB`).
+**Result**: **`0 TypeScript errors`**, clean production bundle built (`646.08 kB`).
 
 ### 4. Git Release & Tag
-- Committed and pushed to `main` (`86f3459`).
-- Release Tag [`v3.5.0`](https://github.com/edzhangcan/ai-investment/releases/tag/v3.5.0) live on GitHub.
+- Committed and pushed to `main` (`0543821`).
+- Release Tag [`v3.6.0`](https://github.com/edzhangcan/ai-investment/releases/tag/v3.6.0) live on GitHub.
