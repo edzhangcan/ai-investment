@@ -115,7 +115,11 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       }`}>
         <div className="flex items-center gap-2 font-bold mb-1 text-slate-100">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{t.cycleStage}: <span className="text-emerald-400">{macroData.cycle_stage}</span></span>
+          <span>
+            <BilingualHoverCard termKey="MacroCycle" isPlainTalk={isPlainTalk}>
+              {t.cycleStage}
+            </BilingualHoverCard>: <span className="text-emerald-400">{macroData.cycle_stage}</span>
+          </span>
         </div>
         <p className="text-slate-300">{macroData.plain_explanation}</p>
       </div>
@@ -170,14 +174,24 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/80 bg-slate-900/60">
-              {factsList.map((fact, idx) => (
-                <tr key={idx} className="hover:bg-slate-800/50 transition-colors">
-                  <td className="p-3 font-semibold text-slate-100">{fact.indicator}</td>
-                  <td className="p-3 font-extrabold text-emerald-400">{fact.value}</td>
-                  <td className="p-3 text-slate-400">{fact.source}</td>
-                  <td className="p-3 text-slate-300">{fact.impact}</td>
-                </tr>
-              ))}
+              {factsList.map((fact, idx) => {
+                let key = "YieldSpread";
+                if (fact.indicator.toLowerCase().includes("fed") || fact.indicator.toLowerCase().includes("rate")) key = "FedSentiment";
+                else if (fact.indicator.toLowerCase().includes("cpi") || fact.indicator.toLowerCase().includes("gdp")) key = "MacroCycle";
+                
+                return (
+                  <tr key={idx} className="hover:bg-slate-800/50 transition-colors">
+                    <td className="p-3 font-semibold text-slate-100">
+                      <BilingualHoverCard termKey={key} isPlainTalk={isPlainTalk}>
+                        {fact.indicator}
+                      </BilingualHoverCard>
+                    </td>
+                    <td className="p-3 font-extrabold text-emerald-400">{fact.value}</td>
+                    <td className="p-3 text-slate-400">{fact.source}</td>
+                    <td className="p-3 text-slate-300">{fact.impact}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

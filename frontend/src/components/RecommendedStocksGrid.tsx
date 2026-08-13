@@ -220,7 +220,11 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                   </div>
 
                   <div className="bg-slate-950/80 p-2 rounded-xl border border-slate-800/80">
-                    <span className="text-[10px] text-slate-400 block truncate">{t.buyZone}</span>
+                    <span className="text-[10px] text-slate-400 block truncate">
+                      <BilingualHoverCard termKey="IdealBuyZone" isPlainTalk={isPlainTalk}>
+                        {t.buyZone}
+                      </BilingualHoverCard>
+                    </span>
                     <span className="font-bold text-amber-300 truncate block">{rec.key_metrics.ideal_buy_range}</span>
                   </div>
                 </div>
