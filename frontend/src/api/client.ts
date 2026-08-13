@@ -1,6 +1,12 @@
 import { StockAnalysisResponse, MacroData } from '../types';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined' && window.location.hostname) {
+    return `http://${window.location.hostname}:8000`;
+  }
+  return 'http://127.0.0.1:8000';
+};
+export const API_BASE_URL = getApiBaseUrl();
 
 export async function fetchMacroAnalysis(lang: string = "en"): Promise<MacroData> {
   const res = await fetch(`${API_BASE_URL}/api/macro?lang=${lang}`);

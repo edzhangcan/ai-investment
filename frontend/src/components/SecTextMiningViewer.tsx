@@ -35,7 +35,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
     const fetchMiningData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/stock/${symbol}/filings/mining?lang=${language}`);
+        const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/stock/${symbol}/filings/mining?lang=${language}`);
         if (res.ok) {
           const json = await res.json();
           setData(json);

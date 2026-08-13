@@ -52,7 +52,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
     const fetchBacktest = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/backtest/stock/${symbol}?benchmark=${benchmark}&lang=${language}`);
+        const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/backtest/stock/${symbol}?benchmark=${benchmark}&lang=${language}`);
         if (res.ok) {
           const json = await res.json();
           setData(json);

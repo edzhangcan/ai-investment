@@ -34,7 +34,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   const fetchWatchlist = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/watchlist');
+      const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/watchlist`);
       if (res.ok) {
         const json = await res.json();
         setItems(json);
@@ -68,7 +68,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
     };
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/watchlist', {
+      const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/watchlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -91,7 +91,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
 
   const handleDelete = async (symbol: string) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/watchlist/${symbol}`, { method: 'DELETE' });
+      await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/watchlist/${symbol}`, { method: 'DELETE' });
       setItems(items.filter((i) => i.symbol !== symbol));
       if (onWatchlistChange) onWatchlistChange();
     } catch (e) {

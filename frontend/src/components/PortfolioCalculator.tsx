@@ -54,7 +54,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
   const calculateSizing = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/portfolio/calculate', {
+      const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/portfolio/calculate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
