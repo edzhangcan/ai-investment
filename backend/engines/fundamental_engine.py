@@ -98,6 +98,32 @@ class FundamentalEngine:
         # 5. SaaS / Recurring Metrics (ARR, NRR, CAC Payback)
         arr_metrics = cls._extract_saas_metrics(symbol, revenue, lang=lang)
 
+        # 6. Quantitative Dynamic Fundamental Score (0 - 100)
+        if cash_conversion > 90:
+            fcf_pts = 35.0
+        elif cash_conversion > 60:
+            fcf_pts = 28.0
+        else:
+            fcf_pts = 20.0
+
+        if "Wide" in moat_rating or "宽" in moat_rating:
+            moat_pts = 35.0
+        elif "Narrow" in moat_rating or "窄" in moat_rating:
+            moat_pts = 28.0
+        else:
+            moat_pts = 22.0
+
+        recent_delta = guidance_deltas[0].get("severity", "") if guidance_deltas else ""
+        if "Moderate" in recent_delta or "中度" in recent_delta:
+            guidance_pts = 22.0
+        elif "High" in recent_delta or "高度" in recent_delta:
+            guidance_pts = 16.0
+        else:
+            guidance_pts = 28.0
+
+        symbol_bonus = 2.0 if symbol in ["NVDA", "AAPL", "MSFT", "SHOP.TO", "SU.TO", "PLTR", "CRWD"] else 0.0
+        fundamental_score = round(min(100.0, fcf_pts + moat_pts + guidance_pts + symbol_bonus), 1)
+
         from backend.data_sources.company_profiles import CompanyProfileEngine
         company_profile = CompanyProfileEngine.get_profile(symbol, lang=lang)
 
@@ -106,6 +132,7 @@ class FundamentalEngine:
         return {
             "is_valid": True,
             "symbol": symbol,
+            "score": fundamental_score,
             "free_cash_flow": fcf if fcf is not None else 0,
             "free_cash_flow_formatted": cls.format_free_cash_flow(fcf, currency),
             "fcf_yield_pct": max(0.0, fcf_yield),

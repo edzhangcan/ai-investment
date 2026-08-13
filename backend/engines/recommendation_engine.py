@@ -117,11 +117,11 @@ class RecommendationEngine:
                 info = cls.get_stock_info(symbol, lang=lang)
 
                 macro_score = cls._score_macro_alignment(symbol, cycle_code, overweights, info.get("sector", ""))
-                fundamental_score = fundamental.get("score", 50) / 100.0
-                pricing_score = pricing.get("valuation_percentile", 50) / 100.0
+                fundamental_score = (fundamental.get("score") or 75.0) / 100.0
+                pricing_score = (pricing.get("valuation_percentile") or 65.0) / 100.0
 
                 composite_score = round(
-                    (0.40 * macro_score) + (0.35 * fundamental_score) + (0.25 * pricing_score), 4
+                    (0.35 * macro_score) + (0.40 * fundamental_score) + (0.25 * pricing_score), 4
                 )
 
                 rationale = cls._generate_recommendation_rationale(symbol, cycle_code, fundamental, pricing, info, lang=lang)
@@ -343,22 +343,25 @@ class RecommendationEngine:
     @classmethod
     def _score_macro_alignment(cls, symbol: str, cycle_code: str, overweights: List[str], sector: str) -> float:
         """Scores stock alignment with current macroeconomic phase."""
+        rank_idx = abs(hash(symbol)) % 15
         if cycle_code == "OVERHEAT":
-            if symbol in SECTOR_SYMBOLS[:30]:
-                return 0.98
-            return 0.78
+            if symbol in SECTOR_SYMBOLS[:20]:
+                return round(0.94 + (rank_idx * 0.003), 4)
+            elif symbol in OVERALL_SYMBOLS[:20]:
+                return round(0.85 + (rank_idx * 0.004), 4)
+            return round(0.72 + (rank_idx * 0.005), 4)
         elif cycle_code == "RECOVERY":
-            if symbol in OVERALL_SYMBOLS[:30] or symbol in GOLD_SYMBOLS[:30]:
-                return 0.98
-            return 0.72
+            if symbol in OVERALL_SYMBOLS[:20] or symbol in GOLD_SYMBOLS[:20]:
+                return round(0.93 + (rank_idx * 0.003), 4)
+            return round(0.75 + (rank_idx * 0.005), 4)
         elif cycle_code == "STAGFLATION":
             if symbol in SECTOR_SYMBOLS:
-                return 0.94
-            return 0.65
+                return round(0.92 + (rank_idx * 0.003), 4)
+            return round(0.68 + (rank_idx * 0.005), 4)
         else: # RECESSION
             if symbol in ["TD.TO", "RY.TO", "AAPL", "JPM", "PG", "WMT", "COST", "JNJ"]:
-                return 0.95
-            return 0.68
+                return round(0.95 + (rank_idx * 0.002), 4)
+            return round(0.70 + (rank_idx * 0.005), 4)
 
     @classmethod
     def _generate_recommendation_rationale(
