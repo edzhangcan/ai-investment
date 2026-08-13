@@ -26,3 +26,8 @@ Thumbs.db
 
 # AI Agent Skills & Workspace Configurations (Do Not Push)
 /.agents/
+
+*.db-wal
+*.db-shm
+*.sqlite3
+backend/*.db
