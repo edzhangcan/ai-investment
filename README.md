@@ -1,4 +1,4 @@
-# Institutional AI Investment Workstation
+# AI Investment Workstation
 
 [English](README.md) | [中文](README.zh-CN.md)
 
@@ -6,100 +6,52 @@
 [![Tests](https://img.shields.io/badge/pytest-49%2F49%20passing-brightgreen.svg)](file:///c:/Users/drunk/Projects/ai-investment/backend/tests)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An institutional-grade, AI-powered investment workstation for US and Canadian equities. The platform synthesizes macroeconomic indicators (FRED API, Fed/BoC monetary policy streams), authentic 5-year SEC 10-K & SEDAR+ official filings, Morningstar 5-Factor Moat metrics, 2-Stage DCF intrinsic fair valuation, technical support overlays (200D SMA & 14D RSI), multi-agent Bull/Bear/CIO investment debates, and multi-channel zero-KYC push notifications.
+An investment copilot built for everyday investors in US and Canadian stock markets. It combines interest rate trends, official company financial reports, and multi-agent AI debates into one clear dashboard. Instead of spending hours reading earnings filings or guessing fair stock prices, you get clear buy target brackets, verified growth drivers, and objective risk warnings.
 
----
+## Core Features
 
-## 🌟 Core Features & Modules
+- **Macro Trend Scanner**: Tracks inflation rates, central bank interest decisions, and economic news across the US and Canada so you know when the market favors growth stocks versus stable dividend payers.
+- **128 Stock Recommendation Cards**: Ranks US tech leaders, Canadian energy and bank blue-chips, and mid-cap growth stocks into three clear categories: Sector Champions, Core Leaders, and Gold Nuggets.
+- **Fair Value and Buy Zones**: Gives you a clear price range for each stock based on free cash flow and moving averages. You know exactly what price offers a safe entry before buying.
+- **Authentic Company Profiles**: Shows real business descriptions, top revenue channels, and 3 to 4 specific growth catalysts for every company. No generic placeholder text or missing numbers.
+- **Multi-Agent AI Debate Arena**: Hear two distinct AI perspectives (a Bull advocate and a Bear prosecutor) debate each stock, followed by a final verdict and position sizing advice from a Chief Investment Officer agent.
+- **Instant Alerts**: Connect Discord or custom webhooks to receive real-time notifications when a recommended stock drops into your target buy range.
+- **Plain-Talk Mode**: Switch between English, Chinese, or a hybrid mode with popover explanations that translate complex financial jargon into everyday language.
 
-### 1. 128-Stock North American Institutional Universe
-- **Coverage**: 128 premier North American equities spanning US Tech Leaders, Canadian Energy & Banking Giants, and High-Growth Niche Gems (`NVDA`, `AAPL`, `MSFT`, `AMZN`, `GOOGL`, `META`, `TSLA`, `SHOP.TO`, `SU.TO`, `ENB.TO`, `TD.TO`, `PLTR`, `CRWD`, `CELH`, etc.).
-- **Zero Fabrication Policy**: Free cash flow, revenue drivers, and corporate backgrounds are pulled from authentic SEC/SEDAR filings and institutional registries—never defaulted to static constants.
+## Quick Start
 
-### 2. Multi-Factor Dynamic Composite Scoring Engine
-- **Continuous Distribution (0 - 100)**: Evaluates stocks using a weighted quantitative formula:
-  $$\text{Composite Score} = (0.35 \times \text{Macro Score}) + (0.40 \times \text{Fundamental Score}) + (0.25 \times \text{Pricing Score})$$
-- Generates distinct, continuous scores per stock (e.g. NVDA `94/100`, AMZN `88/100`, SHOP.TO `87/100`, CELH `85/100`).
+### What You Need
+- Python 3.11 or newer
+- Node.js 18 or newer
 
-### 3. Authentic Corporate Profiles & Growth Catalysts (`company_profiles.py`)
-- Provides verified business summaries, 3-4 specific key growth catalysts, and percentage-based revenue driver breakdowns across US and Canadian equities in English, Chinese, and Hybrid modes.
-- Fallback dynamic lookup via `yfinance.longBusinessSummary` for unmapped searched tickers.
-
-### 4. Multi-Agent AI Investment Arena
-- Features real-time debates between **Bull Case Advocate 🐂**, **Bear Case Prosecutor 🐻**, and **Chief Investment Officer (CIO) 👨‍⚖️** with position sizing guidance, risk-reward ratios, and trade entry brackets.
-
-### 5. Multi-Channel Zero-KYC Push Alerts (`push_notifier.py`)
-- Automated notification dispatching across **Discord Webhooks**, **Custom Webhooks**, **Email SMTP**, and **Mobile Push** with zero user registration required.
-
----
-
-## ⚡ Quick Start
-
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-
-### 1. Backend Setup
+### Step 1: Start the Backend Server
 ```powershell
-# Navigate to project root, create virtual environment and install packages
 python -m venv backend/venv
 .\backend\venv\Scripts\pip install -r backend/requirements.txt
-
-# Start FastAPI backend server (runs on http://127.0.0.1:8000)
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python backend/main.py
 ```
 
-### 2. Frontend Setup
+### Step 2: Start the Web Dashboard
 ```powershell
-# Open a new terminal, install dependencies, and start dev server
 cd frontend
 npm install
 npm run dev
 ```
-Open `http://localhost:3000` in your browser.
+Open `http://localhost:3000` in your web browser.
 
----
-
-## 📁 Repository Architecture
-
-```
-ai-investment/
-├── backend/
-│   ├── data_sources/    # SEC EDGAR 10-K, SEDAR+, FRED API, News scrapers & Company Profiles
-│   ├── database/        # SQLite WAL storage for watchlists, alert logs & snapshots
-│   ├── engines/         # Macro, Fundamental, Pricing, Recommendation, Backtest, & Portfolio engines
-│   ├── models/          # SQLModel database schemas & Pydantic REST models
-│   ├── routers/         # FastAPI REST API route handlers
-│   ├── services/        # Price Alert Engine & Multi-Channel Push Notifier
-│   ├── tests/           # 49 Pytest automated unit tests
-│   └── main.py          # FastAPI application entry point
-├── frontend/
-│   ├── src/
-│   │   ├── components/  # React components (Dashboard, Deep Dive, Pricing Chart, Debate Arena)
-│   │   ├── context/     # Language Provider (EN / ZH / Hybrid)
-│   │   ├── i18n/        # Multi-language translation dictionaries
-│   │   └── App.tsx      # Main application dashboard
-│   └── package.json
-└── README.md
-```
-
----
-
-## 🧪 Testing & Verification
+## Testing
 
 ```powershell
-# Run backend Pytest automated test suite (49 passing)
+# Run backend test suite (49 tests passing)
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python -m pytest backend/tests/ -v
 
-# Run frontend TypeScript build check
+# Test frontend build
 cd frontend
 npm run build
 ```
 
----
-
-## 📜 License
+## License
 
 Distributed under the MIT License. See `LICENSE` for details.
