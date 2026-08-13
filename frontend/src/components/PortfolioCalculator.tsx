@@ -102,11 +102,11 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
           <div>
             <h2 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-300 bg-clip-text text-transparent">
               <BilingualHoverCard termKey="PositionSizing" isPlainTalk={isPlainTalk}>
-                Portfolio Position Sizing & Rebalancing Calculator
+                {t.calcTitle}
               </BilingualHoverCard>
             </h2>
             <p className="text-xs text-slate-400">
-              Risk-adjusted dollar allocations & exact share counts based on CIO position sizing models
+              {t.calcSubtitle}
             </p>
           </div>
         </div>
@@ -117,7 +117,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
               <DollarSign className="w-4 h-4 text-emerald-400" />
-              <span>Investment Capital ({currency})</span>
+              <span>{t.calcCapitalLabel} ({currency})</span>
             </label>
             <input
               type="number"
@@ -146,7 +146,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
               <Sliders className="w-4 h-4 text-indigo-400" />
-              <span>Risk Preference Model</span>
+              <span>{t.calcRiskModelLabel}</span>
             </label>
             <div className="space-y-1.5">
               {(['CONSERVATIVE', 'BALANCED', 'AGGRESSIVE'] as const).map((profile) => (
@@ -160,14 +160,14 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
                   }`}
                 >
                   <span>
-                    {profile === 'CONSERVATIVE' && '🛡️ Conservative (保守)'}
-                    {profile === 'BALANCED' && '⚖️ Balanced (稳健)'}
-                    {profile === 'AGGRESSIVE' && '🚀 Aggressive (激进)'}
+                    {profile === 'CONSERVATIVE' && t.calcConservative}
+                    {profile === 'BALANCED' && t.calcBalanced}
+                    {profile === 'AGGRESSIVE' && t.calcAggressive}
                   </span>
                   <span className="text-[10px] opacity-80">
-                    {profile === 'CONSERVATIVE' && 'Max 3% / Stock'}
-                    {profile === 'BALANCED' && 'Max 5% / Stock'}
-                    {profile === 'AGGRESSIVE' && 'Max 8% / Stock'}
+                    {profile === 'CONSERVATIVE' && `${t.calcMaxPerStock} 3%`}
+                    {profile === 'BALANCED' && `${t.calcMaxPerStock} 5%`}
+                    {profile === 'AGGRESSIVE' && `${t.calcMaxPerStock} 8%`}
                   </span>
                 </button>
               ))}
@@ -178,7 +178,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
               <Coins className="w-4 h-4 text-amber-400" />
-              <span>Base Currency</span>
+              <span>{t.calcCurrencyLabel}</span>
             </label>
             <div className="flex gap-2 mb-3">
               {(['USD', 'CAD'] as const).map((curr) => (
@@ -199,11 +199,11 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
             {data && (
               <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs">
                 <div className="flex justify-between text-slate-400 mb-1">
-                  <span>Equities ({data.equity_allocation_pct}%):</span>
+                  <span>{t.calcEquities} ({data.equity_allocation_pct}%):</span>
                   <span className="font-bold text-emerald-400">${data.total_allocated_dollars.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>Cash Reserve ({data.cash_buffer_pct}%):</span>
+                  <span>{t.calcCashReserve} ({data.cash_buffer_pct}%):</span>
                   <span className="font-bold text-amber-300">${data.residual_unallocated_cash.toLocaleString()}</span>
                 </div>
               </div>
@@ -229,11 +229,11 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="p-3.5">Asset & Ticker</th>
-                  <th className="p-3.5">Current Price</th>
-                  <th className="p-3.5">Target Weight</th>
-                  <th className="p-3.5 text-emerald-400 font-bold">Executable Shares</th>
-                  <th className="p-3.5 text-right">Target Dollar</th>
+                  <th className="p-3.5">{t.calcTableAsset}</th>
+                  <th className="p-3.5">{t.calcTablePrice}</th>
+                  <th className="p-3.5">{t.calcTableWeight}</th>
+                  <th className="p-3.5 text-emerald-400 font-bold">{t.calcTableShares}</th>
+                  <th className="p-3.5 text-right">{t.calcTableDollar}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/80 bg-slate-900/50">
@@ -268,7 +268,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
                     </td>
                     <td className="p-3.5">
                       <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl font-mono font-extrabold text-xs">
-                        {item.executable_shares} shares
+                        {item.executable_shares} {t.calcSharesUnit}
                       </span>
                     </td>
                     <td className="p-3.5 text-right font-mono font-bold text-slate-100">
@@ -284,13 +284,13 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
         {/* Modal Action Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-slate-800">
           <span className="text-[11px] text-slate-400">
-            *Positions sized strictly to floor integer share counts. Remaining cash retained in portfolio reserve.
+            {t.calcFooterNotice}
           </span>
           <button
             onClick={onClose}
             className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold rounded-xl text-xs transition-all cursor-pointer"
           >
-            Close Calculator
+            {t.calcCloseBtn}
           </button>
         </div>
       </div>

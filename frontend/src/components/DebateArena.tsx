@@ -35,7 +35,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
               )}
             </h3>
             <p className="text-xs text-slate-400">
-              🐂 Bull Agent vs 🐻 Bear Agent Data Debate $\rightarrow$ 👨‍⚖️ CIO Verdict & Evidence Verification
+              {t.debateSubtitle}
             </p>
           </div>
         </div>

@@ -178,9 +178,9 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px]">
             <tr>
-              <th className="p-3.5">Filing Year</th>
-              <th className="p-3.5 text-emerald-400 font-bold">{symbol} Return</th>
-              <th className="p-3.5 text-slate-300">{data.benchmark} Return</th>
+              <th className="p-3.5">{t.filingYear}</th>
+              <th className="p-3.5 text-emerald-400 font-bold">{symbol} {t.returnHeader}</th>
+              <th className="p-3.5 text-slate-300">{data.benchmark} {t.returnHeader}</th>
               <th className="p-3.5 text-right font-bold">
                 <BilingualHoverCard termKey="Alpha" isPlainTalk={isPlainTalk}>
                   {t.alpha}

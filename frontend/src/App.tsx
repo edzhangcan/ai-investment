@@ -438,7 +438,7 @@ export const App: React.FC = () => {
                       <div>
                         <div className="text-xs text-slate-400">
                           <BilingualHoverCard termKey="FCF" isPlainTalk={isPlainTalk}>
-                            Free Cash Flow (FCF)
+                            {t.freeCashFlow}
                           </BilingualHoverCard>
                         </div>
                         <div className="text-base font-bold text-emerald-400">
@@ -450,7 +450,7 @@ export const App: React.FC = () => {
                       <div>
                         <div className="text-xs text-slate-400">
                           <BilingualHoverCard termKey="PE" isPlainTalk={isPlainTalk}>
-                            Price-to-Earnings (P/E)
+                            {t.peRatio}
                           </BilingualHoverCard>
                         </div>
                         <div className="text-base font-bold text-indigo-400">
@@ -479,7 +479,7 @@ export const App: React.FC = () => {
                         <div className="bg-gradient-to-r from-emerald-950/40 via-teal-950/20 to-slate-950 border border-emerald-500/30 p-4 rounded-2xl">
                           <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-400 mb-1.5">
                             <TrendingUp className="w-4 h-4" />
-                            <span>Why Invest Now (为什么此时推荐配置)</span>
+                            <span>{t.whyInvestNow}</span>
                           </div>
                           <p className="text-xs text-slate-200 leading-relaxed font-medium">
                             {matchedRec.why_recommend_rationale}
@@ -490,7 +490,7 @@ export const App: React.FC = () => {
                           <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
                             <div className="flex items-center gap-2 font-bold text-slate-300 mb-1.5">
                               <Layers className="w-4 h-4 text-indigo-400" />
-                              <span>Company Business Background (主营业务背景)</span>
+                              <span>{t.companyBackground}</span>
                             </div>
                             <p className="text-xs text-slate-300 leading-relaxed">
                               {matchedRec.company_background}
@@ -500,7 +500,7 @@ export const App: React.FC = () => {
                           <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
                             <div className="flex items-center gap-2 font-bold text-slate-300 mb-2">
                               <Sparkles className="w-4 h-4 text-amber-400" />
-                              <span>Growth Catalysts & Revenue Drivers (核心增长催化剂)</span>
+                              <span>{t.growthCatalysts}</span>
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {matchedRec.key_catalysts?.map((cat: string, idx: number) => (
