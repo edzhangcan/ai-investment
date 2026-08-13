@@ -1,4 +1,44 @@
 {
+  "IdealBuyZone": {
+    "term_en": "Ideal Buy Zone (Margin of Safety)",
+    "term_zh": "理想建仓买入区 (安全边际)",
+    "definition_en": "Target price range where a stock trades at a significant discount (e.g. 15-30%) below its intrinsic valuation, offering a strong margin of safety.",
+    "definition_zh": "股票价格相比其内在真实估值出现大幅打折（如折价 15%-30%）的合理建仓价格区间，具备充裕的安全边际。",
+    "analogy_en": "Buying a high-end designer winter coat during a Black Friday end-of-season clearance sale when it's discounted 30% below retail tag price.",
+    "analogy_zh": "就像在黑五打折季买大牌羽绒服，用 7 折甚至更高的折扣拿货，买得便宜自然不容易亏本。"
+  },
+  "YieldCurveTransition": {
+    "term_en": "Yield Curve Transition (Late-Cycle Phase)",
+    "term_zh": "收益率曲线过渡 (经济晚期阶段)",
+    "definition_en": "Macroeconomic transition phase where long-term and short-term bond yield spreads invert or un-invert, signaling a shift from peak interest rate hikes toward an economic slowdown.",
+    "definition_zh": "长短期国债收益率利差发生倒挂或解挂的宏观阶段，标志着经济从央行加息顶峰向增速放缓转折。",
+    "analogy_en": "The engine temperature warning dashboard light blinking on a long highway road trip — signaling it's time to ease off the gas pedal and inspect the brakes before a slowdown.",
+    "analogy_zh": "就像长途自驾游时仪表盘发动机水温警报灯开始闪烁，提醒司机该踩刹车减速、检查车况，防范前方路段坑洼。"
+  },
+  "YieldSpread": {
+    "term_en": "10Y-2Y Treasury Yield Spread",
+    "term_zh": "10年-2年期国债收益率利差 (收益率倒挂)",
+    "definition_en": "The interest rate difference between 10-year long-term benchmark bonds and 2-year short-term Treasury notes. Negative spread indicates yield curve inversion.",
+    "definition_zh": "基准 10 年期长期国债与 2 年期短期国债收益率的利差。负利差代表‘倒挂’，属于历史可靠的经济衰退前兆。",
+    "analogy_en": "Comparing a 10-year fixed mortgage interest rate against a 2-year short-term bank deposit rate. Normally long loans pay higher interest; when short rates pay higher, money is inverted.",
+    "analogy_zh": "对比 10 年期长期房贷利率与 2 年期短期存款利率。正常情况下借钱时间越长利息越高，如果存短期的利息比借长期的还高，说明市场资金‘颠倒错乱’。"
+  },
+  "MDA": {
+    "term_en": "MD&A (Management Discussion & Analysis)",
+    "term_zh": "MD&A (管理层讨论与分析)",
+    "definition_en": "Section 7 of the SEC 10-K filing where corporate C-suite executives explain operating results, risk factors, liquidity, and future business guidance in plain narrative text.",
+    "definition_zh": "SEC 10-K 财报第 7 章节，由公司 CEO 与 CFO 等高管亲自撰写，详细说明经营成败原因、资金流动性与未来风险隐患。",
+    "analogy_en": "The company CEO's honest annual diary entry and report card explanation, detailing what went right, what went wrong, and potential storm clouds ahead.",
+    "analogy_zh": "公司 CEO 的年度自白书与体检问诊单，由高管亲笔交代这一年哪儿赚了钱、哪儿踩了坑以及后面有什么隐患。"
+  },
+  "ROIC": {
+    "term_en": "Return on Invested Capital (ROIC)",
+    "term_zh": "资本回报率 (ROIC / 造血效率)",
+    "definition_en": "Measures how efficiently a company allocates capital to generate net operating profit. ROIC above 15% indicates superior capital efficiency and moat strength.",
+    "definition_zh": "衡量公司将投入的资本转化为净营业利润的造血效率。ROIC > 15% 代表资金效率极高，护城河稳固。",
+    "analogy_en": "Getting $20 back in clear profit every single year for every $100 you invested into building a lemonade stand.",
+    "analogy_zh": "你每给奶茶店投入 100 块钱本金，店里每年能净赚回 20 块钱利润，造血回报率就是 20%。"
+  },
   "FCF": {
     "term_en": "Free Cash Flow (FCF)",
     "term_zh": "自由现金流 (口袋净现金)",
