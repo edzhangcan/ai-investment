@@ -144,7 +144,7 @@ class RecommendationEngine:
                     "company_background": info["company_background"].get(lang, info["company_background"]["en"]),
                     "core_drivers": info["core_drivers"].get(lang, info["core_drivers"]["en"]),
                     "key_metrics": {
-                        "free_cash_flow": f"${round((fundamental.get('free_cash_flow') or 2500000000) / 1e9, 2)}B USD",
+                        "free_cash_flow": fundamental.get("free_cash_flow_formatted") or FundamentalEngine.format_free_cash_flow(stock_raw.get("free_cash_flow"), stock_raw.get("currency", "USD")),
                         "pe_ratio": stock_raw.get("pe_ratio") or 22.5,
                         "moat_rating": fundamental.get("moat_rating", "Wide Moat"),
                         "two_hundred_day_sma": pricing.get("two_hundred_day_sma", 100.0),

@@ -229,7 +229,9 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                         {t.freeCashFlow}
                       </BilingualHoverCard>
                     </span>
-                    <span className="font-bold text-emerald-400">${rec.key_metrics.free_cash_flow_b}B</span>
+                    <span className="font-bold text-emerald-400">
+                      {rec.key_metrics.free_cash_flow || (rec.key_metrics.free_cash_flow_b ? `$${rec.key_metrics.free_cash_flow_b}B` : 'N/A')}
+                    </span>
                   </div>
 
                   <div className="bg-slate-950/80 p-2 rounded-xl border border-slate-800/80">

@@ -466,9 +466,11 @@ export const App: React.FC = () => {
                           </BilingualHoverCard>
                         </div>
                         <div className="text-base font-bold text-emerald-400">
-                          {stockData.stock.free_cash_flow && stockData.stock.free_cash_flow > 0
-                            ? `$${(stockData.stock.free_cash_flow / 1e9).toFixed(1)}B`
-                            : 'N/A (ETF/Index)'}
+                          {stockData.stock.free_cash_flow && Math.abs(stockData.stock.free_cash_flow) >= 1e9
+                            ? `$${(stockData.stock.free_cash_flow / 1e9).toFixed(2)}B ${stockData.stock.currency || 'USD'}`
+                            : (stockData.stock.free_cash_flow && Math.abs(stockData.stock.free_cash_flow) >= 1e6
+                                ? `$${Math.round(stockData.stock.free_cash_flow / 1e6)}M ${stockData.stock.currency || 'USD'}`
+                                : 'N/A (ETF/Financial)')}
                         </div>
                       </div>
                       <div>
