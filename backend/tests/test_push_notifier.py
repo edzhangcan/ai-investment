@@ -100,3 +100,29 @@ def test_multi_type_push_alert_test_endpoints(
 
     r4 = client.post("/api/push-alerts/test/gold-nuggets", json={"discord_webhook_url": url, "lang": "en"})
     assert r4.status_code == 200 and r4.json()["success"] is True
+
+def test_dispatch_push_alert_endpoint(client: TestClient):
+    with patch("backend.engines.push_notifier.PushNotifier.send_macro_digest_alert") as mock_macro:
+        mock_macro.return_value = {"success": True, "status_code": 204}
+
+        # 1. Dispatch with explicit URL
+        url = "https://discord.com/api/webhooks/123/dispatch"
+        res = client.post("/api/push-alerts/dispatch", json={
+            "discord_webhook_url": url,
+            "alert_type": "macro_digest",
+            "lang": "en"
+        })
+        assert res.status_code == 200
+        assert res.json()["success"] is True
+
+        # 2. Save config and dispatch without explicit URL (fall back to DB config)
+        client.post("/api/push-alerts/config", json={
+            "discord_webhook_url": url,
+            "is_discord_enabled": True
+        })
+        res2 = client.post("/api/push-alerts/dispatch", json={
+            "alert_type": "macro_digest",
+            "lang": "en"
+        })
+        assert res2.status_code == 200
+        assert res2.json()["success"] is True

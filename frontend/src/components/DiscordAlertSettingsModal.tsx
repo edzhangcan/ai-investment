@@ -68,6 +68,9 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
     setActiveTest(testType);
     setToastMessage(null);
     try {
+      // Auto-save configuration to database so all multi-device sessions stay in sync
+      await savePushAlertConfig(webhookUrl.trim(), isEnabled);
+
       if (testType === 'conn') {
         await testDiscordWebhook(webhookUrl.trim(), activeLang);
         setToastMessage({ type: 'success', text: t.discordConnTestSuccess });
