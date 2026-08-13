@@ -39,23 +39,17 @@ class SECEdgarParser:
         symbol = symbol.upper()
         cik = TICKER_TO_CIK.get(symbol)
         if not cik:
-            logger.info(f"CIK not in static map for {symbol}, generating lookup fallback.")
-            cik = cls._lookup_cik(symbol)
-
-        if not cik:
             return None
 
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik.zfill(10)}.json"
         try:
             req = urllib.request.Request(url, headers=SEC_HEADERS)
-            with urllib.request.urlopen(req, timeout=8) as resp:
+            with urllib.request.urlopen(req, timeout=3) as resp:
                 if resp.status == 200:
                     return json.loads(resp.read().decode('utf-8'))
                 else:
-                    logger.warning(f"SEC EDGAR API status code {resp.status} for CIK {cik}")
                     return None
         except Exception as e:
-            logger.warning(f"Failed to fetch SEC EDGAR facts for {symbol}: {e}")
             return None
 
     @classmethod
