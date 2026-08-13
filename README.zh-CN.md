@@ -24,21 +24,25 @@
 - Python 3.11 或更高版本
 - Node.js 18 或更高版本
 
-### 第一步：启动后端服务
+### 方案 A：一键安装与启动（推荐）
+
+1. 双击运行 `install.bat`（Mac/Linux 用户运行 `./install.sh`）一次，自动完成依赖安装与环境配置。
+2. 以后每次使用，直接双击 `start.bat`（Mac/Linux 用户运行 `./start.sh`），浏览器将自动打开 `http://localhost:3000` 工作台。
+
+### 方案 B：手动终端命令行启动
+
 ```powershell
+# 1. 启动后端 API（运行于 http://127.0.0.1:8000）
 python -m venv backend/venv
 .\backend\venv\Scripts\pip install -r backend/requirements.txt
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python backend/main.py
-```
 
-### 第二步：启动前端界面
-```powershell
+# 2. 新开终端窗口，启动前端界面（运行于 http://localhost:3000）
 cd frontend
 npm install
 npm run dev
 ```
-在浏览器中访问 `http://localhost:3000` 即可开始使用。
 
 ## 测试与验证
 
