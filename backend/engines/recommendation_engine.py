@@ -65,6 +65,8 @@ for s in OVERALL_SYMBOLS:
 for s in GOLD_SYMBOLS:
     SYMBOL_CATEGORY_MAP[s] = "GOLD_NUGGET"
 
+from backend.data_sources.company_profiles import CompanyProfileEngine
+
 _SNAPSHOT_LAST_UPDATE = 0
 _SNAPSHOT_TTL_SECONDS = 7200  # 2 hours
 _MEM_RECOMMENDATION_CACHE: Dict[str, Dict[str, Any]] = {}
@@ -73,24 +75,19 @@ class RecommendationEngine:
     """Macro-driven stock recommendation engine with 2-hour DB persistence & ultra-fast parallel execution."""
 
     @classmethod
-    def get_stock_info(cls, symbol: str) -> Dict[str, Any]:
-        """Provides metadata for any stock in the universe."""
-        is_ca = symbol.endswith(".TO") or symbol.endswith(".V")
-        country = "Canadian" if is_ca else "US"
-        category = SYMBOL_CATEGORY_MAP.get(symbol, "OVERALL_LEADER")
+    def get_stock_info(cls, symbol: str, lang: str = "en") -> Dict[str, Any]:
+        """Provides rich metadata and authentic corporate background for any stock in the universe."""
+        category = SYMBOL_CATEGORY_MAP.get(symbol.upper(), "OVERALL_LEADER")
+        profile = CompanyProfileEngine.get_profile(symbol, lang=lang)
         
         return {
-            "company_background": {
-                "en": f"{symbol} is a leading {country} enterprise operating in key growth and value sectors.",
-                "zh": f"{symbol} 是优质 {country} 行业龙头企业，在宏观周期中展现出强劲的资产回报与现金流。",
-                "hybrid": f"{symbol} 为优质 {country} 行业龙头，在宏观周期中具强劲 Returns & Cash Flow."
-            },
-            "core_drivers": {
-                "en": ["Strong Free Cash Flow Conversion", "Macro Sector Tailwind", "Solid Balance Sheet Support"],
-                "zh": ["强劲的自由现金流转换率", "宏观板块顺风优势", "稳健的资产负债表支持"],
-                "hybrid": ["强劲自由现金流 (FCF Conversion)", "宏观板块顺风 (Macro Tailwind)", "资产负债表支持 (Balance Sheet)"]
-            },
-            "sector": "Macro Overweight Sector" if category == "SECTOR_OVERWEIGHT" else ("Core Market Leaders" if category == "OVERALL_LEADER" else "Niche High Growth"),
+            "company_name": profile["company_name"],
+            "company_background": profile["company_background"],
+            "core_drivers": profile["growth_catalysts"],
+            "key_catalysts": profile["growth_catalysts"],
+            "growth_catalysts": profile["growth_catalysts"],
+            "revenue_drivers": profile["revenue_drivers"],
+            "sector": profile.get("sector") or ("Macro Overweight Sector" if category == "SECTOR_OVERWEIGHT" else ("Core Market Leaders" if category == "OVERALL_LEADER" else "Niche High Growth")),
             "category": category
         }
 
@@ -115,9 +112,9 @@ class RecommendationEngine:
                 if not stock_raw.get("is_valid", True):
                     return None
 
-                fundamental = FundamentalEngine.evaluate_fundamentals(stock_raw)
+                fundamental = FundamentalEngine.evaluate_fundamentals(stock_raw, lang=lang)
                 pricing = PricingEngine.evaluate_pricing_and_entry_zone(stock_raw, lang=lang)
-                info = cls.get_stock_info(symbol)
+                info = cls.get_stock_info(symbol, lang=lang)
 
                 macro_score = cls._score_macro_alignment(symbol, cycle_code, overweights, info.get("sector", ""))
                 fundamental_score = fundamental.get("score", 50) / 100.0
@@ -141,8 +138,11 @@ class RecommendationEngine:
                     "fundamental_score": fundamental.get("score", 50),
                     "pricing_score": pricing.get("valuation_percentile", 50),
                     "why_invest_now": rationale,
-                    "company_background": info["company_background"].get(lang, info["company_background"]["en"]),
-                    "core_drivers": info["core_drivers"].get(lang, info["core_drivers"]["en"]),
+                    "company_background": info["company_background"],
+                    "core_drivers": info["core_drivers"],
+                    "key_catalysts": info["key_catalysts"],
+                    "growth_catalysts": info["growth_catalysts"],
+                    "revenue_drivers": info["revenue_drivers"],
                     "key_metrics": {
                         "free_cash_flow": fundamental.get("free_cash_flow_formatted") or FundamentalEngine.format_free_cash_flow(stock_raw.get("free_cash_flow"), stock_raw.get("currency", "USD")),
                         "pe_ratio": stock_raw.get("pe_ratio") or 22.5,

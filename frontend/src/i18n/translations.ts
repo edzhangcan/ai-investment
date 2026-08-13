@@ -63,6 +63,7 @@ export interface Translations {
   whyInvestNow: string;
   companyBackground: string;
   growthCatalysts: string;
+  revenueDrivers: string;
   drillDownAnalysis: string;
   supportLevel: string;
   score: string;
@@ -259,7 +260,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     catGoldDesc: "Non-mainstream mid-cap / niche growth stocks with high upside potential.",
     whyInvestNow: "Why Recommend Now",
     companyBackground: "Company Core Business Background",
-    growthCatalysts: "Growth Catalysts & Revenue Drivers",
+    growthCatalysts: "Key Growth Catalysts",
+    revenueDrivers: "Core Revenue Drivers & Business Segments",
     drillDownAnalysis: "Drill Down Full Analysis",
     supportLevel: "Support Level",
     score: "Score",
@@ -446,6 +448,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     whyInvestNow: "为什么此时推荐配置",
     companyBackground: "主营业务背景",
     growthCatalysts: "核心增长催化剂",
+    revenueDrivers: "核心营收驱动与业务构成",
     drillDownAnalysis: "剖析完整报告",
     supportLevel: "技术支撑位",
     score: "综合评分",
@@ -631,7 +634,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     catGoldDesc: "非散户热搜的中小盘利基龙头，具高 FCF 转换率与强 upside 潜力。",
     whyInvestNow: "为什么此时推荐配置 (Why Recommend Now)",
     companyBackground: "主营业务背景 (Company Background)",
-    growthCatalysts: "核心增长催化剂 (Growth Catalysts)",
+    growthCatalysts: "核心增长催化剂 (Key Catalysts)",
+    revenueDrivers: "核心营收驱动与业务构成 (Revenue Drivers)",
     drillDownAnalysis: "剖析完整报告 (Drill Down Analysis)",
     supportLevel: "技术支撑位 (Support Level)",
     score: "Score",

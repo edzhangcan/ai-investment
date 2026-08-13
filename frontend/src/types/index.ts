@@ -173,10 +173,23 @@ export interface MacroDashboardResponse {
   recommendations: CategorizedRecommendationsPayload;
 }
 
+export interface CompanyProfile {
+  symbol: string;
+  company_name: string;
+  sector: string;
+  company_background: string;
+  growth_catalysts: string[];
+  key_catalysts: string[];
+  revenue_drivers: string[];
+  is_institutional_verified?: boolean;
+}
+
 export interface StockAnalysisResponse {
   stock: StockData;
+  profile?: CompanyProfile;
   macro: MacroData;
   fundamentals: FundamentalData;
   pricing: PricingData;
   debate: DebateData;
+  news: any[];
 }

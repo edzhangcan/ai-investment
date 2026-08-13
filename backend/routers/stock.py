@@ -29,9 +29,11 @@ def analyze_stock(ticker: str, lang: str = "en"):
     pricing_data = PricingEngine.evaluate_pricing_and_entry_zone(stock_data)
     debate_data = MultiAgentArena.run_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
     news_data = NewsClient.fetch_stock_news(symbol)
+    profile_data = fundamental_data.get("company_profile")
 
     return {
         "stock": stock_data,
+        "profile": profile_data,
         "macro": macro_data,
         "fundamentals": fundamental_data,
         "pricing": pricing_data,

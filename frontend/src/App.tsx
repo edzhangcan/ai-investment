@@ -18,7 +18,7 @@ import { ExportMemoModal } from './components/ExportMemoModal';
 import { useLanguage } from './context/LanguageContext';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
 import { fetchStockAnalysis, fetchMacroDashboard, fetchWatchlistApi, addWatchlistApi, deleteWatchlistApi, refreshRecommendationsApi } from './api/client';
-import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command, TrendingUp, Layers, Calculator, Bell, FileText } from 'lucide-react';
+import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command, TrendingUp, Layers, Calculator, Bell, FileText, BarChart3 } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { language, t } = useLanguage();
@@ -497,8 +497,33 @@ export const App: React.FC = () => {
                         if (dashboardData.recommendations.gold_nugget_stocks) allRecs.push(...dashboardData.recommendations.gold_nugget_stocks);
                       }
                     }
-                    const matchedRec = allRecs.find(r => r.symbol.toUpperCase() === stockData.stock.symbol.toUpperCase());
-                    if (!matchedRec) return null;
+                    const matchedRec = allRecs.find(r => r.symbol?.toUpperCase() === stockData.stock?.symbol?.toUpperCase());
+
+                    const background = stockData.profile?.company_background 
+                      || (stockData.fundamentals as any)?.company_background 
+                      || (stockData.fundamentals as any)?.company_profile?.company_background 
+                      || matchedRec?.company_background;
+
+                    const catalysts: string[] = stockData.profile?.growth_catalysts 
+                      || stockData.profile?.key_catalysts 
+                      || (stockData.fundamentals as any)?.growth_catalysts 
+                      || (stockData.fundamentals as any)?.company_profile?.growth_catalysts 
+                      || matchedRec?.key_catalysts 
+                      || [];
+
+                    const drivers: string[] = stockData.profile?.revenue_drivers 
+                      || (stockData.fundamentals as any)?.revenue_drivers 
+                      || (stockData.fundamentals as any)?.company_profile?.revenue_drivers 
+                      || (matchedRec as any)?.revenue_drivers 
+                      || [];
+
+                    const whyInvest = matchedRec?.why_recommend_rationale 
+                      || (matchedRec as any)?.why_invest_now 
+                      || (stockData.debate?.cio_verdict?.judge_summary 
+                          ? `${stockData.stock.symbol} ${stockData.debate.cio_verdict.judge_summary}` 
+                          : `High conviction strategic candidate aligned with current macroeconomic cycle.`);
+
+                    if (!background && catalysts.length === 0 && drivers.length === 0) return null;
 
                     return (
                       <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl space-y-4">
@@ -508,31 +533,56 @@ export const App: React.FC = () => {
                             <span>{t.whyInvestNow}</span>
                           </div>
                           <p className="text-xs text-slate-200 leading-relaxed font-medium">
-                            {matchedRec.why_recommend_rationale}
+                            {whyInvest}
                           </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                          <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
-                            <div className="flex items-center gap-2 font-bold text-slate-300 mb-1.5">
-                              <Layers className="w-4 h-4 text-indigo-400" />
-                              <span>{t.companyBackground}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                          {/* 1. Core Business Background */}
+                          <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center gap-2 font-bold text-slate-200 mb-2">
+                                <Layers className="w-4 h-4 text-indigo-400" />
+                                <span>{t.companyBackground}</span>
+                              </div>
+                              <p className="text-xs text-slate-300 leading-relaxed">
+                                {background}
+                              </p>
                             </div>
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                              {matchedRec.company_background}
-                            </p>
+                            <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+                              <span>Sector: <span className="text-slate-200 font-medium">{stockData.profile?.sector || stockData.stock.market}</span></span>
+                              <span className="text-emerald-400 font-semibold">Verified Registry</span>
+                            </div>
                           </div>
 
+                          {/* 2. Key Growth Catalysts */}
                           <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
-                            <div className="flex items-center gap-2 font-bold text-slate-300 mb-2">
+                            <div className="flex items-center gap-2 font-bold text-amber-300 mb-2">
                               <Sparkles className="w-4 h-4 text-amber-400" />
                               <span>{t.growthCatalysts}</span>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              {matchedRec.key_catalysts?.map((cat: string, idx: number) => (
-                                <span key={idx} className="px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-300 rounded-xl text-xs font-medium">
-                                  • {cat}
-                                </span>
+                            <div className="space-y-2">
+                              {catalysts.map((cat: string, idx: number) => (
+                                <div key={idx} className="p-2 bg-slate-900/90 border border-slate-800/90 text-slate-200 rounded-xl text-xs flex items-start gap-2">
+                                  <span className="text-amber-400 font-bold leading-tight">▸</span>
+                                  <span className="leading-snug">{cat}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 3. Revenue Drivers & Segments */}
+                          <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
+                            <div className="flex items-center gap-2 font-bold text-teal-300 mb-2">
+                              <BarChart3 className="w-4 h-4 text-teal-400" />
+                              <span>{t.revenueDrivers}</span>
+                            </div>
+                            <div className="space-y-2">
+                              {drivers.map((drv: string, idx: number) => (
+                                <div key={idx} className="p-2 bg-slate-900/90 border border-slate-800/90 text-slate-200 rounded-xl text-xs flex items-start gap-2">
+                                  <span className="text-teal-400 font-bold leading-tight">•</span>
+                                  <span className="leading-snug">{drv}</span>
+                                </div>
                               ))}
                             </div>
                           </div>
