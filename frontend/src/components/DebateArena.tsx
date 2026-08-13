@@ -49,7 +49,11 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
             <div className="flex items-center justify-between text-xs font-bold text-emerald-400 mb-2 pb-2 border-b border-emerald-500/20">
               <span className="flex items-center gap-1.5">
                 <Award className="w-4 h-4" />
-                <span>{t.bullCase}</span>
+                <span>
+                  <BilingualHoverCard termKey="BullAgent" isPlainTalk={isPlainTalk}>
+                    {t.bullCase}
+                  </BilingualHoverCard>
+                </span>
               </span>
               <span className="text-[10px] text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded font-mono">
                 Agent: {bull.agent || "Bullish Analyst"}
@@ -80,7 +84,11 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
             <div className="flex items-center justify-between text-xs font-bold text-rose-400 mb-2 pb-2 border-b border-rose-500/20">
               <span className="flex items-center gap-1.5">
                 <ShieldAlert className="w-4 h-4" />
-                <span>{t.bearCase}</span>
+                <span>
+                  <BilingualHoverCard termKey="BearAgent" isPlainTalk={isPlainTalk}>
+                    {t.bearCase}
+                  </BilingualHoverCard>
+                </span>
               </span>
               <span className="text-[10px] text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded font-mono">
                 Agent: {bear.agent || "Bearish Auditor"}
@@ -111,12 +119,16 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-extrabold">
-              {t.cioVerdict}
+              <BilingualHoverCard termKey="CIOVerdict" isPlainTalk={isPlainTalk}>
+                {t.cioVerdict}
+              </BilingualHoverCard>
             </span>
             <span className="text-xs font-extrabold text-emerald-400">{cio.verdict || "ACCUMULATE ON PULLBACKS"}</span>
           </div>
           <span className="text-xs font-bold text-slate-300">
-            {t.riskReward}: <span className="text-indigo-400 font-mono">{cio.risk_reward_ratio || 2.4}:1</span>
+            <BilingualHoverCard termKey="RiskReward" isPlainTalk={isPlainTalk}>
+              {t.riskReward}
+            </BilingualHoverCard>: <span className="text-indigo-400 font-mono">{cio.risk_reward_ratio || 2.4}:1</span>
           </span>
         </div>
 
@@ -126,12 +138,20 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs border-t border-slate-800 pt-2.5">
           <div className="text-slate-300">
-            <span className="text-slate-400">{t.recommendedBuyBracket}: </span>
-            <span className="font-bold text-amber-300">{cio.recommended_buy_bracket || "Ideal Buy Zone"}</span>
+            <span className="text-slate-400">
+              <BilingualHoverCard termKey="IdealBuyZone" isPlainTalk={isPlainTalk}>
+                {t.recommendedBuyBracket}
+              </BilingualHoverCard>: 
+            </span>
+            <span className="font-bold text-amber-300"> {cio.recommended_buy_bracket || "Ideal Buy Zone"}</span>
           </div>
           <div className="text-slate-300">
-            <span className="text-slate-400">{t.positionSizing}: </span>
-            <span className="font-semibold text-emerald-400">{cio.position_sizing_advice || "3.5% Portfolio Max Weight"}</span>
+            <span className="text-slate-400">
+              <BilingualHoverCard termKey="PositionSizing" isPlainTalk={isPlainTalk}>
+                {t.positionSizing}
+              </BilingualHoverCard>: 
+            </span>
+            <span className="font-semibold text-emerald-400"> {cio.position_sizing_advice || "3.5% Portfolio Max Weight"}</span>
           </div>
         </div>
       </div>

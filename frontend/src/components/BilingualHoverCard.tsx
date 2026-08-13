@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import jargonData from '../../data/jargon_dictionary.json';
 import { HelpCircle, Sparkles, Globe } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -30,10 +30,10 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const triggerRef = useRef<HTMLSpanElement>(null);
-  const [coords, setCoords] = useState<{ top: number; left: number; positionAbove: boolean }>({
-    top: 0,
-    left: 0,
-    positionAbove: true
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({
+    display: 'none',
   });
 
   // Resolution order: jargon dictionary key -> custom props
@@ -48,22 +48,45 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
 
   const showPopover = isHovered || isOpen;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (showPopover && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       const cardWidth = Math.min(384, window.innerWidth - 32);
       
-      // Calculate horizontal center, clamped within viewport padding
+      // Calculate horizontal center relative to trigger
       let leftPos = rect.left + rect.width / 2 - cardWidth / 2;
       leftPos = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, leftPos));
 
-      // Determine if popover fits above, otherwise position below trigger
-      const positionAbove = rect.top > 320;
-      const topPos = positionAbove ? rect.top - 8 : rect.bottom + 8;
+      // Get actual card height or estimate ~220px
+      const cardHeight = cardRef.current ? cardRef.current.offsetHeight : 220;
 
-      setCoords({ top: topPos, left: leftPos, positionAbove });
+      // Determine if popover fits above (needs at least cardHeight + 16px space)
+      const fitsAbove = rect.top >= cardHeight + 16;
+      
+      let topPos: number;
+      if (fitsAbove) {
+        // Position directly above the trigger with 8px gap
+        topPos = rect.top - cardHeight - 8;
+      } else {
+        // Position directly below the trigger with 8px gap
+        topPos = rect.bottom + 8;
+      }
+
+      // Ensure top is not clipped off top of viewport
+      topPos = Math.max(12, topPos);
+
+      setPopoverStyle({
+        position: 'fixed',
+        left: `${leftPos}px`,
+        top: `${topPos}px`,
+        width: `${cardWidth}px`,
+        zIndex: 999999,
+        display: 'block',
+      });
+    } else {
+      setPopoverStyle({ display: 'none' });
     }
-  }, [showPopover]);
+  }, [showPopover, isHovered, isOpen, language]);
 
   // Language-based title resolution for trigger text
   const displayTitle = children || (language === 'zh' ? termZh : language === 'hybrid' ? `${termZh} (${termEn})` : termEn);
@@ -71,13 +94,16 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
   return (
     <span
       ref={triggerRef}
-      className="relative inline-block"
+      className="relative inline-block cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={(e) => {
+        e.stopPropagation();
+        setIsOpen((prev) => !prev);
+      }}
     >
       <span
-        onClick={() => setIsOpen(!isOpen)}
-        className={`cursor-pointer transition-all inline-flex items-center gap-1 ${
+        className={`transition-all inline-flex items-center gap-1 ${
           isPlainTalk
             ? 'border-b-2 border-dashed border-amber-400 font-bold text-amber-300 hover:text-amber-200 px-1.5 py-0.5 bg-amber-950/40 rounded-lg shadow-sm'
             : 'hover:text-emerald-300 border-b border-dashed border-slate-600'
@@ -87,16 +113,14 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
         <HelpCircle className={`w-3.5 h-3.5 inline shrink-0 ${isPlainTalk ? 'text-amber-400 animate-pulse' : 'text-slate-400'}`} />
       </span>
 
-      {/* Fixed Viewport Portal-Style Popover with z-[99999] floating above all parent containers */}
+      {/* 100% Opaque Solid Portal Hover Card with z-[999999] floating above all parent containers */}
       {showPopover && (
         <div
-          style={{
-            position: 'fixed',
-            left: `${coords.left}px`,
-            top: coords.positionAbove ? 'auto' : `${coords.top}px`,
-            bottom: coords.positionAbove ? `${window.innerHeight - coords.top}px` : 'auto',
-          }}
-          className="z-[99999] w-80 md:w-96 p-4 bg-slate-900/98 backdrop-blur-2xl border border-amber-500/50 rounded-2xl shadow-2xl text-left pointer-events-none transition-all animate-fade-in"
+          ref={cardRef}
+          style={popoverStyle}
+          className="p-4 bg-slate-900 border-2 border-amber-500/60 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.95)] text-left pointer-events-auto transition-opacity duration-150"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           {/* Header Badge */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
@@ -104,7 +128,7 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>{language === 'zh' ? termZh : termEn}</span>
             </div>
-            <div className="flex items-center gap-1 text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-extrabold uppercase">
+            <div className="flex items-center gap-1 text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40 font-extrabold uppercase">
               <Globe className="w-3 h-3" />
               <span>{language === 'en' ? 'EN Mode' : language === 'zh' ? '中文模式' : 'Hybrid Mode'}</span>
             </div>
@@ -112,7 +136,7 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
 
           {/* Subtitle Chinese (rendered in zh and hybrid modes) */}
           {language !== 'en' && (
-            <div className="text-xs font-bold text-slate-200 mb-3 flex items-center gap-1.5">
+            <div className="text-xs font-bold text-slate-200 mb-2.5 flex items-center gap-1.5">
               <span>🇨🇳 {termZh}</span>
             </div>
           )}
@@ -120,8 +144,8 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
           {/* English Definition (rendered in en and hybrid modes) */}
           {language !== 'zh' && (
             <div className="mb-2.5">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 mb-0.5">🇺🇸 English Definition:</div>
-              <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-amber-400/90 mb-0.5">🇺🇸 English Definition:</div>
+              <p className="text-xs text-slate-100 font-medium leading-relaxed bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                 {defEn}
               </p>
             </div>
@@ -129,9 +153,9 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
 
           {/* Chinese Definition (rendered in zh and hybrid modes) */}
           {language !== 'en' && (
-            <div className="mb-3">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 mb-0.5">🇨🇳 中文解析：</div>
-              <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+            <div className="mb-2.5">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-amber-400/90 mb-0.5">🇨🇳 中文解析：</div>
+              <p className="text-xs text-slate-100 font-medium leading-relaxed bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                 {defZh}
               </p>
             </div>
@@ -139,15 +163,15 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
 
           {/* Everyday Analogy Box */}
           {((language !== 'zh' && analogyEn) || (language !== 'en' && analogyZh)) && (
-            <div className="p-3 bg-gradient-to-r from-amber-950/50 via-slate-900 to-amber-950/50 rounded-xl border border-amber-500/40 text-xs text-amber-200 leading-relaxed shadow-inner">
+            <div className="p-3 bg-slate-950 rounded-xl border border-amber-500/40 text-xs text-amber-200 leading-relaxed shadow-md">
               <div className="font-bold text-amber-300 text-xs mb-1 flex items-center gap-1">
                 <span>💡 Everyday Analogy / 通俗比喻：</span>
               </div>
               {language !== 'zh' && analogyEn && (
-                <p className="mb-1 text-[11px] text-amber-200/90 font-normal">🇺🇸 {analogyEn}</p>
+                <p className="mb-1 text-[11px] text-amber-100 font-normal">🇺🇸 {analogyEn}</p>
               )}
               {language !== 'en' && analogyZh && (
-                <p className="text-[11px] text-amber-200/90 font-normal">🇨🇳 {analogyZh}</p>
+                <p className="text-[11px] text-amber-100 font-normal">🇨🇳 {analogyZh}</p>
               )}
             </div>
           )}

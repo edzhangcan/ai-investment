@@ -105,7 +105,11 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
               onChange={(e) => setShow50D(e.target.checked)}
               className="accent-indigo-500 rounded"
             />
-            <span>50D SMA (${fiftySma})</span>
+            <span>
+              <BilingualHoverCard termKey="SMA50" isPlainTalk={isPlainTalk}>
+                50D SMA
+              </BilingualHoverCard> (${fiftySma})
+            </span>
           </label>
 
           <label className="flex items-center gap-1.5 cursor-pointer text-indigo-400">
@@ -115,7 +119,11 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
               onChange={(e) => setShow200D(e.target.checked)}
               className="accent-indigo-600 rounded"
             />
-            <span>200D SMA (${twoHundredSma})</span>
+            <span>
+              <BilingualHoverCard termKey="SMA200" isPlainTalk={isPlainTalk}>
+                200D SMA
+              </BilingualHoverCard> (${twoHundredSma})
+            </span>
           </label>
 
           <label className="flex items-center gap-1.5 cursor-pointer text-amber-300">
@@ -125,7 +133,11 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
               onChange={(e) => setShowDCF(e.target.checked)}
               className="accent-amber-500 rounded"
             />
-            <span>DCF Fair Value (${dcfFairValue})</span>
+            <span>
+              <BilingualHoverCard termKey="DCF" isPlainTalk={isPlainTalk}>
+                DCF Fair Value
+              </BilingualHoverCard> (${dcfFairValue})
+            </span>
           </label>
         </div>
 
