@@ -90,12 +90,12 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
             </span>
             <h3 className="text-xl font-extrabold text-slate-100 flex items-center gap-2">
               <BilingualHoverCard termKey="Backtest" isPlainTalk={isPlainTalk}>
-                5-Year Historical Quantitative Backtest (2021 – 2025)
+                {t.backtestTitle}
               </BilingualHoverCard>
             </h3>
           </div>
           <p className="text-xs text-slate-400">
-            5-Year rolling annual returns, Sharpe Ratio, Max Drawdown & CAGR vs benchmark
+            {t.backtestSubtitle}
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
           <div className="text-[11px] text-slate-400 font-semibold mb-1">
             <BilingualHoverCard termKey="CAGR" isPlainTalk={isPlainTalk}>
-              CAGR (年化复利)
+              {t.cagr}
             </BilingualHoverCard>
           </div>
           <div className="text-lg font-extrabold text-emerald-400">+{data.cagr_pct}%</div>
@@ -145,7 +145,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
           <div className="text-[11px] text-slate-400 font-semibold mb-1">
             <BilingualHoverCard termKey="SharpeRatio" isPlainTalk={isPlainTalk}>
-              Sharpe Ratio (夏普比率)
+              {t.sharpeRatio}
             </BilingualHoverCard>
           </div>
           <div className="text-lg font-extrabold text-indigo-300">{data.sharpe_ratio}</div>
@@ -155,7 +155,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
           <div className="text-[11px] text-slate-400 font-semibold mb-1">
             <BilingualHoverCard termKey="MaxDrawdown" isPlainTalk={isPlainTalk}>
-              Max Drawdown (最大回撤)
+              {t.maxDrawdown}
             </BilingualHoverCard>
           </div>
           <div className="text-lg font-extrabold text-rose-400">-{data.max_drawdown_pct}%</div>
@@ -165,7 +165,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
           <div className="text-[11px] text-slate-400 font-semibold mb-1">
             <BilingualHoverCard termKey="WinRate" isPlainTalk={isPlainTalk}>
-              Win Rate (胜率)
+              {t.winRate}
             </BilingualHoverCard>
           </div>
           <div className="text-lg font-extrabold text-amber-300">{data.win_rate_pct}%</div>
@@ -183,7 +183,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
               <th className="p-3.5 text-slate-300">{data.benchmark} Return</th>
               <th className="p-3.5 text-right font-bold">
                 <BilingualHoverCard termKey="Alpha" isPlainTalk={isPlainTalk}>
-                  Alpha (超额收益)
+                  {t.alpha}
                 </BilingualHoverCard>
               </th>
             </tr>

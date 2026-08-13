@@ -15,6 +15,7 @@ export interface Translations {
   addStar: string;
   groundTruthVerified: string;
   source: string;
+  currentMarketPrice: string;
 
   // Macro Dashboard
   macroTitle: string;
@@ -71,13 +72,36 @@ export interface Translations {
   recommendedBuyBracket: string;
   positionSizing: string;
   judgeSummary: string;
+  keyUpsideCatalyst: string;
+  keyDownsideRisk: string;
 
   // Pricing Chart & Timing
   chartTitle: string;
+  pricingOverlay: string;
   valuationStatus: string;
   idealBuyRange: string;
   actionStatus: string;
   timingAdvice: string;
+
+  // SEC Text Mining Viewer
+  secTitle: string;
+  secSubtitle: string;
+  insertedDisclaimer: string;
+  removedDisclaimer: string;
+  extractedKeywordTrends: string;
+  comparisonPeriod: string;
+
+  // Quantitative Backtest Viewer
+  backtestTitle: string;
+  backtestSubtitle: string;
+  cagr: string;
+  sharpeRatio: string;
+  maxDrawdown: string;
+  winRate: string;
+  alpha: string;
+
+  // Hover Card Everyday Analogy
+  everydayAnalogyHeader: string;
 
   // Watchlist Drawer
   watchlistTitle: string;
@@ -142,6 +166,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     addStar: "+ Add Star",
     groundTruthVerified: "100% Verified Data",
     source: "Source",
+    currentMarketPrice: "Current Market Price",
 
     macroTitle: "North American Macro Economic Cycle Scanner",
     macroSubtitle: "Empirical proof array derived from FRED economic data, Fed & Bank of Canada NLP statements",
@@ -194,12 +219,32 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     recommendedBuyBracket: "Recommended Entry Bracket",
     positionSizing: "Position Sizing Advice",
     judgeSummary: "CIO Decision Rationale",
+    keyUpsideCatalyst: "Key Upside Catalyst",
+    keyDownsideRisk: "Key Downside Risk",
 
     chartTitle: "Valuation & Dynamic Price Channel Chart",
+    pricingOverlay: "Pricing & Technical Overlay",
     valuationStatus: "Valuation Assessment",
     idealBuyRange: "Ideal Entry Bracket",
     actionStatus: "Action Status",
     timingAdvice: "Timing & Tactical Execution Advice",
+
+    secTitle: "5-Year SEC 10-K & SEDAR+ Text Mining Pipeline",
+    secSubtitle: "Automated Levenshtein diffing & risk factor keyword extraction across 5 annual filings",
+    insertedDisclaimer: "+ Inserted Risk Disclaimer",
+    removedDisclaimer: "- Removed / Reclassified Disclaimers",
+    extractedKeywordTrends: "Extracted Risk Keyword Trends",
+    comparisonPeriod: "Comparison Period",
+
+    backtestTitle: "5-Year Historical Quantitative Backtest (2021 – 2025)",
+    backtestSubtitle: "5-Year rolling annual returns, Sharpe Ratio, Max Drawdown & CAGR vs benchmark",
+    cagr: "CAGR (Annual Compound Rate)",
+    sharpeRatio: "Sharpe Ratio",
+    maxDrawdown: "Max Drawdown",
+    winRate: "Win Rate",
+    alpha: "Alpha (Excess Return)",
+
+    everydayAnalogyHeader: "💡 Everyday Analogy:",
 
     watchlistTitle: "Watchlist & Price Alerts",
     addFocusAndAlert: "Add Stock & Target Buy Price Alert",
@@ -261,6 +306,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     addStar: "+ 关注",
     groundTruthVerified: "100% 真实数据验证",
     source: "数据源",
+    currentMarketPrice: "当前市场价格",
 
     macroTitle: "北美宏观经济周期扫描仪",
     macroSubtitle: "基于美联储 FRED 经济指标、美联储与加拿大央行 NLP 语句分析的客观实证数组",
@@ -283,12 +329,12 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     catSectorChampions: "🟢 超配板块精选",
     catMarketLeaders: "🔵 核心龙头",
     catGoldNuggets: "🪙 隐形金矿股",
-    catSectorDesc: "与当前宏观环境 Overweight 板块 100% 契合的强现金流领头羊。",
+    catSectorDesc: "与当前宏观超配板块 100% 契合的强现金流领头羊。",
     catLeaderDesc: "美股与加股大盘蓝筹核心标的，兼具宽护城河与真金白银现金流。",
-    catGoldDesc: "非散户热搜的中小盘利基龙头，具高 FCF 转换率与强增长潜力。",
-    whyInvestNow: "为什么现在推荐投资",
-    companyBackground: "公司核心业务背景",
-    growthCatalysts: "核心增长催化剂与营收驱动力",
+    catGoldDesc: "非散户热搜的中小盘利基龙头，具高现金流转换率与强增长潜力。",
+    whyInvestNow: "为什么此时推荐配置",
+    companyBackground: "主营业务背景",
+    growthCatalysts: "核心增长催化剂",
     drillDownAnalysis: "剖析完整报告",
     supportLevel: "技术支撑位",
     score: "综合评分",
@@ -302,23 +348,43 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     fiftyDaySma: "50日均线",
     twoHundredDaySma: "200日均线",
     rsi14: "RSI 相对强弱",
-    arrMetric: "年度订阅收入 (ARR)",
-    nrrMetric: "净收入留存率 (NRR)",
+    arrMetric: "年度订阅收入",
+    nrrMetric: "净收入留存率",
 
     debateTitle: "多智能体机构投资辩论竞技场",
     bullCase: "🟢 多头辩护人",
     bearCase: "🔴 空头公诉人",
-    cioVerdict: "⚖️ 首席投资官 (CIO) 最终裁决",
+    cioVerdict: "⚖️ 首席投资官最终裁决",
     riskReward: "风险/收益比",
     recommendedBuyBracket: "建议买入区间",
     positionSizing: "仓位管理建议",
     judgeSummary: "CIO 决策逻辑阐述",
+    keyUpsideCatalyst: "核心看涨催化剂",
+    keyDownsideRisk: "主要下行风险",
 
     chartTitle: "估值与动态价格通道图表",
+    pricingOverlay: "估值与技术面走势叠加",
     valuationStatus: "估值状态",
     idealBuyRange: "理想买入区间",
     actionStatus: "操作指令",
     timingAdvice: "择时与战术执行建议",
+
+    secTitle: "5年期 SEC 10-K 与 SEDAR+ 官方财报文本挖掘",
+    secSubtitle: "基于 Levenshtein 算法对比 5 年年度财报中高管隐患与避责声明变动",
+    insertedDisclaimer: "+ 新增风险披露条款",
+    removedDisclaimer: "- 移除与重分类避责声明",
+    extractedKeywordTrends: "提取高频风险关键词趋势",
+    comparisonPeriod: "对比年份",
+
+    backtestTitle: "5年期历史量化策略回测 (2021 – 2025)",
+    backtestSubtitle: "5 年滚动年化收益率、夏普比率、最大回撤与超额收益对比",
+    cagr: "年化复利收益率",
+    sharpeRatio: "夏普比率",
+    maxDrawdown: "最大回撤",
+    winRate: "跑赢大盘胜率",
+    alpha: "超额收益",
+
+    everydayAnalogyHeader: "💡 通俗比喻：",
 
     watchlistTitle: "自选股与价格提醒",
     addFocusAndAlert: "关注新股票与设置买入提醒",
@@ -380,6 +446,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     addStar: "+ 关注 (Star)",
     groundTruthVerified: "100% Verified Data (真实数据)",
     source: "Source (数据源)",
+    currentMarketPrice: "当前价格 (Current Market Price)",
 
     macroTitle: "北美宏观经济周期扫描仪 (North American Macro Cycle Scanner)",
     macroSubtitle: "基于 FRED 经济数据、Fed 与 Bank of Canada NLP 语句分析的客观实证数组",
@@ -405,8 +472,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     catSectorDesc: "与当前 Overweight 板块 100% 契合的强现金流领头羊。",
     catLeaderDesc: "美股与加股大盘蓝筹核心标的，兼具 Wide Moat 与强劲 FCF。",
     catGoldDesc: "非散户热搜的中小盘利基龙头，具高 FCF 转换率与强 upside 潜力。",
-    whyInvestNow: "为什么现在推荐投资 (Why Invest Now)",
-    companyBackground: "公司核心业务背景 (Company Background)",
+    whyInvestNow: "为什么此时推荐配置 (Why Recommend Now)",
+    companyBackground: "主营业务背景 (Company Background)",
     growthCatalysts: "核心增长催化剂 (Growth Catalysts)",
     drillDownAnalysis: "剖析完整报告 (Drill Down Analysis)",
     supportLevel: "技术支撑位 (Support Level)",
@@ -432,12 +499,32 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     recommendedBuyBracket: "建议买入区间 (Entry Bracket)",
     positionSizing: "仓位管理建议 (Position Sizing)",
     judgeSummary: "CIO 决策逻辑 (Judge Summary)",
+    keyUpsideCatalyst: "核心看涨催化剂 (Key Upside Catalyst)",
+    keyDownsideRisk: "主要下行风险 (Key Downside Risk)",
 
     chartTitle: "估值与动态价格通道 (Valuation & Price Channel)",
+    pricingOverlay: "估值与技术面走势 (Pricing & Technical Overlay)",
     valuationStatus: "估值状态 (Valuation Status)",
     idealBuyRange: "理想买入区间 (Ideal Buy Range)",
     actionStatus: "操作指令 (Action Status)",
     timingAdvice: "战术执行建议 (Timing Advice)",
+
+    secTitle: "5年期 SEC 10-K 与 SEDAR+ 财报文本挖掘 (Text Mining Pipeline)",
+    secSubtitle: "基于算法对比 5 年年度财报中高管 Risk Disclaimer 变动",
+    insertedDisclaimer: "+ 新增风险披露条款 (Inserted Risk Disclaimer)",
+    removedDisclaimer: "- 移除与重分类声明 (Removed Disclaimers)",
+    extractedKeywordTrends: "提取风险关键词趋势 (Extracted Keyword Trends)",
+    comparisonPeriod: "对比年份 (Comparison Period)",
+
+    backtestTitle: "5年期历史量化策略回测 (5-Year Quantitative Backtest)",
+    backtestSubtitle: "5 年滚动年化收益率、Sharpe Ratio、Max Drawdown 与 CAGR 对比",
+    cagr: "年化复利 (CAGR)",
+    sharpeRatio: "夏普比率 (Sharpe Ratio)",
+    maxDrawdown: "最大回撤 (Max Drawdown)",
+    winRate: "胜率 (Win Rate vs Benchmark)",
+    alpha: "超额收益 (Alpha)",
+
+    everydayAnalogyHeader: "💡 通俗比喻 (Everyday Analogy)：",
 
     watchlistTitle: "自选股与价格提醒 (Watchlist & Price Alerts)",
     addFocusAndAlert: "关注新股票与设置买入提醒",
