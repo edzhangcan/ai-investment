@@ -14,10 +14,11 @@ import { NotificationToast } from './components/NotificationToast';
 import { LanguageSelector } from './components/LanguageSelector';
 import { StartupLoadingOverlay } from './components/StartupLoadingOverlay';
 import { DiscordAlertSettingsModal } from './components/DiscordAlertSettingsModal';
+import { ExportMemoModal } from './components/ExportMemoModal';
 import { useLanguage } from './context/LanguageContext';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
 import { fetchStockAnalysis, fetchMacroDashboard } from './api/client';
-import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command, TrendingUp, Layers, Calculator, Bell } from 'lucide-react';
+import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command, TrendingUp, Layers, Calculator, Bell, FileText } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { language, t } = useLanguage();
@@ -34,6 +35,7 @@ export const App: React.FC = () => {
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
   const [isPortfolioCalculatorOpen, setIsPortfolioCalculatorOpen] = useState(false);
   const [isDiscordModalOpen, setIsDiscordModalOpen] = useState(false);
+  const [isExportMemoModalOpen, setIsExportMemoModalOpen] = useState(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<Set<string>>(new Set(['NVDA', 'SHOP.TO']));
 
   // Fetch watchlist symbols from database
@@ -393,18 +395,29 @@ export const App: React.FC = () => {
                         {(() => {
                           const isCurrentStarred = stockData?.stock?.symbol ? watchlistSymbols.has(stockData.stock.symbol.toUpperCase()) : false;
                           return (
-                            <button
-                              onClick={() => toggleWatchlist(stockData.stock.symbol, stockData.stock.company_name, stockData.pricing.ideal_buy_range_max)}
-                              className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ml-2 ${
-                                isCurrentStarred
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30 shadow-md shadow-amber-500/10'
-                                  : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-amber-500/40 hover:text-amber-300'
-                              }`}
-                              title={isCurrentStarred ? "已在自选股中 (点击取消关注)" : "添加到自选股与价格提醒"}
-                            >
-                              <Star className={`w-3.5 h-3.5 ${isCurrentStarred ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} />
-                              <span>{isCurrentStarred ? '✓ 已关注' : '+ 关注'}</span>
-                            </button>
+                            <div className="flex items-center gap-2 ml-2">
+                              <button
+                                onClick={() => toggleWatchlist(stockData.stock.symbol, stockData.stock.company_name, stockData.pricing.ideal_buy_range_max)}
+                                className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                  isCurrentStarred
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30 shadow-md shadow-amber-500/10'
+                                    : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-amber-500/40 hover:text-amber-300'
+                                }`}
+                                title={isCurrentStarred ? "已在自选股中 (点击取消关注)" : "添加到自选股与价格提醒"}
+                              >
+                                <Star className={`w-3.5 h-3.5 ${isCurrentStarred ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} />
+                                <span>{isCurrentStarred ? '✓ 已关注' : '+ 关注'}</span>
+                              </button>
+
+                              <button
+                                onClick={() => setIsExportMemoModalOpen(true)}
+                                className="px-3 py-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-300 border border-emerald-500/50 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/10"
+                                title="Export Institutional Investment Memo (.md / .pdf)"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Export Memo</span>
+                              </button>
+                            </div>
                           );
                         })()}
                       </div>
@@ -562,6 +575,24 @@ export const App: React.FC = () => {
           isOpen={isDiscordModalOpen}
           onClose={() => setIsDiscordModalOpen(false)}
         />
+
+        {/* Institutional Investment Memo Export Modal */}
+        {stockData && (
+          <ExportMemoModal
+            isOpen={isExportMemoModalOpen}
+            onClose={() => setIsExportMemoModalOpen(false)}
+            memoData={{
+              stock: stockData.stock,
+              macro: stockData.macro,
+              pricing: stockData.pricing,
+              debate: stockData.debate,
+              fundamentals: stockData.fundamentals,
+              secMining: null,
+              backtest: null,
+              language
+            }}
+          />
+        )}
       </div>
     </div>
   );
