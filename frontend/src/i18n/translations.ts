@@ -20,6 +20,7 @@ export interface Translations {
   // Macro Dashboard
   macroTitle: string;
   macroSubtitle: string;
+  liveMacroStream: string;
   cycleStage: string;
   fedSentiment: string;
   bocSentiment: string;
@@ -65,6 +66,7 @@ export interface Translations {
 
   // Debate Arena & Verdicts
   debateTitle: string;
+  debateSubtitle: string;
   bullCase: string;
   bearCase: string;
   cioVerdict: string;
@@ -94,11 +96,16 @@ export interface Translations {
   // Quantitative Backtest Viewer
   backtestTitle: string;
   backtestSubtitle: string;
+  filingYear: string;
+  returnHeader: string;
   cagr: string;
   sharpeRatio: string;
   maxDrawdown: string;
   winRate: string;
   alpha: string;
+
+  // Fundamental Review Section
+  fundamentalReportTitle: string;
 
   // Hover Card Everyday Analogy
   everydayAnalogyHeader: string;
@@ -116,6 +123,27 @@ export interface Translations {
   suggestedAlloc: string;
   deleteItem: string;
   dbStorageNotice: string;
+
+  // Portfolio Calculator Modal
+  calcTitle: string;
+  calcSubtitle: string;
+  calcCapitalLabel: string;
+  calcRiskModelLabel: string;
+  calcConservative: string;
+  calcBalanced: string;
+  calcAggressive: string;
+  calcMaxPerStock: string;
+  calcCurrencyLabel: string;
+  calcEquities: string;
+  calcCashReserve: string;
+  calcTableAsset: string;
+  calcTablePrice: string;
+  calcTableWeight: string;
+  calcTableShares: string;
+  calcTableDollar: string;
+  calcSharesUnit: string;
+  calcFooterNotice: string;
+  calcCloseBtn: string;
 
   // Discord Push Alert Modal
   discordModalTitle: string;
@@ -168,8 +196,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     source: "Source",
     currentMarketPrice: "Current Market Price",
 
-    macroTitle: "North American Macro Economic Cycle Scanner",
+    macroTitle: "North American Macro Economic Cycle Scanner (US & CA)",
     macroSubtitle: "Empirical proof array derived from FRED economic data, Fed & Bank of Canada NLP statements",
+    liveMacroStream: "Live Policy & Economic News Stream",
     cycleStage: "Macro Cycle Stage",
     fedSentiment: "Fed Hawkish / Dovish Sentiment",
     bocSentiment: "BoC Hawkish / Dovish Sentiment",
@@ -200,7 +229,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     score: "Score",
     showingStocks: "Showing",
 
-    freeCashFlow: "Free Cash Flow",
+    freeCashFlow: "Free Cash Flow (FCF)",
     peRatio: "P/E Ratio",
     moatRating: "Moat Rating",
     buyZone: "Ideal Buy Zone",
@@ -212,6 +241,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     nrrMetric: "Net Revenue Retention (NRR)",
 
     debateTitle: "Multi-Agent Institutional Investment Arena",
+    debateSubtitle: "🐂 Bull Agent vs 🐻 Bear Agent Data Debate → 👨‍⚖️ CIO Verdict & Evidence Verification",
     bullCase: "🟢 Bull Case Advocate",
     bearCase: "🔴 Bear Case Prosecutor",
     cioVerdict: "⚖️ Chief Investment Officer (CIO) Final Verdict",
@@ -238,11 +268,15 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     backtestTitle: "5-Year Historical Quantitative Backtest (2021 – 2025)",
     backtestSubtitle: "5-Year rolling annual returns, Sharpe Ratio, Max Drawdown & CAGR vs benchmark",
+    filingYear: "Filing Year",
+    returnHeader: "Return",
     cagr: "CAGR (Annual Compound Rate)",
     sharpeRatio: "Sharpe Ratio",
     maxDrawdown: "Max Drawdown",
     winRate: "Win Rate",
     alpha: "Alpha (Excess Return)",
+
+    fundamentalReportTitle: "Institutional Fundamental Review Report",
 
     everydayAnalogyHeader: "💡 Everyday Analogy:",
 
@@ -258,6 +292,26 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     suggestedAlloc: "Suggested Alloc",
     deleteItem: "Delete",
     dbStorageNotice: "SQLite WAL Mode Persistent Database",
+
+    calcTitle: "Portfolio Position Sizing & Rebalancing Calculator",
+    calcSubtitle: "Risk-adjusted dollar allocations & exact share counts based on CIO position sizing models",
+    calcCapitalLabel: "Investment Capital",
+    calcRiskModelLabel: "Risk Preference Model",
+    calcConservative: "🛡️ Conservative",
+    calcBalanced: "⚖️ Balanced",
+    calcAggressive: "🚀 Aggressive",
+    calcMaxPerStock: "Max",
+    calcCurrencyLabel: "Base Currency",
+    calcEquities: "Equities",
+    calcCashReserve: "Cash Reserve",
+    calcTableAsset: "Asset & Ticker",
+    calcTablePrice: "Current Price",
+    calcTableWeight: "Target Weight",
+    calcTableShares: "Executable Shares",
+    calcTableDollar: "Target Dollar",
+    calcSharesUnit: "shares",
+    calcFooterNotice: "*Positions sized strictly to floor integer share counts. Remaining cash retained in portfolio reserve.",
+    calcCloseBtn: "Close Calculator",
 
     discordModalTitle: "Discord Push Alerts",
     discordModalSubtitle: "Receive real-time 4 multi-type alerts directly in your Discord server.",
@@ -308,8 +362,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     source: "数据源",
     currentMarketPrice: "当前市场价格",
 
-    macroTitle: "北美宏观经济周期扫描仪",
+    macroTitle: "北美宏观经济周期扫描仪 (美股与加股)",
     macroSubtitle: "基于美联储 FRED 经济指标、美联储与加拿大央行 NLP 语句分析的客观实证数组",
+    liveMacroStream: "实时央行政策与宏观新闻流",
     cycleStage: "宏观经济周期阶段",
     fedSentiment: "美联储鹰鸽情绪指数",
     bocSentiment: "加拿大央行鹰鸽情绪指数",
@@ -352,6 +407,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     nrrMetric: "净收入留存率",
 
     debateTitle: "多智能体机构投资辩论竞技场",
+    debateSubtitle: "🐂 多头分析师 vs 🐻 空头公诉人 辩论竞技场 → 👨‍⚖️ 首席投资官 最终裁决与证据核验",
     bullCase: "🟢 多头辩护人",
     bearCase: "🔴 空头公诉人",
     cioVerdict: "⚖️ 首席投资官最终裁决",
@@ -378,11 +434,15 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     backtestTitle: "5年期历史量化策略回测 (2021 – 2025)",
     backtestSubtitle: "5 年滚动年化收益率、夏普比率、最大回撤与超额收益对比",
+    filingYear: "财报年份",
+    returnHeader: "收益率",
     cagr: "年化复利收益率",
     sharpeRatio: "夏普比率",
     maxDrawdown: "最大回撤",
     winRate: "跑赢大盘胜率",
     alpha: "超额收益",
+
+    fundamentalReportTitle: "机构基本面深度审计报告",
 
     everydayAnalogyHeader: "💡 通俗比喻：",
 
@@ -398,6 +458,26 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     suggestedAlloc: "建议仓位",
     deleteItem: "删除",
     dbStorageNotice: "本地 SQLite 数据库 WAL 模式持久化存储",
+
+    calcTitle: "组合仓位管理与再平衡计算器",
+    calcSubtitle: "基于 CIO 风险对冲模型的资金动态分配与精准拟执行股数计算",
+    calcCapitalLabel: "投资总本金",
+    calcRiskModelLabel: "风控偏好模型",
+    calcConservative: "🛡️ 保守型",
+    calcBalanced: "⚖️ 稳健型",
+    calcAggressive: "🚀 激进型",
+    calcMaxPerStock: "单股上限",
+    calcCurrencyLabel: "基础结算货币",
+    calcEquities: "股票配置仓位",
+    calcCashReserve: "现金储备缓冲",
+    calcTableAsset: "标的与股票代码",
+    calcTablePrice: "当前市场价格",
+    calcTableWeight: "目标配置权重",
+    calcTableShares: "拟执行购买股数",
+    calcTableDollar: "目标配置金额",
+    calcSharesUnit: "股",
+    calcFooterNotice: "*购买股数按整数股向下取整计算，剩余未分配尾款保留于现金储备中。",
+    calcCloseBtn: "关闭计算器",
 
     discordModalTitle: "Discord 实时推送警报",
     discordModalSubtitle: "在您的 Discord 服务器中实时接收 4 种多类型投资与风控提醒。",
@@ -448,8 +528,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     source: "Source (数据源)",
     currentMarketPrice: "当前价格 (Current Market Price)",
 
-    macroTitle: "北美宏观经济周期扫描仪 (North American Macro Cycle Scanner)",
+    macroTitle: "北美宏观经济周期扫描仪 (Macro Cycle Scanner US & CA)",
     macroSubtitle: "基于 FRED 经济数据、Fed 与 Bank of Canada NLP 语句分析的客观实证数组",
+    liveMacroStream: "实时央行政策与新闻 (Live Macro Stream)",
     cycleStage: "宏观周期阶段 (Macro Cycle Stage)",
     fedSentiment: "美联储 (Fed) 鹰鸽情绪",
     bocSentiment: "加拿大央行 (BoC) 鹰鸽情绪",
@@ -492,6 +573,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     nrrMetric: "净收入留存率 (NRR)",
 
     debateTitle: "多智能体投资辩论竞技场 (Multi-Agent Investment Arena)",
+    debateSubtitle: "🐂 多头 (Bull) vs 🐻 空头 (Bear) 数据辩论 → 👨‍⚖️ CIO 裁决与 Evidence 核验",
     bullCase: "🟢 多头辩护人 (Bull Case Advocate)",
     bearCase: "🔴 空头公诉人 (Bear Case Prosecutor)",
     cioVerdict: "⚖️ CIO 最终裁决 (Chief Investment Officer Verdict)",
@@ -518,11 +600,15 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     backtestTitle: "5年期历史量化策略回测 (5-Year Quantitative Backtest)",
     backtestSubtitle: "5 年滚动年化收益率、Sharpe Ratio、Max Drawdown 与 CAGR 对比",
+    filingYear: "财报年份 (Filing Year)",
+    returnHeader: "收益率 (Return)",
     cagr: "年化复利 (CAGR)",
     sharpeRatio: "夏普比率 (Sharpe Ratio)",
     maxDrawdown: "最大回撤 (Max Drawdown)",
     winRate: "胜率 (Win Rate vs Benchmark)",
     alpha: "超额收益 (Alpha)",
+
+    fundamentalReportTitle: "机构基本面审计报告 (Fundamental Review Report)",
 
     everydayAnalogyHeader: "💡 通俗比喻 (Everyday Analogy)：",
 
@@ -538,6 +624,26 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     suggestedAlloc: "建议仓位 (Suggested Alloc)",
     deleteItem: "删除",
     dbStorageNotice: "本地 SQLite 数据库 WAL 模式持久化存储",
+
+    calcTitle: "组合仓位管理与再平衡计算器 (Position Sizing Calculator)",
+    calcSubtitle: "基于 CIO 模型的资金动态分配与精准 Share Count 计算",
+    calcCapitalLabel: "投资本金 (Investment Capital)",
+    calcRiskModelLabel: "风控模型 (Risk Preference Model)",
+    calcConservative: "🛡️ 保守型 (Conservative)",
+    calcBalanced: "⚖️ 稳健型 (Balanced)",
+    calcAggressive: "🚀 激进型 (Aggressive)",
+    calcMaxPerStock: "单股上限 (Max)",
+    calcCurrencyLabel: "基础货币 (Base Currency)",
+    calcEquities: "股票仓位 (Equities Allocation)",
+    calcCashReserve: "现金缓冲 (Cash Reserve)",
+    calcTableAsset: "标的 (Asset & Ticker)",
+    calcTablePrice: "当前价格 (Current Price)",
+    calcTableWeight: "目标权重 (Target Weight)",
+    calcTableShares: "拟购买股数 (Executable Shares)",
+    calcTableDollar: "目标金额 (Target Dollar)",
+    calcSharesUnit: "股 (shares)",
+    calcFooterNotice: "*股数按整数股向下取整计算，剩余现金保留于 Cash Reserve。",
+    calcCloseBtn: "关闭计算器 (Close)",
 
     discordModalTitle: "Discord 推送警报 (Push Alerts)",
     discordModalSubtitle: "在 Discord 服务器中实时接收 4 种多类型投资 alert。",

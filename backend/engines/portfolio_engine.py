@@ -16,19 +16,19 @@ logger = logging.getLogger(__name__)
 # Risk Profile Allocation Parameters
 RISK_PROFILES = {
     "CONSERVATIVE": {
-        "label": {"en": "Conservative (🛡️ 保守型)", "zh": "🛡️ 保守型 (防守避险)", "hybrid": "🛡️ 保守型 (Conservative)"},
+        "label": {"en": "🛡️ Conservative", "zh": "🛡️ 保守型 (防守避险)", "hybrid": "🛡️ 保守型 (Conservative)"},
         "max_per_stock_pct": 3.0,
         "cash_buffer_pct": 40.0,
         "equity_allocation_pct": 60.0
     },
     "BALANCED": {
-        "label": {"en": "Balanced (⚖️ 稳健型)", "zh": "⚖️ 稳健型 (攻守兼备)", "hybrid": "⚖️ 稳健型 (Balanced)"},
+        "label": {"en": "⚖️ Balanced", "zh": "⚖️ 稳健型 (攻守兼备)", "hybrid": "⚖️ 稳健型 (Balanced)"},
         "max_per_stock_pct": 5.0,
         "cash_buffer_pct": 20.0,
         "equity_allocation_pct": 80.0
     },
     "AGGRESSIVE": {
-        "label": {"en": "Aggressive (🚀 激进型)", "zh": "🚀 激进型 (积极进攻)", "hybrid": "🚀 激进型 (Aggressive)"},
+        "label": {"en": "🚀 Aggressive", "zh": "🚀 激进型 (积极进攻)", "hybrid": "🚀 激进型 (Aggressive)"},
         "max_per_stock_pct": 8.0,
         "cash_buffer_pct": 10.0,
         "equity_allocation_pct": 90.0
