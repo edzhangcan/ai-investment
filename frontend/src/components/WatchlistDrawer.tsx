@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, X, Trash2, Plus, Bell, TrendingUp, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { fetchWatchlistApi, addWatchlistApi, deleteWatchlistApi } from '../api/client';
 
 export interface WatchlistItem {
   id?: number;
@@ -34,17 +35,10 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   const fetchWatchlist = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/watchlist`);
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json);
-      }
+      const data = await fetchWatchlistApi();
+      setItems(data);
     } catch (e) {
-      // Fallback mock watchlist items if API server offline
-      setItems([
-        { id: 1, symbol: 'NVDA', company_name: 'NVIDIA Corporation', target_buy_price: 108.5, portfolio_allocation_pct: 5.0 },
-        { id: 2, symbol: 'SHOP.TO', company_name: 'Shopify Inc.', target_buy_price: 94.6, portfolio_allocation_pct: 3.5 },
-      ]);
+      console.warn("Failed to fetch watchlist from API:", e);
     } finally {
       setLoading(false);
     }
@@ -68,35 +62,24 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
     };
 
     try {
-      const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/watchlist`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        fetchWatchlist();
-        setNewSymbol('');
-        setNewName('');
-        setNewTarget('');
-        if (onWatchlistChange) onWatchlistChange();
-      }
-    } catch (e) {
-      setItems([...items, { ...payload, id: Date.now() }]);
+      await addWatchlistApi(payload);
+      fetchWatchlist();
       setNewSymbol('');
       setNewName('');
       setNewTarget('');
       if (onWatchlistChange) onWatchlistChange();
+    } catch (e) {
+      console.warn("Failed to add item to watchlist API:", e);
     }
   };
 
   const handleDelete = async (symbol: string) => {
     try {
-      await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/watchlist/${symbol}`, { method: 'DELETE' });
-      setItems(items.filter((i) => i.symbol !== symbol));
+      await deleteWatchlistApi(symbol);
+      setItems(items.filter((i) => i.symbol.toUpperCase() !== symbol.toUpperCase()));
       if (onWatchlistChange) onWatchlistChange();
     } catch (e) {
-      setItems(items.filter((i) => i.symbol !== symbol));
-      if (onWatchlistChange) onWatchlistChange();
+      console.warn("Failed to delete item from watchlist API:", e);
     }
   };
 
