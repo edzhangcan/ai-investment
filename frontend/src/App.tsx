@@ -17,7 +17,7 @@ import { DiscordAlertSettingsModal } from './components/DiscordAlertSettingsModa
 import { ExportMemoModal } from './components/ExportMemoModal';
 import { useLanguage } from './context/LanguageContext';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
-import { fetchStockAnalysis, fetchMacroDashboard } from './api/client';
+import { fetchStockAnalysis, fetchMacroDashboard, fetchWatchlistApi, addWatchlistApi, deleteWatchlistApi } from './api/client';
 import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command, TrendingUp, Layers, Calculator, Bell, FileText } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -41,11 +41,8 @@ export const App: React.FC = () => {
   // Fetch watchlist symbols from database
   const fetchWatchlistSymbols = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/watchlist');
-      if (res.ok) {
-        const items = await res.json();
-        setWatchlistSymbols(new Set(items.map((i: any) => i.symbol.toUpperCase())));
-      }
+      const items = await fetchWatchlistApi();
+      setWatchlistSymbols(new Set(items.map((i: any) => i.symbol.toUpperCase())));
     } catch (e) {
       console.warn("Failed to fetch watchlist symbols:", e);
     }
@@ -111,7 +108,7 @@ export const App: React.FC = () => {
       nextSet.delete(sym);
       setWatchlistSymbols(nextSet);
       try {
-        await fetch(`http://127.0.0.1:8000/api/watchlist/${sym}`, { method: 'DELETE' });
+        await deleteWatchlistApi(sym);
       } catch (e) {
         console.warn("Watchlist delete failed:", e);
       }
@@ -119,15 +116,11 @@ export const App: React.FC = () => {
       nextSet.add(sym);
       setWatchlistSymbols(nextSet);
       try {
-        await fetch('http://127.0.0.1:8000/api/watchlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            symbol: sym,
-            company_name: companyName,
-            target_buy_price: targetPrice,
-            portfolio_allocation_pct: 3.5,
-          }),
+        await addWatchlistApi({
+          symbol: sym,
+          company_name: companyName,
+          target_buy_price: targetPrice,
+          portfolio_allocation_pct: 3.5,
         });
       } catch (e) {
         console.warn("Watchlist add failed:", e);
@@ -326,30 +319,45 @@ export const App: React.FC = () => {
               <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
               <p className="text-xs">Fetching North American Macro Data & Recommendations...</p>
             </div>
-          ) : (
-            dashboardData && (
-              <>
-                <MacroDashboard
-                  macroData={dashboardData.macro_assessment}
-                  policyNews={dashboardData.policy_news}
-                  supportingFacts={dashboardData.empirical_supporting_facts}
-                  credibleSources={dashboardData.credible_sources}
-                  isPlainTalk={isPlainTalk}
-                  onRefreshMacro={async () => {
-                    const res = await fetchMacroDashboard(language, true);
-                    setDashboardData(res);
-                  }}
-                />
+          ) : dashboardData ? (
+            <>
+              <MacroDashboard
+                macroData={dashboardData.macro_assessment}
+                policyNews={dashboardData.policy_news}
+                supportingFacts={dashboardData.empirical_supporting_facts}
+                credibleSources={dashboardData.credible_sources}
+                isPlainTalk={isPlainTalk}
+                onRefreshMacro={async () => {
+                  const res = await fetchMacroDashboard(language, true);
+                  setDashboardData(res);
+                }}
+              />
 
-                <RecommendedStocksGrid
-                  recommendations={dashboardData.recommendations}
-                  onSelectStock={handleSelectRecommendedStock}
-                  isPlainTalk={isPlainTalk}
-                  watchlistSymbols={watchlistSymbols}
-                  onToggleWatchlist={toggleWatchlist}
-                />
-              </>
-            )
+              <RecommendedStocksGrid
+                recommendations={dashboardData.recommendations}
+                onSelectStock={handleSelectRecommendedStock}
+                isPlainTalk={isPlainTalk}
+                watchlistSymbols={watchlistSymbols}
+                onToggleWatchlist={toggleWatchlist}
+              />
+            </>
+          ) : (
+            <div className="bg-red-950/40 border border-red-500/50 rounded-2xl p-6 text-center max-w-2xl mx-auto my-12 shadow-xl backdrop-blur-md">
+              <ShieldAlert className="w-10 h-10 text-red-400 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-red-200 mb-2">Backend Service Connection Timeout</h3>
+              <p className="text-xs text-red-300/80 mb-4 leading-relaxed">
+                Unable to reach backend service at <code className="bg-red-900/60 px-2 py-0.5 rounded font-mono text-red-200">{`http://${window.location.hostname}:8000`}</code>.
+                <br />
+                If connecting from another device on your Wi-Fi network, Windows Defender Firewall may be blocking inbound traffic on port 8000.
+              </p>
+              <button
+                onClick={() => loadDashboard()}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer inline-flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Retry Connection</span>
+              </button>
+            </div>
           )
         )}
 

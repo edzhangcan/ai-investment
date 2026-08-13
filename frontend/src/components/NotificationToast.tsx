@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, ArrowDownRight, Sparkles } from 'lucide-react';
+import { getApiBaseUrl } from '../api/client';
 
 export interface AlertNotificationPayload {
   id: number;
@@ -19,7 +20,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({ onSelectTi
 
   const fetchAlertHistory = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/alerts/history');
+      const res = await fetch(`${getApiBaseUrl()}/api/alerts/history`);
       if (res.ok) {
         const json = await res.json();
         if (json && json.length > 0) {
