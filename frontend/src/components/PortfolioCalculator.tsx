@@ -122,11 +122,11 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
             <input
               type="number"
               value={cashBalance}
-              onChange={(e) => setCashBalance(Math.max(1000, Number(e.target.value)))}
+              onChange={(e) => setCashBalance(Math.max(100, Number(e.target.value)))}
               className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm font-bold text-emerald-400 focus:outline-none focus:border-emerald-500 transition-all mb-2"
             />
             <div className="flex flex-wrap gap-1">
-              {[10000, 25000, 50000, 100000, 250000].map((preset) => (
+              {[5000, 10000, 25000, 50000, 100000, 250000].map((preset) => (
                 <button
                   key={preset}
                   onClick={() => setCashBalance(preset)}

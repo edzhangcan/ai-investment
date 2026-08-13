@@ -55,9 +55,6 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
                   </BilingualHoverCard>
                 </span>
               </span>
-              <span className="text-[10px] text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded font-mono">
-                Agent: {bull.agent || "Bullish Analyst"}
-              </span>
             </div>
             <ul className="space-y-2 text-xs text-slate-300 mb-4">
               {(bull.key_points || ["High Free Cash Flow conversion", "Dominant market leadership position"]).map((pt: string, idx: number) => (
@@ -89,9 +86,6 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
                     {t.bearCase}
                   </BilingualHoverCard>
                 </span>
-              </span>
-              <span className="text-[10px] text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded font-mono">
-                Agent: {bear.agent || "Bearish Auditor"}
               </span>
             </div>
             <ul className="space-y-2 text-xs text-slate-300 mb-4">
