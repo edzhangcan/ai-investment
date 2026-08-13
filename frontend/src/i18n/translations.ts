@@ -20,6 +20,15 @@ export interface Translations {
   calcButtonTitle: string;
   discordButtonTitle: string;
 
+  // Startup Loading Screen
+  loadingSubtitle: string;
+  loadingStep1: string;
+  loadingStep2: string;
+  loadingStep3: string;
+  loadingStep4: string;
+  loadingStepCounter: string;
+  loadingOf: string;
+
   // Macro Dashboard & Scanner Bar
   macroTitle: string;
   macroSubtitle: string;
@@ -209,6 +218,14 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     calcButtonTitle: "Position Sizing Calculator",
     discordButtonTitle: "Discord Push Alerts",
 
+    loadingSubtitle: "Initializing real-time market intelligence systems...",
+    loadingStep1: "Connecting to Federal Reserve (FRED) & Bank of Canada Economic Data...",
+    loadingStep2: "Ingesting Live Central Bank Policy Statements & Macro News Stream...",
+    loadingStep3: "Analyzing Top Stock Recommendations & Sector Allocations...",
+    loadingStep4: "Initializing Multi-Agent AI Debate Arena & Portfolio Engine...",
+    loadingStepCounter: "Step",
+    loadingOf: "of",
+
     macroTitle: "North American Macro Economic Cycle Scanner (US & CA)",
     macroSubtitle: "Empirical proof array derived from FRED economic data, Fed & Bank of Canada NLP statements",
     liveMacroStream: "Live Policy & Economic News Stream",
@@ -385,6 +402,14 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     calcButtonTitle: "仓位管理计算器",
     discordButtonTitle: "Discord 警报推送",
 
+    loadingSubtitle: "正在初始化实时市场情报系统...",
+    loadingStep1: "正在连接美联储 (FRED) 与加拿大央行宏观数据...",
+    loadingStep2: "正在解析央行政策声明与实时宏观新闻流...",
+    loadingStep3: "正在计算多维度股票推荐与板块配置建议...",
+    loadingStep4: "正在初始化多智能体 AI 辩论竞技场与仓位引擎...",
+    loadingStepCounter: "步骤",
+    loadingOf: "/",
+
     macroTitle: "北美宏观经济周期扫描仪 (美股与加股)",
     macroSubtitle: "基于美联储 FRED 经济指标、美联储与加拿大央行 NLP 语句分析的客观实证数组",
     liveMacroStream: "实时央行政策与宏观新闻流",
@@ -560,6 +585,14 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     commandPaletteTitle: "快捷搜索 (Command Palette)",
     calcButtonTitle: "仓位计算器 (Position Sizing)",
     discordButtonTitle: "Discord 警报 (Push Alerts)",
+
+    loadingSubtitle: "正在初始化市场情报系统 (Initializing Market Intelligence)...",
+    loadingStep1: "正在连接美联储 FRED & 央行数据 (Connecting Macro Data)...",
+    loadingStep2: "正在解析央行政策声明与新闻 (Ingesting Policy News)...",
+    loadingStep3: "正在计算股票推荐与板块配置 (Stock Recommendations)...",
+    loadingStep4: "正在初始化多智能体 AI 辩论 (Initializing AI Arena)...",
+    loadingStepCounter: "Step",
+    loadingOf: "/",
 
     macroTitle: "北美宏观经济周期扫描仪 (Macro Cycle Scanner US & CA)",
     macroSubtitle: "基于 FRED 经济数据、Fed 与 Bank of Canada NLP 语句分析的客观实证数组",

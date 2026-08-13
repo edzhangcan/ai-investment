@@ -1,46 +1,48 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Activity, Database, Newspaper, TrendingUp, Cpu } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface StartupLoadingOverlayProps {
   isLoading: boolean;
 }
 
-const LOADING_STEPS = [
-  {
-    label: 'Connecting to Federal Reserve (FRED) & Bank of Canada Economic Data...',
-    icon: Database,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/20',
-    borderColor: 'border-emerald-500/40',
-  },
-  {
-    label: 'Ingesting Live Central Bank Policy Statements & Macro News Stream...',
-    icon: Newspaper,
-    color: 'text-indigo-400',
-    bgColor: 'bg-indigo-500/20',
-    borderColor: 'border-indigo-500/40',
-  },
-  {
-    label: 'Analyzing Top 3-5 Equity Recommendations & CIO Sector Allocations...',
-    icon: TrendingUp,
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/20',
-    borderColor: 'border-amber-500/40',
-  },
-  {
-    label: 'Initializing Multi-Agent AI Debate Arena & Portfolio Engine...',
-    icon: Cpu,
-    color: 'text-violet-400',
-    bgColor: 'bg-violet-500/20',
-    borderColor: 'border-violet-500/40',
-  },
-];
-
 export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ isLoading }) => {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(isLoading);
   const isApiDoneRef = useRef(false);
+
+  const loadingSteps = [
+    {
+      label: t.loadingStep1,
+      icon: Database,
+      color: 'text-emerald-400',
+      bgColor: 'bg-emerald-500/20',
+      borderColor: 'border-emerald-500/40',
+    },
+    {
+      label: t.loadingStep2,
+      icon: Newspaper,
+      color: 'text-indigo-400',
+      bgColor: 'bg-indigo-500/20',
+      borderColor: 'border-indigo-500/40',
+    },
+    {
+      label: t.loadingStep3,
+      icon: TrendingUp,
+      color: 'text-amber-400',
+      bgColor: 'bg-amber-500/20',
+      borderColor: 'border-amber-500/40',
+    },
+    {
+      label: t.loadingStep4,
+      icon: Cpu,
+      color: 'text-violet-400',
+      bgColor: 'bg-violet-500/20',
+      borderColor: 'border-violet-500/40',
+    },
+  ];
 
   useEffect(() => {
     isApiDoneRef.current = !isLoading;
@@ -52,47 +54,47 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
       setCurrentStep(0);
       setProgress(0);
 
-      // Smooth progress animation: advances smoothly over ~1.2 seconds to 100%
-      const totalDuration = 1200; // 1.2s total smooth load
       const intervalMs = 30;
-      const totalTicks = totalDuration / intervalMs;
-      let currentTick = 0;
+      let currentProgress = 0;
 
       const interval = setInterval(() => {
-        currentTick++;
-        const pct = Math.min(100, Math.round((currentTick / totalTicks) * 100));
-        
-        // If API is still running at tick end, hold smoothly at 92% until API resolves
-        let displayPct = pct;
-        if (pct >= 92 && !isApiDoneRef.current) {
-          displayPct = 92;
+        if (isApiDoneRef.current) {
+          // Instant fast-path to 100% when API resolves
+          setProgress(100);
+          setCurrentStep(loadingSteps.length - 1);
+          clearInterval(interval);
+          setTimeout(() => setIsVisible(false), 100);
+          return;
         }
 
+        // Pacing logic: Smooth acceleration to 90%, then asymptotic continuous velocity to 99%
+        if (currentProgress < 90) {
+          currentProgress += 2.25; // Reaches 90% in ~1.2 seconds
+        } else if (currentProgress < 99) {
+          currentProgress += (99 - currentProgress) * 0.05; // Continuous decelerating progress (never stalls)
+        }
+
+        const displayPct = Math.min(99, currentProgress);
         setProgress(displayPct);
 
         if (displayPct >= 75) setCurrentStep(3);
         else if (displayPct >= 50) setCurrentStep(2);
         else if (displayPct >= 25) setCurrentStep(1);
         else setCurrentStep(0);
-
-        if (pct >= 100 && isApiDoneRef.current) {
-          clearInterval(interval);
-          setTimeout(() => setIsVisible(false), 100);
-        }
       }, intervalMs);
 
       return () => clearInterval(interval);
     } else {
-      // Fast path if already loaded
+      // Immediate unmount if API was already done at mount
       setProgress(100);
-      setCurrentStep(LOADING_STEPS.length - 1);
+      setCurrentStep(loadingSteps.length - 1);
       const timer = setTimeout(() => {
         setIsVisible(false);
       }, 100);
 
       return () => clearTimeout(timer);
     }
-  }, [isLoading]);
+  }, [isLoading, loadingSteps.length]);
 
   if (!isVisible) return null;
 
@@ -112,10 +114,10 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
           </div>
           <div>
             <h2 className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-300 bg-clip-text text-transparent">
-              AI Investment Platform
+              {t.appTitle}
             </h2>
             <p className="text-[11px] text-slate-400 font-medium">
-              Initializing real-time market intelligence systems...
+              {t.loadingSubtitle}
             </p>
           </div>
         </div>
@@ -130,7 +132,7 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
 
         {/* Steps */}
         <div className="space-y-3">
-          {LOADING_STEPS.map((step, idx) => {
+          {loadingSteps.map((step, idx) => {
             const StepIcon = step.icon;
             const isActive = idx === currentStep;
             const isCompleted = idx < currentStep || displayPercent === 100;
@@ -167,7 +169,9 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
 
         {/* Footer percentage */}
         <div className="mt-6 flex items-center justify-between text-[11px]">
-          <span className="text-slate-500 font-medium">Step {Math.min(currentStep + 1, LOADING_STEPS.length)} of {LOADING_STEPS.length}</span>
+          <span className="text-slate-500 font-medium">
+            {t.loadingStepCounter} {Math.min(currentStep + 1, loadingSteps.length)} {t.loadingOf} {loadingSteps.length}
+          </span>
           <span className="font-extrabold bg-gradient-to-r from-emerald-400 to-indigo-400 bg-clip-text text-transparent font-mono">
             {displayPercent}%
           </span>
