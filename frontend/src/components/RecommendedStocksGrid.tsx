@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StockRecommendation, CategorizedRecommendationsPayload } from '../types';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
-import { Sparkles, ArrowRight, Award, Coins, Compass, Star, ChevronRight } from 'lucide-react';
+import { Sparkles, ArrowRight, Award, Coins, Compass, Star, ChevronRight, RefreshCw } from 'lucide-react';
 
 interface RecommendedStocksGridProps {
   recommendations: CategorizedRecommendationsPayload | StockRecommendation[];
@@ -10,6 +10,7 @@ interface RecommendedStocksGridProps {
   isPlainTalk: boolean;
   watchlistSymbols?: Set<string>;
   onToggleWatchlist?: (symbol: string, companyName: string, targetPrice?: number) => void;
+  onRefreshRecommendations?: (category: 'SECTOR' | 'OVERALL' | 'GOLD', offset: number) => Promise<void> | void;
 }
 
 export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
@@ -18,9 +19,12 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
   isPlainTalk,
   watchlistSymbols = new Set(),
   onToggleWatchlist,
+  onRefreshRecommendations,
 }) => {
   const { t } = useLanguage();
   const [activeCategory, setActiveCategory] = useState<'SECTOR' | 'OVERALL' | 'GOLD'>('SECTOR');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshOffset, setRefreshOffset] = useState(0);
 
   // Extract categorization pools with fallbacks
   let sectorStocks: StockRecommendation[] = [];
@@ -43,6 +47,21 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
       : activeCategory === 'GOLD'
       ? goldNuggetStocks.length > 0 ? goldNuggetStocks : overallStocks
       : overallStocks;
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    const nextOffset = refreshOffset + 1;
+    setRefreshOffset(nextOffset);
+    try {
+      if (onRefreshRecommendations) {
+        await onRefreshRecommendations(activeCategory, nextOffset);
+      }
+    } catch (e) {
+      console.warn("Failed to refresh recommendations:", e);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 300);
+    }
+  };
 
   return (
     <div className="space-y-6 mb-8">
@@ -73,7 +92,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Award className="w-4 h-4 text-emerald-950" />
-            <span>{t.catSectorChampions} ({sectorStocks.length || 8})</span>
+            <span>{t.catSectorChampions} ({sectorStocks.length || 40})</span>
           </button>
 
           <button
@@ -85,7 +104,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>{t.catMarketLeaders} ({overallStocks.length || 8})</span>
+            <span>{t.catMarketLeaders} ({overallStocks.length || 40})</span>
           </button>
 
           <button
@@ -97,13 +116,13 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Coins className="w-4 h-4 text-amber-950" />
-            <span>{t.catGoldNuggets} ({goldNuggetStocks.length || 8})</span>
+            <span>{t.catGoldNuggets} ({goldNuggetStocks.length || 40})</span>
           </button>
         </div>
       </div>
 
       {/* Category Description Banner */}
-      <div className="bg-slate-950/60 border border-slate-800 p-3.5 rounded-2xl text-xs text-slate-300 flex items-center justify-between">
+      <div className="bg-slate-950/60 border border-slate-800 p-3.5 rounded-2xl text-xs text-slate-300 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           {activeCategory === 'SECTOR' && (
             <>
@@ -124,7 +143,19 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             </>
           )}
         </div>
-        <span className="text-[11px] text-slate-400 hidden sm:inline">{t.showingStocks}: {currentDisplayPool.length}</span>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-slate-400 hidden sm:inline">{t.showingStocks}: {currentDisplayPool.length}</span>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-1.5 bg-slate-900 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+            title={t.refreshRecommendations}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+            <span>{isRefreshing ? t.refreshingPicks : t.refreshRecommendations}</span>
+          </button>
+        </div>
       </div>
 
       {/* Compact 4-Column Stock Cards Grid */}
@@ -198,7 +229,9 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                         {t.freeCashFlow}
                       </BilingualHoverCard>
                     </span>
-                    <span className="font-bold text-emerald-400">${rec.key_metrics.free_cash_flow_b}B</span>
+                    <span className="font-bold text-emerald-400">
+                      {rec.key_metrics.free_cash_flow || (rec.key_metrics.free_cash_flow_b ? `$${rec.key_metrics.free_cash_flow_b}B` : 'N/A')}
+                    </span>
                   </div>
 
                   <div className="bg-slate-950/80 p-2 rounded-xl border border-slate-800/80">

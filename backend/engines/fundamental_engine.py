@@ -13,6 +13,25 @@ from backend.data_sources.sedar_parser import SEDARParser
 class FundamentalEngine:
     """Fundamental review and guidance drift engine with multi-language support."""
 
+    @staticmethod
+    def format_free_cash_flow(fcf: float | int | None, currency: str = "USD") -> str:
+        """Formats Free Cash Flow with $B and $M conversion badges."""
+        if fcf is None or float(fcf or 0) == 0:
+            return "N/A (ETF / Financial)"
+        
+        val = float(fcf)
+        abs_fcf = abs(val)
+        sign = "-" if val < 0 else ""
+        
+        if abs_fcf >= 1_000_000_000:
+            val_b = round(abs_fcf / 1_000_000_000, 2)
+            return f"{sign}${val_b}B {currency}"
+        elif abs_fcf >= 1_000_000:
+            val_m = round(abs_fcf / 1_000_000, 1)
+            return f"{sign}${val_m}M {currency}"
+        else:
+            return f"{sign}${round(abs_fcf, 2)} {currency}"
+
     @classmethod
     def evaluate_fundamentals(cls, stock_data: Dict[str, Any], lang: str = "en") -> Dict[str, Any]:
         symbol = stock_data.get("symbol", "UNKNOWN")
@@ -23,6 +42,7 @@ class FundamentalEngine:
                 "is_valid": False,
                 "symbol": symbol,
                 "free_cash_flow": None,
+                "free_cash_flow_formatted": "N/A (ETF / Financial)",
                 "fcf_yield_pct": 0.0,
                 "cash_conversion_ratio": 0.0,
                 "fcf_quality": "NO DATA AVAILABLE",
@@ -78,10 +98,13 @@ class FundamentalEngine:
         # 5. SaaS / Recurring Metrics (ARR, NRR, CAC Payback)
         arr_metrics = cls._extract_saas_metrics(symbol, revenue, lang=lang)
 
+        currency = stock_data.get("currency", "CAD" if symbol.endswith(".TO") else "USD")
+
         return {
             "is_valid": True,
             "symbol": symbol,
             "free_cash_flow": fcf if fcf is not None else 0,
+            "free_cash_flow_formatted": cls.format_free_cash_flow(fcf, currency),
             "fcf_yield_pct": max(0.0, fcf_yield),
             "cash_conversion_ratio": cash_conversion,
             "fcf_quality": fcf_quality,

@@ -15,7 +15,7 @@ DATABASE_URL = f"sqlite:///{DB_FILE}"
 engine = create_engine(
     DATABASE_URL,
     echo=settings.DEBUG,
-    connect_args={"check_same_thread": False}
+    connect_args={"check_same_thread": False, "timeout": 30}
 )
 
 def init_db():

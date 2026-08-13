@@ -22,6 +22,17 @@ export async function fetchMacroDashboard(lang: string = "en", forceRefresh: boo
   return res.json();
 }
 
+export async function refreshRecommendationsApi(category?: string, offset: number = 0, lang: string = "en"): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/macro/recommendations/refresh`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ category, offset, lang })
+  });
+  if (!res.ok) throw new Error(`Refresh recommendations API failed: ${res.statusText}`);
+  return res.json();
+}
+
 export async function fetchStockAnalysis(symbol: string, lang: string = "en"): Promise<StockAnalysisResponse> {
   const normalizedSymbol = symbol.trim().toUpperCase();
   const url = `${getApiBaseUrl()}/api/stock/${normalizedSymbol}?lang=${lang}`;

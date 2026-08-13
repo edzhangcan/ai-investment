@@ -77,3 +77,15 @@ class PushAlertConfigDB(SQLModel, table=True):
     discord_webhook_url: Optional[str] = Field(default=None)
     is_discord_enabled: bool = Field(default=False)
     updated_at: datetime = Field(default_factory=get_utc_now)
+
+class RecommendationSnapshotDB(SQLModel, table=True):
+    __tablename__ = "recommendation_snapshots"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    category: str = Field(index=True)  # "SECTOR", "OVERALL", "GOLD"
+    symbol: str = Field(index=True)
+    company_name: str
+    category_badge: str
+    total_recommendation_score: float
+    financial_payload_json: str  # Serialized JSON of recommendation item
+    lang: str = Field(default="en", index=True)
+    updated_at: datetime = Field(default_factory=get_utc_now)

@@ -17,7 +17,7 @@ import { DiscordAlertSettingsModal } from './components/DiscordAlertSettingsModa
 import { ExportMemoModal } from './components/ExportMemoModal';
 import { useLanguage } from './context/LanguageContext';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
-import { fetchStockAnalysis, fetchMacroDashboard, fetchWatchlistApi, addWatchlistApi, deleteWatchlistApi } from './api/client';
+import { fetchStockAnalysis, fetchMacroDashboard, fetchWatchlistApi, addWatchlistApi, deleteWatchlistApi, refreshRecommendationsApi } from './api/client';
 import { Search, Sparkles, RefreshCw, ShieldCheck, ShieldAlert, HelpCircle, LayoutDashboard, LineChart, Star, Command, TrendingUp, Layers, Calculator, Bell, FileText } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -339,6 +339,26 @@ export const App: React.FC = () => {
                 isPlainTalk={isPlainTalk}
                 watchlistSymbols={watchlistSymbols}
                 onToggleWatchlist={toggleWatchlist}
+                onRefreshRecommendations={async (category, offset) => {
+                  try {
+                    const res = await refreshRecommendationsApi(category, offset, language);
+                    if (dashboardData && dashboardData.recommendations) {
+                      const updatedRecs = { ...dashboardData.recommendations };
+                      if (category === 'SECTOR') {
+                        updatedRecs.sector_overweight_stocks = res.stocks || res.sector_overweight_stocks;
+                      } else if (category === 'OVERALL') {
+                        updatedRecs.overall_recommended_stocks = res.stocks || res.overall_recommended_stocks;
+                      } else if (category === 'GOLD') {
+                        updatedRecs.gold_nugget_stocks = res.stocks || res.gold_nugget_stocks;
+                      } else if (res.sector_overweight_stocks) {
+                        dashboardData.recommendations = res;
+                      }
+                      setDashboardData({ ...dashboardData, recommendations: updatedRecs });
+                    }
+                  } catch (e) {
+                    console.warn("Failed to refresh recommendations:", e);
+                  }
+                }}
               />
             </>
           ) : (
@@ -446,9 +466,11 @@ export const App: React.FC = () => {
                           </BilingualHoverCard>
                         </div>
                         <div className="text-base font-bold text-emerald-400">
-                          {stockData.stock.free_cash_flow && stockData.stock.free_cash_flow > 0
-                            ? `$${(stockData.stock.free_cash_flow / 1e9).toFixed(1)}B`
-                            : 'N/A (ETF/Index)'}
+                          {stockData.stock.free_cash_flow && Math.abs(stockData.stock.free_cash_flow) >= 1e9
+                            ? `$${(stockData.stock.free_cash_flow / 1e9).toFixed(2)}B ${stockData.stock.currency || 'USD'}`
+                            : (stockData.stock.free_cash_flow && Math.abs(stockData.stock.free_cash_flow) >= 1e6
+                                ? `$${Math.round(stockData.stock.free_cash_flow / 1e6)}M ${stockData.stock.currency || 'USD'}`
+                                : 'N/A (ETF/Financial)')}
                         </div>
                       </div>
                       <div>

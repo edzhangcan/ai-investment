@@ -141,8 +141,9 @@ export interface StockRecommendation {
   key_catalysts: string[];
   key_metrics: {
     pe_ratio: number | string;
-    free_cash_flow_b: number;
-    fcf_quality: string;
+    free_cash_flow?: string;
+    free_cash_flow_b?: number | string;
+    fcf_quality?: string;
     moat_rating: string;
     two_hundred_day_sma: number;
     dcf_fair_value: number;

@@ -12,25 +12,25 @@ def test_get_top_recommendations_categorized():
     assert "overall_recommended_stocks" in result
     assert "gold_nugget_stocks" in result
 
-    # 1. Sector Overweight Champions count == 8
+    # 1. Sector Overweight Champions count == 16
     sector_stocks = result["sector_overweight_stocks"]
-    assert len(sector_stocks) == 8
+    assert len(sector_stocks) == 16
     sector_symbols = [s["symbol"] for s in sector_stocks]
     for stock in sector_stocks:
         assert stock["category_badge"] == "SECTOR_OVERWEIGHT"
 
-    # 2. Overall Market Leaders count == 8
+    # 2. Overall Market Leaders count == 16
     overall_stocks = result["overall_recommended_stocks"]
-    assert len(overall_stocks) == 8
+    assert len(overall_stocks) == 16
     overall_symbols = [s["symbol"] for s in overall_stocks]
 
-    # 3. Gold Nuggets count == 8
+    # 3. Gold Nuggets count == 16
     gold_stocks = result["gold_nugget_stocks"]
-    assert len(gold_stocks) == 8
+    assert len(gold_stocks) == 16
     gold_symbols = [s["symbol"] for s in gold_stocks]
 
     # -------------------------------------------------------------
-    # STRICT MUTUAL EXCLUSIVITY ASSERTIONS (ZERO OVERLAP ACROSS ALL 24 STOCKS)
+    # STRICT MUTUAL EXCLUSIVITY ASSERTIONS (ZERO OVERLAP ACROSS ALL 48 STOCKS)
     # -------------------------------------------------------------
     sector_set = set(sector_symbols)
     overall_set = set(overall_symbols)
@@ -39,3 +39,18 @@ def test_get_top_recommendations_categorized():
     assert len(sector_set.intersection(overall_set)) == 0, f"Overlap between Sector and Overall: {sector_set.intersection(overall_set)}"
     assert len(sector_set.intersection(gold_set)) == 0, f"Overlap between Sector and Gold: {sector_set.intersection(gold_set)}"
     assert len(overall_set.intersection(gold_set)) == 0, f"Overlap between Overall and Gold: {overall_set.intersection(gold_set)}"
+
+def test_refresh_stock_recommendations_endpoint():
+    from fastapi.testclient import TestClient
+    from backend.main import app
+
+    client = TestClient(app)
+    res = client.post("/api/macro/recommendations/refresh", json={
+        "category": "SECTOR",
+        "offset": 1,
+        "lang": "en"
+    })
+    assert res.status_code == 200
+    json_data = res.json()
+    assert "stocks" in json_data
+    assert len(json_data["stocks"]) == 16

@@ -17,11 +17,28 @@ from backend.config import settings
 from backend.database import init_db
 from backend.routers import macro, stock, debate, watchlist, alerts, portfolio, backtest, push_alerts
 
+import asyncio
+
+async def run_universe_refresh_daemon():
+    logging.info("Starting 2-Hour Automated Stock Universe Refresh Daemon...")
+    while True:
+        try:
+            from backend.engines.recommendation_engine import RecommendationEngine
+            logging.info("Daemon scanning 200+ North American stocks for macro recommendation refresh...")
+            RecommendationEngine.refresh_stock_universe_job(force=True, lang="en")
+            RecommendationEngine.refresh_stock_universe_job(force=True, lang="zh")
+            RecommendationEngine.refresh_stock_universe_job(force=True, lang="hybrid")
+            logging.info("Daemon stock universe scan complete. Next background refresh in 2 hours.")
+        except Exception as e:
+            logging.error(f"Error in stock universe refresh daemon: {e}")
+        await asyncio.sleep(7200)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize SQLite database tables on startup
     init_db()
     logging.info("SQLite database tables initialized successfully.")
+    asyncio.create_task(run_universe_refresh_daemon())
     yield
 
 app = FastAPI(
