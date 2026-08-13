@@ -68,20 +68,32 @@ class PricingEngine:
             # ETF / Index or missing FCF default DCF target relative to 200D SMA
             dcf_fair_value = round(max(price * 1.05, two_hundred_sma * 1.10), 2)
 
-        # 2. Valuation Percentile Status
+        # 2. Continuous Dynamic Valuation Percentile & Timing Score
+        rsi = float(stock_data.get("rsi_14") or 55.0)
+        sma_ratio = price / max(1.0, two_hundred_sma)
+        
+        # Base score from DCF upside / discount ratio
+        dcf_upside = max(-0.30, min(0.60, (dcf_fair_value - price) / max(1.0, price)))
+        dcf_pts = 60.0 + (dcf_upside * 50.0)  # Maps -30% -> 45 pts, +60% -> 90 pts
+        
+        # Momentum & MA support adjustment (+/- 10 pts)
+        ma_pts = 10.0 if sma_ratio <= 1.15 else (-5.0 if sma_ratio > 1.30 else 0.0)
+        
         if pe is not None:
-            if pe > 40:
+            if pe > 50:
                 val_status = "Premium / High Multiple" if lang == "en" else ("高估值区间" if lang == "zh" else "高估值区间 (Premium Multiple)")
-                val_percentile = 85
+                pe_pts = -8.0
             elif pe < 18:
                 val_status = "Deep Value / Cheap" if lang == "en" else ("低估值区间" if lang == "zh" else "低估值区间 (Deep Value)")
-                val_percentile = 20
+                pe_pts = 8.0
             else:
                 val_status = "Fair Value" if lang == "en" else ("合理估值区间" if lang == "zh" else "合理估值区间 (Fair Value)")
-                val_percentile = 55
+                pe_pts = 2.0
         else:
             val_status = "ETF / Index Portfolio" if lang == "en" else ("指数基金/资产组合" if lang == "zh" else "指数基金/资产组合 (ETF Portfolio)")
-            val_percentile = 50
+            pe_pts = 0.0
+
+        val_percentile = round(max(30.0, min(95.0, dcf_pts + ma_pts + pe_pts)), 1)
 
         # 3. Technical Support & Institutional Margin of Safety Buy Bracket Synthesis
         mos_discount = 0.85
