@@ -98,6 +98,9 @@ class FundamentalEngine:
         # 5. SaaS / Recurring Metrics (ARR, NRR, CAC Payback)
         arr_metrics = cls._extract_saas_metrics(symbol, revenue, lang=lang)
 
+        from backend.data_sources.company_profiles import CompanyProfileEngine
+        company_profile = CompanyProfileEngine.get_profile(symbol, lang=lang)
+
         currency = stock_data.get("currency", "CAD" if symbol.endswith(".TO") else "USD")
 
         return {
@@ -113,7 +116,12 @@ class FundamentalEngine:
             "moat_scores": moat_scores,
             "guidance_shift_deltas": guidance_deltas,
             "filing_source": filing_metrics.get("sec_source") or filing_metrics.get("sedar_source") or "Filing Parser",
-            "arr_nrr_metrics": arr_metrics
+            "arr_nrr_metrics": arr_metrics,
+            "company_profile": company_profile,
+            "company_background": company_profile["company_background"],
+            "growth_catalysts": company_profile["growth_catalysts"],
+            "key_catalysts": company_profile["growth_catalysts"],
+            "revenue_drivers": company_profile["revenue_drivers"]
         }
 
     @classmethod
