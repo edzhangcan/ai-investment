@@ -17,7 +17,7 @@ export interface Translations {
   source: string;
   currentMarketPrice: string;
 
-  // Macro Dashboard
+  // Macro Dashboard & Scanner Bar
   macroTitle: string;
   macroSubtitle: string;
   liveMacroStream: string;
@@ -34,6 +34,8 @@ export interface Translations {
   indicator: string;
   value: string;
   impact: string;
+  macroInsight: string;
+  readOfficialRelease: string;
 
   // Recommendations Grid
   recsTitle: string;
@@ -63,6 +65,8 @@ export interface Translations {
   rsi14: string;
   arrMetric: string;
   nrrMetric: string;
+  fcfQualityAssessment: string;
+  guidanceShiftDeltas: string;
 
   // Debate Arena & Verdicts
   debateTitle: string;
@@ -103,6 +107,9 @@ export interface Translations {
   maxDrawdown: string;
   winRate: string;
   alpha: string;
+  riskFreeRate: string;
+  peakToTroughRisk: string;
+  outperformedBenchmark: string;
 
   // Fundamental Review Section
   fundamentalReportTitle: string;
@@ -212,6 +219,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     indicator: "Economic Indicator",
     value: "Current Value",
     impact: "Portfolio Impact",
+    macroInsight: "Macro Insight:",
+    readOfficialRelease: "Read Official Release",
 
     recsTitle: "Top Macro-Driven Stock Recommendations",
     recsSubtitle: "Categorized by Macro Overweight Sectors, Blue-Chip Leaders, and Hidden Gold Nuggets",
@@ -231,7 +240,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     freeCashFlow: "Free Cash Flow (FCF)",
     peRatio: "P/E Ratio",
-    moatRating: "Moat Rating",
+    moatRating: "Morningstar Moat Rating",
     buyZone: "Ideal Buy Zone",
     fairValue: "DCF Intrinsic Fair Value",
     fiftyDaySma: "50-Day SMA",
@@ -239,6 +248,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     rsi14: "RSI (14-Day)",
     arrMetric: "Annual Recurring Revenue (ARR)",
     nrrMetric: "Net Revenue Retention (NRR)",
+    fcfQualityAssessment: "FCF Quality Assessment",
+    guidanceShiftDeltas: "5-Yr Guidance Shift Deltas",
 
     debateTitle: "Multi-Agent Institutional Investment Arena",
     debateSubtitle: "🐂 Bull Agent vs 🐻 Bear Agent Data Debate → 👨‍⚖️ CIO Verdict & Evidence Verification",
@@ -275,6 +286,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     maxDrawdown: "Max Drawdown",
     winRate: "Win Rate",
     alpha: "Alpha (Excess Return)",
+    riskFreeRate: "Risk-free rate: 3.5%",
+    peakToTroughRisk: "Peak-to-trough risk",
+    outperformedBenchmark: "Outperformed benchmark",
 
     fundamentalReportTitle: "Institutional Fundamental Review Report",
 
@@ -378,6 +392,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     indicator: "经济指标",
     value: "最新数据",
     impact: "组合影响",
+    macroInsight: "宏观深度洞察:",
+    readOfficialRelease: "阅读官方发布公告",
 
     recsTitle: "宏观驱动多维度股票推荐阵列",
     recsSubtitle: "按宏观超配板块、蓝筹核心龙头与隐形金矿股精准分类",
@@ -397,7 +413,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     freeCashFlow: "自由现金流",
     peRatio: "市盈率",
-    moatRating: "护城河评级",
+    moatRating: "晨星护城河评级",
     buyZone: "理想买入区间",
     fairValue: "DCF 固有价值",
     fiftyDaySma: "50日均线",
@@ -405,6 +421,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     rsi14: "RSI 相对强弱",
     arrMetric: "年度订阅收入",
     nrrMetric: "净收入留存率",
+    fcfQualityAssessment: "自由现金流质量评估",
+    guidanceShiftDeltas: "5年期管理层指引变动量",
 
     debateTitle: "多智能体机构投资辩论竞技场",
     debateSubtitle: "🐂 多头分析师 vs 🐻 空头公诉人 辩论竞技场 → 👨‍⚖️ 首席投资官 最终裁决与证据核验",
@@ -441,6 +459,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     maxDrawdown: "最大回撤",
     winRate: "跑赢大盘胜率",
     alpha: "超额收益",
+    riskFreeRate: "无风险利率基准: 3.5%",
+    peakToTroughRisk: "峰值至谷值最大回撤风险",
+    outperformedBenchmark: "跑赢基准大盘比例",
 
     fundamentalReportTitle: "机构基本面深度审计报告",
 
@@ -544,6 +565,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     indicator: "经济指标 (Indicator)",
     value: "最新数据 (Value)",
     impact: "组合影响 (Impact)",
+    macroInsight: "宏观洞察 (Macro Insight):",
+    readOfficialRelease: "阅读官方公告 (Official Release)",
 
     recsTitle: "宏观驱动股票推荐阵列 (Top Macro Recommendations)",
     recsSubtitle: "按 Overweight 板块、Blue-Chip 核心龙头与 Hidden Gold Nuggets 精准分类",
@@ -563,7 +586,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     freeCashFlow: "自由现金流 (Free Cash Flow)",
     peRatio: "市盈率 (P/E Ratio)",
-    moatRating: "护城河评级 (Moat Rating)",
+    moatRating: "护城河评级 (Morningstar Moat Rating)",
     buyZone: "理想买入区间 (Buy Zone)",
     fairValue: "DCF 固有价值 (Fair Value)",
     fiftyDaySma: "50日均线 (50D SMA)",
@@ -571,6 +594,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     rsi14: "RSI (14-Day)",
     arrMetric: "年度订阅收入 (ARR)",
     nrrMetric: "净收入留存率 (NRR)",
+    fcfQualityAssessment: "自由现金流质量 (FCF Quality Assessment)",
+    guidanceShiftDeltas: "5年指引变动 (5-Yr Guidance Shift Deltas)",
 
     debateTitle: "多智能体投资辩论竞技场 (Multi-Agent Investment Arena)",
     debateSubtitle: "🐂 多头 (Bull) vs 🐻 空头 (Bear) 数据辩论 → 👨‍⚖️ CIO 裁决与 Evidence 核验",
@@ -607,6 +632,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     maxDrawdown: "最大回撤 (Max Drawdown)",
     winRate: "胜率 (Win Rate vs Benchmark)",
     alpha: "超额收益 (Alpha)",
+    riskFreeRate: "无风险利率 (Risk-free rate): 3.5%",
+    peakToTroughRisk: "最大回撤风险 (Peak-to-trough risk)",
+    outperformedBenchmark: "跑赢基准大盘 (Outperformed benchmark)",
 
     fundamentalReportTitle: "机构基本面审计报告 (Fundamental Review Report)",
 

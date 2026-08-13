@@ -149,7 +149,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
             </BilingualHoverCard>
           </div>
           <div className="text-lg font-extrabold text-indigo-300">{data.sharpe_ratio}</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Risk-free rate: 3.5%</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">{t.riskFreeRate}</div>
         </div>
 
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
@@ -159,7 +159,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
             </BilingualHoverCard>
           </div>
           <div className="text-lg font-extrabold text-rose-400">-{data.max_drawdown_pct}%</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Peak-to-trough risk</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">{t.peakToTroughRisk}</div>
         </div>
 
         <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
@@ -169,7 +169,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
             </BilingualHoverCard>
           </div>
           <div className="text-lg font-extrabold text-amber-300">{data.win_rate_pct}%</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Outperformed benchmark</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">{t.outperformedBenchmark}</div>
         </div>
       </div>
 

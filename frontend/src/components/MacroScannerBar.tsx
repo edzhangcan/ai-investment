@@ -1,5 +1,6 @@
 import React from 'react';
 import { BilingualHoverCard } from './BilingualHoverCard';
+import { useLanguage } from '../context/LanguageContext';
 import { Compass, TrendingUp, AlertTriangle, Cpu } from 'lucide-react';
 
 interface MacroScannerBarProps {
@@ -8,6 +9,7 @@ interface MacroScannerBarProps {
 }
 
 export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isPlainTalk = false }) => {
+  const { t } = useLanguage();
   if (!macroData) return null;
 
   const cycle = macroData.cycle_stage || "Overheat / Late Expansion";
@@ -29,14 +31,14 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isP
           <div>
             <div className="text-xs uppercase tracking-wider text-slate-400 font-medium flex items-center gap-2">
               <BilingualHoverCard termKey="MacroCycle" isPlainTalk={isPlainTalk}>
-                Macro Economic Cycle Scanner (US & CA)
+                {t.macroTitle}
               </BilingualHoverCard>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-                Live Macro Stream
+                {t.liveMacroStream}
               </span>
             </div>
             <h2 className="text-lg font-bold text-slate-100 mt-0.5">
-              Current Cycle Stage: <span className="text-emerald-400">{cycle}</span>
+              {t.cycleStage}: <span className="text-emerald-400">{cycle}</span>
             </h2>
           </div>
         </div>
@@ -47,7 +49,7 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isP
           <div>
             <div className="text-slate-400">
               <BilingualHoverCard termKey="FedSentiment" isPlainTalk={isPlainTalk}>
-                Central Bank (Fed) Sentiment
+                {t.fedSentiment}
               </BilingualHoverCard>:
             </div>
             <div className="font-semibold text-indigo-300">{fed.tone || "Hawkish"}</div>
@@ -57,7 +59,7 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isP
 
       {/* Summary Explanation */}
       <p className="text-sm text-slate-300 mb-4 bg-slate-950/40 p-3 rounded-xl border border-slate-800/60 leading-relaxed">
-        💡 <span className="font-semibold text-amber-300">Macro Insight:</span> {macroData.plain_explanation}
+        💡 <span className="font-semibold text-amber-300">{t.macroInsight}</span> {macroData.plain_explanation}
       </p>
 
       {/* Sector Rotation Grid */}
@@ -66,7 +68,7 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isP
         <div className="bg-emerald-950/20 border border-emerald-800/30 rounded-xl p-3.5">
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 mb-2">
             <TrendingUp className="w-4 h-4" />
-            <span>Recommended Overweight Sectors</span>
+            <span>{t.overweightSectors}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {overweights.map((sector: string, idx: number) => (
@@ -81,7 +83,7 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isP
         <div className="bg-rose-950/20 border border-rose-800/30 rounded-xl p-3.5">
           <div className="flex items-center gap-2 text-xs font-bold text-rose-400 mb-2">
             <AlertTriangle className="w-4 h-4" />
-            <span>Recommended Underweight Sectors</span>
+            <span>{t.underweightSectors}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {underweights.map((sector: string, idx: number) => (

@@ -526,14 +526,14 @@ export const App: React.FC = () => {
                     <div className="flex items-center justify-between text-sm font-bold text-slate-100 mb-3">
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="w-5 h-5 text-indigo-400" />
-                        <span>Fundamental Review Report</span>
+                        <span>{t.fundamentalReportTitle}</span>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                       <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
                         <span className="text-slate-400 block mb-1">
                           <BilingualHoverCard termKey="FCF" isPlainTalk={isPlainTalk}>
-                            FCF Quality Assessment
+                            {t.fcfQualityAssessment}
                           </BilingualHoverCard>:
                         </span>
                         <span className="font-semibold text-emerald-400">{stockData.fundamentals.fcf_quality}</span>
@@ -541,7 +541,7 @@ export const App: React.FC = () => {
                       <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
                         <span className="text-slate-400 block mb-1">
                           <BilingualHoverCard termKey="MoatRating" isPlainTalk={isPlainTalk}>
-                            Morningstar Moat Rating
+                            {t.moatRating}
                           </BilingualHoverCard>:
                         </span>
                         <span className="font-semibold text-indigo-300">{stockData.fundamentals.moat_rating}</span>
@@ -549,7 +549,7 @@ export const App: React.FC = () => {
                       <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
                         <span className="text-slate-400 block mb-1">
                           <BilingualHoverCard termKey="GuidanceShift" isPlainTalk={isPlainTalk}>
-                            5-Yr Guidance Shift Deltas
+                            {t.guidanceShiftDeltas}
                           </BilingualHoverCard>:
                         </span>
                         <span className="font-semibold text-amber-300">{stockData.fundamentals.guidance_shift_deltas[0].added_disclaimer}</span>
