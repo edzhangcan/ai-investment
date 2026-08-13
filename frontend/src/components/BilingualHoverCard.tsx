@@ -27,7 +27,7 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
   children,
   isPlainTalk = false
 }) => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -146,7 +146,7 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
       {((language !== 'zh' && analogyEn) || (language !== 'en' && analogyZh)) && (
         <div className="p-3 bg-slate-950 rounded-xl border border-amber-500/40 text-xs text-amber-200 leading-relaxed shadow-md">
           <div className="font-bold text-amber-300 text-xs mb-1 flex items-center gap-1">
-            <span>💡 Everyday Analogy / 通俗比喻：</span>
+            <span>{t.everydayAnalogyHeader}</span>
           </div>
           {language !== 'zh' && analogyEn && (
             <p className="mb-1 text-[11px] text-amber-100 font-normal">🇺🇸 {analogyEn}</p>

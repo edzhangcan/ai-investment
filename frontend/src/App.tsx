@@ -403,10 +403,10 @@ export const App: React.FC = () => {
                                     ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30 shadow-md shadow-amber-500/10'
                                     : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-amber-500/40 hover:text-amber-300'
                                 }`}
-                                title={isCurrentStarred ? "已在自选股中 (点击取消关注)" : "添加到自选股与价格提醒"}
+                                title={isCurrentStarred ? t.starred : t.addStar}
                               >
                                 <Star className={`w-3.5 h-3.5 ${isCurrentStarred ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} />
-                                <span>{isCurrentStarred ? '✓ 已关注' : '+ 关注'}</span>
+                                <span>{isCurrentStarred ? t.starred : t.addStar}</span>
                               </button>
 
                               <button
@@ -422,15 +422,15 @@ export const App: React.FC = () => {
                         })()}
                       </div>
                       <div className="text-xs text-slate-400 flex items-center gap-3">
-                        <span>Source: <span className="text-slate-300">{stockData.stock.source}</span></span>
+                        <span>{t.source}: <span className="text-slate-300">{stockData.stock.source}</span></span>
                         <span>•</span>
-                        <span>Ground Truth: <span className="text-emerald-400 font-semibold">100% Verified Data</span></span>
+                        <span>Ground Truth: <span className="text-emerald-400 font-semibold">{t.groundTruthVerified}</span></span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-6">
                       <div>
-                        <div className="text-xs text-slate-400">Current Market Price</div>
+                        <div className="text-xs text-slate-400">{t.currentMarketPrice}</div>
                         <div className="text-xl font-extrabold text-slate-100">
                           ${stockData.stock.current_price} <span className="text-xs font-normal text-slate-400">{stockData.stock.currency}</span>
                         </div>

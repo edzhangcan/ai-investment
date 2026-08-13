@@ -71,7 +71,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
           {bull.upside_catalyst && (
             <div className="bg-emerald-900/30 border border-emerald-500/30 p-2.5 rounded-lg text-xs">
               <span className="text-emerald-400 font-bold block mb-0.5 flex items-center gap-1">
-                <ArrowUpRight className="w-3.5 h-3.5" /> Key Upside Catalyst:
+                <ArrowUpRight className="w-3.5 h-3.5" /> {t.keyUpsideCatalyst}:
               </span>
               <span className="text-slate-200 font-medium">{bull.upside_catalyst}</span>
             </div>
@@ -106,7 +106,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
           {bear.downside_risk && (
             <div className="bg-rose-900/30 border border-rose-500/30 p-2.5 rounded-lg text-xs">
               <span className="text-rose-400 font-bold block mb-0.5 flex items-center gap-1">
-                <ShieldAlert className="w-3.5 h-3.5" /> Key Downside Risk:
+                <ShieldAlert className="w-3.5 h-3.5" /> {t.keyDownsideRisk}:
               </span>
               <span className="text-slate-200 font-medium">{bear.downside_risk}</span>
             </div>

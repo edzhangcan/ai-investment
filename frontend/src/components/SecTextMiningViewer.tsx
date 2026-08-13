@@ -75,12 +75,12 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
             </span>
             <h3 className="text-xl font-extrabold text-slate-100">
               <BilingualHoverCard termKey="SEC10K" isPlainTalk={isPlainTalk}>
-                5-Year SEC 10-K & SEDAR+ Text Mining Pipeline
+                {t.secTitle}
               </BilingualHoverCard>
             </h3>
           </div>
           <p className="text-xs text-slate-400">
-            Automated Levenshtein diffing & risk factor keyword extraction across 5 annual filings
+            {t.secSubtitle}
           </p>
         </div>
 
@@ -124,7 +124,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
       <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 mb-6">
         <div className="flex items-center justify-between mb-4 border-b border-slate-800/80 pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-200">Comparison Period:</span>
+            <span className="text-xs font-bold text-slate-200">{t.comparisonPeriod}:</span>
             <span className="text-xs font-extrabold text-emerald-400 font-mono">{currentEntry.year}</span>
           </div>
           <span className="px-2.5 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-lg text-xs font-bold">
@@ -138,7 +138,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
           <div className="bg-rose-950/20 border border-rose-500/30 rounded-xl p-4">
             <div className="text-xs font-bold text-rose-400 mb-2 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4" />
-              <span>+ Inserted Risk Disclaimer (新增风险披露)</span>
+              <span>{t.insertedDisclaimer}</span>
             </div>
             <p className="text-xs text-slate-200 leading-relaxed font-medium">
               {currentEntry.added_disclaimer}
@@ -149,7 +149,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
           <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-4">
             <div className="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4" />
-              <span>- Removed / Reclassified Disclaimers (移除性声明)</span>
+              <span>{t.removedDisclaimer}</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed font-medium">
               {currentEntry.removed_disclaimer}
@@ -161,7 +161,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
         <div>
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <TrendingUp className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Extracted Risk Keyword Trends (关键词频率变化)</span>
+            <span>{t.extractedKeywordTrends}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {currentEntry.keywords_trend.map((kw, idx) => (

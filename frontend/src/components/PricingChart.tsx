@@ -54,7 +54,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
         <div>
           <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold">
             <Target className="w-4 h-4 text-emerald-400" />
-            <span>Pricing & Technical Overlay</span>
+            <span>{t.pricingOverlay}</span>
           </div>
           <h3 className="text-base font-bold text-slate-100 mt-1">
             {t.idealBuyRange}: <span className="text-emerald-400">${buyMin} – ${buyMax} {currency}</span>
@@ -82,8 +82,8 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
           <div className="bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs">
             <span className="text-slate-400">
               <BilingualHoverCard termKey="DCF" isPlainTalk={isPlainTalk}>
-                DCF Fair Value
-              </BilingualHoverCard>: 
+                {t.fairValue}
+              </BilingualHoverCard>:
             </span>
             <span className="font-bold text-emerald-300"> ${dcfFairValue} {currency}</span>
           </div>
