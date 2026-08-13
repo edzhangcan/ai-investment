@@ -494,6 +494,49 @@ class RecommendationEngine:
         return payload
 
     @classmethod
+    def get_refreshed_recommendations(
+        cls, category: Optional[str] = None, offset: int = 0, lang: str = "en"
+    ) -> Dict[str, Any]:
+        """
+        Rotates candidate stocks for category pool or all categories.
+        Returns refreshed candidate stock list matching active macro criteria.
+        """
+        full = cls.get_top_recommendations(force_refresh=True, lang=lang)
+        
+        category_clean = (category or "").upper().strip()
+        
+        if category_clean in ["SECTOR", "SECTOR_OVERWEIGHT"]:
+            pool = full.get("sector_overweight_stocks", [])
+            shift = (offset + 1) % max(1, len(pool))
+            rotated = pool[shift:] + pool[:shift]
+            return {"category": "SECTOR", "stocks": rotated}
+        elif category_clean in ["OVERALL", "OVERALL_LEADER"]:
+            pool = full.get("overall_recommended_stocks", [])
+            shift = (offset + 1) % max(1, len(pool))
+            rotated = pool[shift:] + pool[:shift]
+            return {"category": "OVERALL", "stocks": rotated}
+        elif category_clean in ["GOLD", "GOLD_NUGGET"]:
+            pool = full.get("gold_nugget_stocks", [])
+            shift = (offset + 1) % max(1, len(pool))
+            rotated = pool[shift:] + pool[:shift]
+            return {"category": "GOLD", "stocks": rotated}
+        else:
+            # Rotate all category pools
+            s_pool = full.get("sector_overweight_stocks", [])
+            o_pool = full.get("overall_recommended_stocks", [])
+            g_pool = full.get("gold_nugget_stocks", [])
+            
+            s_shift = (offset + 1) % max(1, len(s_pool))
+            o_shift = (offset + 1) % max(1, len(o_pool))
+            g_shift = (offset + 1) % max(1, len(g_pool))
+            
+            full["sector_overweight_stocks"] = s_pool[s_shift:] + s_pool[:s_shift]
+            full["overall_recommended_stocks"] = o_pool[o_shift:] + o_pool[:o_shift]
+            full["gold_nugget_stocks"] = g_pool[g_shift:] + g_pool[:g_shift]
+            full["recommended_stocks"] = full["overall_recommended_stocks"]
+            return full
+
+    @classmethod
     def _score_macro_alignment(cls, symbol: str, cycle_code: str, overweights: List[str], sector: str) -> float:
         """Scores stock alignment with current macroeconomic phase."""
         if cycle_code == "OVERHEAT":

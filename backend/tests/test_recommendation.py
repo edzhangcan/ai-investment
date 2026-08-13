@@ -39,3 +39,18 @@ def test_get_top_recommendations_categorized():
     assert len(sector_set.intersection(overall_set)) == 0, f"Overlap between Sector and Overall: {sector_set.intersection(overall_set)}"
     assert len(sector_set.intersection(gold_set)) == 0, f"Overlap between Sector and Gold: {sector_set.intersection(gold_set)}"
     assert len(overall_set.intersection(gold_set)) == 0, f"Overlap between Overall and Gold: {overall_set.intersection(gold_set)}"
+
+def test_refresh_stock_recommendations_endpoint():
+    from fastapi.testclient import TestClient
+    from backend.main import app
+
+    client = TestClient(app)
+    res = client.post("/api/macro/recommendations/refresh", json={
+        "category": "SECTOR",
+        "offset": 1,
+        "lang": "en"
+    })
+    assert res.status_code == 200
+    json_data = res.json()
+    assert "stocks" in json_data
+    assert len(json_data["stocks"]) == 8

@@ -52,6 +52,8 @@ export interface Translations {
   // Recommendations Grid
   recsTitle: string;
   recsSubtitle: string;
+  refreshRecommendations: string;
+  refreshingPicks: string;
   catSectorChampions: string;
   catMarketLeaders: string;
   catGoldNuggets: string;
@@ -247,6 +249,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     recsTitle: "Top Macro-Driven Stock Recommendations",
     recsSubtitle: "Categorized by Macro Overweight Sectors, Blue-Chip Leaders, and Hidden Gold Nuggets",
+    refreshRecommendations: "Refresh Recommendations",
+    refreshingPicks: "Rotating candidate batch...",
     catSectorChampions: "🟢 Sector Overweight Champions",
     catMarketLeaders: "🔵 Core Market Leaders",
     catGoldNuggets: "🪙 Hidden Gold Nuggets",
@@ -431,6 +435,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     recsTitle: "宏观驱动多维度股票推荐阵列",
     recsSubtitle: "按宏观超配板块、蓝筹核心龙头与隐形金矿股精准分类",
+    refreshRecommendations: "刷新推荐组合",
+    refreshingPicks: "正在更换新一批推荐标的...",
     catSectorChampions: "🟢 超配板块精选",
     catMarketLeaders: "🔵 核心龙头",
     catGoldNuggets: "🪙 隐形金矿股",
@@ -615,6 +621,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     recsTitle: "宏观驱动股票推荐阵列 (Top Macro Recommendations)",
     recsSubtitle: "按 Overweight 板块、Blue-Chip 核心龙头与 Hidden Gold Nuggets 精准分类",
+    refreshRecommendations: "刷新推荐 (Refresh Picks)",
+    refreshingPicks: "正在刷新标的 (Rotating Picks)...",
     catSectorChampions: "🟢 超配板块精选 (Sector Champions)",
     catMarketLeaders: "🔵 核心龙头 (Market Leaders)",
     catGoldNuggets: "🪙 隐形金矿股 (Hidden Gold Nuggets)",
