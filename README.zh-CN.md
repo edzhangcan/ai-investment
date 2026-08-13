@@ -1,80 +1,53 @@
-# 投资工作站 (Investment Workstation)
+# AI 智能投资工作站
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-[![Release](https://img.shields.io/badge/release-v4.3.0-emerald.svg)](https://github.com/edzhangcan/ai-investment/tags)
-[![Tests](https://img.shields.io/badge/pytest-32%2F32%20passing-brightgreen.svg)](file:///c:/Users/drunk/Projects/ai-investment/backend/tests)
+[![Release](https://img.shields.io/badge/release-v4.7.0-emerald.svg)](https://github.com/edzhangcan/ai-investment/tags)
+[![Tests](https://img.shields.io/badge/pytest-49%2F49%20passing-brightgreen.svg)](file:///c:/Users/drunk/Projects/ai-investment/backend/tests)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-一款面向美股与加拿大股票市场的 AI 辅助量化投资工作站。系统自动解析央行货币政策声明、跟踪 FRED 宏观经济指标、对 3 大类共 21 只精选标的进行评分，并提供安全边际买入区间与多智能体 AI 投资辩论。
+专为美股与加股普通投资者打造的 AI 投资助手。它将宏观利率趋势、公司真实财报数据与多智能体 AI 投资辩论整合在一个简洁直观的界面中。你不再需要花费数小时翻阅繁杂的官方财报，就能快速看懂每只股票的主营业务、增长催化剂、合理买入区间与下行风险。
 
 ## 核心功能
 
-- **宏观周期扫描仪**：实时跟踪美加通胀、利率及收益率曲线，结合美联储与加拿大央行政策新闻判断周期阶段。
-- **分类股票推荐阵列**：将 21 只标的精准划分为超配板块精选、蓝筹核心龙头与隐形金矿股。
-- **安全边际买入区间**：基于 200 日均线与 DCF 固有价值计算动态安全买入价格。
-- **多智能体 AI 辩论**：提供多头分析师、空头公诉人与 CIO 首席投资官的对垒辩论与最终交易裁决。
-- **仓位管理计算器**：针对保守型、稳健型与激进型风控模型，自动计算拟执行买入股数与现金缓冲。
-- **Discord 警报推送**：支持免注册 Webhook 自动推送每日宏观简报、买入信号、卖出预警与金矿股提醒。
-- **投资备忘录导出**：一键导出 Markdown (.md) 或 PDF 格式的机构级投资备忘录。
-- **多语言与白话模式**：支持英文、中文与中英混合模式，提供术语白话比喻解释。
+- **宏观周期扫描**：实时跟踪美加通胀数据、央行加降息决策与宏观新闻，帮助你判断当前环境更适合配置成长股还是避险高股息标的。
+- **128 只精选标的分类推荐**：覆盖美股科技龙头、加拿大能源与银行蓝筹股以及高成长中小盘股票，分为超配板块精选、核心龙头与隐形金矿股三大类。
+- **合理买入区间与安全边际**：基于公司自由现金流与均线支撑，直接算出每只股票的合理买入价格区间，避免高位追高。
+- **真实公司背景与增长催化剂**：展示真实的主营业务构成、收入分布占比以及 3 到 4 个具体的未来增长催化剂，拒绝套话与空白数据。
+- **多智能体 AI 投资辩论**：由多头分析师、空头公诉人与 CIO 首席投资官三大 AI 角色针对每只股票展开客观辩论，给出明确的仓位建议与风险提示。
+- **即时价格提醒**：支持绑定 Discord 或自定义 Webhook，当推荐股票跌入理想买入区间时自动发送提醒。
+- **通俗白话与多语言切换**：支持英文、中文与中英混合模式，提供鼠标悬停白话比喻解释，把专业金融术语翻译成听得懂的日常语言。
 
 ## 快速开始
 
-### 环境要求
-- Python 3.11+
-- Node.js 18+
+### 准备工作
+- Python 3.11 或更高版本
+- Node.js 18 或更高版本
 
-### 1. 启动后端服务
+### 第一步：启动后端服务
 ```powershell
-# 创建虚拟环境并安装依赖
 python -m venv backend/venv
 .\backend\venv\Scripts\pip install -r backend/requirements.txt
-
-# 启动后端 API（运行于 http://127.0.0.1:8000）
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python backend/main.py
 ```
 
-### 2. 启动前端应用
+### 第二步：启动前端界面
 ```powershell
-# 新开终端窗口，安装依赖并启动前端
 cd frontend
 npm install
 npm run dev
 ```
-在浏览器中打开 `http://localhost:3000` 即可使用。
-
-## 项目目录结构
-
-```
-ai-investment/
-├── backend/
-│   ├── data_sources/    # 市场行情、FRED、SEC 及新闻抓取器
-│   ├── database/        # SQLite WAL 数据库与 CRUD 操作
-│   ├── engines/         # 宏观、定价、基本面、回测与警报引擎
-│   ├── routers/         # REST API 接口
-│   ├── tests/           # 32 项 Pytest 自动化测试
-│   ├── main.py          # FastAPI 服务入口
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── components/  # React UI 组件与弹窗
-│   │   ├── context/     # 多语言上下文 (EN / ZH / Hybrid)
-│   │   ├── i18n/        # 翻译字典
-│   │   └── App.tsx      # 主界面入口
-│   └── package.json
-└── README.md
-```
+在浏览器中访问 `http://localhost:3000` 即可开始使用。
 
 ## 测试与验证
 
 ```powershell
-# 后端单元测试
+# 运行后端单元测试 (49 项测试全过)
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python -m pytest backend/tests/ -v
 
-# 前端构建检查
+# 验证前端构建
 cd frontend
 npm run build
 ```
