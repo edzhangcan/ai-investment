@@ -92,7 +92,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Award className="w-4 h-4 text-emerald-950" />
-            <span>{t.catSectorChampions} ({sectorStocks.length || 8})</span>
+            <span>{t.catSectorChampions} ({sectorStocks.length || 40})</span>
           </button>
 
           <button
@@ -104,7 +104,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>{t.catMarketLeaders} ({overallStocks.length || 8})</span>
+            <span>{t.catMarketLeaders} ({overallStocks.length || 40})</span>
           </button>
 
           <button
@@ -116,7 +116,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Coins className="w-4 h-4 text-amber-950" />
-            <span>{t.catGoldNuggets} ({goldNuggetStocks.length || 8})</span>
+            <span>{t.catGoldNuggets} ({goldNuggetStocks.length || 40})</span>
           </button>
         </div>
       </div>
