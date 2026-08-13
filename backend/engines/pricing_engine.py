@@ -78,19 +78,23 @@ class PricingEngine:
             val_status = "ETF / Index Portfolio (指数基金/资产组合)"
             val_percentile = 50
 
-        # 3. Technical Support & Buy Bracket Synthesis
-        ideal_buy_max = round(min(price, max(two_hundred_sma * 1.02, dcf_fair_value * 0.95)), 2)
-        ideal_buy_min = round(ideal_buy_max * 0.90, 2)
+        # 3. Technical Support & Institutional Margin of Safety Buy Bracket Synthesis
+        # Institutional Rule: Ideal Buy Ceiling is 15% below DCF Intrinsic Value (0.85 * DCF) or 102% of 200D SMA support
+        # Do NOT artificially clamp ceiling to current price, so undervalued stocks show an ideal buy ceiling higher than current price.
+        mos_discount = 0.85
+        calculated_buy_max = round(max(two_hundred_sma * 0.95, dcf_fair_value * mos_discount), 2)
+        ideal_buy_max = calculated_buy_max
+        ideal_buy_min = round(min(two_hundred_sma * 0.88, ideal_buy_max * 0.85), 2)
 
         if price <= ideal_buy_max:
             action_status = "IN_BUY_ZONE (处于理想买入区间)"
-            advice = f"Current price ${price} {currency} is within safe buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency})."
-        elif price <= fifty_sma:
+            advice = f"Current price ${price} {currency} is within safe buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency}) with a strong Margin of Safety."
+        elif price <= dcf_fair_value:
             action_status = "PULLBACK_WATCH (回调观察期)"
-            advice = f"Price ${price} {currency} is pulling back towards 200D MA (${two_hundred_sma} {currency}). Recommend setting price alert at ${ideal_buy_max} {currency}."
+            advice = f"Price ${price} {currency} is fairly valued below DCF (${dcf_fair_value} {currency}). Recommend setting price alert at ${ideal_buy_max} {currency}."
         else:
             action_status = "OVEREXTENDED (过度延伸/暂勿追高)"
-            advice = f"Price ${price} {currency} is overextended above 200D MA (${two_hundred_sma} {currency}). Wait for pullbacks to ${ideal_buy_max} {currency}."
+            advice = f"Price ${price} {currency} is overextended above DCF intrinsic fair value (${dcf_fair_value} {currency}). Wait for pullbacks to ${ideal_buy_max} {currency}."
 
         return {
             "is_valid": True,
