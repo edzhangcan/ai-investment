@@ -16,6 +16,9 @@ export interface Translations {
   groundTruthVerified: string;
   source: string;
   currentMarketPrice: string;
+  commandPaletteTitle: string;
+  calcButtonTitle: string;
+  discordButtonTitle: string;
 
   // Macro Dashboard & Scanner Bar
   macroTitle: string;
@@ -188,8 +191,8 @@ export interface Translations {
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
   en: {
-    appTitle: "Antigravity Quantitative Investment Workstation",
-    appSubtitle: "Macro Cycle Engine • SEC EDGAR / SEDAR+ Filing Audit • Multi-Agent CIO Arena",
+    appTitle: "Investment Workstation",
+    appSubtitle: "",
     searchPlaceholder: "Search US & Canadian Stocks ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "Analyze Ticker",
     tabMacro: "Macro Dashboard & Picks",
@@ -202,6 +205,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     groundTruthVerified: "100% Verified Data",
     source: "Source",
     currentMarketPrice: "Current Market Price",
+    commandPaletteTitle: "Quick Search (Ctrl+K)",
+    calcButtonTitle: "Position Sizing Calculator",
+    discordButtonTitle: "Discord Push Alerts",
 
     macroTitle: "North American Macro Economic Cycle Scanner (US & CA)",
     macroSubtitle: "Empirical proof array derived from FRED economic data, Fed & Bank of Canada NLP statements",
@@ -361,8 +367,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
   },
 
   zh: {
-    appTitle: "Antigravity 机构级量化投资工作站",
-    appSubtitle: "宏观周期引擎 • SEC EDGAR / SEDAR+ 财报审计 • 多智能体 CIO 辩论阵列",
+    appTitle: "投资工作站",
+    appSubtitle: "",
     searchPlaceholder: "搜索美股与加拿大股票 ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "深度剖析标的",
     tabMacro: "宏观仪表盘与选股阵列",
@@ -375,6 +381,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     groundTruthVerified: "100% 真实数据验证",
     source: "数据源",
     currentMarketPrice: "当前市场价格",
+    commandPaletteTitle: "快捷搜索 (Ctrl+K)",
+    calcButtonTitle: "仓位管理计算器",
+    discordButtonTitle: "Discord 警报推送",
 
     macroTitle: "北美宏观经济周期扫描仪 (美股与加股)",
     macroSubtitle: "基于美联储 FRED 经济指标、美联储与加拿大央行 NLP 语句分析的客观实证数组",
@@ -534,8 +543,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
   },
 
   hybrid: {
-    appTitle: "Antigravity 量化投资工作站 (Quantitative Workstation)",
-    appSubtitle: "Macro Cycle Engine • SEC EDGAR / SEDAR+ 财报审计 • Multi-Agent CIO 辩论阵列",
+    appTitle: "投资工作站 (Investment Workstation)",
+    appSubtitle: "",
     searchPlaceholder: "搜索美股与加拿大股票 ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "深度剖析标的",
     tabMacro: "宏观仪表盘与选股阵列 (Macro Dashboard & Picks)",
@@ -548,6 +557,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     groundTruthVerified: "100% Verified Data (真实数据)",
     source: "Source (数据源)",
     currentMarketPrice: "当前价格 (Current Market Price)",
+    commandPaletteTitle: "快捷搜索 (Command Palette)",
+    calcButtonTitle: "仓位计算器 (Position Sizing)",
+    discordButtonTitle: "Discord 警报 (Push Alerts)",
 
     macroTitle: "北美宏观经济周期扫描仪 (Macro Cycle Scanner US & CA)",
     macroSubtitle: "基于 FRED 经济数据、Fed 与 Bank of Canada NLP 语句分析的客观实证数组",

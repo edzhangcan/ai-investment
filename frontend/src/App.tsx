@@ -182,105 +182,101 @@ export const App: React.FC = () => {
       <div className="max-w-6xl mx-auto relative z-10">
         
         {/* Main Navigation Header */}
-        <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-tr from-emerald-500 to-indigo-500 rounded-2xl shadow-lg shadow-emerald-500/20">
-              <Sparkles className="w-6 h-6 text-slate-950" />
-            </div>
-            <div>
+        <header className="flex flex-col gap-4 mb-6 pb-4 border-b border-slate-800">
+          {/* Top Row: App Title, Prominent Search Bar, Language & PlainTalk Switchers */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 w-full">
+            {/* Title */}
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="p-2.5 bg-gradient-to-tr from-emerald-500 to-indigo-500 rounded-2xl shadow-lg shadow-emerald-500/20">
+                <Sparkles className="w-5 h-5 text-slate-950" />
+              </div>
               <h1 className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-300 bg-clip-text text-transparent">
                 {t.appTitle}
               </h1>
-              <p className="text-xs text-slate-400">
-                {t.appSubtitle}
-              </p>
-            </div>
-          </div>
-
-          {/* Purpose-Grouped Toolbar */}
-          <div className="flex items-center gap-1 w-full md:w-auto flex-wrap">
-
-            {/* Cluster 1: Search & Quick Navigation */}
-            <div className="flex items-center gap-1.5 flex-1 md:flex-none">
-              <form onSubmit={handleSearch} className="relative flex-1 md:w-52">
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder={t.searchPlaceholder}
-                  className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all"
-                />
-                <button type="submit" aria-label={t.searchButton} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-400">
-                  <Search className="w-4 h-4" />
-                </button>
-              </form>
-              <button
-                onClick={() => setIsCommandPaletteOpen(true)}
-                className="p-2 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-slate-300 transition-all flex items-center gap-1 text-xs font-semibold"
-                title="Quick Search (Ctrl+K)"
-              >
-                <Command className="w-4 h-4 text-emerald-400" />
-                <span className="hidden sm:inline font-mono text-[10px]">⌘K</span>
-              </button>
             </div>
 
-            {/* Cluster Separator */}
-            <div className="hidden md:block w-px h-6 bg-slate-700/60 mx-1" />
-
-            {/* Cluster 2: Investment Analysis Tools */}
-            <div className="flex items-center gap-1.5">
+            {/* Expanded Prominent Search Bar */}
+            <form onSubmit={handleSearch} className="relative flex-1 w-full md:max-w-xl">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder={t.searchPlaceholder}
+                className="w-full bg-slate-900/90 border border-slate-700/90 hover:border-emerald-500/50 focus:border-emerald-500 rounded-2xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-400 focus:outline-none transition-all shadow-inner font-medium"
+              />
               <button
-                onClick={() => setIsWatchlistOpen(true)}
-                className="p-2 bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl text-amber-400 transition-all flex items-center gap-1 text-xs font-semibold relative"
-                title={t.watchlistTitle}
+                type="submit"
+                aria-label={t.searchButton}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer"
               >
-                <Star className="w-4 h-4 fill-amber-400" />
-                <span className="hidden sm:inline">Watchlist</span>
-                {watchlistSymbols.size > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-slate-950 text-[9px] font-extrabold rounded-full shadow-lg">
-                    {watchlistSymbols.size}
-                  </span>
-                )}
+                <Search className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => setIsPortfolioCalculatorOpen(true)}
-                className="p-2 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-indigo-300 transition-all flex items-center gap-1 text-xs font-semibold"
-                title="Portfolio Sizing Calculator"
-              >
-                <Calculator className="w-4 h-4 text-indigo-400" />
-                <span className="hidden sm:inline">Calculator</span>
-              </button>
+            </form>
 
-              <button
-                onClick={() => setIsDiscordModalOpen(true)}
-                className="p-2 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-indigo-300 transition-all flex items-center gap-1 text-xs font-semibold"
-                title="Discord Webhook Push Alerts (Zero-KYC)"
-              >
-                <Bell className="w-4 h-4 text-indigo-400" />
-                <span className="hidden sm:inline">Discord Alerts</span>
-              </button>
-            </div>
-
-            {/* Cluster Separator */}
-            <div className="hidden md:block w-px h-6 bg-slate-700/60 mx-1" />
-
-            {/* Cluster 3: Preferences & Accessibility */}
-            <div className="flex items-center gap-1.5">
+            {/* Right Controls: Language & PlainTalk Mode Switchers Only */}
+            <div className="flex items-center gap-2 shrink-0">
               <LanguageSelector />
               <button
                 onClick={() => setIsPlainTalk(!isPlainTalk)}
-                className={`px-2.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
                   isPlainTalk
-                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-md shadow-amber-500/10'
                     : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
                 title={isPlainTalk ? 'Switch to Professional Mode' : 'Switch to Plain Talk Mode'}
               >
-                <HelpCircle className="w-3.5 h-3.5" />
+                <HelpCircle className="w-4 h-4" />
                 <span className="hidden sm:inline">{isPlainTalk ? t.plainTalkOn : t.plainTalkOff}</span>
               </button>
             </div>
+          </div>
 
+          {/* Sub-Header Toolbar (Positioned Directly Under Search Bar) */}
+          <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-slate-800/80 w-full justify-start md:justify-center">
+            {/* Watchlist Drawer Button */}
+            <button
+              onClick={() => setIsWatchlistOpen(true)}
+              className="px-3.5 py-2 bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 rounded-xl text-amber-400 transition-all flex items-center gap-2 text-xs font-bold relative cursor-pointer group shadow-sm"
+              title={t.watchlistDrawerTitle}
+            >
+              <Star className="w-4 h-4 fill-amber-400 group-hover:scale-110 transition-transform" />
+              <span>{t.watchlistTitle}</span>
+              {watchlistSymbols.size > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-amber-500 text-slate-950 text-[10px] font-extrabold rounded-full shadow-md ml-0.5">
+                  {watchlistSymbols.size}
+                </span>
+              )}
+            </button>
+
+            {/* Command Palette / Quick Search (Ctrl+K) Button */}
+            <button
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="px-3.5 py-2 bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-slate-200 hover:text-emerald-400 transition-all flex items-center gap-2 text-xs font-bold cursor-pointer shadow-sm"
+              title={t.commandPaletteTitle}
+            >
+              <Command className="w-4 h-4 text-emerald-400" />
+              <span>{t.commandPaletteTitle}</span>
+            </button>
+
+            {/* Position Sizing Calculator Button */}
+            <button
+              onClick={() => setIsPortfolioCalculatorOpen(true)}
+              className="px-3.5 py-2 bg-slate-900/90 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-indigo-300 hover:text-indigo-200 transition-all flex items-center gap-2 text-xs font-bold cursor-pointer shadow-sm"
+              title={t.calcButtonTitle}
+            >
+              <Calculator className="w-4 h-4 text-indigo-400" />
+              <span>{t.calcButtonTitle}</span>
+            </button>
+
+            {/* Discord Push Alerts Button */}
+            <button
+              onClick={() => setIsDiscordModalOpen(true)}
+              className="px-3.5 py-2 bg-slate-900/90 border border-slate-800 hover:border-indigo-500/50 rounded-xl text-indigo-300 hover:text-indigo-200 transition-all flex items-center gap-2 text-xs font-bold cursor-pointer shadow-sm"
+              title={t.discordButtonTitle}
+            >
+              <Bell className="w-4 h-4 text-indigo-400" />
+              <span>{t.discordButtonTitle}</span>
+            </button>
           </div>
         </header>
 
