@@ -24,21 +24,25 @@ An investment copilot built for everyday investors in US and Canadian stock mark
 - Python 3.11 or newer
 - Node.js 18 or newer
 
-### Step 1: Start the Backend Server
+### Option A: 1-Click Install and Launch (Recommended)
+
+1. Double-click `install.bat` (or run `./install.sh` on Mac/Linux) once to set up all dependencies automatically.
+2. Double-click `start.bat` (or run `./start.sh` on Mac/Linux) whenever you want to open the workstation. Your browser will open automatically to `http://localhost:3000`.
+
+### Option B: Manual Terminal Setup
+
 ```powershell
+# 1. Setup and start backend (runs on http://127.0.0.1:8000)
 python -m venv backend/venv
 .\backend\venv\Scripts\pip install -r backend/requirements.txt
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python backend/main.py
-```
 
-### Step 2: Start the Web Dashboard
-```powershell
+# 2. In a new terminal, start frontend (runs on http://localhost:3000)
 cd frontend
 npm install
 npm run dev
 ```
-Open `http://localhost:3000` in your web browser.
 
 ## Testing
 
