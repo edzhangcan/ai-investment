@@ -33,7 +33,7 @@ class FundamentalEngine:
             return f"{sign}${round(abs_fcf, 2)} {currency}"
 
     @classmethod
-    def evaluate_fundamentals(cls, stock_data: Dict[str, Any], lang: str = "en") -> Dict[str, Any]:
+    def evaluate_fundamentals(cls, stock_data: Dict[str, Any], lang: str = "en", lazy_on_demand: bool = True, use_cache_only: bool = False) -> Dict[str, Any]:
         symbol = stock_data.get("symbol", "UNKNOWN")
         
         # 0. Check validity
@@ -62,7 +62,11 @@ class FundamentalEngine:
         if market == "CA" or symbol.endswith(".TO"):
             filing_metrics = SEDARParser.extract_sedar_metrics(symbol)
         else:
-            filing_metrics = SECEdgarParser.extract_sec_metrics(symbol)
+            filing_metrics = SECEdgarParser.extract_sec_metrics(
+                symbol, 
+                lazy_on_demand=lazy_on_demand, 
+                use_cache_only=use_cache_only
+            )
 
         fcf = filing_metrics.get("free_cash_flow") or stock_data.get("free_cash_flow")
         net_income = filing_metrics.get("net_income") or stock_data.get("net_income")
