@@ -21,10 +21,14 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
   onToggleWatchlist,
   onRefreshRecommendations,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeCategory, setActiveCategory] = useState<'SECTOR' | 'OVERALL' | 'GOLD'>('SECTOR');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshOffset, setRefreshOffset] = useState(0);
+  const [sampleOffset, setSampleOffset] = useState<{ SECTOR: number; OVERALL: number; GOLD: number }>({
+    SECTOR: 0,
+    OVERALL: 0,
+    GOLD: 0,
+  });
 
   // Extract categorization pools with fallbacks
   let sectorStocks: StockRecommendation[] = [];
@@ -33,34 +37,58 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
   if (Array.isArray(recommendations)) {
     overallStocks = recommendations;
-    sectorStocks = recommendations.slice(0, 8);
-    goldNuggetStocks = recommendations.slice(0, 8);
+    sectorStocks = recommendations.slice(0, 32);
+    goldNuggetStocks = recommendations.slice(0, 32);
   } else if (recommendations) {
     sectorStocks = recommendations.sector_overweight_stocks || [];
     overallStocks = recommendations.overall_recommended_stocks || recommendations.recommended_stocks || [];
     goldNuggetStocks = recommendations.gold_nugget_stocks || [];
   }
 
-  const currentDisplayPool =
-    activeCategory === 'SECTOR'
-      ? sectorStocks.length > 0 ? sectorStocks : overallStocks
-      : activeCategory === 'GOLD'
-      ? goldNuggetStocks.length > 0 ? goldNuggetStocks : overallStocks
-      : overallStocks;
+  const getActivePool = () => {
+    if (activeCategory === 'SECTOR') return sectorStocks.length > 0 ? sectorStocks : overallStocks;
+    if (activeCategory === 'GOLD') return goldNuggetStocks.length > 0 ? goldNuggetStocks : overallStocks;
+    return overallStocks;
+  };
+
+  const activePool = getActivePool();
+  const poolSize = activePool.length || 32;
+
+  // Sample exactly 8 non-overlapping stocks from the 32-candidate pool
+  const getDisplayedSample = (): StockRecommendation[] => {
+    if (activePool.length <= 8) return activePool;
+    const offset = sampleOffset[activeCategory];
+    const startIndex = (offset * 8) % activePool.length;
+    let sample = activePool.slice(startIndex, startIndex + 8);
+    if (sample.length < 8) {
+      sample = [...sample, ...activePool.slice(0, 8 - sample.length)];
+    }
+    return sample;
+  };
+
+  const currentDisplayPool = getDisplayedSample();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    const nextOffset = refreshOffset + 1;
-    setRefreshOffset(nextOffset);
+    setSampleOffset(prev => ({
+      ...prev,
+      [activeCategory]: prev[activeCategory] + 1
+    }));
     try {
       if (onRefreshRecommendations) {
-        await onRefreshRecommendations(activeCategory, nextOffset);
+        await onRefreshRecommendations(activeCategory, sampleOffset[activeCategory] + 1);
       }
     } catch (e) {
       console.warn("Failed to refresh recommendations:", e);
     } finally {
       setTimeout(() => setIsRefreshing(false), 300);
     }
+  };
+
+  const poolBadgeText = (count: number) => {
+    if (language === 'zh') return `8/${count || 32} 候选池`;
+    if (language === 'hybrid') return `8/${count || 32} Pool`;
+    return `8 of ${count || 32} Pool`;
   };
 
   return (
@@ -81,7 +109,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
           </p>
         </div>
 
-        {/* Multi-Category Selector Buttons */}
+        {/* Multi-Category Selector Buttons with (8 of 32 Pool) Badges */}
         <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs w-full md:w-auto flex-wrap gap-1">
           <button
             onClick={() => setActiveCategory('SECTOR')}
@@ -92,7 +120,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Award className="w-4 h-4 text-emerald-950" />
-            <span>{t.catSectorChampions} ({sectorStocks.length || 40})</span>
+            <span>{t.catSectorChampions} ({poolBadgeText(sectorStocks.length)})</span>
           </button>
 
           <button
@@ -104,7 +132,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>{t.catMarketLeaders} ({overallStocks.length || 40})</span>
+            <span>{t.catMarketLeaders} ({poolBadgeText(overallStocks.length)})</span>
           </button>
 
           <button
@@ -116,12 +144,12 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Coins className="w-4 h-4 text-amber-950" />
-            <span>{t.catGoldNuggets} ({goldNuggetStocks.length || 40})</span>
+            <span>{t.catGoldNuggets} ({poolBadgeText(goldNuggetStocks.length)})</span>
           </button>
         </div>
       </div>
 
-      {/* Category Description Banner */}
+      {/* Category Description Banner with Active Pool Indicators */}
       <div className="bg-slate-950/60 border border-slate-800 p-3.5 rounded-2xl text-xs text-slate-300 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           {activeCategory === 'SECTOR' && (
@@ -145,7 +173,9 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
         </div>
         
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-slate-400 hidden sm:inline">{t.showingStocks}: {currentDisplayPool.length}</span>
+          <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+            {language === 'zh' ? `显示中: 8 / ${poolSize} 候选池` : `Showing: 8 of ${poolSize} Pool`}
+          </span>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -153,7 +183,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             title={t.refreshRecommendations}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-            <span>{isRefreshing ? t.refreshingPicks : t.refreshRecommendations}</span>
+            <span>{isRefreshing ? t.refreshingPicks : (language === 'zh' ? '换一批精选 (8只)' : t.refreshRecommendations)}</span>
           </button>
         </div>
       </div>
