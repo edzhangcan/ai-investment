@@ -167,39 +167,33 @@ class RecommendationEngine:
                     all_scored.append(res)
 
         # -------------------------------------------------------------
-        # SELECTION PIPELINE: 16 TOP STOCKS PER CATEGORY POOL (48 TOTAL)
+        # SELECTION PIPELINE: 32 TOP STOCKS PER CATEGORY POOL (96 TOTAL)
         # -------------------------------------------------------------
         seen_symbols: Set[str] = set()
 
-        # 1. Category 1: Sector Overweight Champions (Top 16)
+        # 1. Category 1: Sector Overweight Champions (Top 32)
         sector_candidates = [s for s in all_scored if s["symbol"] in SECTOR_SYMBOLS]
         sector_candidates.sort(key=lambda x: x["total_recommendation_score"], reverse=True)
-        sector_champions = sector_candidates[:16]
+        sector_champions = sector_candidates[:32]
         for s in sector_champions:
             s["category_badge"] = "SECTOR_OVERWEIGHT"
             seen_symbols.add(s["symbol"])
 
-        # 2. Category 2: Overall Market Leaders (Top 16 without overlap)
+        # 2. Category 2: Overall Market Leaders (Top 32 without overlap)
         overall_candidates = [
             s for s in all_scored 
             if s["symbol"] not in seen_symbols and (s["symbol"] in OVERALL_SYMBOLS or s["symbol"] in SECTOR_SYMBOLS)
         ]
         overall_candidates.sort(key=lambda x: x["total_recommendation_score"], reverse=True)
-        overall_leaders = overall_candidates[:16]
+        overall_leaders = overall_candidates[:32]
         for s in overall_leaders:
             s["category_badge"] = "OVERALL_LEADER"
             seen_symbols.add(s["symbol"])
 
-        # 3. Category 3: Hidden Gold Nuggets (Top 16 without overlap)
+        # 3. Category 3: Hidden Gold Nuggets (Top 32 without overlap)
         gold_candidates = [s for s in all_scored if s["symbol"] not in seen_symbols]
         gold_candidates.sort(key=lambda x: x["total_recommendation_score"], reverse=True)
-        gold_nuggets = gold_candidates[:16]
-        for s in gold_nuggets:
-            s["category_badge"] = "GOLD_NUGGET"
-            seen_symbols.add(s["symbol"])
-        for s in gold_nuggets:
-            s["category_badge"] = "GOLD_NUGGET"
-            seen_symbols.add(s["symbol"])
+        gold_nuggets = gold_candidates[:32]
         for s in gold_nuggets:
             s["category_badge"] = "GOLD_NUGGET"
             seen_symbols.add(s["symbol"])
