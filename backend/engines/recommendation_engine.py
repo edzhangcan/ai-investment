@@ -112,7 +112,7 @@ class RecommendationEngine:
                 if not stock_raw.get("is_valid", True):
                     return None
 
-                fundamental = FundamentalEngine.evaluate_fundamentals(stock_raw, lang=lang)
+                fundamental = FundamentalEngine.evaluate_fundamentals(stock_raw, lang=lang, use_cache_only=True)
                 pricing = PricingEngine.evaluate_pricing_and_entry_zone(stock_raw, lang=lang)
                 info = cls.get_stock_info(symbol, lang=lang)
 
