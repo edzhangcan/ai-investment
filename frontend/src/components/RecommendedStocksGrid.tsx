@@ -85,12 +85,6 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
     }
   };
 
-  const poolBadgeText = (count: number) => {
-    if (language === 'zh') return `8/${count || 32} 候选池`;
-    if (language === 'hybrid') return `8/${count || 32} Pool`;
-    return `8 of ${count || 32} Pool`;
-  };
-
   return (
     <div className="space-y-6 mb-8">
       {/* Section Header */}
@@ -109,7 +103,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
           </p>
         </div>
 
-        {/* Multi-Category Selector Buttons with (8 of 32 Pool) Badges */}
+        {/* Multi-Category Selector Buttons */}
         <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs w-full md:w-auto flex-wrap gap-1">
           <button
             onClick={() => setActiveCategory('SECTOR')}
@@ -120,7 +114,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Award className="w-4 h-4 text-emerald-950" />
-            <span>{t.catSectorChampions} ({poolBadgeText(sectorStocks.length)})</span>
+            <span>{t.catSectorChampions}</span>
           </button>
 
           <button
@@ -132,7 +126,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>{t.catMarketLeaders} ({poolBadgeText(overallStocks.length)})</span>
+            <span>{t.catMarketLeaders}</span>
           </button>
 
           <button
@@ -144,12 +138,12 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             }`}
           >
             <Coins className="w-4 h-4 text-amber-950" />
-            <span>{t.catGoldNuggets} ({poolBadgeText(goldNuggetStocks.length)})</span>
+            <span>{t.catGoldNuggets}</span>
           </button>
         </div>
       </div>
 
-      {/* Category Description Banner with Active Pool Indicators */}
+      {/* Category Description Banner */}
       <div className="bg-slate-950/60 border border-slate-800 p-3.5 rounded-2xl text-xs text-slate-300 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           {activeCategory === 'SECTOR' && (
@@ -173,9 +167,6 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
         </div>
         
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
-            {language === 'zh' ? `显示中: 8 / ${poolSize} 候选池` : `Showing: 8 of ${poolSize} Pool`}
-          </span>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -183,7 +174,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             title={t.refreshRecommendations}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-            <span>{isRefreshing ? t.refreshingPicks : (language === 'zh' ? '换一批精选 (8只)' : t.refreshRecommendations)}</span>
+            <span>{isRefreshing ? t.refreshingPicks : (language === 'zh' ? '换一批精选' : t.refreshRecommendations)}</span>
           </button>
         </div>
       </div>
