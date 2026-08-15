@@ -317,7 +317,7 @@ export const App: React.FC = () => {
 
         {/* Plain Talk Banner */}
         {isPlainTalk && (
-          <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 border border-amber-500/40 rounded-2xl p-4 mb-6 text-xs text-amber-200 flex items-center justify-between shadow-lg">
+          <div className="bg-amber-50/90 dark:bg-gradient-to-r dark:from-amber-500/20 dark:via-amber-500/10 dark:to-amber-500/20 border border-amber-300 dark:border-amber-500/40 rounded-2xl p-4 mb-6 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2 font-semibold">
               <span className="text-base">💡</span>
               <span>Bilingual Plain-Talk Hover Layovers Active: Hover or tap on metric badges for non-technical explanations.</span>

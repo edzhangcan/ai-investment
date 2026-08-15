@@ -19,6 +19,8 @@ export interface Translations {
   commandPaletteTitle: string;
   calcButtonTitle: string;
   discordButtonTitle: string;
+  themeLight: string;
+  themeDark: string;
 
   // Startup Loading Screen
   loadingSubtitle: string;
@@ -220,6 +222,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     commandPaletteTitle: "Quick Search (Ctrl+K)",
     calcButtonTitle: "Position Sizing Calculator",
     discordButtonTitle: "Discord Push Alerts",
+    themeLight: "Light Mode",
+    themeDark: "Dark Mode",
 
     loadingSubtitle: "Initializing real-time market intelligence systems...",
     loadingStep1: "Connecting to Federal Reserve (FRED) & Bank of Canada Economic Data...",
@@ -407,6 +411,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     commandPaletteTitle: "快捷搜索 (Ctrl+K)",
     calcButtonTitle: "仓位管理计算器",
     discordButtonTitle: "Discord 警报推送",
+    themeLight: "明亮模式",
+    themeDark: "暗黑模式",
 
     loadingSubtitle: "正在初始化实时市场情报系统...",
     loadingStep1: "正在连接美联储 (FRED) 与加拿大央行宏观数据...",
@@ -594,6 +600,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     commandPaletteTitle: "快捷搜索 (Command Palette)",
     calcButtonTitle: "仓位计算器 (Position Sizing)",
     discordButtonTitle: "Discord 警报 (Push Alerts)",
+    themeLight: "明亮模式 (Light)",
+    themeDark: "暗黑模式 (Dark)",
 
     loadingSubtitle: "正在初始化市场情报系统 (Initializing Market Intelligence)...",
     loadingStep1: "正在连接美联储 FRED & 央行数据 (Connecting Macro Data)...",
