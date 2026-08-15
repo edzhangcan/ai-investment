@@ -203,8 +203,8 @@ export interface Translations {
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
   en: {
-    appTitle: "Investment Workstation",
-    appSubtitle: "",
+    appTitle: "Prism Loop",
+    appSubtitle: "Multi-Spectrum Equity Intelligence",
     searchPlaceholder: "Search US & Canadian Stocks ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "Analyze Ticker",
     tabMacro: "Macro Dashboard & Picks",
@@ -390,8 +390,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
   },
 
   zh: {
-    appTitle: "投资工作站",
-    appSubtitle: "",
+    appTitle: "Prism Loop",
+    appSubtitle: "多维光谱智能投研工作站",
     searchPlaceholder: "搜索美股与加拿大股票 ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "深度剖析标的",
     tabMacro: "宏观仪表盘与选股阵列",
@@ -577,8 +577,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
   },
 
   hybrid: {
-    appTitle: "投资工作站 (Investment Workstation)",
-    appSubtitle: "",
+    appTitle: "Prism Loop",
+    appSubtitle: "多维光谱投研工作站 (Multi-Spectrum Equity Intelligence)",
     searchPlaceholder: "搜索美股与加拿大股票 ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "深度剖析标的",
     tabMacro: "宏观仪表盘与选股阵列 (Macro Dashboard & Picks)",

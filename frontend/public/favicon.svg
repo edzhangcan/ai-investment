@@ -1,0 +1,61 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Facet 1: Radiant Amber-Gold Peak -->
+    <linearGradient id="faviconGoldPeak" x1="50" y1="8" x2="32" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <!-- Facet 2: Warm Amber Left -->
+    <linearGradient id="faviconAmberLeft" x1="14" y1="29" x2="32" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <!-- Facet 3: Amber-Cobalt Transition -->
+    <linearGradient id="faviconAmberCobaltLower" x1="14" y1="71" x2="50" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#B45309" />
+      <stop offset="100%" stop-color="#1E40AF" />
+    </linearGradient>
+    <!-- Facet 4: Crisp Optical Cyan Peak Right -->
+    <linearGradient id="faviconCyanPeak" x1="50" y1="8" x2="68" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#BAE6FD" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+    <!-- Facet 5: Deep Cerulean Cyan Right -->
+    <linearGradient id="faviconCyanRight" x1="86" y1="29" x2="68" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0EA5E9" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <!-- Facet 6: Rich Royal Cobalt Lower Right -->
+    <linearGradient id="faviconCobaltLower" x1="86" y1="71" x2="50" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <!-- Facet 7: Center Sapphire Core -->
+    <linearGradient id="faviconSapphireCore" x1="50" y1="92" x2="50" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+  </defs>
+
+  <!-- High-Contrast Faceted Polygons -->
+  <!-- Top-Left Gold -->
+  <polygon points="50,8 14,29 32,40 50,50" fill="url(#faviconGoldPeak)" />
+  <!-- Left Amber -->
+  <polygon points="14,29 14,71 32,55 32,40" fill="url(#faviconAmberLeft)" />
+  <!-- Lower-Left Transition -->
+  <polygon points="14,71 50,92 32,55" fill="url(#faviconAmberCobaltLower)" />
+  <!-- Top-Right Ice Cyan -->
+  <polygon points="50,8 86,29 68,40 50,50" fill="url(#faviconCyanPeak)" />
+  <!-- Right Deep Cyan -->
+  <polygon points="86,29 86,71 68,55 68,40" fill="url(#faviconCyanRight)" />
+  <!-- Lower-Right Royal Cobalt -->
+  <polygon points="86,71 50,92 68,55" fill="url(#faviconCobaltLower)" />
+  <!-- Center Core Facet -->
+  <polygon points="50,50 32,40 32,55 50,92 68,55 68,40" fill="url(#faviconSapphireCore)" opacity="0.9" />
+
+  <!-- Clean Razor-Sharp Facet Dividers -->
+  <polygon points="50,8 86,29 86,71 50,92 14,71 14,29" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="1.5" fill="none" />
+  <line x1="50" y1="8" x2="50" y2="92" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="1" />
+  <line x1="14" y1="29" x2="86" y2="71" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="1" />
+  <line x1="14" y1="71" x2="86" y2="29" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="1" />
+</svg>

@@ -15,6 +15,7 @@ import { LanguageSelector } from './components/LanguageSelector';
 import { StartupLoadingOverlay } from './components/StartupLoadingOverlay';
 import { DiscordAlertSettingsModal } from './components/DiscordAlertSettingsModal';
 import { ExportMemoModal } from './components/ExportMemoModal';
+import { PrismLoopLogo } from './components/PrismLoopLogo';
 import { useLanguage } from './context/LanguageContext';
 import { StockAnalysisResponse, MacroDashboardResponse } from './types';
 import { fetchStockAnalysis, fetchMacroDashboard, fetchWatchlistApi, addWatchlistApi, deleteWatchlistApi, refreshRecommendationsApi } from './api/client';
@@ -178,14 +179,24 @@ export const App: React.FC = () => {
         <header className="flex flex-col gap-4 mb-6 pb-4 border-b border-slate-800">
           {/* Top Row: App Title, Prominent Search Bar, Language & PlainTalk Switchers */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 w-full">
-            {/* Title */}
+            {/* Title & Brand Mark */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="p-2.5 bg-gradient-to-tr from-emerald-500 to-indigo-500 rounded-2xl shadow-lg shadow-emerald-500/20">
-                <Sparkles className="w-5 h-5 text-slate-950" />
+              <PrismLoopLogo size="lg" className="hover:scale-105 transition-transform duration-200" />
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5 leading-none">
+                  <span className="text-xl md:text-2xl font-black tracking-tight text-white">
+                    PRISM
+                  </span>
+                  <span className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
+                    LOOP
+                  </span>
+                </div>
+                {t.appSubtitle && (
+                  <span className="text-[11px] font-medium text-slate-400 tracking-wide mt-0.5">
+                    {t.appSubtitle}
+                  </span>
+                )}
               </div>
-              <h1 className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-300 bg-clip-text text-transparent">
-                {t.appTitle}
-              </h1>
             </div>
 
             {/* Expanded Prominent Search Bar */}
