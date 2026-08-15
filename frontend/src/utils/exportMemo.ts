@@ -28,7 +28,7 @@ export const generateMarkdownMemo = (data: ExportMemoData): string => {
 
 ---
 
-## 📌 Executive Summary & Market Snapshot
+## Executive Summary & Market Snapshot
 
 - **Company Name**: ${stock.company_name}
 - **Ticker Symbol**: \`$${stock.symbol}\` (${stock.market || 'US'})
@@ -42,30 +42,30 @@ export const generateMarkdownMemo = (data: ExportMemoData): string => {
 
 ---
 
-## 🏛️ North American Macro Cycle Scanner Context
+## North American Macro Cycle Scanner Context
 
 - **Current Cycle Stage**: ${macro?.stage || 'Late-Cycle Transition'}
-- **Overweight Sector Match**: ${macro?.overweight_sectors?.includes(stock.sector) ? '✅ MATCHED (Overweight Sector)' : 'ℹ️ Standard Allocation'}
+- **Overweight Sector Match**: ${macro?.overweight_sectors?.includes(stock.sector) ? 'MATCHED (Overweight Sector)' : 'Standard Allocation'}
 - **Fed NLP Sentiment**: ${macro?.fed_sentiment || 'Hawkish Policy Rate Stance'}
 - **BoC NLP Sentiment**: ${macro?.boc_sentiment || 'Neutral / Data Dependent'}
 
 ---
 
-## ⚖️ Multi-Agent Institutional Investment Arena
+## Multi-Agent Institutional Investment Arena
 
-### 🟢 Bull Case Advocate
+### Bull Case Advocate
 - **Agent Role**: ${bull.agent || "Bullish Analyst"}
 - **Key Investment Catalysts**:
 ${(bull.key_points || ["High Free Cash Flow conversion", "Dominant market leadership position"]).map((pt: string) => `  - ${pt}`).join('\n')}
 - **Key Upside Catalyst**: ${bull.upside_catalyst || 'Sustained revenue growth expansion'}
 
-### 🔴 Bear Case Prosecutor
+### Bear Case Prosecutor
 - **Agent Role**: ${bear.agent || "Bearish Auditor"}
 - **Key Downside Risks**:
 ${(bear.key_points || ["Macro headwinds & interest rate sensitivity", "Competitive margin compression risks"]).map((pt: string) => `  - ${pt}`).join('\n')}
 - **Key Downside Risk**: ${bear.downside_risk || 'Margin compression in high rate environment'}
 
-### 👨‍⚖️ CIO Final Verdict
+### Chief Investment Officer (CIO) Verdict
 - **Verdict**: **${cio.verdict || "ACCUMULATE ON PULLBACKS"}**
 - **Risk / Reward Ratio**: **${cio.risk_reward_ratio || 2.4}:1**
 - **Recommended Buy Bracket**: **${cio.recommended_buy_bracket || "Ideal Buy Zone"}**
@@ -74,7 +74,7 @@ ${(bear.key_points || ["Macro headwinds & interest rate sensitivity", "Competiti
 
 ---
 
-## 📄 SEC 10-K & SEDAR+ Text Mining Pipeline
+## SEC 10-K & SEDAR+ Text Mining Pipeline
 
 ${secMining ? `
 - **Filing Repository**: ${secMining.filing_repository || 'SEC EDGAR / SEDAR+'}
@@ -90,7 +90,7 @@ ${secMining ? `
 
 ---
 
-## 📊 5-Year Historical Quantitative Backtest (2021 – 2025)
+## 5-Year Historical Quantitative Backtest (2021 – 2025)
 
 ${backtest ? `
 - **Benchmark**: ${backtest.benchmark || 'S&P 500 (SPY)'}

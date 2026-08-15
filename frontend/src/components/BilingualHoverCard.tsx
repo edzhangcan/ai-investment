@@ -91,8 +91,10 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
         ...(positionStyle.top !== undefined ? { top: `${positionStyle.top}px` } : {}),
         width: `${positionStyle.width}px`,
         zIndex: 9999999,
+        backgroundColor: 'var(--bg-surface, #ffffff)',
+        opacity: 1,
       }}
-      className="p-4 bg-surface border-2 border-warning rounded-2xl shadow-2xl text-left pointer-events-auto transition-opacity duration-150 animate-fade-in"
+      className="p-4 bg-white dark:bg-slate-900 border-2 border-warning rounded-2xl shadow-2xl text-left pointer-events-auto transition-opacity duration-150 animate-fade-in"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -111,14 +113,15 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
       {/* Subtitle Chinese (rendered in zh and hybrid modes) */}
       {language !== 'en' && (
         <div className="text-xs font-bold text-content-primary mb-2.5 flex items-center gap-1.5">
-          <span>🇨🇳 {termZh}</span>
+          <span className="prism-badge-neutral text-[10px]">ZH</span>
+          <span>{termZh}</span>
         </div>
       )}
 
       {/* English Definition (rendered in en and hybrid modes) */}
       {language !== 'zh' && (
         <div className="mb-2.5">
-          <div className="text-[10px] font-bold tracking-wider uppercase text-warning mb-0.5">🇺🇸 English Definition:</div>
+          <div className="text-[10px] font-bold tracking-wider uppercase text-warning mb-0.5">English Definition:</div>
           <p className="text-xs text-content-primary font-medium leading-relaxed prism-surface-subtle p-2.5">
             {defEn}
           </p>
@@ -128,7 +131,7 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
       {/* Chinese Definition (rendered in zh and hybrid modes) */}
       {language !== 'en' && (
         <div className="mb-2.5">
-          <div className="text-[10px] font-bold tracking-wider uppercase text-warning mb-0.5">🇨🇳 中文解析：</div>
+          <div className="text-[10px] font-bold tracking-wider uppercase text-warning mb-0.5">中文解析：</div>
           <p className="text-xs text-content-primary font-medium leading-relaxed prism-surface-subtle p-2.5">
             {defZh}
           </p>
@@ -142,10 +145,10 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
             <span>{t.everydayAnalogyHeader}</span>
           </div>
           {language !== 'zh' && analogyEn && (
-            <p className="mb-1 text-[11px] font-normal">🇺🇸 {analogyEn}</p>
+            <p className="mb-1 text-[11px] font-normal text-content-secondary">{analogyEn}</p>
           )}
           {language !== 'en' && analogyZh && (
-            <p className="text-[11px] font-normal">🇨🇳 {analogyZh}</p>
+            <p className="text-[11px] font-normal text-content-secondary">{analogyZh}</p>
           )}
         </div>
       )}

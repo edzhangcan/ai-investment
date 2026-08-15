@@ -84,8 +84,8 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in">
-      <div className="bg-surface border border-border-subtle rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-content-primary transition-colors duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-content-primary z-10 transition-colors duration-150">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -221,7 +221,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
 
         {/* Position Breakdown Table */}
         {loading ? (
-          <div className="p-12 text-center text-content-muted text-xs animate-pulse">
+          <div className="p-12 text-center text-content-muted text-xs">
             Calculating optimal share allocations...
           </div>
         ) : data && data.position_breakdown.length > 0 ? (
@@ -241,7 +241,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
                   <tr key={item.symbol} className="hover:bg-surface-subtle transition-colors">
                     <td className="p-3.5">
                       <div className="flex items-center gap-2">
-                        <span>{item.is_ca ? '🇨🇦' : '🇺🇸'}</span>
+                        <span className="prism-badge-neutral text-[10px] font-bold">{item.is_ca ? 'CA' : 'US'}</span>
                         <div>
                           <span
                             onClick={() => {

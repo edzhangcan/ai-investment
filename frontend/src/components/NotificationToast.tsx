@@ -49,7 +49,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({ onSelectTi
       {activeAlerts.map((alert) => (
         <div
           key={alert.id}
-          className="bg-surface border border-positive rounded-2xl p-4 shadow-xl flex items-start justify-between gap-3 text-xs transition-colors duration-150"
+          className="bg-white dark:bg-slate-900 border border-positive rounded-2xl p-4 shadow-2xl flex items-start justify-between gap-3 text-xs z-50 transition-colors duration-150"
         >
           <div className="flex items-start gap-3">
             <div className="p-2 prism-badge-positive rounded-xl shrink-0 mt-0.5">

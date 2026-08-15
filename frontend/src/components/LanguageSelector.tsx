@@ -8,10 +8,10 @@ export const LanguageSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const options: { mode: LanguageMode; label: string; flag: string; badge: string }[] = [
-    { mode: 'en', label: 'English (Default)', flag: '🇺🇸', badge: 'EN' },
-    { mode: 'zh', label: '简体中文', flag: '🇨🇳', badge: '中文' },
-    { mode: 'hybrid', label: '混合模式 (Hybrid)', flag: '🔀', badge: '中/英' }
+  const options: { mode: LanguageMode; label: string; badge: string }[] = [
+    { mode: 'en', label: 'English (Default)', badge: 'EN' },
+    { mode: 'zh', label: '简体中文', badge: 'ZH' },
+    { mode: 'hybrid', label: '混合模式 (Hybrid)', badge: '中/EN' }
   ];
 
   const currentOpt = options.find((o) => o.mode === language) || options[0];
@@ -34,15 +34,12 @@ export const LanguageSelector: React.FC = () => {
         title="Switch Interface Language (切换系统语言)"
       >
         <Globe className="w-3.5 h-3.5 text-brand" />
-        <span className="flex items-center gap-1">
-          <span>{currentOpt.flag}</span>
-          <span className="font-bold text-content-primary">{currentOpt.badge}</span>
-        </span>
+        <span className="font-bold text-content-primary">{currentOpt.badge}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-content-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-surface border border-border-subtle rounded-2xl shadow-xl z-50 py-1.5 animate-fade-in">
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 py-1.5 animate-fade-in">
           <div className="px-3 py-1.5 border-b border-border-subtle text-[10px] font-bold text-content-muted uppercase tracking-wider">
             Language / 语言模式
           </div>
@@ -62,7 +59,7 @@ export const LanguageSelector: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span>{opt.flag}</span>
+                  <span className="prism-badge-neutral text-[10px]">{opt.badge}</span>
                   <span>{opt.label}</span>
                 </div>
                 {isSelected && <Check className="w-3.5 h-3.5 text-brand" />}

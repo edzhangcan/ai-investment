@@ -4,17 +4,17 @@
 
 @layer base {
   :root {
-    /* Canvas & Surfaces */
-    --bg-canvas: #f8fafc;
+    /* Canvas & Surfaces (Crisp light contrast) */
+    --bg-canvas: #f1f5f9;
     --bg-surface: #ffffff;
-    --bg-surface-subtle: #f1f5f9;
+    --bg-surface-subtle: #f8fafc;
     --bg-surface-hover: #e2e8f0;
     
     /* Borders */
-    --border-subtle: #e2e8f0;
-    --border-strong: #cbd5e1;
+    --border-subtle: #cbd5e1;
+    --border-strong: #94a3b8;
     
-    /* Typography */
+    /* Typography (WCAG AAA contrast on light backgrounds) */
     --text-primary: #0f172a;
     --text-secondary: #334155;
     --text-muted: #64748b;
@@ -23,25 +23,25 @@
     --accent-brand: #0284c7;
     --accent-brand-hover: #0369a1;
     --accent-brand-bg: #e0f2fe;
-    --accent-brand-border: #bae6fd;
+    --accent-brand-border: #7dd3fc;
     
-    /* Semantic Financial Indicators ONLY */
-    --accent-positive: #059669;
-    --accent-positive-bg: #ecfdf5;
-    --accent-positive-border: #a7f3d0;
+    /* Semantic Financial Indicators */
+    --accent-positive: #047857;
+    --accent-positive-bg: #dcfce7;
+    --accent-positive-border: #86efac;
     
-    --accent-negative: #e11d48;
-    --accent-negative-bg: #fff1f2;
-    --accent-negative-border: #fecdd3;
+    --accent-negative: #be123c;
+    --accent-negative-bg: #ffe4e6;
+    --accent-negative-border: #fca5a5;
     
-    --accent-warning: #d97706;
-    --accent-warning-bg: #fffbeb;
-    --accent-warning-border: #fde68a;
+    --accent-warning: #b45309;
+    --accent-warning-bg: #fef3c7;
+    --accent-warning-border: #fcd34d;
   }
 
   .dark {
-    /* Canvas & Surfaces */
-    --bg-canvas: #0b0f19;
+    /* Canvas & Surfaces (Matte dark slate) */
+    --bg-canvas: #090d16;
     --bg-surface: #111827;
     --bg-surface-subtle: #1e293b;
     --bg-surface-hover: #334155;
@@ -50,7 +50,7 @@
     --border-subtle: #1e293b;
     --border-strong: #334155;
     
-    /* Typography */
+    /* Typography (WCAG AAA contrast on dark backgrounds) */
     --text-primary: #f8fafc;
     --text-secondary: #cbd5e1;
     --text-muted: #94a3b8;
@@ -58,21 +58,21 @@
     /* Brand Accent (Sky Cyan / Pure Refraction) */
     --accent-brand: #38bdf8;
     --accent-brand-hover: #7dd3fc;
-    --accent-brand-bg: rgba(56, 189, 248, 0.12);
-    --accent-brand-border: rgba(56, 189, 248, 0.3);
+    --accent-brand-bg: rgba(56, 189, 248, 0.15);
+    --accent-brand-border: rgba(56, 189, 248, 0.35);
     
-    /* Semantic Financial Indicators ONLY */
+    /* Semantic Financial Indicators */
     --accent-positive: #10b981;
-    --accent-positive-bg: rgba(16, 185, 129, 0.12);
-    --accent-positive-border: rgba(16, 185, 129, 0.3);
+    --accent-positive-bg: rgba(16, 185, 129, 0.15);
+    --accent-positive-border: rgba(16, 185, 129, 0.35);
     
     --accent-negative: #f43f5e;
-    --accent-negative-bg: rgba(244, 63, 94, 0.12);
-    --accent-negative-border: rgba(244, 63, 94, 0.3);
+    --accent-negative-bg: rgba(244, 63, 94, 0.15);
+    --accent-negative-border: rgba(244, 63, 94, 0.35);
     
     --accent-warning: #f59e0b;
-    --accent-warning-bg: rgba(245, 158, 11, 0.12);
-    --accent-warning-border: rgba(245, 158, 11, 0.3);
+    --accent-warning-bg: rgba(245, 158, 11, 0.15);
+    --accent-warning-border: rgba(245, 158, 11, 0.35);
   }
 
   html {
@@ -93,12 +93,12 @@
   }
 }
 
-/* Standalone Clean Card (No Blurry Fluff) */
+/* Standalone Clean Card (Solid background, crisp border & clean elevation) */
 .prism-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 1rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08);
   transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 
@@ -158,21 +158,40 @@
   padding: 0.125rem 0.5rem;
 }
 
-/* Custom Minimal Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Modal and Drawer solid containers */
+.prism-modal-content {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  color: var(--text-primary);
+  opacity: 1 !important;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 9999px;
+.animate-fade-in {
+  animation: fadeIn 0.15s ease-out forwards;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+@keyframes bounceShort {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-bounce-short {
+  animation: bounceShort 2s ease-in-out infinite;
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

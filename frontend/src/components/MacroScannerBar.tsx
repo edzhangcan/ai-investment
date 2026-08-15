@@ -1,7 +1,7 @@
 import React from 'react';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
-import { Compass, TrendingUp, AlertTriangle, Cpu } from 'lucide-react';
+import { Compass, TrendingUp, AlertTriangle, Cpu, Info } from 'lucide-react';
 
 interface MacroScannerBarProps {
   macroData: any;
@@ -58,9 +58,13 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isP
       </div>
 
       {/* Summary Explanation */}
-      <p className="text-sm text-content-secondary mb-4 prism-surface-subtle p-3 leading-relaxed">
-        💡 <span className="font-semibold text-warning">{t.macroInsight}</span> {macroData.plain_explanation}
-      </p>
+      <div className="text-sm text-content-secondary mb-4 prism-surface-subtle p-3 leading-relaxed flex items-start gap-2">
+        <Info className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+        <div>
+          <span className="font-semibold text-warning">{t.macroInsight} </span>
+          <span>{macroData.plain_explanation}</span>
+        </div>
+      </div>
 
       {/* Sector Rotation Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -103,13 +103,13 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
         </div>
 
         {/* Multi-Category Selector Buttons */}
-        <div className="flex bg-surface-subtle p-1.5 rounded-2xl border border-border-subtle text-xs w-full md:w-auto flex-wrap gap-1 shadow-sm">
+        <div className="flex bg-surface border border-border-subtle p-1.5 rounded-2xl text-xs w-full md:w-auto flex-wrap gap-1.5 shadow-sm">
           <button
             onClick={() => setActiveCategory('SECTOR')}
-            className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeCategory === 'SECTOR'
-                ? 'bg-brand text-white shadow-sm'
-                : 'text-content-secondary hover:text-content-primary hover:bg-surface'
+                ? 'bg-brand text-white shadow-md ring-2 ring-brand/30 border border-brand'
+                : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
             }`}
           >
             <Award className="w-4 h-4" />
@@ -118,10 +118,10 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
           <button
             onClick={() => setActiveCategory('OVERALL')}
-            className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeCategory === 'OVERALL'
-                ? 'bg-brand text-white shadow-sm'
-                : 'text-content-secondary hover:text-content-primary hover:bg-surface'
+                ? 'bg-brand text-white shadow-md ring-2 ring-brand/30 border border-brand'
+                : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
             }`}
           >
             <Compass className="w-4 h-4" />
@@ -130,10 +130,10 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
           <button
             onClick={() => setActiveCategory('GOLD')}
-            className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeCategory === 'GOLD'
-                ? 'bg-warning text-white shadow-sm'
-                : 'text-content-secondary hover:text-content-primary hover:bg-surface'
+                ? 'bg-warning text-white shadow-md ring-2 ring-warning/30 border border-warning'
+                : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
             }`}
           >
             <Coins className="w-4 h-4" />

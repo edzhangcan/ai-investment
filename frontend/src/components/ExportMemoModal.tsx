@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { ExportMemoData, generateMarkdownMemo, downloadMarkdownMemo } from '../utils/exportMemo';
-import { FileText, Printer, Download, Copy, Check, X, Sparkles, Scale, ShieldAlert, Award, TrendingUp, Database } from 'lucide-react';
+import { FileText, Printer, Download, Copy, Check, X, Sparkles, Scale, ShieldAlert, Award, TrendingUp, Database, Eye, Code2 } from 'lucide-react';
 
 interface ExportMemoModalProps {
   isOpen: boolean;
@@ -34,8 +34,8 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
   const cio = debate?.cio_verdict || {};
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in print:p-0 print:bg-white print:static">
-      <div className="bg-surface border border-border-subtle rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-content-primary print:shadow-none print:border-none print:max-w-full print:max-h-full print:bg-white print:text-black transition-colors duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in print:p-0 print:bg-white print:static">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-content-primary z-10 print:shadow-none print:border-none print:max-w-full print:max-h-full print:bg-white print:text-black transition-colors duration-150">
         
         {/* Modal Action Header (Hidden in Print) */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-border-subtle print:hidden">
@@ -66,23 +66,25 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('preview')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'preview'
                   ? 'bg-brand text-white shadow-sm'
                   : 'text-content-secondary hover:text-content-primary hover:bg-surface'
               }`}
             >
-              👁️ Styled Preview
+              <Eye className="w-3.5 h-3.5" />
+              <span>Styled Preview</span>
             </button>
             <button
               onClick={() => setActiveTab('markdown')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'markdown'
                   ? 'bg-brand text-white shadow-sm'
                   : 'text-content-secondary hover:text-content-primary hover:bg-surface'
               }`}
             >
-              📝 Raw Markdown
+              <Code2 className="w-3.5 h-3.5" />
+              <span>Raw Markdown</span>
             </button>
           </div>
 

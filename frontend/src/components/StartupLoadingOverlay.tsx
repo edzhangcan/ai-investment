@@ -143,7 +143,7 @@ export const StartupLoadingOverlay: React.FC<StartupLoadingOverlayProps> = ({ is
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   ) : (
-                    <StepIcon className={`w-4 h-4 ${isActive ? step.color : 'text-content-muted'} ${isActive ? 'animate-pulse' : ''}`} />
+                    <StepIcon className={`w-4 h-4 ${isActive ? step.color : 'text-content-muted'}`} />
                   )}
                 </div>
                 <span className={`text-xs font-semibold ${

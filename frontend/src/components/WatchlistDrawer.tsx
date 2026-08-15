@@ -86,8 +86,8 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-sm animate-fade-in flex justify-end">
-      <div className="w-full max-w-md bg-surface border-l border-border-subtle h-full p-6 shadow-2xl flex flex-col justify-between overflow-y-auto transition-colors duration-150">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/70 backdrop-blur-sm animate-fade-in flex justify-end">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 shadow-2xl flex flex-col justify-between overflow-y-auto z-10 transition-colors duration-150">
         <div>
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-6">
@@ -141,7 +141,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                 value={newAlloc}
                 onChange={(e) => setNewAlloc(e.target.value)}
                 placeholder={t.allocPlaceholder}
-                className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-content-primary placeholder:text-content-muted focus:outline-none focus:border-brand shadow-sm"
+                className="w-full bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-content-primary placeholder:text-content-muted focus:outline-none focus:border-brand shadow-sm"
               />
             </div>
             <button

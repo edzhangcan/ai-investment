@@ -133,7 +133,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
           <div className="flex flex-wrap gap-2">
             {macroData.recommended_overweights.map((sec, idx) => (
               <span key={idx} className="prism-badge-positive text-xs">
-                🟢 {sec}
+                {sec}
               </span>
             ))}
           </div>
@@ -148,7 +148,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
           <div className="flex flex-wrap gap-2">
             {macroData.recommended_underweights.map((sec, idx) => (
               <span key={idx} className="prism-badge-negative text-xs">
-                🔴 {sec}
+                {sec}
               </span>
             ))}
           </div>

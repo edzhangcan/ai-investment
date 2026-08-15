@@ -15,7 +15,8 @@ import {
   Command,
   Calculator,
   Bell,
-  FileText
+  FileText,
+  Info
 } from 'lucide-react';
 import { MacroDashboard } from './components/MacroDashboard';
 import { RecommendedStocksGrid } from './components/RecommendedStocksGrid';
@@ -269,10 +270,10 @@ export const App: React.FC = () => {
               className="px-3.5 py-2 bg-surface border border-border-subtle hover:border-warning rounded-xl text-content-primary hover:text-warning transition-all flex items-center gap-2 text-xs font-bold relative cursor-pointer group shadow-sm"
               title={t.watchlistDrawerTitle}
             >
-              <Star className="w-4 h-4 text-warning group-hover:scale-110 transition-transform" />
+              <Star className="w-4 h-4 text-warning group-hover:scale-105 transition-transform" />
               <span>{t.watchlistTitle}</span>
               {watchlistSymbols.size > 0 && (
-                <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-warning text-white text-[10px] font-extrabold rounded-full shadow-sm ml-0.5">
+                <span className="min-w-[18px] h-[18px] px-1.5 flex items-center justify-center bg-warning text-white text-[10px] font-bold rounded-md shadow-sm ml-0.5">
                   {watchlistSymbols.size}
                 </span>
               )}
@@ -310,31 +311,31 @@ export const App: React.FC = () => {
           </div>
         </header>
 
-        {/* Navigation Tabs Bar */}
-        <div className="flex items-center justify-between gap-2 mb-8 bg-surface-subtle border border-border-subtle p-1.5 rounded-2xl shadow-sm">
+        {/* Navigation Tabs Bar with High-Contrast Selected State */}
+        <div className="flex items-center justify-between gap-2 mb-8 bg-surface border border-border-subtle p-1.5 rounded-2xl shadow-sm">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('macro')}
-              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 activeTab === 'macro'
-                  ? 'bg-brand text-white shadow-sm'
-                  : 'text-content-secondary hover:text-content-primary hover:bg-surface'
+                  ? 'bg-brand text-white shadow-sm ring-2 ring-brand/30 border border-brand'
+                  : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
               }`}
             >
               <LayoutDashboard className="w-4 h-4" />
-              <span>📊 1. {t.tabMacro}</span>
+              <span>1. {t.tabMacro}</span>
             </button>
 
             <button
               onClick={() => setActiveTab('stock')}
-              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 activeTab === 'stock'
-                  ? 'bg-brand text-white shadow-sm'
-                  : 'text-content-secondary hover:text-content-primary hover:bg-surface'
+                  ? 'bg-brand text-white shadow-sm ring-2 ring-brand/30 border border-brand'
+                  : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
               }`}
             >
               <LineChart className="w-4 h-4" />
-              <span>🔍 2. {t.tabStock} (${ticker})</span>
+              <span>2. {t.tabStock} (${ticker})</span>
             </button>
           </div>
         </div>
@@ -343,7 +344,7 @@ export const App: React.FC = () => {
         {isPlainTalk && (
           <div className="prism-card p-4 mb-6 text-xs text-warning border-warning flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2 font-semibold">
-              <span className="text-base">💡</span>
+              <Info className="w-4 h-4 shrink-0 text-warning" />
               <span>Bilingual Plain-Talk Hover Layovers Active: Hover or tap on metric badges for non-technical explanations.</span>
             </div>
           </div>

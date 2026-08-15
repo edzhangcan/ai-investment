@@ -104,8 +104,8 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
   const isConfigured = Boolean(webhookUrl.trim() && webhookUrl.startsWith('http'));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xl animate-fade-in">
-      <div className="relative w-full max-w-xl bg-surface border border-border-subtle rounded-3xl p-6 md:p-8 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto transition-colors duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto z-10 transition-colors duration-150">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-border-subtle mb-6">
           <div className="flex items-center gap-3">
@@ -164,12 +164,11 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
           {/* Status Badge */}
           <div className="flex items-center justify-between p-3 prism-surface-subtle text-xs shadow-sm">
             <span className="text-content-secondary font-medium">{t.discordChannelStatus}</span>
-            <span className={`px-3 py-1 rounded-full font-extrabold flex items-center gap-1.5 ${
+            <span className={`px-3 py-1 rounded-xl font-extrabold flex items-center gap-1.5 ${
               isConfigured && isEnabled
                 ? 'prism-badge-positive'
                 : 'prism-badge-neutral'
             }`}>
-              <span className={`w-2 h-2 rounded-full ${isConfigured && isEnabled ? 'bg-positive animate-pulse' : 'bg-content-muted'}`} />
               <span>{isConfigured && isEnabled ? t.discordConnected : t.discordNotConfigured}</span>
             </span>
           </div>
