@@ -46,32 +46,32 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
   chartData[pointCount - 1].Price = currentPrice;
 
   return (
-    <div className={`bg-slate-900/80 border rounded-2xl p-5 backdrop-blur-xl shadow-xl mb-6 transition-all ${
-      isPlainTalk ? 'border-amber-500/40 ring-1 ring-amber-500/20' : 'border-slate-800'
+    <div className={`bg-white dark:bg-slate-900/80 border rounded-2xl p-5 backdrop-blur-xl shadow-sm dark:shadow-xl mb-6 transition-all ${
+      isPlainTalk ? 'border-amber-400 dark:border-amber-500/40 ring-1 ring-amber-400/20 dark:ring-amber-500/20' : 'border-slate-200 dark:border-slate-800'
     }`}>
       {/* Top Header & Range Controls */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 border-b border-slate-800 pb-3">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
         <div>
-          <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold">
-            <Target className="w-4 h-4 text-emerald-400" />
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-semibold">
+            <Target className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>{t.pricingOverlay}</span>
           </div>
-          <h3 className="text-base font-bold text-slate-100 mt-1">
-            {t.idealBuyRange}: <span className="text-emerald-400">${buyMin} – ${buyMax} {currency}</span>
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
+            {t.idealBuyRange}: <span className="text-emerald-600 dark:text-emerald-400">${buyMin} – ${buyMax} {currency}</span>
           </h3>
         </div>
 
         {/* Time Horizon Selector Buttons */}
         <div className="flex items-center gap-2">
-          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+          <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
             {(['1M', '3M', '6M', '1Y', '5Y'] as const).map((tf) => (
               <button
                 key={tf}
                 onClick={() => setTimeframe(tf)}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                   timeframe === tf
-                    ? 'bg-emerald-500 text-slate-950 shadow'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-sky-500 dark:bg-emerald-500 text-white dark:text-slate-950 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 {tf}
@@ -79,31 +79,31 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
             ))}
           </div>
 
-          <div className="bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs">
-            <span className="text-slate-400">
+          <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs">
+            <span className="text-slate-500 dark:text-slate-400">
               <BilingualHoverCard termKey="DCF" isPlainTalk={isPlainTalk}>
                 {t.fairValue}
               </BilingualHoverCard>:
             </span>
-            <span className="font-bold text-emerald-300"> ${dcfFairValue} {currency}</span>
+            <span className="font-bold text-emerald-700 dark:text-emerald-300"> ${dcfFairValue} {currency}</span>
           </div>
         </div>
       </div>
 
       {/* Layer Toggles & Current Price Callout */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60 text-xs">
-        <div className="flex items-center gap-3">
-          <span className="text-slate-400 font-semibold flex items-center gap-1">
-            <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3 bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800/60 text-xs">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+            <Sliders className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
             <span>Chart Overlays:</span>
           </span>
 
-          <label className="flex items-center gap-1.5 cursor-pointer text-indigo-300">
+          <label className="flex items-center gap-1.5 cursor-pointer text-indigo-700 dark:text-indigo-300 font-medium">
             <input
               type="checkbox"
               checked={show50D}
               onChange={(e) => setShow50D(e.target.checked)}
-              className="accent-indigo-500 rounded"
+              className="accent-indigo-600 rounded"
             />
             <span>
               <BilingualHoverCard termKey="SMA50" isPlainTalk={isPlainTalk}>
@@ -112,7 +112,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
             </span>
           </label>
 
-          <label className="flex items-center gap-1.5 cursor-pointer text-indigo-400">
+          <label className="flex items-center gap-1.5 cursor-pointer text-indigo-700 dark:text-indigo-400 font-medium">
             <input
               type="checkbox"
               checked={show200D}
@@ -126,7 +126,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
             </span>
           </label>
 
-          <label className="flex items-center gap-1.5 cursor-pointer text-amber-300">
+          <label className="flex items-center gap-1.5 cursor-pointer text-amber-700 dark:text-amber-300 font-medium">
             <input
               type="checkbox"
               checked={showDCF}
@@ -141,16 +141,16 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
           </label>
         </div>
 
-        <div className="text-slate-300 font-medium">
-          Current Price: <span className="font-bold text-slate-100">${currentPrice} {currency}</span>
+        <div className="text-slate-700 dark:text-slate-300 font-medium">
+          Current Price: <span className="font-bold text-slate-900 dark:text-slate-100">${currentPrice} {currency}</span>
         </div>
       </div>
 
       {/* Action Advice Callout */}
-      <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 mb-4 flex items-center gap-3 text-xs text-slate-300">
-        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+      <div className="bg-slate-50 dark:bg-slate-950/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800 mb-4 flex items-center gap-3 text-xs text-slate-700 dark:text-slate-300 shadow-sm">
+        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <div>
-          <span className="font-bold text-emerald-400">{pricingData.action_status}: </span>
+          <span className="font-bold text-emerald-600 dark:text-emerald-400">{pricingData.action_status}: </span>
           {pricingData.timing_advice}
         </div>
       </div>
@@ -170,8 +170,8 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
             <YAxis domain={['auto', 'auto']} stroke="#64748b" fontSize={11} tickLine={false} />
 
             <Tooltip
-              contentStyle={{ backgroundColor: '#090d16', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px' }}
-              itemStyle={{ color: '#34d399' }}
+              contentStyle={{ backgroundColor: 'var(--prism-bg-surface, #111827)', borderColor: 'var(--prism-border-subtle, #1e293b)', borderRadius: '12px', fontSize: '12px' }}
+              itemStyle={{ color: '#10b981' }}
             />
 
             {/* Ideal Buy Zone Band */}
