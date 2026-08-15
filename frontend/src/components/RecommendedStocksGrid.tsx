@@ -102,38 +102,41 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
           </p>
         </div>
 
-        {/* Multi-Category Selector Buttons */}
+        {/* Multi-Category Selector Buttons with Distinct Signatures */}
         <div className="flex bg-surface border border-border-subtle p-1.5 rounded-2xl text-xs w-full md:w-auto flex-wrap gap-1.5 shadow-sm">
+          {/* 1. Sector Champions (Emerald Theme) */}
           <button
             onClick={() => setActiveCategory('SECTOR')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeCategory === 'SECTOR'
-                ? 'bg-brand text-white shadow-md ring-2 ring-brand/30 border border-brand'
-                : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-400/40 border border-emerald-600'
+                : 'bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
             }`}
           >
             <Award className="w-4 h-4" />
             <span>{t.catSectorChampions}</span>
           </button>
 
+          {/* 2. Core Market Leaders (Sky Blue Theme) */}
           <button
             onClick={() => setActiveCategory('OVERALL')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeCategory === 'OVERALL'
-                ? 'bg-brand text-white shadow-md ring-2 ring-brand/30 border border-brand'
-                : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
+                ? 'bg-sky-600 hover:bg-sky-700 text-white shadow-md ring-2 ring-sky-400/40 border border-sky-600'
+                : 'bg-sky-50/80 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800/80 hover:bg-sky-100 dark:hover:bg-sky-900/50'
             }`}
           >
             <Compass className="w-4 h-4" />
             <span>{t.catMarketLeaders}</span>
           </button>
 
+          {/* 3. Hidden Gold Nuggets (Warm Gold Theme) */}
           <button
             onClick={() => setActiveCategory('GOLD')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeCategory === 'GOLD'
-                ? 'bg-warning text-white shadow-md ring-2 ring-warning/30 border border-warning'
-                : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
+                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md ring-2 ring-amber-400/40 border border-amber-500'
+                : 'bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50'
             }`}
           >
             <Coins className="w-4 h-4" />

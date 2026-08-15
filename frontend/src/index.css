@@ -5,9 +5,9 @@
 @layer base {
   :root {
     /* Canvas & Surfaces (Crisp light contrast) */
-    --bg-canvas: #f1f5f9;
+    --bg-canvas: #f8fafc;
     --bg-surface: #ffffff;
-    --bg-surface-subtle: #f8fafc;
+    --bg-surface-subtle: #f1f5f9;
     --bg-surface-hover: #e2e8f0;
     
     /* Borders */
@@ -39,7 +39,7 @@
     --accent-warning-border: #fcd34d;
   }
 
-  .dark {
+  html.dark, .dark {
     /* Canvas & Surfaces (Matte dark slate) */
     --bg-canvas: #090d16;
     --bg-surface: #111827;
@@ -77,10 +77,14 @@
 
   html {
     color-scheme: light;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
   }
 
   html.dark {
     color-scheme: dark;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
   }
 
   body {
@@ -96,6 +100,7 @@
 /* Standalone Clean Card (Solid background, crisp border & clean elevation) */
 .prism-card {
   background-color: var(--bg-surface);
+  color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   border-radius: 1rem;
   box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08);
@@ -108,6 +113,7 @@
 
 .prism-surface-subtle {
   background-color: var(--bg-surface-subtle);
+  color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   border-radius: 0.75rem;
 }

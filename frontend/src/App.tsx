@@ -262,76 +262,78 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Sub-Header Toolbar */}
+          {/* Sub-Header Toolbar with Distinct Multi-Color Accents */}
           <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-border-subtle w-full justify-start md:justify-center">
-            {/* Watchlist Drawer Button */}
+            {/* 1. Watchlist Drawer Button (Amber Gold Theme) */}
             <button
               onClick={() => setIsWatchlistOpen(true)}
-              className="px-3.5 py-2 bg-surface border border-border-subtle hover:border-warning rounded-xl text-content-primary hover:text-warning transition-all flex items-center gap-2 text-xs font-bold relative cursor-pointer group shadow-sm"
+              className="px-3.5 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold relative cursor-pointer group shadow-sm"
               title={t.watchlistDrawerTitle}
             >
-              <Star className="w-4 h-4 text-warning group-hover:scale-105 transition-transform" />
+              <Star className="w-4 h-4 text-amber-600 dark:text-amber-400 fill-amber-500 group-hover:scale-105 transition-transform" />
               <span>{t.watchlistTitle}</span>
               {watchlistSymbols.size > 0 && (
-                <span className="min-w-[18px] h-[18px] px-1.5 flex items-center justify-center bg-warning text-white text-[10px] font-bold rounded-md shadow-sm ml-0.5">
+                <span className="min-w-[18px] h-[18px] px-1.5 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white text-[10px] font-black rounded-md shadow-sm ml-0.5">
                   {watchlistSymbols.size}
                 </span>
               )}
             </button>
 
-            {/* Command Palette / Quick Search (Ctrl+K) Button */}
+            {/* 2. Command Palette (Sky Blue Theme) */}
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="px-3.5 py-2 bg-surface border border-border-subtle hover:border-brand rounded-xl text-content-primary hover:text-brand transition-all flex items-center gap-2 text-xs font-bold cursor-pointer shadow-sm"
+              className="px-3.5 py-2 bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-700/80 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-900 dark:text-sky-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer shadow-sm group"
               title={t.commandPaletteTitle}
             >
-              <Command className="w-4 h-4 text-brand" />
+              <Command className="w-4 h-4 text-sky-600 dark:text-sky-400 group-hover:scale-105 transition-transform" />
               <span>{t.commandPaletteTitle}</span>
             </button>
 
-            {/* Position Sizing Calculator Button */}
+            {/* 3. Position Sizing Calculator (Emerald Green Theme) */}
             <button
               onClick={() => setIsPortfolioCalculatorOpen(true)}
-              className="px-3.5 py-2 bg-surface border border-border-subtle hover:border-brand rounded-xl text-content-primary hover:text-brand transition-all flex items-center gap-2 text-xs font-bold cursor-pointer shadow-sm"
+              className="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-900 dark:text-emerald-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer shadow-sm group"
               title={t.calcButtonTitle}
             >
-              <Calculator className="w-4 h-4 text-brand" />
+              <Calculator className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform" />
               <span>{t.calcButtonTitle}</span>
             </button>
 
-            {/* Discord Push Alerts Button */}
+            {/* 4. Discord Push Alerts (Indigo Violet Theme) */}
             <button
               onClick={() => setIsDiscordModalOpen(true)}
-              className="px-3.5 py-2 bg-surface border border-border-subtle hover:border-brand rounded-xl text-content-primary hover:text-brand transition-all flex items-center gap-2 text-xs font-bold cursor-pointer shadow-sm"
+              className="px-3.5 py-2 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-300 dark:border-indigo-700/80 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-900 dark:text-indigo-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer shadow-sm group"
               title={t.discordButtonTitle}
             >
-              <Bell className="w-4 h-4 text-brand" />
+              <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform" />
               <span>{t.discordButtonTitle}</span>
             </button>
           </div>
         </header>
 
-        {/* Navigation Tabs Bar with High-Contrast Selected State */}
+        {/* Navigation Tabs Bar with Multi-Color Selected States */}
         <div className="flex items-center justify-between gap-2 mb-8 bg-surface border border-border-subtle p-1.5 rounded-2xl shadow-sm">
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Tab 1: Macro Dashboard (Sky Blue Signature) */}
             <button
               onClick={() => setActiveTab('macro')}
               className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 activeTab === 'macro'
-                  ? 'bg-brand text-white shadow-sm ring-2 ring-brand/30 border border-brand'
-                  : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
+                  ? 'bg-sky-600 hover:bg-sky-700 text-white shadow-md ring-2 ring-sky-400/40 border border-sky-600'
+                  : 'bg-surface-subtle text-content-secondary hover:text-sky-600 hover:bg-surface border border-border-subtle'
               }`}
             >
               <LayoutDashboard className="w-4 h-4" />
               <span>1. {t.tabMacro}</span>
             </button>
 
+            {/* Tab 2: Single Stock Deep-Dive (Indigo Signature) */}
             <button
               onClick={() => setActiveTab('stock')}
               className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 activeTab === 'stock'
-                  ? 'bg-brand text-white shadow-sm ring-2 ring-brand/30 border border-brand'
-                  : 'bg-surface-subtle text-content-secondary hover:text-content-primary hover:bg-surface border border-border-subtle'
+                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md ring-2 ring-indigo-400/40 border border-indigo-600'
+                  : 'bg-surface-subtle text-content-secondary hover:text-indigo-600 hover:bg-surface border border-border-subtle'
               }`}
             >
               <LineChart className="w-4 h-4" />
