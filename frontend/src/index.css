@@ -4,35 +4,75 @@
 
 @layer base {
   :root {
-    --prism-bg-canvas: #f8fafc;
-    --prism-bg-surface: #ffffff;
-    --prism-bg-elevated: #f1f5f9;
-    --prism-border-subtle: #e2e8f0;
-    --prism-border-strong: #cbd5e1;
-    --prism-text-primary: #0f172a;
-    --prism-text-secondary: #334155;
-    --prism-text-muted: #64748b;
-    --prism-accent-gold: #d97706;
-    --prism-accent-cyan: #0284c7;
-    --prism-accent-cobalt: #1d4ed8;
-    --prism-accent-rose: #e11d48;
-    --prism-accent-emerald: #059669;
+    /* Canvas & Surfaces */
+    --bg-canvas: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-surface-subtle: #f1f5f9;
+    --bg-surface-hover: #e2e8f0;
+    
+    /* Borders */
+    --border-subtle: #e2e8f0;
+    --border-strong: #cbd5e1;
+    
+    /* Typography */
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    
+    /* Brand Accent (Sky Cyan / Pure Refraction) */
+    --accent-brand: #0284c7;
+    --accent-brand-hover: #0369a1;
+    --accent-brand-bg: #e0f2fe;
+    --accent-brand-border: #bae6fd;
+    
+    /* Semantic Financial Indicators ONLY */
+    --accent-positive: #059669;
+    --accent-positive-bg: #ecfdf5;
+    --accent-positive-border: #a7f3d0;
+    
+    --accent-negative: #e11d48;
+    --accent-negative-bg: #fff1f2;
+    --accent-negative-border: #fecdd3;
+    
+    --accent-warning: #d97706;
+    --accent-warning-bg: #fffbeb;
+    --accent-warning-border: #fde68a;
   }
 
   .dark {
-    --prism-bg-canvas: #0b0f19;
-    --prism-bg-surface: #111827;
-    --prism-bg-elevated: #1e293b;
-    --prism-border-subtle: #1e293b;
-    --prism-border-strong: #334155;
-    --prism-text-primary: #f8fafc;
-    --prism-text-secondary: #cbd5e1;
-    --prism-text-muted: #94a3b8;
-    --prism-accent-gold: #f59e0b;
-    --prism-accent-cyan: #38bdf8;
-    --prism-accent-cobalt: #2563eb;
-    --prism-accent-rose: #f43f5e;
-    --prism-accent-emerald: #10b981;
+    /* Canvas & Surfaces */
+    --bg-canvas: #0b0f19;
+    --bg-surface: #111827;
+    --bg-surface-subtle: #1e293b;
+    --bg-surface-hover: #334155;
+    
+    /* Borders */
+    --border-subtle: #1e293b;
+    --border-strong: #334155;
+    
+    /* Typography */
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    
+    /* Brand Accent (Sky Cyan / Pure Refraction) */
+    --accent-brand: #38bdf8;
+    --accent-brand-hover: #7dd3fc;
+    --accent-brand-bg: rgba(56, 189, 248, 0.12);
+    --accent-brand-border: rgba(56, 189, 248, 0.3);
+    
+    /* Semantic Financial Indicators ONLY */
+    --accent-positive: #10b981;
+    --accent-positive-bg: rgba(16, 185, 129, 0.12);
+    --accent-positive-border: rgba(16, 185, 129, 0.3);
+    
+    --accent-negative: #f43f5e;
+    --accent-negative-bg: rgba(244, 63, 94, 0.12);
+    --accent-negative-border: rgba(244, 63, 94, 0.3);
+    
+    --accent-warning: #f59e0b;
+    --accent-warning-bg: rgba(245, 158, 11, 0.12);
+    --accent-warning-border: rgba(245, 158, 11, 0.3);
   }
 
   html {
@@ -46,33 +86,76 @@
   body {
     margin: 0;
     font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
-    background-color: var(--prism-bg-canvas);
-    color: var(--prism-text-primary);
-    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    min-height: 100vh;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 }
 
-/* Reusable Prism Card */
+/* Standalone Clean Card (No Blurry Fluff) */
 .prism-card {
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: 1rem;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out, transform 0.15s ease-out;
-}
-
-.dark .prism-card {
-  background-color: rgba(17, 24, 39, 0.85);
-  border: 1px solid rgba(30, 41, 59, 0.8);
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 
 .prism-card:hover {
-  border-color: rgba(2, 132, 199, 0.35);
+  border-color: var(--accent-brand-border);
 }
 
-.dark .prism-card:hover {
-  border-color: rgba(56, 189, 248, 0.4);
+.prism-surface-subtle {
+  background-color: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+}
+
+/* Semantic Badges */
+.prism-badge-brand {
+  background-color: var(--accent-brand-bg);
+  color: var(--accent-brand);
+  border: 1px solid var(--accent-brand-border);
+  font-weight: 700;
+  border-radius: 0.5rem;
+  padding: 0.125rem 0.5rem;
+}
+
+.prism-badge-positive {
+  background-color: var(--accent-positive-bg);
+  color: var(--accent-positive);
+  border: 1px solid var(--accent-positive-border);
+  font-weight: 700;
+  border-radius: 0.5rem;
+  padding: 0.125rem 0.5rem;
+}
+
+.prism-badge-negative {
+  background-color: var(--accent-negative-bg);
+  color: var(--accent-negative);
+  border: 1px solid var(--accent-negative-border);
+  font-weight: 700;
+  border-radius: 0.5rem;
+  padding: 0.125rem 0.5rem;
+}
+
+.prism-badge-warning {
+  background-color: var(--accent-warning-bg);
+  color: var(--accent-warning);
+  border: 1px solid var(--accent-warning-border);
+  font-weight: 700;
+  border-radius: 0.5rem;
+  padding: 0.125rem 0.5rem;
+}
+
+.prism-badge-neutral {
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.125rem 0.5rem;
 }
 
 /* Custom Minimal Scrollbars */
@@ -86,18 +169,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
+  background: var(--border-strong);
   border-radius: 9999px;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.5);
-}
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.5);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(51, 65, 85, 0.8);
+  background: var(--text-muted);
 }
