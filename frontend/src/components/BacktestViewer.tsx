@@ -68,9 +68,9 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
 
   if (loading) {
     return (
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl animate-pulse flex items-center justify-center min-h-[220px]">
-        <div className="flex items-center gap-3 text-slate-400 text-xs">
-          <ChartIcon className="w-5 h-5 animate-spin text-emerald-400" />
+      <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 backdrop-blur-xl animate-pulse flex items-center justify-center min-h-[220px]">
+        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 text-xs">
+          <ChartIcon className="w-5 h-5 animate-spin text-sky-600 dark:text-emerald-400" />
           <span>Simulating 5-Year Historical Macro Cycle Performance (2021-2025)...</span>
         </div>
       </div>
@@ -80,33 +80,33 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
   if (!data) return null;
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-2xl mb-8">
+    <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-sm dark:shadow-2xl mb-8 transition-colors duration-200">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
-            <span className="p-2 bg-gradient-to-tr from-emerald-500 to-indigo-500 rounded-xl text-slate-950 shadow-md">
+            <span className="p-2 bg-gradient-to-tr from-sky-500 to-indigo-600 dark:from-emerald-500 dark:to-indigo-500 rounded-xl text-white dark:text-slate-950 shadow-md">
               <ChartIcon className="w-5 h-5" />
             </span>
-            <h3 className="text-xl font-extrabold text-slate-100 flex items-center gap-2">
+            <h3 className="text-xl font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <BilingualHoverCard termKey="Backtest" isPlainTalk={isPlainTalk}>
                 {t.backtestTitle}
               </BilingualHoverCard>
             </h3>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {t.backtestSubtitle}
           </p>
         </div>
 
         {/* Benchmark Switcher Buttons */}
-        <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-sm">
           <button
             onClick={() => setBenchmark('SPY')}
             className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
               benchmark === 'SPY'
-                ? 'bg-emerald-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-sky-500 dark:bg-emerald-500 text-white dark:text-slate-950 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             S&P 500 (SPY)
@@ -115,8 +115,8 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
             onClick={() => setBenchmark('XIU.TO')}
             className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
               benchmark === 'XIU.TO'
-                ? 'bg-emerald-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-sky-500 dark:bg-emerald-500 text-white dark:text-slate-950 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             TSX 60 (XIU.TO)
@@ -125,62 +125,62 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
       </div>
 
       {/* Summary Note Banner */}
-      <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-2xl mb-6 text-xs text-slate-300 font-medium flex items-start gap-2.5">
-        <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+      <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl mb-6 text-xs text-slate-700 dark:text-slate-300 font-medium flex items-start gap-2.5 shadow-sm">
+        <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
         <div>{data.summary_note}</div>
       </div>
 
       {/* 4 Quantitative Metric Badges */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-          <div className="text-[11px] text-slate-400 font-semibold mb-1">
+        <div className="bg-slate-50 dark:bg-slate-950/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mb-1">
             <BilingualHoverCard termKey="CAGR" isPlainTalk={isPlainTalk}>
               {t.cagr}
             </BilingualHoverCard>
           </div>
-          <div className="text-lg font-extrabold text-emerald-400">+{data.cagr_pct}%</div>
+          <div className="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">+{data.cagr_pct}%</div>
           <div className="text-[10px] text-slate-500 mt-0.5">Vs {data.benchmark}: +{data.benchmark_cagr_pct}%</div>
         </div>
 
-        <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-          <div className="text-[11px] text-slate-400 font-semibold mb-1">
+        <div className="bg-slate-50 dark:bg-slate-950/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mb-1">
             <BilingualHoverCard termKey="SharpeRatio" isPlainTalk={isPlainTalk}>
               {t.sharpeRatio}
             </BilingualHoverCard>
           </div>
-          <div className="text-lg font-extrabold text-indigo-300">{data.sharpe_ratio}</div>
+          <div className="text-lg font-extrabold text-indigo-700 dark:text-indigo-300">{data.sharpe_ratio}</div>
           <div className="text-[10px] text-slate-500 mt-0.5">{t.riskFreeRate}</div>
         </div>
 
-        <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-          <div className="text-[11px] text-slate-400 font-semibold mb-1">
+        <div className="bg-slate-50 dark:bg-slate-950/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mb-1">
             <BilingualHoverCard termKey="MaxDrawdown" isPlainTalk={isPlainTalk}>
               {t.maxDrawdown}
             </BilingualHoverCard>
           </div>
-          <div className="text-lg font-extrabold text-rose-400">-{data.max_drawdown_pct}%</div>
+          <div className="text-lg font-extrabold text-rose-700 dark:text-rose-400">-{data.max_drawdown_pct}%</div>
           <div className="text-[10px] text-slate-500 mt-0.5">{t.peakToTroughRisk}</div>
         </div>
 
-        <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-          <div className="text-[11px] text-slate-400 font-semibold mb-1">
+        <div className="bg-slate-50 dark:bg-slate-950/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mb-1">
             <BilingualHoverCard termKey="WinRate" isPlainTalk={isPlainTalk}>
               {t.winRate}
             </BilingualHoverCard>
           </div>
-          <div className="text-lg font-extrabold text-amber-300">{data.win_rate_pct}%</div>
+          <div className="text-lg font-extrabold text-amber-700 dark:text-amber-300">{data.win_rate_pct}%</div>
           <div className="text-[10px] text-slate-500 mt-0.5">{t.outperformedBenchmark}</div>
         </div>
       </div>
 
       {/* Annual Breakdown Table */}
-      <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-950/40">
+      <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 shadow-sm">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px]">
+          <thead className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
             <tr>
               <th className="p-3.5">{t.filingYear}</th>
-              <th className="p-3.5 text-emerald-400 font-bold">{symbol} {t.returnHeader}</th>
-              <th className="p-3.5 text-slate-300">{data.benchmark} {t.returnHeader}</th>
+              <th className="p-3.5 text-emerald-700 dark:text-emerald-400 font-bold">{symbol} {t.returnHeader}</th>
+              <th className="p-3.5 text-slate-600 dark:text-slate-300">{data.benchmark} {t.returnHeader}</th>
               <th className="p-3.5 text-right font-bold">
                 <BilingualHoverCard termKey="Alpha" isPlainTalk={isPlainTalk}>
                   {t.alpha}
@@ -188,21 +188,21 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/80">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/80 bg-white dark:bg-transparent">
             {data.annual_breakdown.map((row) => (
-              <tr key={row.year} className="hover:bg-slate-800/30 transition-colors">
-                <td className="p-3.5 font-bold font-mono text-slate-200">{row.year}</td>
-                <td className="p-3.5 font-mono font-bold text-emerald-400">
+              <tr key={row.year} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                <td className="p-3.5 font-bold font-mono text-slate-900 dark:text-slate-200">{row.year}</td>
+                <td className="p-3.5 font-mono font-bold text-emerald-700 dark:text-emerald-400">
                   {row.portfolio_return_pct >= 0 ? `+${row.portfolio_return_pct}%` : `${row.portfolio_return_pct}%`}
                 </td>
-                <td className="p-3.5 font-mono text-slate-300">
+                <td className="p-3.5 font-mono text-slate-700 dark:text-slate-300">
                   {row.benchmark_return_pct >= 0 ? `+${row.benchmark_return_pct}%` : `${row.benchmark_return_pct}%`}
                 </td>
                 <td className="p-3.5 text-right font-mono font-bold">
                   <span className={`px-2 py-0.5 rounded text-[11px] ${
                     row.alpha_pct >= 0
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                      ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30'
+                      : 'bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-500/30'
                   }`}>
                     {row.alpha_pct >= 0 ? `+${row.alpha_pct}%` : `${row.alpha_pct}%`}
                   </span>

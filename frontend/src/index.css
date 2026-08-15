@@ -2,9 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  background-color: #020617;
-  color: #f8fafc;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+@layer base {
+  :root {
+    --prism-bg-canvas: #f8fafc;
+    --prism-bg-surface: #ffffff;
+    --prism-bg-elevated: #f1f5f9;
+    --prism-border-subtle: #e2e8f0;
+    --prism-border-strong: #cbd5e1;
+    --prism-text-primary: #0f172a;
+    --prism-text-secondary: #334155;
+    --prism-text-muted: #64748b;
+    --prism-accent-gold: #d97706;
+    --prism-accent-cyan: #0284c7;
+    --prism-accent-cobalt: #1d4ed8;
+    --prism-accent-rose: #e11d48;
+    --prism-accent-emerald: #059669;
+  }
+
+  .dark {
+    --prism-bg-canvas: #0b0f19;
+    --prism-bg-surface: #111827;
+    --prism-bg-elevated: #1e293b;
+    --prism-border-subtle: #1e293b;
+    --prism-border-strong: #334155;
+    --prism-text-primary: #f8fafc;
+    --prism-text-secondary: #cbd5e1;
+    --prism-text-muted: #94a3b8;
+    --prism-accent-gold: #f59e0b;
+    --prism-accent-cyan: #38bdf8;
+    --prism-accent-cobalt: #2563eb;
+    --prism-accent-rose: #f43f5e;
+    --prism-accent-emerald: #10b981;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    background-color: var(--prism-bg-canvas);
+    color: var(--prism-text-primary);
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  }
+}
+
+/* Reusable Prism Card */
+.prism-card {
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out, transform 0.15s ease-out;
+}
+
+.dark .prism-card {
+  background-color: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.3);
+}
+
+.prism-card:hover {
+  border-color: rgba(2, 132, 199, 0.35);
+}
+
+.dark .prism-card:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+/* Custom Minimal Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(51, 65, 85, 0.8);
 }
