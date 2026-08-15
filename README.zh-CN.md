@@ -1,61 +1,72 @@
-# AI 智能投资工作站
+# Prism Loop — 多维光谱智能投研工作站
 
-[English](README.md) | [中文](README.zh-CN.md)
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-[![Release](https://img.shields.io/badge/release-v4.7.0-emerald.svg)](https://github.com/edzhangcan/ai-investment/tags)
-[![Tests](https://img.shields.io/badge/pytest-49%2F49%20passing-brightgreen.svg)](file:///c:/Users/drunk/Projects/ai-investment/backend/tests)
+[![Release](https://img.shields.io/badge/release-v7.0.0-sky.svg)](https://github.com/edzhangcan/ai-investment/tags)
+[![Tests](https://img.shields.io/badge/pytest-60%2F60%20通过-brightgreen.svg)](file:///c:/Users/drunk/Projects/ai-investment/backend/tests)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Theme](https://img.shields.io/badge/主题-明亮%2F暗黑双模式-slate.svg)](#)
 
-专为美股与加股普通投资者打造的 AI 投资助手。它将宏观利率趋势、公司真实财报数据与多智能体 AI 投资辩论整合在一个简洁直观的界面中。你不再需要花费数小时翻阅繁杂的官方财报，就能快速看懂每只股票的主营业务、增长催化剂、合理买入区间与下行风险。
+**Prism Loop** 是一款专为北美与全球散户投资者打造的机构级智能投研工作站。深度整合宏观经济周期跟踪、SEC 10-K / SEDAR+ 年报文本挖掘、多智能体（Multi-Agent）对抗辩论以及 DCF 现金流折现内在价值评估，呈现在极简高对比度的统一交互界面中。
 
-## 核心功能
+告别翻阅数百页晦涩财报与盲目追高，Prism Loop 为您提供严密的安全边际买入区间、经验证的增长催化剂与客观的风控止损预警。
 
-- **宏观周期扫描**：实时跟踪美加通胀数据、央行加降息决策与宏观新闻，帮助你判断当前环境更适合配置成长股还是避险高股息标的。
-- **128 只精选标的分类推荐**：覆盖美股科技龙头、加拿大能源与银行蓝筹股以及高成长中小盘股票，分为超配板块精选、核心龙头与隐形金矿股三大类。
-- **合理买入区间与安全边际**：基于公司自由现金流与均线支撑，直接算出每只股票的合理买入价格区间，避免高位追高。
-- **真实公司背景与增长催化剂**：展示真实的主营业务构成、收入分布占比以及 3 到 4 个具体的未来增长催化剂，拒绝套话与空白数据。
-- **多智能体 AI 投资辩论**：由多头分析师、空头公诉人与 CIO 首席投资官三大 AI 角色针对每只股票展开客观辩论，给出明确的仓位建议与风险提示。
-- **即时价格提醒**：支持绑定 Discord 或自定义 Webhook，当推荐股票跌入理想买入区间时自动发送提醒。
-- **通俗白话与多语言切换**：支持英文、中文与中英混合模式，提供鼠标悬停白话比喻解释，把专业金融术语翻译成听得懂的日常语言。
+---
 
-## 快速开始
+## 💎 核心技术架构与核心能力
 
-### 准备工作
+- **🏛️ 北美宏观周期扫描仪 (Macro Scanner)**: 实时跟踪美联储 FRED 通胀数据、加拿大央行 (BoC) 利率立场、10Y-2Y 美债收益率倒挂利差及核心政策头条，智能研判顺周期强势板块（如 AI 云端基础设施、商业银行、高股息能源等）。
+- **📄 SEC 10-K & SEDAR+ 文本挖掘管线**: 跨越 5 年历史 MD&A 年报的纵向 Levenshtein 语义差异分析。自动侦测管理层新增的风险免责声明、悄然删除的盈利指引与关键词频率跃迁。
+- **⚖️ 多智能体投资辩论竞技场 (Debate Arena)**: 针对每只股票展开对抗性审计——**看多先锋 (Bull Advocate)** 剖析自由现金流与护城河优势，**看空检察官 (Bear Prosecutor)** 揭示利润率挤压与宏观逆风，最终由 **首席投资官 (CIO)** 给出客观投资胜率裁决与仓位配置建议。
+- **🎯 DCF 内在价值与安全边际买入区间**: 基于自由现金流折现、50日均线与200日均线动态锚定理想买入上下限，助您在建仓前清晰掌握价格安全边际。
+- **🔔 Zero-KYC Discord 实时 Webhook 推送引擎**: 免认证无缝绑定 Discord 频道，在自选股跌入目标买入区间或触发风险预警时接收毫秒级即时提醒，并支持每日 8:00 AM EST 晨间宏观政策简报。
+- **💡 通俗白话模式 (Plain-Talk) 与双语词典**: 自由切换英文、简体中文与中英混合模式，集成金融术语生活化类比卡片，零门槛理解华尔街专业指标。
+- **💼 仓位管理与动态再平衡计算器**: 根据保守型、平衡型或进取型风险模型，计算精确到单股的可执行买入股数，支持 CAD/USD 资产配置，最低起始本金扩展至 $5,000。
+- **📑 机构级投资备忘录一键导出**: 一键生成带机构水印标识的 Markdown (.md) 与打印级 PDF 报告，支持一键复制辩论裁决分享至 Reddit / X。
+
+---
+
+## 🚀 快速启动
+
+### 环境要求
 - Python 3.11 或更高版本
 - Node.js 18 或更高版本
 
-### 方案 A：一键安装与启动（推荐）
+### 方式一：一键自动安装与启动（推荐）
 
-1. 双击运行 `install.bat`（Mac/Linux 用户运行 `./install.sh`）一次，自动完成依赖安装与环境配置。
-2. 以后每次使用，直接双击 `start.bat`（Mac/Linux 用户运行 `./start.sh`），浏览器将自动打开 `http://localhost:3000` 工作台。
+1. 双击运行 `install.bat`（Mac/Linux 用户运行 `./install.sh`）进行自动化依赖安装。
+2. 双击运行 `start.bat`（Mac/Linux 用户运行 `./start.sh`）启动服务，系统将自动在默认浏览器中打开 `http://localhost:3000`。
 
-### 方案 B：手动终端命令行启动
+### 方式二：手动终端分步启动
 
 ```powershell
-# 1. 启动后端 API（运行于 http://127.0.0.1:8000）
+# 1. 配置并启动后端服务 (FastAPI 服务运行于 http://127.0.0.1:8000)
 python -m venv backend/venv
 .\backend\venv\Scripts\pip install -r backend/requirements.txt
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python backend/main.py
 
-# 2. 新开终端窗口，启动前端界面（运行于 http://localhost:3000）
+# 2. 在新终端窗口中启动前端服务 (Vite 服务运行于 http://localhost:3000)
 cd frontend
 npm install
 npm run dev
 ```
 
-## 测试与验证
+---
+
+## 🧪 自动化测试验证
 
 ```powershell
-# 运行后端单元测试 (49 项测试全过)
+# 运行全部后端 pytest 测试用例 (60/60 全部通过)
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python -m pytest backend/tests/ -v
 
-# 验证前端构建
-cd frontend
-npm run build
+# 验证前端构建与 TypeScript 类型检查
+npm --prefix frontend run build
 ```
 
-## 开源协议
+---
 
-本项目基于 MIT 协议开源，详见 `LICENSE` 文件。
+## 📄 开源许可证
+
+本项目基于 MIT License 开源协议发布。详情请查阅 [LICENSE](LICENSE) 文件。

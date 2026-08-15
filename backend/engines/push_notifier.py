@@ -34,7 +34,7 @@ class PushNotifier:
         description: str,
         color: int = DISCORD_COLOR_BUY_ZONE,
         fields: Optional[List[Dict[str, Any]]] = None,
-        footer_text: str = "AI Investment Platform • Real-Time Alert System"
+        footer_text: str = "Prism Loop • Multi-Spectrum Equity Intelligence"
     ) -> Dict[str, Any]:
         """Dispatches a rich embed alert message to a Discord Incoming Webhook URL."""
         if not webhook_url or not webhook_url.startswith("http"):
@@ -44,13 +44,16 @@ class PushNotifier:
             "title": title,
             "description": description,
             "color": color,
+            "author": {
+                "name": "Prism Loop Autonomous Workstation"
+            },
             "footer": {"text": footer_text},
             "fields": fields or []
         }
 
         body_data = {
-            "username": "AI Investment Alert Bot",
-            "avatar_url": "https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/trending-up.svg",
+            "username": "Prism Loop Intelligence",
+            "avatar_url": "https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/activity.svg",
             "embeds": [embed_payload]
         }
 
@@ -61,7 +64,7 @@ class PushNotifier:
                 data=json_bytes,
                 headers={
                     "Content-Type": "application/json",
-                    "User-Agent": "AI-Investment-Platform/3.10.0"
+                    "User-Agent": "Prism-Loop-Workstation/7.0.0"
                 },
                 method="POST"
             )
@@ -116,7 +119,7 @@ class PushNotifier:
             description=description,
             color=cls.DISCORD_COLOR_MACRO_DIGEST,
             fields=fields,
-            footer_text="AI Investment Platform • Daily 8:00 AM EST Macro Digest"
+            footer_text="Prism Loop • Daily 8:00 AM EST Macro Digest"
         )
 
     @classmethod
@@ -159,7 +162,7 @@ class PushNotifier:
             description=description,
             color=cls.DISCORD_COLOR_BUY_ZONE,
             fields=fields,
-            footer_text="AI Investment Platform • Bundled Watchlist Buy-In Alert"
+            footer_text="Prism Loop • Bundled Watchlist Buy-In Alert"
         )
 
     @classmethod
@@ -201,7 +204,7 @@ class PushNotifier:
             description=description,
             color=cls.DISCORD_COLOR_DANGER_ZONE,
             fields=fields,
-            footer_text="AI Investment Platform • High-Priority Danger Risk Alert"
+            footer_text="Prism Loop • High-Priority Danger Risk Alert"
         )
 
     @classmethod
@@ -244,7 +247,7 @@ class PushNotifier:
             description=description,
             color=cls.DISCORD_COLOR_GOLD_NUGGET,
             fields=fields,
-            footer_text="AI Investment Platform • Daily Gold Nuggets Discovery Alert"
+            footer_text="Prism Loop • Daily Gold Nuggets Discovery Alert"
         )
 
     @classmethod
@@ -253,7 +256,7 @@ class PushNotifier:
         if lang == "zh":
             title = "🧪 Discord Webhook 通道关联成功!"
             description = (
-                "恭喜！您的 Discord 频道已成功关联 **AI 智能投资平台**。\n\n"
+                "恭喜！您的 Discord 频道已成功关联 **Prism Loop 智能投研工作站**。\n\n"
                 "系统将为您自动实时推送 4 种多类型投资警报:\n"
                 "1. **每日 8:00 AM EST 宏观经济与政策新闻简报**\n"
                 "2. **观察列表买入信号汇总** (合并单张 Embed 卡片)\n"
@@ -268,7 +271,7 @@ class PushNotifier:
         else:
             title = "🧪 Discord Webhook Connected Successfully!"
             description = (
-                "Congratulations! Your Discord channel is now connected to the **AI Investment Platform**.\n\n"
+                "Congratulations! Your Discord channel is now connected to **Prism Loop Autonomous Workstation**.\n\n"
                 "You will receive 4 multi-type automated alerts:\n"
                 "1. **Daily Macro & Policy Digest** (8:00 AM EST)\n"
                 "2. **Bundled Watchlist Buy-In Alert** (Combined Embed)\n"
@@ -286,6 +289,6 @@ class PushNotifier:
             title=title,
             description=description,
             color=cls.DISCORD_COLOR_TEST,
-            fields=fields
+            fields=fields,
+            footer_text="Prism Loop • Multi-Spectrum Equity Intelligence"
         )
-

@@ -1,61 +1,72 @@
-# AI Investment Workstation
+# Prism Loop — Multi-Spectrum Equity Intelligence Workstation
 
-[English](README.md) | [中文](README.zh-CN.md)
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-[![Release](https://img.shields.io/badge/release-v4.7.0-emerald.svg)](https://github.com/edzhangcan/ai-investment/tags)
-[![Tests](https://img.shields.io/badge/pytest-49%2F49%20passing-brightgreen.svg)](file:///c:/Users/drunk/Projects/ai-investment/backend/tests)
+[![Release](https://img.shields.io/badge/release-v7.0.0-sky.svg)](https://github.com/edzhangcan/ai-investment/tags)
+[![Tests](https://img.shields.io/badge/pytest-60%2F60%20passing-brightgreen.svg)](file:///c:/Users/drunk/Projects/ai-investment/backend/tests)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Theme](https://img.shields.io/badge/theme-Dual--Mode%20Light%2FDark-slate.svg)](#)
 
-An investment copilot built for everyday investors in US and Canadian stock markets. It combines interest rate trends, official company financial reports, and multi-agent AI debates into one clear dashboard. Instead of spending hours reading earnings filings or guessing fair stock prices, you get clear buy target brackets, verified growth drivers, and objective risk warnings.
+**Prism Loop** is an institutional-grade equity intelligence workstation built for everyday investors in US and Canadian stock markets. It combines macroeconomic cycle tracking, automated SEC 10-K / SEDAR+ filing text mining, multi-agent adversarial debates, and discounted cash flow (DCF) fair value pricing into a clean, high-contrast dashboard.
 
-## Core Features
+Instead of drowning in hundreds of pages of financial filings or guessing whether a stock is overvalued, Prism Loop gives you clear margin-of-safety buy zones, verified growth catalysts, and objective downside risk warnings.
 
-- **Macro Trend Scanner**: Tracks inflation rates, central bank interest decisions, and economic news across the US and Canada so you know when the market favors growth stocks versus stable dividend payers.
-- **128 Stock Recommendation Cards**: Ranks US tech leaders, Canadian energy and bank blue-chips, and mid-cap growth stocks into three clear categories: Sector Champions, Core Leaders, and Gold Nuggets.
-- **Fair Value and Buy Zones**: Gives you a clear price range for each stock based on free cash flow and moving averages. You know exactly what price offers a safe entry before buying.
-- **Authentic Company Profiles**: Shows real business descriptions, top revenue channels, and 3 to 4 specific growth catalysts for every company. No generic placeholder text or missing numbers.
-- **Multi-Agent AI Debate Arena**: Hear two distinct AI perspectives (a Bull advocate and a Bear prosecutor) debate each stock, followed by a final verdict and position sizing advice from a Chief Investment Officer agent.
-- **Instant Alerts**: Connect Discord or custom webhooks to receive real-time notifications when a recommended stock drops into your target buy range.
-- **Plain-Talk Mode**: Switch between English, Chinese, or a hybrid mode with popover explanations that translate complex financial jargon into everyday language.
+---
 
-## Quick Start
+## 💎 Core Architecture & Capabilities
 
-### What You Need
+- **🏛️ North American Macro Cycle Scanner**: Real-time tracking of US FRED inflation rates, Bank of Canada (BoC) policy rate stances, 10Y-2Y yield curve spreads, and economic policy feeds to identify which sectors (e.g., Tech infrastructure, Commercial Banking, Energy) are cyclically favored.
+- **📄 SEC 10-K & SEDAR+ Text Mining Pipeline**: 5-year longitudinal Levenshtein delta diffing across annual MD&A filings. Automatically detects newly inserted corporate risk disclaimers, removed guidance phrases, and shifting executive focus keywords.
+- **⚖️ Multi-Agent Debate Arena & CIO Verdict**: Every stock undergoes an adversarial audit between a **Bull Case Advocate** (growth catalysts & moat) and a **Bear Case Prosecutor** (margin compression & macro vulnerabilities), concluded by a **Chief Investment Officer (CIO)** agent with an objective conviction score and position-sizing allocation advice.
+- **🎯 DCF Fair Value & Margin of Safety Buy Zones**: Calculates intrinsic fair values and dynamic price brackets based on free cash flow (FCF), 50-day SMA, and 200-day SMA. Know your exact entry ceiling and floor before placing a trade.
+- **🔔 Zero-KYC Discord Push Webhook Engine**: Get real-time mobile notifications directly on your Discord server when watchlist stocks drop into their target buy zone, or receive daily 8:00 AM EST macro policy briefings.
+- **💡 Plain-Talk Mode & Bilingual Dictionary**: Switch freely between English, Simplified Chinese, and Hybrid modes with popover definitions that translate Wall Street financial jargon into intuitive everyday analogies.
+- **💼 Position Sizing & Rebalancing Calculator**: Calculate executable share counts based on risk appetite (Conservative, Balanced, Aggressive) with support for CAD and USD portfolios starting from $5,000.
+- **📑 Institutional Investment Memo Export**: 1-click export to printable PDF or raw Markdown with institutional headers and provenance watermarks.
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
 - Python 3.11 or newer
 - Node.js 18 or newer
 
-### Option A: 1-Click Install and Launch (Recommended)
+### Option A: 1-Click Launch (Recommended)
 
-1. Double-click `install.bat` (or run `./install.sh` on Mac/Linux) once to set up all dependencies automatically.
-2. Double-click `start.bat` (or run `./start.sh` on Mac/Linux) whenever you want to open the workstation. Your browser will open automatically to `http://localhost:3000`.
+1. Run `install.bat` (or `./install.sh` on macOS/Linux) once to configure dependencies automatically.
+2. Run `start.bat` (or `./start.sh` on macOS/Linux) anytime to launch the workstation. Your default browser will open automatically to `http://localhost:3000`.
 
 ### Option B: Manual Terminal Setup
 
 ```powershell
-# 1. Setup and start backend (runs on http://127.0.0.1:8000)
+# 1. Setup and start backend (FastAPI on http://127.0.0.1:8000)
 python -m venv backend/venv
 .\backend\venv\Scripts\pip install -r backend/requirements.txt
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python backend/main.py
 
-# 2. In a new terminal, start frontend (runs on http://localhost:3000)
+# 2. In a separate terminal, start frontend (Vite on http://localhost:3000)
 cd frontend
 npm install
 npm run dev
 ```
 
-## Testing
+---
+
+## 🧪 Verification & Testing
 
 ```powershell
-# Run backend test suite (49 tests passing)
+# Run the complete pytest test suite (60/60 passing)
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python -m pytest backend/tests/ -v
 
-# Test frontend build
-cd frontend
-npm run build
+# Verify frontend build & type check
+npm --prefix frontend run build
 ```
 
-## License
+---
 
-Distributed under the MIT License. See `LICENSE` for details.
+## 📄 License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.
