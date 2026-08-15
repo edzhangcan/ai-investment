@@ -40,7 +40,6 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
     }
   };
 
-  // Fallback empirical facts if not provided
   const factsList: SupportingFact[] = supportingFacts.length > 0 ? supportingFacts : [
     { indicator: "US CPI Inflation YoY", value: "3.4%", source: "FRED (CPIAUCSL)", impact: "High Inflation Sticky" },
     { indicator: "10Y-2Y Treasury Yield Spread", value: "-0.15%", source: "FRED (T10Y2Y)", impact: "Yield Curve Inversion Warning" },
@@ -49,7 +48,6 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
     { indicator: "US Unemployment Rate", value: "4.1%", source: "FRED (UNRATE)", impact: "Resilient Labor Market" }
   ];
 
-  // Fallback policy news if not provided
   const newsList: PolicyNewsItem[] = policyNews.length > 0 ? policyNews : [
     {
       title: "FOMC Reaffirms Data-Dependent Stance Amid Sticky Core Services Inflation",
@@ -82,25 +80,25 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
   ];
 
   return (
-    <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-sm dark:shadow-2xl mb-8 transition-colors duration-200">
+    <div className="prism-card p-6 md:p-8 mb-8">
       {/* Header Title Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-border-subtle">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
-            <span className="p-2 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <span className="p-2 prism-badge-positive rounded-xl">
               <Globe className="w-5 h-5" />
             </span>
-            <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl md:text-2xl font-extrabold text-content-primary">
               {t.macroTitle}
             </h2>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-content-muted">
             {t.macroSubtitle}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-sm">
+          <span className="prism-badge-brand text-xs flex items-center gap-1.5 shadow-sm">
             <TrendingUp className="w-3.5 h-3.5" />
             <span>{macroData.cycle_stage}</span>
           </span>
@@ -110,31 +108,31 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       {/* Cycle Stage Plain Explanation Banner */}
       <div className={`p-4 rounded-2xl mb-6 border text-xs leading-relaxed font-medium transition-all ${
         isPlainTalk
-          ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-500/40 text-amber-900 dark:text-amber-100 shadow-sm'
-          : 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+          ? 'prism-card border-warning text-warning shadow-sm'
+          : 'prism-surface-subtle text-content-secondary'
       }`}>
-        <div className="flex items-center gap-2 font-bold mb-1 text-slate-900 dark:text-slate-100">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center gap-2 font-bold mb-1 text-content-primary">
+          <CheckCircle2 className="w-4 h-4 text-positive" />
           <span>
             <BilingualHoverCard termKey="MacroCycle" isPlainTalk={isPlainTalk}>
               {t.cycleStage}
-            </BilingualHoverCard>: <span className="text-emerald-600 dark:text-emerald-400 font-bold">{macroData.cycle_stage}</span>
+            </BilingualHoverCard>: <span className="text-positive font-bold">{macroData.cycle_stage}</span>
           </span>
         </div>
-        <p className="text-slate-600 dark:text-slate-300">{macroData.plain_explanation}</p>
+        <p className="text-content-secondary">{macroData.plain_explanation}</p>
       </div>
 
       {/* Overweight & Underweight Sectors Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         {/* Recommended Overweight Sectors */}
-        <div className="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/30 rounded-2xl p-4">
-          <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+        <div className="prism-surface-subtle p-4 border-l-4 border-l-positive">
+          <div className="text-xs font-bold text-positive mb-2 flex items-center gap-1.5 uppercase tracking-wider">
             <TrendingUp className="w-4 h-4" />
             <span>{t.overweightSectors}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {macroData.recommended_overweights.map((sec, idx) => (
-              <span key={idx} className="px-3 py-1 bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-extrabold shadow-sm">
+              <span key={idx} className="prism-badge-positive text-xs">
                 🟢 {sec}
               </span>
             ))}
@@ -142,14 +140,14 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
         </div>
 
         {/* Recommended Underweight Sectors */}
-        <div className="bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-500/30 rounded-2xl p-4">
-          <div className="text-xs font-bold text-rose-700 dark:text-rose-400 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+        <div className="prism-surface-subtle p-4 border-l-4 border-l-negative">
+          <div className="text-xs font-bold text-negative mb-2 flex items-center gap-1.5 uppercase tracking-wider">
             <ShieldAlert className="w-4 h-4" />
             <span>{t.underweightSectors}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {macroData.recommended_underweights.map((sec, idx) => (
-              <span key={idx} className="px-3 py-1 bg-rose-100 dark:bg-rose-500/20 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-300 rounded-xl text-xs font-semibold">
+              <span key={idx} className="prism-badge-negative text-xs">
                 🔴 {sec}
               </span>
             ))}
@@ -159,13 +157,13 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
 
       {/* Empirical Indicators Table */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-slate-200 mb-3 uppercase tracking-wider">
-          <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center gap-2 text-xs font-bold text-content-primary mb-3 uppercase tracking-wider">
+          <Database className="w-4 h-4 text-brand" />
           <span>{t.empiricalFacts}</span>
         </div>
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="overflow-x-auto rounded-2xl border border-border-subtle">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-surface-subtle text-content-muted font-bold border-b border-border-subtle">
               <tr>
                 <th className="p-3">{t.indicator}</th>
                 <th className="p-3">{t.value}</th>
@@ -173,22 +171,22 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
                 <th className="p-3">{t.impact}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/80 bg-white dark:bg-slate-900/60">
+            <tbody className="divide-y divide-border-subtle bg-surface">
               {factsList.map((fact, idx) => {
                 let key = "YieldSpread";
                 if (fact.indicator.toLowerCase().includes("fed") || fact.indicator.toLowerCase().includes("rate")) key = "FedSentiment";
                 else if (fact.indicator.toLowerCase().includes("cpi") || fact.indicator.toLowerCase().includes("gdp")) key = "MacroCycle";
                 
                 return (
-                  <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">
+                  <tr key={idx} className="hover:bg-surface-subtle transition-colors">
+                    <td className="p-3 font-semibold text-content-primary">
                       <BilingualHoverCard termKey={key} isPlainTalk={isPlainTalk}>
                         {fact.indicator}
                       </BilingualHoverCard>
                     </td>
-                    <td className="p-3 font-extrabold text-emerald-600 dark:text-emerald-400">{fact.value}</td>
-                    <td className="p-3 text-slate-500 dark:text-slate-400">{fact.source}</td>
-                    <td className="p-3 text-slate-600 dark:text-slate-300">{fact.impact}</td>
+                    <td className="p-3 font-extrabold text-positive">{fact.value}</td>
+                    <td className="p-3 text-content-muted">{fact.source}</td>
+                    <td className="p-3 text-content-secondary">{fact.impact}</td>
                   </tr>
                 );
               })}
@@ -199,10 +197,10 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
 
       {/* Refresh Toast Notification */}
       {refreshToast && (
-        <div className={`mb-4 px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all animate-pulse ${
+        <div className={`mb-4 px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
           refreshToast.startsWith('✅')
-            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300'
-            : 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-500/40 text-amber-800 dark:text-amber-300'
+            ? 'prism-badge-positive'
+            : 'prism-badge-warning'
         }`}>
           {refreshToast}
         </div>
@@ -211,15 +209,15 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       {/* Central Bank Policy & Economic News */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-slate-200 uppercase tracking-wider">
-            <Newspaper className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <div className="flex items-center gap-2 text-xs font-bold text-content-primary uppercase tracking-wider">
+            <Newspaper className="w-4 h-4 text-brand" />
             <span>{t.policyNews}</span>
           </div>
           {onRefreshMacro && (
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 border border-indigo-200 dark:border-indigo-500/30 hover:border-indigo-300 dark:hover:border-indigo-400/50 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-200 rounded-xl text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border-subtle hover:border-brand text-content-primary hover:text-brand rounded-xl text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               title="Refresh Macro Data & Policy News"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -234,21 +232,21 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500/40 p-4 rounded-2xl transition-all group flex flex-col justify-between shadow-sm"
+              className="prism-surface-subtle hover:border-brand p-4 transition-all group flex flex-col justify-between shadow-sm"
             >
               <div>
-                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">{item.source}</span>
+                <div className="flex items-center justify-between text-[11px] text-content-muted mb-1.5">
+                  <span className="font-bold text-brand">{item.source}</span>
                   <span>{item.date}</span>
                 </div>
-                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors line-clamp-2 mb-2">
+                <h3 className="text-xs font-bold text-content-primary group-hover:text-brand transition-colors line-clamp-2 mb-2">
                   {item.title}
                 </h3>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-3">
+                <p className="text-[11px] text-content-secondary leading-relaxed line-clamp-3">
                   {item.summary}
                 </p>
               </div>
-              <div className="mt-3 text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-1 group-hover:underline">
+              <div className="mt-3 text-[11px] text-brand font-semibold flex items-center gap-1 group-hover:underline">
                 <span>Read Official Release</span>
                 <ExternalLink className="w-3 h-3" />
               </div>
@@ -258,16 +256,16 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       </div>
 
       {/* Credible Sources Footer */}
-      <div className="pt-4 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+      <div className="pt-4 border-t border-border-subtle text-[11px] text-content-muted flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <CheckCircle2 className="w-3.5 h-3.5 text-positive" />
           <span>{t.credibleSources}:</span>
         </div>
         <div className="flex flex-wrap gap-2 text-[10px]">
           {sourcesList.map((src: any, idx: number) => {
             const label = typeof src === 'string' ? src : (src.name || src.domain || 'Official Source');
             return (
-              <span key={idx} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-950 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 font-medium">
+              <span key={idx} className="px-2 py-0.5 prism-badge-neutral text-[10px]">
                 {label}
               </span>
             );

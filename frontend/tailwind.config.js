@@ -8,20 +8,41 @@ export default {
   theme: {
     extend: {
       colors: {
-        prism: {
-          gold: '#F59E0B',
-          'gold-light': '#FBBF24',
-          'gold-dark': '#D97706',
-          cyan: '#38BDF8',
-          'cyan-deep': '#0EA5E9',
-          'cyan-dark': '#0284C7',
-          cobalt: '#2563EB',
-          'cobalt-deep': '#1D4ED8',
-          'cobalt-dark': '#1E3A8A',
-          rose: '#F43F5E',
-          'rose-dark': '#E11D48',
-          emerald: '#10B981',
-          'emerald-dark': '#059669',
+        canvas: 'var(--bg-canvas)',
+        surface: {
+          DEFAULT: 'var(--bg-surface)',
+          subtle: 'var(--bg-surface-subtle)',
+          hover: 'var(--bg-surface-hover)',
+        },
+        border: {
+          subtle: 'var(--border-subtle)',
+          strong: 'var(--border-strong)',
+        },
+        content: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
+        },
+        brand: {
+          DEFAULT: 'var(--accent-brand)',
+          hover: 'var(--accent-brand-hover)',
+          bg: 'var(--accent-brand-bg)',
+          border: 'var(--accent-brand-border)',
+        },
+        positive: {
+          DEFAULT: 'var(--accent-positive)',
+          bg: 'var(--accent-positive-bg)',
+          border: 'var(--accent-positive-border)',
+        },
+        negative: {
+          DEFAULT: 'var(--accent-negative)',
+          bg: 'var(--accent-negative-bg)',
+          border: 'var(--accent-negative-border)',
+        },
+        warning: {
+          DEFAULT: 'var(--accent-warning)',
+          bg: 'var(--accent-warning-bg)',
+          border: 'var(--accent-warning-border)',
         },
       },
       fontFamily: {
@@ -44,9 +65,8 @@ export default {
         ],
       },
       boxShadow: {
-        'prism-sm': '0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08)',
-        'prism-card': '0 4px 16px -2px rgba(0, 0, 0, 0.06)',
-        'prism-card-dark': '0 4px 20px -2px rgba(0, 0, 0, 0.35)',
+        'prism-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'prism-card': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
       },
     },
   },
