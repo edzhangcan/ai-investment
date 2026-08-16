@@ -104,7 +104,12 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
   const isConfigured = Boolean(webhookUrl.trim() && webhookUrl.startsWith('http'));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="discord-modal-title"
+    >
       <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto z-10 transition-colors duration-150">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-border-subtle mb-6">
@@ -114,7 +119,7 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg md:text-xl font-extrabold text-content-primary">
+                <h2 id="discord-modal-title" className="text-lg md:text-xl font-extrabold text-content-primary">
                   {t.discordModalTitle}
                 </h2>
                 <span className="prism-badge-positive text-[10px] flex items-center gap-1">
@@ -129,7 +134,8 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-content-muted hover:text-content-primary hover:bg-surface-subtle rounded-xl transition-all cursor-pointer"
+            aria-label="Close Discord Settings"
+            className="p-2 text-content-muted hover:text-content-primary hover:bg-surface-subtle rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-brand"
           >
             <X className="w-5 h-5" />
           </button>

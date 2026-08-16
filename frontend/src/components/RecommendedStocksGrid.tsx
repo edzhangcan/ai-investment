@@ -103,11 +103,19 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
         </div>
 
         {/* Multi-Category Selector Buttons with Distinct Signatures */}
-        <div className="flex bg-surface border border-border-subtle p-1.5 rounded-2xl text-xs w-full md:w-auto flex-wrap gap-1.5 shadow-sm">
+        <div 
+          className="flex bg-surface border border-border-subtle p-1.5 rounded-2xl text-xs w-full md:w-auto flex-wrap gap-1.5 shadow-sm"
+          role="tablist"
+          aria-label="Stock Recommendation Categories"
+        >
           {/* 1. Sector Champions (Emerald Theme) */}
           <button
+            role="tab"
+            aria-selected={activeCategory === 'SECTOR'}
+            aria-controls="recommended-stocks-grid-panel"
+            id="tab-category-sector"
             onClick={() => setActiveCategory('SECTOR')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${
               activeCategory === 'SECTOR'
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-400/40 border border-emerald-600'
                 : 'bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
@@ -119,8 +127,12 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
           {/* 2. Core Market Leaders (Sky Blue Theme) */}
           <button
+            role="tab"
+            aria-selected={activeCategory === 'OVERALL'}
+            aria-controls="recommended-stocks-grid-panel"
+            id="tab-category-overall"
             onClick={() => setActiveCategory('OVERALL')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:outline-none ${
               activeCategory === 'OVERALL'
                 ? 'bg-sky-600 hover:bg-sky-700 text-white shadow-md ring-2 ring-sky-400/40 border border-sky-600'
                 : 'bg-sky-50/80 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800/80 hover:bg-sky-100 dark:hover:bg-sky-900/50'
@@ -132,8 +144,12 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
           {/* 3. Hidden Gold Nuggets (Warm Gold Theme) */}
           <button
+            role="tab"
+            aria-selected={activeCategory === 'GOLD'}
+            aria-controls="recommended-stocks-grid-panel"
+            id="tab-category-gold"
             onClick={() => setActiveCategory('GOLD')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-none ${
               activeCategory === 'GOLD'
                 ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md ring-2 ring-amber-400/40 border border-amber-500'
                 : 'bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50'
@@ -172,8 +188,9 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="px-3 py-1.5 bg-surface border border-border-subtle hover:border-brand rounded-xl text-xs font-bold text-brand hover:text-brand transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+            className="px-3 py-1.5 bg-surface border border-border-subtle hover:border-brand rounded-xl text-xs font-bold text-brand hover:text-brand transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm focus-visible:ring-2 focus-visible:ring-brand"
             title={t.refreshRecommendations}
+            aria-label={t.refreshRecommendations}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>{isRefreshing ? t.refreshingPicks : (language === 'zh' ? '换一批精选' : t.refreshRecommendations)}</span>
@@ -182,7 +199,12 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
       </div>
 
       {/* Compact 4-Column Stock Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div 
+        id="recommended-stocks-grid-panel"
+        role="region"
+        aria-label="Stock Recommendation Grid"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
         {currentDisplayPool.map((rec) => {
           const isCa = rec.symbol.endsWith('.TO');
           const flag = isCa ? '🇨🇦' : '🇺🇸';
@@ -191,8 +213,17 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
           return (
             <div
               key={rec.symbol}
+              role="button"
+              tabIndex={0}
+              aria-label={`Select ${rec.company_name} (${rec.symbol})`}
               onClick={() => onSelectStock(rec.symbol)}
-              className={`prism-card p-4 hover:border-brand transition-all flex flex-col justify-between group/card cursor-pointer ${
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectStock(rec.symbol);
+                }
+              }}
+              className={`prism-card p-4 hover:border-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none transition-all flex flex-col justify-between group/card cursor-pointer ${
                 activeCategory === 'GOLD' 
                   ? 'border-warning' 
                   : isPlainTalk 

@@ -84,12 +84,18 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="portfolio-calc-title"
+    >
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-content-primary z-10 transition-colors duration-150">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-6 top-6 p-2 text-content-muted hover:text-content-primary hover:bg-surface-subtle rounded-xl transition-all cursor-pointer"
+          aria-label="Close Position Sizing Calculator"
+          className="absolute right-6 top-6 p-2 text-content-muted hover:text-content-primary hover:bg-surface-subtle rounded-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-brand"
         >
           <X className="w-5 h-5" />
         </button>
@@ -100,7 +106,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
             <Calculator className="w-6 h-6" />
           </span>
           <div>
-            <h2 className="text-xl md:text-2xl font-extrabold text-content-primary">
+            <h2 id="portfolio-calc-title" className="text-xl md:text-2xl font-extrabold text-content-primary">
               <BilingualHoverCard termKey="PositionSizing" isPlainTalk={isPlainTalk}>
                 {t.calcTitle}
               </BilingualHoverCard>

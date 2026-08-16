@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import {
   TrendingUp,
   LayoutDashboard,
@@ -22,16 +22,9 @@ import { MacroDashboard } from './components/MacroDashboard';
 import { RecommendedStocksGrid } from './components/RecommendedStocksGrid';
 import { PricingChart } from './components/PricingChart';
 import { DebateArena } from './components/DebateArena';
-import { SecTextMiningViewer } from './components/SecTextMiningViewer';
-import { BacktestViewer } from './components/BacktestViewer';
 import { BilingualHoverCard } from './components/BilingualHoverCard';
 import { MacroScannerBar } from './components/MacroScannerBar';
-import { WatchlistDrawer } from './components/WatchlistDrawer';
-import { CommandPalette } from './components/CommandPalette';
 import { NotificationToast } from './components/NotificationToast';
-import { PortfolioCalculator } from './components/PortfolioCalculator';
-import { DiscordAlertSettingsModal } from './components/DiscordAlertSettingsModal';
-import { ExportMemoModal } from './components/ExportMemoModal';
 import { StartupLoadingOverlay } from './components/StartupLoadingOverlay';
 import { LanguageSelector } from './components/LanguageSelector';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -45,6 +38,16 @@ import {
   addWatchlistApi,
   deleteWatchlistApi,
 } from './api/client';
+import { MacroDashboardResponse, StockAnalysisResponse } from './types';
+
+// Code Splitting & Lazy-Loaded Modals / Viewers
+const WatchlistDrawer = lazy(() => import('./components/WatchlistDrawer').then(m => ({ default: m.WatchlistDrawer })));
+const CommandPalette = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const PortfolioCalculator = lazy(() => import('./components/PortfolioCalculator').then(m => ({ default: m.PortfolioCalculator })));
+const DiscordAlertSettingsModal = lazy(() => import('./components/DiscordAlertSettingsModal').then(m => ({ default: m.DiscordAlertSettingsModal })));
+const ExportMemoModal = lazy(() => import('./components/ExportMemoModal').then(m => ({ default: m.ExportMemoModal })));
+const SecTextMiningViewer = lazy(() => import('./components/SecTextMiningViewer').then(m => ({ default: m.SecTextMiningViewer })));
+const BacktestViewer = lazy(() => import('./components/BacktestViewer').then(m => ({ default: m.BacktestViewer })));
 
 export const App: React.FC = () => {
   const { t, language } = useLanguage();
@@ -60,10 +63,10 @@ export const App: React.FC = () => {
   const [isExportMemoModalOpen, setIsExportMemoModalOpen] = useState<boolean>(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<Set<string>>(new Set());
 
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<MacroDashboardResponse | null>(null);
   const [loadingDashboard, setLoadingDashboard] = useState<boolean>(true);
 
-  const [stockData, setStockData] = useState<any>(null);
+  const [stockData, setStockData] = useState<StockAnalysisResponse | null>(null);
   const [loadingStock, setLoadingStock] = useState<boolean>(false);
 
   const fetchWatchlistSymbols = async () => {
@@ -147,10 +150,16 @@ export const App: React.FC = () => {
     }
   }, [activeTab, language]);
 
-  // Global Ctrl+K / Cmd+K listener
+  // Global Keyboard Shortcuts: Esc to close any open modal/drawer, Ctrl+K/Cmd+K for Command Palette
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      if (e.key === 'Escape') {
+        setIsWatchlistOpen(false);
+        setIsCommandPaletteOpen(false);
+        setIsPortfolioCalculatorOpen(false);
+        setIsDiscordModalOpen(false);
+        setIsExportMemoModalOpen(false);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
       }
@@ -163,32 +172,6 @@ export const App: React.FC = () => {
     <div className="min-h-screen bg-canvas text-content-primary font-sans p-4 md:p-8 selection:bg-brand selection:text-white transition-colors duration-150">
       {/* Startup Loading Overlay */}
       <StartupLoadingOverlay isLoading={loadingDashboard} />
-
-      {/* Command Palette Modal */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        onSelectTicker={(sym) => {
-          setTicker(sym);
-          setSearchInput(sym);
-          setActiveTab('stock');
-        }}
-        onTogglePlainTalk={() => setIsPlainTalk(!isPlainTalk)}
-        isPlainTalk={isPlainTalk}
-        onOpenWatchlist={() => setIsWatchlistOpen(true)}
-      />
-
-      {/* Watchlist Slide-over Drawer */}
-      <WatchlistDrawer
-        isOpen={isWatchlistOpen}
-        onClose={() => setIsWatchlistOpen(false)}
-        onSelectTicker={(sym) => {
-          setTicker(sym);
-          setSearchInput(sym);
-          setActiveTab('stock');
-        }}
-        onWatchlistChange={fetchWatchlistSymbols}
-      />
 
       {/* Notification Toast for Triggered Buy-Zone Price Alerts */}
       <NotificationToast
@@ -678,37 +661,61 @@ export const App: React.FC = () => {
           )
         )}
         
-        {/* Portfolio Sizing Calculator Modal */}
-        <PortfolioCalculator
-          isOpen={isPortfolioCalculatorOpen}
-          onClose={() => setIsPortfolioCalculatorOpen(false)}
-          onSelectStock={(sym) => handleSelectRecommendedStock(sym)}
-          isPlainTalk={isPlainTalk}
-        />
-
-        {/* Discord Push Alert Settings Modal */}
-        <DiscordAlertSettingsModal
-          isOpen={isDiscordModalOpen}
-          onClose={() => setIsDiscordModalOpen(false)}
-        />
-
-        {/* Institutional Investment Memo Export Modal */}
-        {stockData && (
-          <ExportMemoModal
-            isOpen={isExportMemoModalOpen}
-            onClose={() => setIsExportMemoModalOpen(false)}
-            memoData={{
-              stock: stockData.stock,
-              macro: stockData.macro,
-              pricing: stockData.pricing,
-              debate: stockData.debate,
-              fundamentals: stockData.fundamentals,
-              secMining: null,
-              backtest: null,
-              language
+        {/* Suspended Lazy Modals & Drawers */}
+        <Suspense fallback={null}>
+          {/* Command Palette Modal */}
+          <CommandPalette
+            isOpen={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+            onSelectTicker={(sym) => {
+              setTicker(sym);
+              setSearchInput(sym);
+              setActiveTab('stock');
             }}
+            onTogglePlainTalk={() => setIsPlainTalk(!isPlainTalk)}
+            isPlainTalk={isPlainTalk}
           />
-        )}
+
+          {/* Watchlist Drawer */}
+          <WatchlistDrawer
+            isOpen={isWatchlistOpen}
+            onClose={() => setIsWatchlistOpen(false)}
+            onSelectStock={(sym) => handleSelectRecommendedStock(sym)}
+            isPlainTalk={isPlainTalk}
+          />
+
+          {/* Portfolio Sizing Calculator Modal */}
+          <PortfolioCalculator
+            isOpen={isPortfolioCalculatorOpen}
+            onClose={() => setIsPortfolioCalculatorOpen(false)}
+            onSelectStock={(sym) => handleSelectRecommendedStock(sym)}
+            isPlainTalk={isPlainTalk}
+          />
+
+          {/* Discord Push Alert Settings Modal */}
+          <DiscordAlertSettingsModal
+            isOpen={isDiscordModalOpen}
+            onClose={() => setIsDiscordModalOpen(false)}
+          />
+
+          {/* Institutional Investment Memo Export Modal */}
+          {stockData && (
+            <ExportMemoModal
+              isOpen={isExportMemoModalOpen}
+              onClose={() => setIsExportMemoModalOpen(false)}
+              memoData={{
+                stock: stockData.stock,
+                macro: stockData.macro,
+                pricing: stockData.pricing,
+                debate: stockData.debate,
+                fundamentals: stockData.fundamentals,
+                secMining: null,
+                backtest: null,
+                language
+              }}
+            />
+          )}
+        </Suspense>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ interface CommandPaletteProps {
   onSelectTicker: (ticker: string) => void;
   onTogglePlainTalk: () => void;
   isPlainTalk: boolean;
-  onOpenWatchlist: () => void;
+  onOpenWatchlist?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -57,7 +57,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+    <div 
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command Palette Quick Search"
+    >
       <div className="w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-10 transition-colors duration-150">
         {/* Search Input Bar */}
         <div className="relative border-b border-border-subtle p-4 flex items-center gap-3">
@@ -98,21 +103,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             </span>
           </button>
 
-          <button
-            onClick={() => {
-              onOpenWatchlist();
-              onClose();
-            }}
-            className="w-full flex items-center justify-between p-2.5 rounded-xl prism-surface-subtle hover:bg-surface text-content-primary transition-all text-left cursor-pointer shadow-sm"
-          >
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-warning" />
-              <span>打开自选股与价格提醒抽屉 (Watchlist)</span>
-            </div>
-            <span className="text-[10px] px-2 py-0.5 rounded prism-badge-neutral font-mono">
-              Drawer
-            </span>
-          </button>
+          {onOpenWatchlist && (
+            <button
+              onClick={() => {
+                onOpenWatchlist();
+                onClose();
+              }}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl prism-surface-subtle hover:bg-surface text-content-primary transition-all text-left cursor-pointer shadow-sm"
+            >
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-warning" />
+                <span>打开自选股与价格提醒抽屉 (Watchlist)</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded prism-badge-neutral font-mono">
+                Drawer
+              </span>
+            </button>
+          )}
 
           <div className="text-[11px] font-semibold uppercase tracking-wider text-content-muted px-2 py-1 pt-2">
             热门美股与加拿大标的 (Stocks)
