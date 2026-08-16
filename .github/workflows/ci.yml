@@ -30,7 +30,7 @@ jobs:
         env:
           PYTHONPATH: .
         run: |
-          pytest backend/tests/ -v
+          pytest backend/tests/ -v --tb=short
 
   frontend-build:
     name: ⚛️ Frontend TypeScript Build & Quality Check
