@@ -29,8 +29,10 @@ jobs:
       - name: Run Pytest Test Suite
         env:
           PYTHONPATH: .
+          PYTHONIOENCODING: "utf-8"
+          LANG: "C.UTF-8"
         run: |
-          pytest backend/tests/ -v --tb=short
+          pytest backend/tests/ -v -ra --tb=short
 
   frontend-build:
     name: ⚛️ Frontend TypeScript Build & Quality Check
