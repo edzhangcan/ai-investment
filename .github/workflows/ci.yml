@@ -31,6 +31,7 @@ jobs:
           PYTHONPATH: .
           PYTHONIOENCODING: "utf-8"
           LANG: "C.UTF-8"
+          TESTING: "true"
         run: |
           pytest backend/tests/ -v -ra --tb=short
 

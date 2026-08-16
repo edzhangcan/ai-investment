@@ -70,8 +70,9 @@ async def lifespan(app: FastAPI):
     init_db()
     logging.info("SQLite database tables initialized successfully.")
     
-    # 2. Launch non-blocking background daemon task
-    asyncio.create_task(run_universe_refresh_daemon())
+    # 2. Launch non-blocking background daemon task in production (skip during pytest)
+    if "pytest" not in sys.modules and os.getenv("TESTING") != "true":
+        asyncio.create_task(run_universe_refresh_daemon())
     yield
 
 # Create FastAPI application instance
