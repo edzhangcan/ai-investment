@@ -33,6 +33,19 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
   const bear = debate?.bear_argument || {};
   const cio = debate?.cio_verdict || {};
 
+  const getSentimentTone = (sentiment: any, fallback: string): string => {
+    if (!sentiment) return fallback;
+    if (typeof sentiment === 'string') return sentiment;
+    if (typeof sentiment === 'object') {
+      return sentiment.tone || (typeof sentiment.score === 'number' ? `Score ${sentiment.score}` : fallback);
+    }
+    return String(sentiment);
+  };
+
+  const macroStage = macro?.cycle_stage || macro?.stage || 'Late-Cycle Transition';
+  const fedTone = getSentimentTone(macro?.fed_sentiment, 'Hawkish');
+  const bocTone = getSentimentTone(macro?.boc_sentiment, 'Neutral');
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in print:p-0 print:bg-white print:static">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 relative text-content-primary z-10 print:shadow-none print:border-none print:max-w-full print:max-h-full print:bg-white print:text-black transition-colors duration-150">
@@ -168,9 +181,9 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
               </h3>
               <div className="bg-surface p-4 rounded-xl border border-border-subtle print:bg-gray-50 print:border-gray-300 shadow-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2 font-semibold">
-                  <div>Macro Stage: <span className="text-warning print:text-black">{macro?.stage || 'Late-Cycle Transition'}</span></div>
-                  <div>Fed Sentiment: <span className="text-brand print:text-black">{macro?.fed_sentiment || 'Hawkish'}</span></div>
-                  <div>BoC Sentiment: <span className="text-content-secondary print:text-black">{macro?.boc_sentiment || 'Neutral'}</span></div>
+                  <div>Macro Stage: <span className="text-warning print:text-black">{macroStage}</span></div>
+                  <div>Fed Sentiment: <span className="text-brand print:text-black">{fedTone}</span></div>
+                  <div>BoC Sentiment: <span className="text-content-secondary print:text-black">{bocTone}</span></div>
                 </div>
               </div>
             </div>
