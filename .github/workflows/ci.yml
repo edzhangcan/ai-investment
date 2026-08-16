@@ -45,27 +45,16 @@ jobs:
           set -o pipefail
           python -m pytest backend/tests/ -v -ra --tb=short 2>&1 | tee pytest_output.log
 
-      - name: Report Pytest Failures in Summary and Commit Comment
+      - name: Report Pytest Failures in Issue
         if: failure()
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f pytest_output.log ]; then
-            echo "## ❌ Pytest Test Suite Failures" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 120 pytest_output.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            
-            FAIL_LOG=$(tail -n 60 pytest_output.log)
-            PAYLOAD=$(jq -n --arg body "### ❌ CI Pytest Suite Failure Log:
-\`\`\`
-$FAIL_LOG
-\`\`\`" '{"body": $body}')
-            curl -s -X POST \
-              -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "$PAYLOAD" \
-              "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/comments" || true
+            echo "=== PYTEST LOG START ==="
+            cat pytest_output.log
+            echo "=== PYTEST LOG END ==="
+            gh issue create --title "CI Failure on $(git rev-parse --short HEAD)" --body-file pytest_output.log || true
           fi
 
   frontend-build:
