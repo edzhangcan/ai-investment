@@ -23,8 +23,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const quickTickers = [
     { symbol: 'NVDA', name: 'NVIDIA Corporation', market: 'US' },
     { symbol: 'AAPL', name: 'Apple Inc.', market: 'US' },
-    { symbol: 'MSFT', name: 'Microsoft Corporation', market: 'US' },
+    { symbol: 'KO', name: 'The Coca-Cola Company', market: 'US' },
+    { symbol: 'COST', name: 'Costco Wholesale Corporation', market: 'US' },
     { symbol: 'SHOP.TO', name: 'Shopify Inc.', market: 'CA' },
+    { symbol: 'T.TO', name: 'TELUS Corporation', market: 'CA' },
     { symbol: 'TD.TO', name: 'Toronto-Dominion Bank', market: 'CA' },
     { symbol: 'XEQT.TO', name: 'iShares Core Equity ETF', market: 'CA' },
   ];

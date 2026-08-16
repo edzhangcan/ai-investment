@@ -36,13 +36,33 @@ def test_company_profile_niche_growth_gems():
         assert len(profile_hy["growth_catalysts"]) >= 3
         assert len(profile_hy["revenue_drivers"]) >= 2
 
+def test_company_profile_registry_consumer_defensive_leaders():
+    """Verifies that KO (Coca-Cola), PEP, COST, and T.TO have authentic profiles and never 'General Equities'."""
+    ko_en = CompanyProfileEngine.get_profile("KO", lang="en")
+    assert ko_en["symbol"] == "KO"
+    assert "Coca-Cola" in ko_en["company_name"]
+    assert "Consumer Defensive" in ko_en["sector"]
+    assert "General Equities" not in ko_en["sector"]
+    assert "beverage" in ko_en["company_background"].lower()
+    assert len(ko_en["growth_catalysts"]) >= 3
+    assert len(ko_en["revenue_drivers"]) >= 3
+
+    t_to_zh = CompanyProfileEngine.get_profile("T.TO", lang="zh")
+    assert t_to_zh["symbol"] == "T.TO"
+    assert "TELUS" in t_to_zh["company_name"]
+    assert "Communication Services" in t_to_zh["sector"]
+    assert len(t_to_zh["growth_catalysts"]) >= 3
+
 def test_dynamic_fallback_unmapped_stock():
-    """Verifies intelligent fallback for unmapped arbitrary ticker."""
-    unmapped_profile = CompanyProfileEngine.get_profile("UNKNOWN_XYZ", lang="en")
-    assert unmapped_profile["symbol"] == "UNKNOWN_XYZ"
-    assert len(unmapped_profile["company_background"]) > 20
-    assert len(unmapped_profile["growth_catalysts"]) >= 2
-    assert len(unmapped_profile["revenue_drivers"]) >= 2
+    """Verifies intelligent dynamic resolution for unmapped arbitrary ticker (e.g. MCD)."""
+    mcd_profile = CompanyProfileEngine.get_profile("MCD", lang="en")
+    assert mcd_profile["symbol"] == "MCD"
+    assert "McDonald" in mcd_profile["company_name"]
+    assert "Consumer Cyclical" in mcd_profile["sector"] or "Restaurants" in mcd_profile["sector"]
+    assert "General Equities" not in mcd_profile["sector"]
+    assert len(mcd_profile["company_background"]) > 20
+    assert len(mcd_profile["growth_catalysts"]) >= 2
+    assert len(mcd_profile["revenue_drivers"]) >= 2
 
 def test_fundamental_engine_includes_profile():
     """Verifies that FundamentalEngine includes company_profile in its evaluation."""

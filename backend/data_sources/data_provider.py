@@ -737,6 +737,23 @@ class DataProviderManager:
 
         normalized_symbol = symbol.upper().strip()
 
+        # Step 0a: If query contains spaces or common company suffixes, resolve to primary equity ticker
+        if " " in symbol or any(w in normalized_symbol for w in ["COMPANY", "CORP", "INC", "LTD", "COCA"]):
+            try:
+                import urllib.parse
+                import urllib.request
+                import json
+                s_url = f"https://query2.finance.yahoo.com/v1/finance/search?q={urllib.parse.quote(symbol)}&quotesCount=1&newsCount=0"
+                s_req = urllib.request.Request(s_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+                with urllib.request.urlopen(s_req, timeout=3) as s_resp:
+                    s_data = json.loads(s_resp.read().decode())
+                    if s_data.get("quotes") and len(s_data["quotes"]) > 0:
+                        resolved_cand = s_data["quotes"][0].get("symbol")
+                        if resolved_cand:
+                            normalized_symbol = resolved_cand.upper().strip()
+            except Exception as e:
+                logger.debug(f"Search ticker resolution skipped for '{symbol}': {e}")
+
         # 0. Check real-time short-lived memory cache (TTL <= 3 minutes)
         current_time = time.time()
         with cls._LOCK:
