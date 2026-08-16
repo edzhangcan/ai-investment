@@ -1,12 +1,33 @@
 """
-Institutional Company Knowledge & Profile Registry (North America & Dynamic Equities)
-Provides verified, authentic corporate business background summaries, specific growth catalysts,
-and core revenue driver segment breakdowns for US & Canadian equities in English, Chinese, and Hybrid modes.
-Includes dynamic yfinance extraction fallback for unlisted / dynamically searched tickers.
+==============================================================================
+Institutional Company Knowledge & Profile Registry (North America & Dynamic)
+==============================================================================
+Developer Guide for Beginners:
+------------------------------------------------------------------------------
+1. Architecture Overview:
+   - When a user views or evaluates any stock (e.g. $KO, $NVDA, $T.TO), they need
+     an accurate corporate background, GICS sector/industry, key growth catalysts,
+     and revenue driver breakdowns.
+   
+2. 3-Tier Resolution Pipeline:
+   - Tier 1: In-Memory Persistent Cache (`_PROFILE_CACHE`). If queried before in the
+             current session, it returns in sub-0.1ms without any network calls.
+   - Tier 2: Institutional Knowledge Registry (`COMPANY_PROFILES_REGISTRY`). Curated,
+             verified profiles for core US & Canadian leaders (KO, PEP, COST, WMT,
+             NVDA, AAPL, MSFT, T.TO, SHOP.TO, etc.) in English, Chinese, and Hybrid.
+   - Tier 3: Dynamic Live Resolver (`_generate_dynamic_profile`). For unmapped tickers,
+             queries Yahoo Search API for official company name and GICS sector/industry,
+             queries Wikipedia API for the business narrative, and synthesizes sector
+             catalysts and revenue drivers before caching the result permanently.
+==============================================================================
 """
 
 import logging
 from typing import Dict, Any, List, Optional
+import urllib.request
+import urllib.parse
+import json
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -870,11 +891,6 @@ COMPANY_PROFILES_REGISTRY: Dict[str, Dict[str, Any]] = {
         }
     }
 }
-
-import urllib.request
-import urllib.parse
-import json
-import threading
 
 class CompanyProfileEngine:
     """

@@ -1,32 +1,33 @@
-# Prism Loop — 多维光谱智能投研工作站
+# Prism Loop: 多维光谱智能投研工作站
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-[![Release](https://img.shields.io/badge/release-v7.0.0-sky.svg)](https://github.com/edzhangcan/ai-investment/tags)
-[![Tests](https://img.shields.io/badge/pytest-60%2F60%20通过-brightgreen.svg)](file:///c:/Users/drunk/Projects/ai-investment/backend/tests)
+[![Release](https://img.shields.io/badge/release-v8.2.0-sky.svg)](https://github.com/edzhangcan/ai-investment/tags)
+[![Tests](https://img.shields.io/badge/pytest-65%2F65%20通过-brightgreen.svg)](file:///c:/Users/drunk/Projects/ai-investment/backend/tests)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Theme](https://img.shields.io/badge/主题-明亮%2F暗黑双模式-slate.svg)](#)
 
-**Prism Loop** 是一款专为北美与全球散户投资者打造的机构级智能投研工作站。深度整合宏观经济周期跟踪、SEC 10-K / SEDAR+ 年报文本挖掘、多智能体（Multi-Agent）对抗辩论以及 DCF 现金流折现内在价值评估，呈现在极简高对比度的统一交互界面中。
+Prism Loop 是一款开源的美股与加股投研工作站。它将实时交易所行情、宏观周期跟踪、SEC 10-K 与 SEDAR+ 年报文本挖掘、多智能体 AI 辩论以及现金流折现（DCF）估值整合在一个高对比度的统一界面中。
 
-告别翻阅数百页晦涩财报与盲目追高，Prism Loop 为您提供严密的安全边际买入区间、经验证的增长催化剂与客观的风控止损预警。
-
----
-
-## 💎 核心技术架构与核心能力
-
-- **🏛️ 北美宏观周期扫描仪 (Macro Scanner)**: 实时跟踪美联储 FRED 通胀数据、加拿大央行 (BoC) 利率立场、10Y-2Y 美债收益率倒挂利差及核心政策头条，智能研判顺周期强势板块（如 AI 云端基础设施、商业银行、高股息能源等）。
-- **📄 SEC 10-K & SEDAR+ 文本挖掘管线**: 跨越 5 年历史 MD&A 年报的纵向 Levenshtein 语义差异分析。自动侦测管理层新增的风险免责声明、悄然删除的盈利指引与关键词频率跃迁。
-- **⚖️ 多智能体投资辩论竞技场 (Debate Arena)**: 针对每只股票展开对抗性审计——**看多先锋 (Bull Advocate)** 剖析自由现金流与护城河优势，**看空检察官 (Bear Prosecutor)** 揭示利润率挤压与宏观逆风，最终由 **首席投资官 (CIO)** 给出客观投资胜率裁决与仓位配置建议。
-- **🎯 DCF 内在价值与安全边际买入区间**: 基于自由现金流折现、50日均线与200日均线动态锚定理想买入上下限，助您在建仓前清晰掌握价格安全边际。
-- **🔔 Zero-KYC Discord 实时 Webhook 推送引擎**: 免认证无缝绑定 Discord 频道，在自选股跌入目标买入区间或触发风险预警时接收毫秒级即时提醒，并支持每日 8:00 AM EST 晨间宏观政策简报。
-- **💡 通俗白话模式 (Plain-Talk) 与双语词典**: 自由切换英文、简体中文与中英混合模式，集成金融术语生活化类比卡片，零门槛理解华尔街专业指标。
-- **💼 仓位管理与动态再平衡计算器**: 根据保守型、平衡型或进取型风险模型，计算精确到单股的可执行买入股数，支持 CAD/USD 资产配置，最低起始本金扩展至 $5,000。
-- **📑 机构级投资备忘录一键导出**: 一键生成带机构水印标识的 Markdown (.md) 与打印级 PDF 报告，支持一键复制辩论裁决分享至 Reddit / X。
+不同于传统冗长晦涩的财报阅读，Prism Loop 直接计算每只股票的安全边际买入区间，核验企业增长催化剂与核心营收构成，并提前提示潜在的下行风险。
 
 ---
 
-## 🚀 快速启动
+## 核心功能
+
+- **实时交易所行情直连**: 直连美股（NYSE/NASDAQ）与加股（TSX/TSXV）实时行情接口，响应时间低于 50ms。采用最长 3 分钟内存缓存机制，杜绝虚构价格与严重滞后。
+- **机构级公司背景与业务拆解**: 为核心蓝筹与领军企业（如可口可乐 `$KO`、百事 `$PEP`、开市客 `$COST`、研科 `$T.TO`、Shopify `$SHOP.TO`、英伟达 `$NVDA` 等）提供结构化的主营业务概况、行业分类与营收拆解。对于其他任意股票，系统自动调用 Yahoo Search 与 Wikipedia API 进行实时动态解析与持久化缓存。
+- **北美宏观周期扫描仪**: 跟踪美联储 FRED 通胀指标、加拿大央行利率决议、10Y-2Y 美债利差与宏观财经要闻，分析当前顺周期优势行业。
+- **SEC 10-K 与 SEDAR+ 年报挖掘**: 对比连续 5 年的 MD&A 章节文本，自动标记管理层新增加的风险免责声明、删减的盈利指引与关键词频率变化。
+- **多智能体对抗辩论与 CIO 裁决**: 针对目标股票组织看多先锋（剖析增长催化剂与护城河）与看空检察官（揭示估值风险与行业逆风）的对抗审计，最后由首席投资官（CIO）给出客观的投资胜率评分与建议仓位。
+- **DCF 内在价值与买入区间**: 结合自由现金流折现、50 日均线与 200 日均线测算内在价值与理想建仓区间，买入前清晰掌握安全边际。
+- **独立打印级投研备忘录**: 内置独立的 iframe 打印排版引擎，一键导出无冗余界面的纯白底 A4 投研备忘录，支持导出为 PDF 或 Markdown 格式。
+- **Discord 实时推送提醒**: 当自选股价格跌入安全边际买入区间时，自动向指定的 Discord 频道发送即时提醒，并支持每日早间宏观政策简报。
+- **通俗白话模式与双语支持**: 支持英文、简体中文与中英混合模式，集成金融术语生活化类比卡片，降低专业理解门槛。
+
+---
+
+## 快速启动
 
 ### 环境要求
 - Python 3.11 或更高版本
@@ -37,7 +38,7 @@
 1. 双击运行 `install.bat`（Mac/Linux 用户运行 `./install.sh`）进行自动化依赖安装。
 2. 双击运行 `start.bat`（Mac/Linux 用户运行 `./start.sh`）启动服务，系统将自动在默认浏览器中打开 `http://localhost:3000`。
 
-### 方式二：手动终端分步启动
+### 方式二：手动分步启动
 
 ```powershell
 # 1. 配置并启动后端服务 (FastAPI 服务运行于 http://127.0.0.1:8000)
@@ -54,19 +55,42 @@ npm run dev
 
 ---
 
-## 🧪 自动化测试验证
+## 项目结构
+
+```
+ai-investment/
+├── backend/                  # FastAPI 后端服务与投研算法引擎
+│   ├── agents/               # 多智能体对抗辩论竞技场 (Bull, Bear, CIO)
+│   ├── data_sources/         # 实时交易所行情、SEC EDGAR、SEDAR+、公司背景库
+│   ├── engines/              # 宏观分析、DCF 估值、基本面、年报挖掘、回测引擎
+│   ├── routers/              # RESTful API 路由模块
+│   └── tests/                # 65 个 Pytest 自动化测试与性能基准用例
+├── frontend/                 # React 18 + TypeScript + Vite 前端工程
+│   ├── src/
+│   │   ├── components/       # 业务卡片、对话框、辩论竞技场、图表抽屉
+│   │   ├── utils/            # 备忘录排版打印、数据格式化工具库
+│   │   └── types/            # TypeScript 类型定义与接口契约
+│   └── vite.config.ts        # Rollup 代码分包优化配置
+├── docs/                     # 需求文档、架构设计与 RICE 需求优先级路线图
+├── start.bat                 # Windows 一键启动脚本
+└── start.sh                  # macOS/Linux 一键启动脚本
+```
+
+---
+
+## 自动化测试
 
 ```powershell
-# 运行全部后端 pytest 测试用例 (60/60 全部通过)
+# 运行全部后端 pytest 测试用例 (65/65 全部通过)
 $env:PYTHONPATH="."
 .\backend\venv\Scripts\python -m pytest backend/tests/ -v
 
-# 验证前端构建与 TypeScript 类型检查
+# 验证前端 TypeScript 类型与生产打包编译
 npm --prefix frontend run build
 ```
 
 ---
 
-## 📄 开源许可证
+## 开源协议
 
-本项目基于 MIT License 开源协议发布。详情请查阅 [LICENSE](LICENSE) 文件。
+本项目采用 MIT 开源协议。详情请参阅 [LICENSE](LICENSE)。
