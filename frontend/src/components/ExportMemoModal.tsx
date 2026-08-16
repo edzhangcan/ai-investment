@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { ExportMemoData, generateMarkdownMemo, downloadMarkdownMemo } from '../utils/exportMemo';
+import { ExportMemoData, generateMarkdownMemo, downloadMarkdownMemo, printInstitutionalMemo } from '../utils/exportMemo';
 import { PrismLoopLogo } from './PrismLoopLogo';
 import { 
   FileText, 
@@ -46,14 +46,7 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
   };
 
   const handlePrintPdf = () => {
-    if (activeTab !== 'preview') {
-      setActiveTab('preview');
-      setTimeout(() => {
-        window.print();
-      }, 50);
-    } else {
-      window.print();
-    }
+    printInstitutionalMemo(memoData);
   };
 
   const { stock, macro, pricing, debate, fundamentals, secMining, backtest } = memoData;
