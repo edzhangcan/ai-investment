@@ -16,7 +16,8 @@ import {
   Calculator,
   Bell,
   FileText,
-  Info
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { MacroDashboard } from './components/MacroDashboard';
 import { RecommendedStocksGrid } from './components/RecommendedStocksGrid';
@@ -477,7 +478,19 @@ export const App: React.FC = () => {
 
                     <div className="flex items-center gap-6">
                       <div>
-                        <div className="text-xs text-content-muted">{t.currentMarketPrice}</div>
+                        <div className="text-xs text-content-muted flex items-center gap-1.5 mb-0.5">
+                          <span>{t.currentMarketPrice}</span>
+                          <a
+                            href={`https://finance.yahoo.com/quote/${encodeURIComponent(stockData.stock.symbol)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand hover:text-brand-hover hover:underline transition-colors ml-0.5"
+                            title={t.verifyOnYahoo}
+                          >
+                            <span>Yahoo Finance</span>
+                            <ExternalLink className="w-3 h-3 inline opacity-80" />
+                          </a>
+                        </div>
                         <div className="text-xl font-extrabold text-content-primary">
                           ${stockData.stock.current_price} <span className="text-xs font-normal text-content-muted">{stockData.stock.currency}</span>
                         </div>

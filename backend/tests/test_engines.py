@@ -25,6 +25,24 @@ def test_data_provider_real_time_t_to():
     # Market price for TELUS should be ~12-16 CAD, never ~219 CAD
     assert 10.0 <= data["current_price"] <= 30.0, f"Expected TELUS price in 10-30 CAD, got {data['current_price']}"
 
+def test_data_provider_real_time_bb_to():
+    """Verifies that $BB.TO (BlackBerry) accurately returns ~12.34 CAD live price instead of fabricated 100.00."""
+    data = DataProviderManager.get_stock_data("BB.TO", force_refresh=True)
+    assert data["is_valid"] is True
+    assert data["symbol"] == "BB.TO"
+    assert data["currency"] == "CAD"
+    assert data["market"] == "CA"
+    assert "BLACKBERRY" in data["company_name"].upper()
+    # Live market price for BlackBerry on TSX is ~10-20 CAD, never fabricated 100.00
+    assert 5.0 <= data["current_price"] <= 35.0, f"Expected BB.TO price in 5-35 CAD, got {data['current_price']}"
+    assert data["current_price"] != 100.0
+
+def test_data_provider_unlisted_symbol_rejection():
+    """Verifies that unlisted / non-existent tickers return is_valid=False rather than fabricated prices."""
+    data = DataProviderManager.get_stock_data("NONEXISTENT_SYMBOL_XYZ_123", force_refresh=True)
+    # When not in mock testing mode, unlisted tickers must be rejected
+    assert "error" in data or data["is_valid"] is False
+
 def test_macro_engine():
     macro = MacroEngine.analyze_macro_environment()
     assert "cycle_stage" in macro

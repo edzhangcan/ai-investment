@@ -16,6 +16,7 @@ export interface Translations {
   groundTruthVerified: string;
   source: string;
   currentMarketPrice: string;
+  verifyOnYahoo: string;
   commandPaletteTitle: string;
   calcButtonTitle: string;
   discordButtonTitle: string;
@@ -219,6 +220,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     groundTruthVerified: "100% Verified Data",
     source: "Source",
     currentMarketPrice: "Current Market Price",
+    verifyOnYahoo: "Verify on Yahoo Finance",
     commandPaletteTitle: "Quick Search (Ctrl+K)",
     calcButtonTitle: "Position Sizing Calculator",
     discordButtonTitle: "Discord Push Alerts",
@@ -408,6 +410,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     groundTruthVerified: "100% 真实数据验证",
     source: "数据源",
     currentMarketPrice: "当前市场价格",
+    verifyOnYahoo: "在 Yahoo Finance 验证行情",
     commandPaletteTitle: "快捷搜索 (Ctrl+K)",
     calcButtonTitle: "仓位管理计算器",
     discordButtonTitle: "Discord 警报推送",
@@ -597,6 +600,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     groundTruthVerified: "100% Verified Data (真实数据)",
     source: "Source (数据源)",
     currentMarketPrice: "当前价格 (Current Market Price)",
+    verifyOnYahoo: "在 Yahoo Finance 验证 (Verify Live)",
     commandPaletteTitle: "快捷搜索 (Command Palette)",
     calcButtonTitle: "仓位计算器 (Position Sizing)",
     discordButtonTitle: "Discord 警报 (Push Alerts)",
