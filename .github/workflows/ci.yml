@@ -45,16 +45,17 @@ jobs:
           set -o pipefail
           python -m pytest backend/tests/ -v -ra --tb=short 2>&1 | tee pytest_output.log
 
-      - name: Report Pytest Failures in Issue
+      - name: Report Pytest Failures in Diagnostic Branch
         if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f pytest_output.log ]; then
-            echo "=== PYTEST LOG START ==="
-            cat pytest_output.log
-            echo "=== PYTEST LOG END ==="
-            gh issue create --title "CI Failure on $(git rev-parse --short HEAD)" --body-file pytest_output.log || true
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -B ci-debug-log
+            cp pytest_output.log ci_debug_log.txt
+            git add ci_debug_log.txt
+            git commit -m "ci: diagnostic test failure log"
+            git push origin ci-debug-log --force || true
           fi
 
   frontend-build:
