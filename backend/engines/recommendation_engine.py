@@ -159,7 +159,7 @@ class RecommendationEngine:
                 return None
 
         all_scored = []
-        with ThreadPoolExecutor(max_workers=25) as executor:
+        with ThreadPoolExecutor(max_workers=8) as executor:
             futures = [executor.submit(_eval_single_stock, s) for s in ALL_STOCK_SYMBOLS]
             for future in as_completed(futures):
                 res = future.result()

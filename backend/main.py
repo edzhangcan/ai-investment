@@ -45,6 +45,7 @@ async def run_universe_refresh_daemon():
     Runs continuously every 7,200 seconds (2 hours) to calculate and cache
     recommendations for 128 North American universe stocks across English, Chinese, and Hybrid modes.
     """
+    await asyncio.sleep(1)  # Allow uvicorn to bind port immediately
     logging.info("Starting 2-Hour Automated Stock Universe Refresh Daemon...")
     while True:
         try:

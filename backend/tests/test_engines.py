@@ -15,6 +15,17 @@ def test_data_provider_fallback():
     assert data["current_price"] > 0
     assert "source" in data
 
+def test_data_provider_real_time_t_to():
+    """Verifies that $T.TO (TELUS) accurately returns ~13.54 CAD live price instead of ~219 CAD."""
+    data = DataProviderManager.get_stock_data("T.TO", force_refresh=True)
+    assert data["symbol"] == "T.TO"
+    assert data["currency"] == "CAD"
+    assert data["market"] == "CA"
+    assert "TELUS" in data["company_name"].upper()
+    # Live market price for TELUS should be ~12-16 CAD, never ~219 CAD
+    assert 10.0 <= data["current_price"] <= 30.0, f"Expected TELUS price in 10-30 CAD, got {data['current_price']}"
+    assert "Real-Time Market Exchange" in data["source"]
+
 def test_macro_engine():
     macro = MacroEngine.analyze_macro_environment()
     assert "cycle_stage" in macro
