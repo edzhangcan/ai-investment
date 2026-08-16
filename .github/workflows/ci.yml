@@ -26,6 +26,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
 
+      - name: Python Syntax & Bytecode Compilation Check
+        run: |
+          python -m compileall backend
+
       - name: Run Pytest Test Suite
         env:
           PYTHONPATH: .
@@ -33,7 +37,18 @@ jobs:
           LANG: "C.UTF-8"
           TESTING: "true"
         run: |
-          pytest backend/tests/ -v -ra --tb=short
+          set -o pipefail
+          python -m pytest backend/tests/ -v -ra --tb=short 2>&1 | tee pytest_output.log
+
+      - name: Report Pytest Failures in Summary
+        if: failure()
+        run: |
+          if [ -f pytest_output.log ]; then
+            echo "## ❌ Pytest Test Suite Failures" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 120 pytest_output.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
 
   frontend-build:
     name: ⚛️ Frontend TypeScript Build & Quality Check
