@@ -46,7 +46,14 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
   };
 
   const handlePrintPdf = () => {
-    window.print();
+    if (activeTab !== 'preview') {
+      setActiveTab('preview');
+      setTimeout(() => {
+        window.print();
+      }, 50);
+    } else {
+      window.print();
+    }
   };
 
   const { stock, macro, pricing, debate, fundamentals, secMining, backtest } = memoData;
