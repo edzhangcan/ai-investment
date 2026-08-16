@@ -10,11 +10,6 @@ jobs:
   backend-tests:
     name: 🐍 Backend Pytest Suite & Linting
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      statuses: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,21 +37,7 @@ jobs:
           LANG: "C.UTF-8"
           TESTING: "true"
         run: |
-          set -o pipefail
-          python -m pytest backend/tests/ -v -ra --tb=short 2>&1 | tee pytest_output.log
-
-      - name: Report Pytest Failures in Diagnostic Branch
-        if: failure()
-        run: |
-          if [ -f pytest_output.log ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git checkout -B ci-debug-log
-            cp pytest_output.log ci_debug_log.txt
-            git add ci_debug_log.txt
-            git commit -m "ci: diagnostic test failure log"
-            git push origin ci-debug-log --force || true
-          fi
+          python -m pytest backend/tests/ -v -ra --tb=short
 
   frontend-build:
     name: ⚛️ Frontend TypeScript Build & Quality Check
