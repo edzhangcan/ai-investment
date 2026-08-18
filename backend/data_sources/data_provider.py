@@ -779,9 +779,10 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "BMO.TO": {"fcf": 7400000000, "pe": 11.5, "name": "Bank of Montreal"},
     "CM.TO": {"fcf": 5800000000, "pe": 11.2, "name": "Canadian Imperial Bank of Commerce"},
     "NA.TO": {"fcf": 3200000000, "pe": 12.4, "name": "National Bank of Canada"},
-    "CWW.TO": {"fcf": 850000000, "pe": 14.8, "name": "Canadian Western Bank"},
+    "CWW.TO": {"fcf": 850000000, "pe": 14.8, "name": "iShares Global Water ETF"},
     "EQB.TO": {"fcf": 620000000, "pe": 9.5, "name": "EQB Inc."},
     "ABX.TO": {"fcf": 1850000000, "pe": 18.2, "name": "Barrick Gold Corp."},
+    "TECK-B.TO": {"fcf": 2100000000, "pe": 14.6, "name": "Teck Resources Ltd."},
     "TECK.B.TO": {"fcf": 2100000000, "pe": 14.6, "name": "Teck Resources Ltd."},
     "NTR.TO": {"fcf": 2600000000, "pe": 13.5, "name": "Nutrien Ltd."},
     "SHOP.TO": {"fcf": 1250000000, "pe": 75.4, "name": "Shopify Inc."},
@@ -790,16 +791,31 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "ATD.TO": {"fcf": 2800000000, "pe": 18.5, "name": "Alimentation Couche-Tard"},
     "BCE.TO": {"fcf": 2900000000, "pe": 15.2, "name": "BCE Inc."},
     "T.TO": {"fcf": 1800000000, "pe": 22.4, "name": "TELUS Corporation"},
+    "BAM.TO": {"fcf": 2400000000, "pe": 32.5, "name": "Brookfield Asset Management"},
+    "BN.TO": {"fcf": 4200000000, "pe": 18.6, "name": "Brookfield Corporation"},
+    "DOL.TO": {"fcf": 1100000000, "pe": 31.2, "name": "Dollarama Inc."},
+    "MFC.TO": {"fcf": 4500000000, "pe": 10.4, "name": "Manulife Financial Corp."},
+    "SLF.TO": {"fcf": 3100000000, "pe": 12.8, "name": "Sun Life Financial Inc."},
+    "POW.TO": {"fcf": 2200000000, "pe": 11.0, "name": "Power Corporation of Canada"},
     "CSU.TO": {"fcf": 1650000000, "pe": 82.0, "name": "Constellation Software"},
     "TOI.V": {"fcf": 280000000, "pe": 45.0, "name": "Topicus.com Inc."},
-    "ONT.TO": {"fcf": 140000000, "pe": 28.0, "name": "Onex Corporation"},
-    "DRT.TO": {"fcf": 85000000, "pe": 18.5, "name": "DIRTT Environmental Solutions"},
-    "CFM.TO": {"fcf": 110000000, "pe": 15.0, "name": "Canacol Energy Ltd."},
+    "LMN.V": {"fcf": 180000000, "pe": 42.0, "name": "Lumine Group Inc."},
     "TFII.TO": {"fcf": 750000000, "pe": 22.0, "name": "TFI International Inc."},
     "X.TO": {"fcf": 190000000, "pe": 16.5, "name": "TMX Group Limited"},
     "EFN.TO": {"fcf": 310000000, "pe": 14.8, "name": "Element Fleet Management"},
-    "NVEI.TO": {"fcf": 240000000, "pe": 32.0, "name": "Nuvei Corporation"},
-    "LMN.V": {"fcf": 65000000, "pe": 38.0, "name": "Lumina Gold Corp."},
+    "OTEX.TO": {"fcf": 850000000, "pe": 11.5, "name": "OpenText Corporation"},
+    "GIB-A.TO": {"fcf": 1600000000, "pe": 19.2, "name": "CGI Inc."},
+    "TIH.TO": {"fcf": 450000000, "pe": 21.0, "name": "Toromont Industries Ltd."},
+    "WCN.TO": {"fcf": 1200000000, "pe": 34.0, "name": "Waste Connections Inc."},
+    "CCL-B.TO": {"fcf": 680000000, "pe": 18.4, "name": "CCL Industries Inc."},
+    "MG.TO": {"fcf": 920000000, "pe": 9.8, "name": "Magna International Inc."},
+    "CAE.TO": {"fcf": 410000000, "pe": 24.5, "name": "CAE Inc."},
+    "BB.TO": {"fcf": 95000000, "pe": 28.0, "name": "BlackBerry Limited"},
+    "KXS.TO": {"fcf": 120000000, "pe": 65.0, "name": "Kinaxis Inc."},
+    "GSY.TO": {"fcf": 290000000, "pe": 11.2, "name": "goeasy Ltd."},
+    "PET.TO": {"fcf": 110000000, "pe": 17.5, "name": "Pet Valu Holdings Ltd."},
+    "BLDP.TO": {"fcf": -60000000, "pe": None, "name": "Ballard Power Systems"},
+    "WPM.TO": {"fcf": 750000000, "pe": 38.0, "name": "Wheaton Precious Metals"},
 
     # US Niche Growth Gems
     "CELH": {"fcf": 185000000, "pe": 45.2, "name": "Celsius Holdings Inc."},
@@ -849,7 +865,24 @@ class DataProviderManager:
 
         normalized_symbol = symbol.upper().strip()
 
-        # Step 0a: If query contains spaces or common company suffixes, resolve to primary equity ticker
+        # Step 0a: Apply Symbol Alias Map (e.g. Canadian dual-class hyphens / ticker variants)
+        ALIAS_MAP = {
+            "TECK.B.TO": "TECK-B.TO",
+            "TECK.B": "TECK-B.TO",
+            "TECH.B.TO": "TECK-B.TO",
+            "TECK.TO": "TECK-B.TO",
+            "TECK": "TECK-B.TO",
+            "GIB.A.TO": "GIB-A.TO",
+            "CCL.B.TO": "CCL-B.TO",
+            "EMP.A.TO": "EMP-A.TO",
+            "BRK.B": "BRK-B",
+            "BRK.A": "BRK-A",
+            "BF.B": "BF-B",
+        }
+        if normalized_symbol in ALIAS_MAP:
+            normalized_symbol = ALIAS_MAP[normalized_symbol]
+
+        # Step 0b: If query contains spaces or common company suffixes, resolve to primary equity ticker
         if " " in symbol or any(w in normalized_symbol for w in ["COMPANY", "CORP", "INC", "LTD", "COCA"]):
             try:
                 import urllib.parse
