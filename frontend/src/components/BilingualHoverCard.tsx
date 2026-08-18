@@ -113,7 +113,7 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
       {/* Subtitle Chinese (rendered in zh and hybrid modes) */}
       {language !== 'en' && (
         <div className="text-xs font-bold text-content-primary mb-2.5 flex items-center gap-1.5">
-          <span className="prism-badge-neutral text-[10px]">ZH</span>
+          <span className="prism-badge-neutral text-[10px]">中</span>
           <span>{termZh}</span>
         </div>
       )}
@@ -166,15 +166,9 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
         setIsOpen((prev) => !prev);
       }}
     >
-      <span
-        className={`transition-all inline-flex items-center gap-1 ${
-          isPlainTalk
-            ? 'border-b-2 border-dashed border-warning font-bold text-warning hover:opacity-90 px-1.5 py-0.5 prism-surface-subtle rounded-lg shadow-sm'
-            : 'hover:text-brand border-b border-dashed border-border-strong'
-        }`}
-      >
-        {displayTitle}
-        <HelpCircle className={`w-3.5 h-3.5 inline shrink-0 ${isPlainTalk ? 'text-warning' : 'text-content-muted'}`} />
+      <span className="group inline-flex items-center gap-1 hover:text-brand border-b border-dashed border-border-strong hover:border-brand transition-colors">
+        <span>{displayTitle}</span>
+        <HelpCircle className="w-3.5 h-3.5 inline shrink-0 text-brand/70 group-hover:text-brand transition-colors" />
       </span>
 
       {/* Render popover via React Portal directly into document.body */}

@@ -5,10 +5,9 @@ import { Compass, TrendingUp, AlertTriangle, Cpu, Info } from 'lucide-react';
 
 interface MacroScannerBarProps {
   macroData: any;
-  isPlainTalk?: boolean;
 }
 
-export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isPlainTalk = false }) => {
+export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData }) => {
   const { t } = useLanguage();
   if (!macroData) return null;
 
@@ -18,9 +17,7 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isP
   const underweights = macroData.recommended_underweights || [];
 
   return (
-    <div className={`prism-card p-5 mb-6 transition-all ${
-      isPlainTalk ? 'border-warning' : ''
-    }`}>
+    <div className="prism-card p-5 mb-6 transition-all">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-border-subtle pb-4 mb-4">
         
         {/* Economic Cycle Badge */}
@@ -30,7 +27,7 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isP
           </div>
           <div>
             <div className="text-xs uppercase tracking-wider text-content-muted font-medium flex items-center gap-2">
-              <BilingualHoverCard termKey="MacroCycle" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="MacroCycle">
                 {t.macroTitle}
               </BilingualHoverCard>
               <span className="prism-badge-positive text-[10px]">
@@ -48,7 +45,7 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData, isP
           <Cpu className="w-5 h-5 text-brand" />
           <div>
             <div className="text-content-muted">
-              <BilingualHoverCard termKey="FedSentiment" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="FedSentiment">
                 {t.fedSentiment}
               </BilingualHoverCard>:
             </div>

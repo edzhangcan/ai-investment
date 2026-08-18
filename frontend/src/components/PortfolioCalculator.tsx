@@ -7,7 +7,6 @@ interface PortfolioCalculatorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectStock?: (symbol: string) => void;
-  isPlainTalk?: boolean;
 }
 
 interface PositionBreakdownItem {
@@ -42,7 +41,6 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
   isOpen,
   onClose,
   onSelectStock,
-  isPlainTalk = false
 }) => {
   const { language, t } = useLanguage();
   const [cashBalance, setCashBalance] = useState<number>(50000);
@@ -107,7 +105,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
           </span>
           <div>
             <h2 id="portfolio-calc-title" className="text-xl md:text-2xl font-extrabold text-content-primary">
-              <BilingualHoverCard termKey="PositionSizing" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="PositionSizing">
                 {t.calcTitle}
               </BilingualHoverCard>
             </h2>

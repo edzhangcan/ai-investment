@@ -4,12 +4,11 @@ import { BilingualHoverCard } from './BilingualHoverCard';
 interface JargonTooltipProps {
   termKey: string;
   children?: React.ReactNode;
-  isPlainTalk?: boolean;
 }
 
-export const JargonTooltip: React.FC<JargonTooltipProps> = ({ termKey, children, isPlainTalk = false }) => {
+export const JargonTooltip: React.FC<JargonTooltipProps> = ({ termKey, children }) => {
   return (
-    <BilingualHoverCard termKey={termKey} isPlainTalk={isPlainTalk}>
+    <BilingualHoverCard termKey={termKey}>
       {children}
     </BilingualHoverCard>
   );

@@ -5,7 +5,6 @@ import { LineChart as ChartIcon, TrendingUp } from 'lucide-react';
 
 interface BacktestViewerProps {
   symbol: string;
-  isPlainTalk?: boolean;
 }
 
 interface EquityPoint {
@@ -42,7 +41,7 @@ interface BacktestResponsePayload {
   annual_breakdown: AnnualBreakdownItem[];
 }
 
-export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainTalk = false }) => {
+export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
   const { language, t } = useLanguage();
   const [benchmark, setBenchmark] = useState<'SPY' | 'XIU.TO'>(symbol.endsWith('.TO') ? 'XIU.TO' : 'SPY');
   const [data, setData] = useState<BacktestResponsePayload | null>(null);
@@ -52,7 +51,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
     const fetchBacktest = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/backtest/stock/${symbol}?benchmark=${benchmark}&lang=${language}`);
+        const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/stock/${symbol}/backtest?benchmark=${benchmark}&lang=${language}`);
         if (res.ok) {
           const json = await res.json();
           setData(json);
@@ -68,10 +67,10 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
 
   if (loading) {
     return (
-      <div className="prism-card p-6 flex items-center justify-center min-h-[220px]">
+      <div className="prism-card p-6 flex items-center justify-center min-h-[260px]">
         <div className="flex items-center gap-3 text-content-muted text-xs">
           <ChartIcon className="w-5 h-5 animate-spin text-brand" />
-          <span>Simulating 5-Year Historical Macro Cycle Performance (2021-2025)...</span>
+          <span>Running 5-Year Quantitative Backtest against {benchmark}...</span>
         </div>
       </div>
     );
@@ -89,7 +88,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
               <ChartIcon className="w-5 h-5" />
             </span>
             <h3 className="text-xl font-extrabold text-content-primary flex items-center gap-2">
-              <BilingualHoverCard termKey="Backtest" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="Backtest">
                 {t.backtestTitle}
               </BilingualHoverCard>
             </h3>
@@ -134,7 +133,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="prism-surface-subtle p-4 shadow-sm">
           <div className="text-[11px] text-content-muted font-semibold mb-1">
-            <BilingualHoverCard termKey="CAGR" isPlainTalk={isPlainTalk}>
+            <BilingualHoverCard termKey="CAGR">
               {t.cagr}
             </BilingualHoverCard>
           </div>
@@ -144,7 +143,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
 
         <div className="prism-surface-subtle p-4 shadow-sm">
           <div className="text-[11px] text-content-muted font-semibold mb-1">
-            <BilingualHoverCard termKey="SharpeRatio" isPlainTalk={isPlainTalk}>
+            <BilingualHoverCard termKey="SharpeRatio">
               {t.sharpeRatio}
             </BilingualHoverCard>
           </div>
@@ -154,7 +153,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
 
         <div className="prism-surface-subtle p-4 shadow-sm">
           <div className="text-[11px] text-content-muted font-semibold mb-1">
-            <BilingualHoverCard termKey="MaxDrawdown" isPlainTalk={isPlainTalk}>
+            <BilingualHoverCard termKey="MaxDrawdown">
               {t.maxDrawdown}
             </BilingualHoverCard>
           </div>
@@ -164,7 +163,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
 
         <div className="prism-surface-subtle p-4 shadow-sm">
           <div className="text-[11px] text-content-muted font-semibold mb-1">
-            <BilingualHoverCard termKey="WinRate" isPlainTalk={isPlainTalk}>
+            <BilingualHoverCard termKey="WinRate">
               {t.winRate}
             </BilingualHoverCard>
           </div>
@@ -182,7 +181,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
               <th className="p-3.5 text-positive font-bold">{symbol} {t.returnHeader}</th>
               <th className="p-3.5 text-content-secondary">{data.benchmark} {t.returnHeader}</th>
               <th className="p-3.5 text-right font-bold">
-                <BilingualHoverCard termKey="Alpha" isPlainTalk={isPlainTalk}>
+                <BilingualHoverCard termKey="Alpha">
                   {t.alpha}
                 </BilingualHoverCard>
               </th>

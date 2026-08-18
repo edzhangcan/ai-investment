@@ -5,10 +5,9 @@ import { ShieldAlert, Award, ArrowUpRight, Scale, Share2, Check } from 'lucide-r
 
 interface DebateArenaProps {
   debateData: any;
-  isPlainTalk?: boolean;
 }
 
-export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTalk = false }) => {
+export const DebateArena: React.FC<DebateArenaProps> = ({ debateData }) => {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
@@ -43,9 +42,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
   };
 
   return (
-    <div className={`prism-card p-5 mb-6 transition-all ${
-      isPlainTalk ? 'border-warning' : ''
-    }`}>
+    <div className="prism-card p-5 mb-6 transition-all">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border-subtle pb-3 mb-5">
         <div className="flex items-center gap-3">
           <div className="p-2.5 prism-badge-warning rounded-xl">
@@ -54,11 +51,6 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
           <div>
             <h3 className="text-base font-bold text-content-primary flex items-center gap-2">
               <span>{t.debateTitle}</span>
-              {isPlainTalk && (
-                <span className="prism-badge-warning text-[10px]">
-                  PlainTalk Mode
-                </span>
-              )}
             </h3>
             <p className="text-xs text-content-muted">
               {t.debateSubtitle}
@@ -95,7 +87,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
               <span className="flex items-center gap-1.5">
                 <Award className="w-4 h-4" />
                 <span>
-                  <BilingualHoverCard termKey="BullAgent" isPlainTalk={isPlainTalk}>
+                  <BilingualHoverCard termKey="BullAgent">
                     {t.bullCase}
                   </BilingualHoverCard>
                 </span>
@@ -127,7 +119,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
               <span className="flex items-center gap-1.5">
                 <ShieldAlert className="w-4 h-4" />
                 <span>
-                  <BilingualHoverCard termKey="BearAgent" isPlainTalk={isPlainTalk}>
+                  <BilingualHoverCard termKey="BearAgent">
                     {t.bearCase}
                   </BilingualHoverCard>
                 </span>
@@ -158,14 +150,14 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="prism-badge-brand text-xs">
-              <BilingualHoverCard termKey="CIOVerdict" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="CIOVerdict">
                 {t.cioVerdict}
               </BilingualHoverCard>
             </span>
             <span className="text-xs font-extrabold text-positive">{cio.verdict || "ACCUMULATE ON PULLBACKS"}</span>
           </div>
           <span className="text-xs font-bold text-content-secondary">
-            <BilingualHoverCard termKey="RiskReward" isPlainTalk={isPlainTalk}>
+            <BilingualHoverCard termKey="RiskReward">
               {t.riskReward}
             </BilingualHoverCard>: <span className="text-brand font-mono">{cio.risk_reward_ratio || 2.4}:1</span>
           </span>
@@ -178,7 +170,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs border-t border-border-subtle pt-2.5">
           <div className="text-content-secondary">
             <span className="text-content-muted">
-              <BilingualHoverCard termKey="IdealBuyZone" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="IdealBuyZone">
                 {t.recommendedBuyBracket}
               </BilingualHoverCard>: 
             </span>
@@ -186,7 +178,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
           </div>
           <div className="text-content-secondary">
             <span className="text-content-muted">
-              <BilingualHoverCard termKey="PositionSizing" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="PositionSizing">
                 {t.positionSizing}
               </BilingualHoverCard>: 
             </span>

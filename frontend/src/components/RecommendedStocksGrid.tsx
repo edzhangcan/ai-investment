@@ -7,7 +7,6 @@ import { Sparkles, Award, Coins, Compass, Star, ChevronRight, RefreshCw } from '
 interface RecommendedStocksGridProps {
   recommendations: CategorizedRecommendationsPayload | StockRecommendation[];
   onSelectStock: (symbol: string) => void;
-  isPlainTalk: boolean;
   watchlistSymbols?: Set<string>;
   onToggleWatchlist?: (symbol: string, companyName: string, targetPrice?: number) => void;
   onRefreshRecommendations?: (category: 'SECTOR' | 'OVERALL' | 'GOLD', offset: number) => Promise<void> | void;
@@ -16,7 +15,6 @@ interface RecommendedStocksGridProps {
 export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
   recommendations,
   onSelectStock,
-  isPlainTalk,
   watchlistSymbols = new Set(),
   onToggleWatchlist,
   onRefreshRecommendations,
@@ -224,11 +222,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                 }
               }}
               className={`prism-card p-4 hover:border-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none transition-all flex flex-col justify-between group/card cursor-pointer ${
-                activeCategory === 'GOLD' 
-                  ? 'border-warning' 
-                  : isPlainTalk 
-                    ? 'border-warning' 
-                    : ''
+                activeCategory === 'GOLD' ? 'border-warning/70' : ''
               }`}
             >
               <div>
@@ -283,7 +277,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                 <div className="grid grid-cols-2 gap-1.5 text-[11px] mb-3">
                   <div className="prism-surface-subtle p-2">
                     <span className="text-[10px] text-content-muted block truncate">
-                      <BilingualHoverCard termKey="FCF" isPlainTalk={isPlainTalk}>
+                      <BilingualHoverCard termKey="FCF">
                         {t.freeCashFlow}
                       </BilingualHoverCard>
                     </span>
@@ -294,7 +288,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
                   <div className="prism-surface-subtle p-2">
                     <span className="text-[10px] text-content-muted block truncate">
-                      <BilingualHoverCard termKey="PE" isPlainTalk={isPlainTalk}>
+                      <BilingualHoverCard termKey="PE">
                         {t.peRatio}
                       </BilingualHoverCard>
                     </span>
@@ -303,7 +297,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
                   <div className="prism-surface-subtle p-2">
                     <span className="text-[10px] text-content-muted block truncate">
-                      <BilingualHoverCard termKey="MoatRating" isPlainTalk={isPlainTalk}>
+                      <BilingualHoverCard termKey="MoatRating">
                         {t.moatRating}
                       </BilingualHoverCard>
                     </span>
@@ -312,7 +306,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
                   <div className="prism-surface-subtle p-2">
                     <span className="text-[10px] text-content-muted block truncate">
-                      <BilingualHoverCard termKey="IdealBuyZone" isPlainTalk={isPlainTalk}>
+                      <BilingualHoverCard termKey="IdealBuyZone">
                         {t.buyZone}
                       </BilingualHoverCard>
                     </span>

@@ -57,7 +57,6 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'macro' | 'stock'>('macro');
   const [ticker, setTicker] = useState<string>('NVDA');
   const [searchInput, setSearchInput] = useState<string>('NVDA');
-  const [isPlainTalk, setIsPlainTalk] = useState<boolean>(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isPortfolioCalculatorOpen, setIsPortfolioCalculatorOpen] = useState<boolean>(false);
@@ -211,7 +210,7 @@ export const App: React.FC = () => {
             </div>
 
             {/* Expanded Search Bar */}
-            <form onSubmit={handleSearch} className="relative flex-1 w-full md:max-w-xl">
+            <form onSubmit={handleSearch} className="relative flex-1 w-full md:max-w-2xl lg:max-w-3xl">
               <input
                 type="text"
                 value={searchInput}
@@ -228,22 +227,10 @@ export const App: React.FC = () => {
               </button>
             </form>
 
-            {/* Right Controls: Language, Theme & PlainTalk Switchers */}
+            {/* Right Controls: Language & Theme Switchers */}
             <div className="flex items-center gap-2 shrink-0">
               <LanguageSelector />
               <ThemeToggle />
-              <button
-                onClick={() => setIsPlainTalk(!isPlainTalk)}
-                className={`h-8 px-3 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 box-border ${
-                  isPlainTalk
-                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-700/80 shadow-sm'
-                    : 'bg-surface border-border-subtle text-content-secondary hover:text-content-primary hover:bg-surface-subtle shadow-sm'
-                }`}
-                title={isPlainTalk ? 'Switch to Professional Mode' : 'Switch to Plain Talk Mode'}
-              >
-                <HelpCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">{isPlainTalk ? t.plainTalkOn : t.plainTalkOff}</span>
-              </button>
             </div>
           </div>
 
@@ -327,16 +314,6 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Plain Talk Banner */}
-        {isPlainTalk && (
-          <div className="prism-card p-4 mb-6 text-xs text-warning border-warning flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-2 font-semibold">
-              <Info className="w-4 h-4 shrink-0 text-warning" />
-              <span>Bilingual Plain-Talk Hover Layovers Active: Hover or tap on metric badges for non-technical explanations.</span>
-            </div>
-          </div>
-        )}
-
         {/* TAB 1: MACRO & RECOMMENDED STOCKS DASHBOARD */}
         {activeTab === 'macro' && (
           loadingDashboard ? (
@@ -351,7 +328,6 @@ export const App: React.FC = () => {
                 policyNews={dashboardData.policy_news}
                 supportingFacts={dashboardData.empirical_supporting_facts}
                 credibleSources={dashboardData.credible_sources}
-                isPlainTalk={isPlainTalk}
                 onRefreshMacro={async () => {
                   const res = await fetchMacroDashboard(language, true);
                   setDashboardData(res);
@@ -361,7 +337,6 @@ export const App: React.FC = () => {
               <RecommendedStocksGrid
                 recommendations={dashboardData.recommendations}
                 onSelectStock={handleSelectRecommendedStock}
-                isPlainTalk={isPlainTalk}
                 watchlistSymbols={watchlistSymbols}
                 onToggleWatchlist={toggleWatchlist}
                 onRefreshRecommendations={async (category, offset) => {
@@ -442,9 +417,7 @@ export const App: React.FC = () => {
                   </div>
 
                   {/* Stock Header Card with Star Watchlist Button */}
-                  <div className={`prism-card p-5 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all ${
-                    isPlainTalk ? 'border-warning' : ''
-                  }`}>
+                  <div className="prism-card p-5 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all">
                     <div>
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xl font-bold text-content-primary">{stockData.stock.company_name}</span>
@@ -508,7 +481,7 @@ export const App: React.FC = () => {
                       </div>
                       <div>
                         <div className="text-xs text-content-muted">
-                          <BilingualHoverCard termKey="FCF" isPlainTalk={isPlainTalk}>
+                          <BilingualHoverCard termKey="FCF">
                             {t.freeCashFlow}
                           </BilingualHoverCard>
                         </div>
@@ -522,7 +495,7 @@ export const App: React.FC = () => {
                       </div>
                       <div>
                         <div className="text-xs text-content-muted">
-                          <BilingualHoverCard termKey="PE" isPlainTalk={isPlainTalk}>
+                          <BilingualHoverCard termKey="PE">
                             {t.peRatio}
                           </BilingualHoverCard>
                         </div>
@@ -638,14 +611,12 @@ export const App: React.FC = () => {
                     );
                   })()}
 
-                  <PricingChart pricingData={stockData.pricing} isPlainTalk={isPlainTalk} />
-                  <DebateArena debateData={stockData.debate} isPlainTalk={isPlainTalk} />
-                  <SecTextMiningViewer symbol={stockData.stock.symbol} isPlainTalk={isPlainTalk} />
-                  <BacktestViewer symbol={stockData.stock.symbol} isPlainTalk={isPlainTalk} />
+                  <PricingChart pricingData={stockData.pricing} />
+                  <DebateArena debateData={stockData.debate} />
+                  <SecTextMiningViewer symbol={stockData.stock.symbol} />
+                  <BacktestViewer symbol={stockData.stock.symbol} />
 
-                  <div className={`prism-card p-5 transition-all ${
-                    isPlainTalk ? 'border-warning' : ''
-                  }`}>
+                  <div className="prism-card p-5 transition-all">
                     <div className="flex items-center justify-between text-sm font-bold text-content-primary mb-3">
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="w-5 h-5 text-brand" />
@@ -655,7 +626,7 @@ export const App: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                       <div className="prism-surface-subtle p-3.5">
                         <span className="text-content-muted block mb-1">
-                          <BilingualHoverCard termKey="FCF" isPlainTalk={isPlainTalk}>
+                          <BilingualHoverCard termKey="FCF">
                             {t.fcfQualityAssessment}
                           </BilingualHoverCard>:
                         </span>
@@ -663,7 +634,7 @@ export const App: React.FC = () => {
                       </div>
                       <div className="prism-surface-subtle p-3.5">
                         <span className="text-content-muted block mb-1">
-                          <BilingualHoverCard termKey="MoatRating" isPlainTalk={isPlainTalk}>
+                          <BilingualHoverCard termKey="MoatRating">
                             {t.moatRating}
                           </BilingualHoverCard>:
                         </span>
@@ -671,7 +642,7 @@ export const App: React.FC = () => {
                       </div>
                       <div className="prism-surface-subtle p-3.5">
                         <span className="text-content-muted block mb-1">
-                          <BilingualHoverCard termKey="GuidanceShift" isPlainTalk={isPlainTalk}>
+                          <BilingualHoverCard termKey="GuidanceShift">
                             {t.guidanceShiftDeltas}
                           </BilingualHoverCard>:
                         </span>
@@ -696,8 +667,6 @@ export const App: React.FC = () => {
               setSearchInput(sym);
               setActiveTab('stock');
             }}
-            onTogglePlainTalk={() => setIsPlainTalk(!isPlainTalk)}
-            isPlainTalk={isPlainTalk}
           />
 
           {/* Watchlist Drawer */}
@@ -705,7 +674,6 @@ export const App: React.FC = () => {
             isOpen={isWatchlistOpen}
             onClose={() => setIsWatchlistOpen(false)}
             onSelectStock={(sym) => handleSelectRecommendedStock(sym)}
-            isPlainTalk={isPlainTalk}
           />
 
           {/* Portfolio Sizing Calculator Modal */}
@@ -713,7 +681,6 @@ export const App: React.FC = () => {
             isOpen={isPortfolioCalculatorOpen}
             onClose={() => setIsPortfolioCalculatorOpen(false)}
             onSelectStock={(sym) => handleSelectRecommendedStock(sym)}
-            isPlainTalk={isPlainTalk}
           />
 
           {/* Discord Push Alert Settings Modal */}

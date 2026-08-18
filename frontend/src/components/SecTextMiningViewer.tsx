@@ -5,7 +5,6 @@ import { FileText, TrendingUp, AlertTriangle, ShieldCheck, Database, FileDiff } 
 
 interface SecTextMiningViewerProps {
   symbol: string;
-  isPlainTalk?: boolean;
 }
 
 interface MiningTimelineEntry {
@@ -25,7 +24,7 @@ interface MiningDataPayload {
   text_mining_timeline: MiningTimelineEntry[];
 }
 
-export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol, isPlainTalk = false }) => {
+export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol }) => {
   const { language, t } = useLanguage();
   const [data, setData] = useState<MiningDataPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +73,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
               <FileDiff className="w-5 h-5" />
             </span>
             <h3 className="text-xl font-extrabold text-content-primary">
-              <BilingualHoverCard termKey="SEC10K" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="SEC10K">
                 {t.secTitle}
               </BilingualHoverCard>
             </h3>

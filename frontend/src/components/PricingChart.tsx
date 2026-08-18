@@ -6,10 +6,9 @@ import { Target, CheckCircle2, Sliders } from 'lucide-react';
 
 interface PricingChartProps {
   pricingData: any;
-  isPlainTalk?: boolean;
 }
 
-export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlainTalk = false }) => {
+export const PricingChart: React.FC<PricingChartProps> = ({ pricingData }) => {
   const { t } = useLanguage();
   const [timeframe, setTimeframe] = useState<'1M' | '3M' | '6M' | '1Y' | '5Y'>('1Y');
   const [show50D, setShow50D] = useState(true);
@@ -46,9 +45,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
   chartData[pointCount - 1].Price = currentPrice;
 
   return (
-    <div className={`prism-card p-5 mb-6 transition-all ${
-      isPlainTalk ? 'border-warning' : ''
-    }`}>
+    <div className="prism-card p-5 mb-6 transition-all">
       {/* Top Header & Range Controls */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 border-b border-border-subtle pb-3">
         <div>
@@ -81,7 +78,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
 
           <div className="prism-badge-warning text-xs">
             <span>
-              <BilingualHoverCard termKey="DCF" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="DCF">
                 {t.fairValue}
               </BilingualHoverCard>:
             </span>
@@ -106,7 +103,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
               className="accent-brand rounded"
             />
             <span>
-              <BilingualHoverCard termKey="SMA50" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="SMA50">
                 50D SMA
               </BilingualHoverCard> (${fiftySma})
             </span>
@@ -120,7 +117,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
               className="accent-brand rounded"
             />
             <span>
-              <BilingualHoverCard termKey="SMA200" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="SMA200">
                 200D SMA
               </BilingualHoverCard> (${twoHundredSma})
             </span>
@@ -134,7 +131,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
               className="accent-warning rounded"
             />
             <span>
-              <BilingualHoverCard termKey="DCF" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="DCF">
                 DCF Fair Value
               </BilingualHoverCard> (${dcfFairValue})
             </span>
