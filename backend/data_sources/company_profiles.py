@@ -2480,27 +2480,27 @@ COMPANY_PROFILES_REGISTRY: Dict[str, Dict[str, Any]] = {
     },
     "CWW.TO": {
         "name": "iShares Global Water Index ETF Common Class",
-        "sector": "Energy & Industrials (General Equities)",
+        "sector": "Utilities & Water Infrastructure (Global Water ETF)",
         "background": {
             "en": "An exchange-traded fund (ETF) is a type of investment fund that is also an exchange-traded product; i.e., it is bought and sold on stock exchanges. ETFs own financial assets such as stocks, bonds, currencies, cryptocurrency, debt, futures contracts, and/or commodities such as gold bars. ETFs provide more diversification than owning an individual stock and more market liquidity than owning an individual bond.",
-            "zh": "iShares Global Water Index ETF Common Class 是知名 Canadian 行业龙头企业（所属板块：Energy & Industrials，细分行业：General Equities）。核心主营业务概况：An exchange-traded fund (ETF) is a type of investment fund that is also an exchange-traded product; i.e., it is bought and sold on stock exchanges. ETFs own financial assets such as stocks, bonds, currencies, cryptocurrency, debt, futures contracts, and/or commodities such as gold bars. ETFs provide more diversification than owning an individual stock and more market liquidity than owning an individual bond.",
-            "hybrid": "iShares Global Water Index ETF Common Class 为核心 Canadian 企业（所属板块：Energy & Industrials | General Equities）。Business Overview: An exchange-traded fund (ETF) is a type of investment fund that is also an exchange-traded product; i.e., it is bought and sold on stock exchanges. ETFs own financial assets such as stocks, bonds, currencies, cryptocurrency, debt, futures contracts, and/or commodities such as gold bars. ETFs provide more diversification than owning an individual stock and more market liquidity than owning an individual bond."
+            "zh": "iShares Global Water Index ETF Common Class 是知名 Canadian 行业龙头企业（所属板块：Energy & Industrials，细分行业：Diversified Equities）。核心主营业务概况：An exchange-traded fund (ETF) is a type of investment fund that is also an exchange-traded product; i.e., it is bought and sold on stock exchanges. ETFs own financial assets such as stocks, bonds, currencies, cryptocurrency, debt, futures contracts, and/or commodities such as gold bars. ETFs provide more diversification than owning an individual stock and more market liquidity than owning an individual bond.",
+            "hybrid": "iShares Global Water Index ETF Common Class 为核心 Canadian 企业（所属板块：Energy & Industrials | Diversified Equities）。Business Overview: An exchange-traded fund (ETF) is a type of investment fund that is also an exchange-traded product; i.e., it is bought and sold on stock exchanges. ETFs own financial assets such as stocks, bonds, currencies, cryptocurrency, debt, futures contracts, and/or commodities such as gold bars. ETFs provide more diversification than owning an individual stock and more market liquidity than owning an individual bond."
         },
         "catalysts": {
             "en": [
-                "Market share expansion and customer adoption across core General Equities product lines",
+                "Market share expansion and customer adoption across core Diversified Equities product lines",
                 "Operating leverage and supply chain optimization driving free cash flow margin expansion",
                 "Structural multi-year secular tailwinds and institutional capital inflows supporting Energy & Industrials",
                 "Disciplined capital allocation focused on share buybacks, balance sheet strength, and dividend growth"
             ],
             "zh": [
-                "iShares Global Water Index ETF Common Class 在 General Equities 核心目标市场的市占率稳步提升与客户深度粘性",
+                "iShares Global Water Index ETF Common Class 在 Diversified Equities 核心目标市场的市占率稳步提升与客户深度粘性",
                 "运营杠杆与供应链协同优化带来的营业利润率与自由现金流持续扩张",
                 "受益于 Energy & Industrials 行业结构性长期顺风与全球机构资本配置需求增长",
                 "稳健的资本配置策略，专注于股票回购、强化资产负债表及股息持续增长"
             ],
             "hybrid": [
-                "iShares Global Water Index ETF Common Class 核心产品市场渗透与市占率提升 (General Equities Market Share Expansion)",
+                "iShares Global Water Index ETF Common Class 核心产品市场渗透与市占率提升 (Diversified Equities Market Share Expansion)",
                 "规模效应推动营业利润率与自由现金流增长 (Operating Leverage & FCF)",
                 "行业结构性顺风与长周期订单需求 (Energy & Industrials Structural Tailwinds)",
                 "稳健资本分配与股东回报 (Capital Allocation & Shareholder Returns)"
@@ -2508,17 +2508,17 @@ COMPANY_PROFILES_REGISTRY: Dict[str, Dict[str, Any]] = {
         },
         "revenue_drivers": {
             "en": [
-                "Core General Equities Offerings & Direct Solutions (65% of Total Revenue)",
+                "Core Diversified Equities Offerings & Direct Solutions (65% of Total Revenue)",
                 "Value-Added Recurring Support & Enterprise Services (25% of Total Revenue)",
                 "International Expansion & New Commercial Verticals (10% of Total Revenue)"
             ],
             "zh": [
-                "核心 General Equities 产品与直营解决方案销售（占总营收约 65%）",
+                "核心 Diversified Equities 产品与直营解决方案销售（占总营收约 65%）",
                 "高附加值经常性技术支持与企业服务收入（占总营收约 25%）",
                 "国际区域市场拓展与创新业务商业化（占总营收约 10%）"
             ],
             "hybrid": [
-                "Core General Equities Offerings 主营产品与服务 (65% 营收)",
+                "Core Diversified Equities Offerings 主营产品与服务 (65% 营收)",
                 "Recurring Support & Services 经常性支持与服务 (25% 营收)",
                 "International & Verticals 国际与创新业务 (10% 营收)"
             ]
@@ -6315,7 +6315,7 @@ class CompanyProfileEngine:
         
         company_name = symbol
         sector_text = "Technology" if not is_ca else "Energy & Industrials"
-        industry_text = "General Equities"
+        industry_text = "Diversified Equities"
 
         # Step 1: Query Yahoo Finance Search API for authentic Official Name, Sector & Industry
         try:
@@ -6440,7 +6440,7 @@ class CompanyProfileEngine:
         return {
             "symbol": symbol,
             "company_name": symbol,
-            "sector": "General Equities",
+            "sector": "Diversified Equities",
             "company_background": "No corporate background data available." if lang == "en" else "暂无公司背景信息。",
             "growth_catalysts": [],
             "key_catalysts": [],

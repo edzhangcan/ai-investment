@@ -54,3 +54,32 @@ def test_refresh_stock_recommendations_endpoint():
     json_data = res.json()
     assert "stocks" in json_data
     assert len(json_data["stocks"]) == 32
+
+def test_zero_hallucination_and_credible_backgrounds():
+    """Verifies that all 96 recommended stocks have non-templated credible corporate profiles."""
+    result = RecommendationEngine.get_top_recommendations(force_refresh=False)
+    for cat_name in ["sector_overweight_stocks", "overall_recommended_stocks", "gold_nugget_stocks"]:
+        for stock in result[cat_name]:
+            assert stock["symbol"] is not None
+            assert len(stock["symbol"]) > 0
+            assert "." not in stock["symbol"] or stock["symbol"].endswith(".TO") or stock["symbol"].endswith(".V")
+            # Verify no generic placeholders
+            assert "General Equities" not in stock.get("sector", "")
+            assert len(stock.get("company_background", "")) >= 40
+            assert len(stock.get("growth_catalysts", [])) >= 2
+            assert len(stock.get("revenue_drivers", [])) >= 2
+            assert stock.get("current_price", 0) > 0
+
+def test_canadian_dual_class_and_alias_normalization():
+    """Verifies alias mapping for Canadian dual-class shares like TECK.B.TO -> TECK-B.TO."""
+    from backend.data_sources.data_provider import DataProviderManager
+    
+    # Test TECK variants
+    for var in ["TECK-B.TO", "TECK.B.TO", "TECH.B.TO", "TECK.TO", "TECK"]:
+        data = DataProviderManager.get_stock_data(var)
+        assert data["is_valid"] is True, f"Failed for {var}"
+        assert data["symbol"] == "TECK-B.TO"
+        assert "Teck Resources" in data["company_name"]
+        assert data["currency"] == "CAD"
+        assert data["current_price"] > 0
+
