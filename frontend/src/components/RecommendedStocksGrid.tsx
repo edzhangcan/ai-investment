@@ -188,7 +188,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="px-3 py-1.5 bg-surface border border-border-subtle hover:border-brand rounded-xl text-xs font-bold text-brand hover:text-brand transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm focus-visible:ring-2 focus-visible:ring-brand"
+            className="h-8 px-3 bg-surface border border-border-subtle hover:border-brand rounded-xl text-xs font-bold text-brand hover:text-brand transition-all inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm focus-visible:ring-2 focus-visible:ring-brand box-border"
             title={t.refreshRecommendations}
             aria-label={t.refreshRecommendations}
           >
@@ -252,12 +252,12 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                         );
                       }
                     }}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1 cursor-pointer ${
+                    className={`h-6 px-2 rounded-lg text-[10px] font-bold border transition-all inline-flex items-center gap-1 cursor-pointer box-border ${
                       isStarred
-                        ? 'prism-badge-warning'
+                        ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/80 shadow-sm'
                         : 'bg-surface-subtle text-content-muted border-border-subtle hover:border-warning hover:text-warning'
                     }`}
-                    title={isStarred ? "Starred" : "Add Star"}
+                    title={isStarred ? t.starred : t.addStar}
                   >
                     <Star className={`w-3 h-3 ${isStarred ? 'fill-warning text-warning' : 'text-content-muted'}`} />
                     <span>{isStarred ? t.starred : t.addStar}</span>

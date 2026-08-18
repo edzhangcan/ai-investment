@@ -22,6 +22,17 @@ export interface Translations {
   discordButtonTitle: string;
   themeLight: string;
   themeDark: string;
+  exportMemoBtn: string;
+  exportMemoTitle: string;
+  backToMacroPicks: string;
+  exportMemoModalTitle: string;
+  exportMemoModalSubtitle: string;
+  exportMemoStyledPreview: string;
+  exportMemoRawMarkdown: string;
+  exportMemoDownloadMd: string;
+  exportMemoPrintPdf: string;
+  exportMemoCopied: string;
+  exportMemoCopy: string;
 
   // Startup Loading Screen
   loadingSubtitle: string;
@@ -226,6 +237,17 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordButtonTitle: "Discord Push Alerts",
     themeLight: "Light Mode",
     themeDark: "Dark Mode",
+    exportMemoBtn: "Export Memo",
+    exportMemoTitle: "Export Institutional Investment Memo (.md / .pdf)",
+    backToMacroPicks: "← Back to Macro Dashboard & Stock Picks",
+    exportMemoModalTitle: "Institutional Investment Memo Export",
+    exportMemoModalSubtitle: "1-Click Export in Clean Printable PDF or Markdown",
+    exportMemoStyledPreview: "Styled Preview",
+    exportMemoRawMarkdown: "Raw Markdown",
+    exportMemoDownloadMd: "Download .md",
+    exportMemoPrintPdf: "Print / Save PDF",
+    exportMemoCopied: "Copied!",
+    exportMemoCopy: "Copy",
 
     loadingSubtitle: "Initializing real-time market intelligence systems...",
     loadingStep1: "Connecting to Federal Reserve (FRED) & Bank of Canada Economic Data...",
@@ -416,6 +438,17 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordButtonTitle: "Discord 警报推送",
     themeLight: "明亮模式",
     themeDark: "暗黑模式",
+    exportMemoBtn: "导出投研备忘录",
+    exportMemoTitle: "导出机构级投资备忘录 (.md / .pdf)",
+    backToMacroPicks: "← 返回宏观大盘与精选标的",
+    exportMemoModalTitle: "机构级投研备忘录导出",
+    exportMemoModalSubtitle: "一键导出排版规范的 PDF 报告或 Markdown 文档",
+    exportMemoStyledPreview: "精美排版预览",
+    exportMemoRawMarkdown: "Markdown 源码",
+    exportMemoDownloadMd: "下载 .md",
+    exportMemoPrintPdf: "打印 / 保存为 PDF",
+    exportMemoCopied: "已复制！",
+    exportMemoCopy: "复制源码",
 
     loadingSubtitle: "正在初始化实时市场情报系统...",
     loadingStep1: "正在连接美联储 (FRED) 与加拿大央行宏观数据...",
@@ -606,6 +639,17 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordButtonTitle: "Discord 警报 (Push Alerts)",
     themeLight: "明亮模式 (Light)",
     themeDark: "暗黑模式 (Dark)",
+    exportMemoBtn: "导出备忘录 (Export Memo)",
+    exportMemoTitle: "导出机构级投资备忘录 (Export Memo .md / .pdf)",
+    backToMacroPicks: "← 返回宏观大盘与精选标的 (Back to Macro Dashboard)",
+    exportMemoModalTitle: "机构级投研备忘录导出 (Memo Export)",
+    exportMemoModalSubtitle: "一键导出 PDF 或 Markdown (Printable PDF / Markdown)",
+    exportMemoStyledPreview: "精美排版预览 (Styled Preview)",
+    exportMemoRawMarkdown: "Markdown 源码 (Raw Markdown)",
+    exportMemoDownloadMd: "下载 .md (Download)",
+    exportMemoPrintPdf: "打印 / 保存 PDF (Print / PDF)",
+    exportMemoCopied: "已复制 (Copied!)",
+    exportMemoCopy: "复制 (Copy)",
 
     loadingSubtitle: "正在初始化市场情报系统 (Initializing Market Intelligence)...",
     loadingStep1: "正在连接美联储 FRED & 央行数据 (Connecting Macro Data)...",

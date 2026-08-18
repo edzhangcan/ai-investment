@@ -17,7 +17,8 @@ import {
   Bell,
   FileText,
   Info,
-  ExternalLink
+  ExternalLink,
+  ArrowLeft
 } from 'lucide-react';
 import { MacroDashboard } from './components/MacroDashboard';
 import { RecommendedStocksGrid } from './components/RecommendedStocksGrid';
@@ -233,9 +234,9 @@ export const App: React.FC = () => {
               <ThemeToggle />
               <button
                 onClick={() => setIsPlainTalk(!isPlainTalk)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                className={`h-8 px-3 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 box-border ${
                   isPlainTalk
-                    ? 'prism-badge-warning shadow-sm'
+                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-700/80 shadow-sm'
                     : 'bg-surface border-border-subtle text-content-secondary hover:text-content-primary hover:bg-surface-subtle shadow-sm'
                 }`}
                 title={isPlainTalk ? 'Switch to Professional Mode' : 'Switch to Plain Talk Mode'}
@@ -428,14 +429,24 @@ export const App: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <MacroScannerBar macroData={stockData.macro} isPlainTalk={isPlainTalk} />
+                  {/* Back to Macro Dashboard & Stock Picks Navigation Button */}
+                  <div className="mb-4">
+                    <button
+                      onClick={() => setActiveTab('macro')}
+                      className="h-8 px-3.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-brand text-content-secondary hover:text-brand rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm group"
+                      title={t.backToMacroPicks}
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-brand" />
+                      <span>{t.backToMacroPicks}</span>
+                    </button>
+                  </div>
 
                   {/* Stock Header Card with Star Watchlist Button */}
                   <div className={`prism-card p-5 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all ${
                     isPlainTalk ? 'border-warning' : ''
                   }`}>
                     <div>
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xl font-bold text-content-primary">{stockData.stock.company_name}</span>
                         <span className="prism-badge-brand text-xs">
                           {stockData.stock.symbol} ({stockData.stock.market})
@@ -446,9 +457,9 @@ export const App: React.FC = () => {
                             <div className="flex items-center gap-2 ml-2">
                               <button
                                 onClick={() => toggleWatchlist(stockData.stock.symbol, stockData.stock.company_name, stockData.pricing.ideal_buy_range_max)}
-                                className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                className={`h-8 px-3 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-1.5 cursor-pointer box-border ${
                                   isCurrentStarred
-                                    ? 'prism-badge-warning shadow-sm'
+                                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/80 shadow-sm'
                                     : 'bg-surface-subtle text-content-secondary border-border-subtle hover:border-warning hover:text-warning'
                                 }`}
                                 title={isCurrentStarred ? t.starred : t.addStar}
@@ -459,11 +470,11 @@ export const App: React.FC = () => {
 
                               <button
                                 onClick={() => setIsExportMemoModalOpen(true)}
-                                className="px-3 py-1 bg-surface border border-border-subtle hover:border-brand text-brand rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                                title="Export Institutional Investment Memo (.md / .pdf)"
+                                className="h-8 px-3 bg-surface border border-border-subtle hover:border-brand text-brand rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm box-border"
+                                title={t.exportMemoTitle}
                               >
                                 <FileText className="w-3.5 h-3.5" />
-                                <span>Export Memo</span>
+                                <span>{t.exportMemoBtn}</span>
                               </button>
                             </div>
                           );

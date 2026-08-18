@@ -68,7 +68,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, isPlain
               <button
                 key={tf}
                 onClick={() => setTimeframe(tf)}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                className={`h-7 px-2.5 rounded-lg font-bold transition-all inline-flex items-center cursor-pointer box-border ${
                   timeframe === tf
                     ? 'bg-brand text-white shadow-sm'
                     : 'text-content-secondary hover:text-content-primary hover:bg-surface'

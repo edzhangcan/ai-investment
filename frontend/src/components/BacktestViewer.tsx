@@ -103,7 +103,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
         <div className="flex items-center gap-2 bg-surface-subtle p-1 rounded-xl border border-border-subtle text-xs shadow-sm">
           <button
             onClick={() => setBenchmark('SPY')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+            className={`h-7 px-3 rounded-lg font-bold transition-all inline-flex items-center cursor-pointer box-border ${
               benchmark === 'SPY'
                 ? 'bg-brand text-white shadow-sm'
                 : 'text-content-secondary hover:text-content-primary hover:bg-surface'
@@ -113,7 +113,7 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol, isPlainT
           </button>
           <button
             onClick={() => setBenchmark('XIU.TO')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+            className={`h-7 px-3 rounded-lg font-bold transition-all inline-flex items-center cursor-pointer box-border ${
               benchmark === 'XIU.TO'
                 ? 'bg-brand text-white shadow-sm'
                 : 'text-content-secondary hover:text-content-primary hover:bg-surface'

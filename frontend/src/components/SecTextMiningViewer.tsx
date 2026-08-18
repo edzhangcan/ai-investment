@@ -104,7 +104,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
           <button
             key={entry.year}
             onClick={() => setActiveYearIndex(idx)}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`h-8 px-4 rounded-xl text-xs font-extrabold transition-all inline-flex items-center gap-2 cursor-pointer shrink-0 box-border ${
               activeYearIndex === idx
                 ? 'bg-brand text-white shadow-sm'
                 : 'bg-surface border border-border-subtle text-content-secondary hover:text-content-primary hover:bg-surface-subtle'

@@ -69,7 +69,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, isPlainTal
         {/* 1-Click Copy Debate Verdict for Reddit / X */}
         <button
           onClick={handleCopyVerdict}
-          className="px-3.5 py-1.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-brand text-content-primary rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+          className="h-8 px-3.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-brand text-content-primary rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-sm cursor-pointer box-border"
           title="Copy formatted markdown debate verdict for Reddit, X, and Discord"
         >
           {copied ? (
