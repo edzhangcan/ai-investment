@@ -84,9 +84,11 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="prism-badge-neutral text-xs flex items-center gap-1.5 shadow-sm">
-            <Database className="w-3.5 h-3.5 text-positive" />
-            <span>{data.filing_repository}</span>
+          <span className="text-xs font-medium text-content-secondary flex items-center gap-1.5 bg-surface-subtle px-3 py-1.5 rounded-xl border border-border-subtle shadow-sm">
+            <Database className="w-3.5 h-3.5 text-positive shrink-0" />
+            <BilingualHoverCard termKey={data.filing_repository.includes("SEDAR") ? "SEDAR" : "SEC10K"}>
+              {data.filing_repository}
+            </BilingualHoverCard>
           </span>
         </div>
       </div>

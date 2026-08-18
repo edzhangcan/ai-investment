@@ -76,13 +76,13 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData }) => {
             ))}
           </div>
 
-          <div className="prism-badge-warning text-xs">
+          <div className="text-xs font-medium text-content-secondary flex items-center gap-1.5 bg-surface-subtle px-3 py-1.5 rounded-xl border border-border-subtle shadow-sm">
             <span>
               <BilingualHoverCard termKey="DCF">
                 {t.fairValue}
               </BilingualHoverCard>:
             </span>
-            <span className="font-bold"> ${dcfFairValue} {currency}</span>
+            <span className="font-extrabold text-warning font-mono"> ${dcfFairValue} {currency}</span>
           </div>
         </div>
       </div>

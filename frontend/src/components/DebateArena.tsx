@@ -149,10 +149,11 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData }) => {
       <div className="prism-surface-subtle p-4 border-l-4 border-l-brand shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="prism-badge-brand text-xs">
+            <span className="text-xs font-bold text-content-primary flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-brand" />
               <BilingualHoverCard termKey="CIOVerdict">
                 {t.cioVerdict}
-              </BilingualHoverCard>
+              </BilingualHoverCard>:
             </span>
             <span className="text-xs font-extrabold text-positive">{cio.verdict || "ACCUMULATE ON PULLBACKS"}</span>
           </div>

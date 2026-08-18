@@ -81,7 +81,8 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
         res = await testGoldNuggetsAlert(webhookUrl, activeLang);
       }
 
-      if (res && res.status === 'ok') {
+      const isSuccess = res && (res.status === 'ok' || res.success === true || (res.details && res.details.success));
+      if (isSuccess) {
         const msg = testType === 'conn' ? t.discordConnTestSuccess
           : testType === 'macro' ? t.discordMacroSuccess
           : testType === 'buy' ? t.discordBuySuccess
@@ -89,7 +90,7 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
           : t.discordGoldSuccess;
         setToastMessage({ type: 'success', text: msg });
       } else {
-        setToastMessage({ type: 'error', text: `${t.discordDispatchFailed}: ${res?.error || 'Unknown error'}` });
+        setToastMessage({ type: 'error', text: `${t.discordDispatchFailed}: ${res?.error || res?.detail || 'Unknown error'}` });
       }
     } catch (e: any) {
       setToastMessage({ type: 'error', text: `${t.discordDispatchFailed}: ${e.message}` });

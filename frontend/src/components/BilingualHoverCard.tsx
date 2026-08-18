@@ -1,7 +1,7 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import jargonData from '../../data/jargon_dictionary.json';
-import { HelpCircle, Sparkles, Globe } from 'lucide-react';
+import { HelpCircle, Sparkles, X, TrendingUp } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 interface BilingualHoverCardProps {
@@ -10,11 +10,13 @@ interface BilingualHoverCardProps {
     term: string;
     definition: string;
     analogy?: string;
+    favor_explanation?: string;
   };
   customZh?: {
     term: string;
     definition: string;
     analogy?: string;
+    favor_explanation?: string;
   };
   children?: React.ReactNode;
   isPlainTalk?: boolean;
@@ -48,6 +50,8 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
   const defZh = customZh?.definition || dictData?.definition_zh || "机构级别指标定义与说明。";
   const analogyEn = customEn?.analogy || dictData?.analogy_en;
   const analogyZh = customZh?.analogy || dictData?.analogy_zh;
+  const favorEn = customEn?.favor_explanation || dictData?.favor_explanation_en;
+  const favorZh = customZh?.favor_explanation || dictData?.favor_explanation_zh;
 
   const showPopover = isHovered || isOpen;
 
@@ -98,16 +102,24 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Header Badge */}
+      {/* Header Bar with Title and Close X Button */}
       <div className="flex items-center justify-between border-b border-border-subtle pb-2 mb-3">
         <div className="flex items-center gap-2 text-warning font-bold text-xs">
-          <Sparkles className="w-4 h-4" />
-          <span>{language === 'zh' ? termZh : termEn}</span>
+          <Sparkles className="w-4 h-4 text-warning shrink-0" />
+          <span className="truncate">{language === 'zh' ? termZh : termEn}</span>
         </div>
-        <div className="flex items-center gap-1 text-[10px] prism-badge-warning uppercase">
-          <Globe className="w-3 h-3" />
-          <span>{language === 'en' ? 'EN Mode' : language === 'zh' ? '中文模式' : 'Hybrid Mode'}</span>
-        </div>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(false);
+            setIsHovered(false);
+          }}
+          className="p-1 text-content-muted hover:text-content-primary hover:bg-surface-subtle rounded-lg transition-colors cursor-pointer shrink-0 ml-2"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Subtitle Chinese (rendered in zh and hybrid modes) */}
@@ -135,6 +147,26 @@ export const BilingualHoverCard: React.FC<BilingualHoverCardProps> = ({
           <p className="text-xs text-content-primary font-medium leading-relaxed prism-surface-subtle p-2.5">
             {defZh}
           </p>
+        </div>
+      )}
+
+      {/* Favorable Direction & Interpretation Section */}
+      {((language !== 'zh' && favorEn) || (language !== 'en' && favorZh)) && (
+        <div className="mb-2.5 p-2.5 rounded-xl border border-positive/30 bg-positive/5 text-xs text-content-primary leading-relaxed shadow-sm">
+          <div className="font-bold text-positive text-[11px] mb-1 flex items-center gap-1.5 uppercase tracking-wider">
+            <TrendingUp className="w-3.5 h-3.5 text-positive shrink-0" />
+            <span>{language === 'zh' ? '优劣势研判与方向解读' : language === 'hybrid' ? 'Favorable Direction (研判方向)' : 'Favorable Direction & Impact'}</span>
+          </div>
+          {language !== 'zh' && favorEn && (
+            <p className="text-[11px] font-medium text-content-secondary mb-1">
+              {favorEn}
+            </p>
+          )}
+          {language !== 'en' && favorZh && (
+            <p className="text-[11px] font-medium text-content-secondary">
+              {favorZh}
+            </p>
+          )}
         </div>
       )}
 
