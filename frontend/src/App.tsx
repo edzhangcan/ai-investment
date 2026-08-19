@@ -612,7 +612,7 @@ export const App: React.FC = () => {
                   })()}
 
                   <PricingChart pricingData={stockData.pricing} />
-                  <DebateArena debateData={stockData.debate} />
+                  <DebateArena debateData={stockData.debate} stock={stockData.stock} pricing={stockData.pricing} />
                   <SecTextMiningViewer symbol={stockData.stock.symbol} />
                   <BacktestViewer symbol={stockData.stock.symbol} />
 

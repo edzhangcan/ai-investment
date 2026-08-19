@@ -319,7 +319,7 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
                     Chief Investment Officer (CIO) Verdict: {cio.verdict || 'ACCUMULATE ON PULLBACKS'}
                   </div>
                   <div className="flex items-center gap-3 text-xs font-mono">
-                    <span className="font-bold text-brand print:text-sky-800">Risk/Reward: {cio.risk_reward_ratio || 2.4}:1</span>
+                    <span className="font-bold text-brand print:text-sky-800">Risk/Reward: {typeof cio.risk_reward_ratio === 'number' ? cio.risk_reward_ratio.toFixed(1) : (cio.risk_reward_ratio ?? '2.1')}:1</span>
                     <span className="font-bold text-positive print:text-emerald-800">Weight: {cio.position_sizing_advice || '3.5% Max'}</span>
                   </div>
                 </div>

@@ -62,7 +62,7 @@ class MultiAgentArena:
             f"You are an institutional investment debate orchestrator managing three agents. {lang_instruction}\n"
             "1. Bull Agent: Highlights real competitive moats, cash flow quality, DCF upside, growth catalysts.\n"
             "2. Bear Agent: Scrutinizes overvaluation, P/E percentiles, 200D MA support gaps, macro cycle headwinds.\n"
-            "3. CIO Agent: Impartial judge enforcing empirical evidence, calculating Risk-Reward ratio, rendering final decision, and providing position sizing advice.\n\n"
+            "3. CIO Agent: Impartial judge enforcing empirical evidence, dynamically calculating Risk-Reward ratio as (DCF Fair Value - Price) / max(1.0, Price - 200D SMA), rendering final decision, and providing position sizing advice.\n\n"
             "STRICT MANDATE: Base all numbers strictly on the provided real-time stock parameters. Never hallucinate fake prices or company names.\n"
             "Respond ONLY with a valid JSON object matching this exact schema:\n"
             "{\n"
@@ -82,10 +82,10 @@ class MultiAgentArena:
             '    "verdict": "BUY" OR "HOLD / WATCH" OR "PASS / OVERVALUED",\n'
             '    "position_sizing_advice": "Advice string",\n'
             '    "recommended_buy_bracket": "$MIN - $MAX CURR",\n'
-            '    "risk_reward_ratio": 2.4,\n'
+            '    "risk_reward_ratio": 2.1,\n'
             '    "judge_summary": "Summary string",\n'
             '    "empirical_proof_verified": true\n'
-            "  }\n"
+            '  }\n'
             "}"
         )
 
@@ -201,22 +201,33 @@ class MultiAgentArena:
             ]
             bear_risk = f"Technical support lies at 200D SMA (${two_hundred_sma} {curr}) indicating {downside_pct}% downside buffer."
 
+        # Calculate dynamic authentic Risk-to-Reward Ratio:
+        # Upside Potential = DCF Fair Value - Current Price (positive margin)
+        # Downside Exposure = Current Price - Floor Support (min of 200D SMA and Buy Range Min)
+        if dcf_fair_value > price:
+            upside_potential = max(0.1, dcf_fair_value - price)
+        else:
+            upside_potential = max(0.1, price * 0.03)
+
+        support_floor = min(two_hundred_sma, buy_min)
+        downside_exposure = max(price * 0.02, price - support_floor)
+
+        calculated_rr = round(upside_potential / max(0.1, downside_exposure), 1)
+        rr_ratio = max(0.2, min(9.9, calculated_rr))
+
         # 👨‍⚖️ CIO Agent Referee & Final Verdict
         if price <= buy_max:
             verdict = "ACCUMULATE IN BRACKETS" if lang == "en" else ("建议买入 (分批建仓)" if lang == "zh" else "建议买入 (BUY - Accumulate)")
             position_size = "Suggest allocating 3% - 5% of total portfolio." if lang == "en" else "建议配置总投资组合的 3% - 5% 仓位。"
-            rationale = f"Real price ${price} {curr} for {company} is within safe buy bracket (${buy_min} - ${buy_max} {curr}). Risk-Reward Ratio is favorable." if lang == "en" else f"{company} 的当前实时股价 ${price} {curr} 处于安全买入区间 (${buy_min} - ${buy_max} {curr})，风险收益比良好。"
-            rr_ratio = 2.4
+            rationale = f"Real price ${price} {curr} for {company} is within safe buy bracket (${buy_min} - ${buy_max} {curr}). Risk-Reward Ratio is favorable at {rr_ratio}:1." if lang == "en" else f"{company} 的当前实时股价 ${price} {curr} 处于安全买入区间 (${buy_min} - ${buy_max} {curr})，风险收益比良好 ({rr_ratio}:1)。"
         elif price <= pricing_data.get("fifty_day_sma", price * 1.05):
             verdict = "HOLD / WATCH PULLBACK" if lang == "en" else ("观望等待 (等待回调)" if lang == "zh" else "观望等待 (HOLD - Watch)")
             position_size = "0% new capital (Hold existing position if owned)." if lang == "en" else "0% 新增资金（已持仓者继续持有）。"
-            rationale = f"Price ${price} {curr} for {company} is above safe buy zone (${buy_max} {curr}). Patiently wait for pullbacks before expanding position." if lang == "en" else f"{company} 当前股价 ${price} {curr} 高于安全买入上限 (${buy_max} {curr})，建议耐心等待回调分批建仓。"
-            rr_ratio = 1.8
+            rationale = f"Price ${price} {curr} for {company} is above safe buy zone (${buy_max} {curr}). Risk-Reward Ratio is {rr_ratio}:1. Patiently wait for pullbacks before expanding position." if lang == "en" else f"{company} 当前股价 ${price} {curr} 高于安全买入上限 (${buy_max} {curr})，风险收益比为 {rr_ratio}:1，建议耐心等待回调分批建仓。"
         else:
             verdict = "PASS / OVERVALUED" if lang == "en" else ("暂不建仓 (估值偏高)" if lang == "zh" else "暂不建仓 (PASS - Overvalued)")
             position_size = "0% (Avoid buying at current extended valuation)." if lang == "en" else "0% 仓位（避免在当前过度拉升的估值位追高）。"
-            rationale = f"Stock {company} is overextended above 200D SMA (${two_hundred_sma} {curr}). Better entry points exist near ${buy_max} {curr}." if lang == "en" else f"{company} 股价在 200日均线 (${two_hundred_sma} {curr}) 上方过度拉升，理想建仓位接近 ${buy_max} {curr}。"
-            rr_ratio = 0.8
+            rationale = f"Stock {company} is overextended above 200D SMA (${two_hundred_sma} {curr}) with Risk-Reward Ratio of {rr_ratio}:1. Better entry points exist near ${buy_max} {curr}." if lang == "en" else f"{company} 股价在 200日均线 (${two_hundred_sma} {curr}) 上方过度拉升，风险收益比为 {rr_ratio}:1，理想建仓位接近 ${buy_max} {curr}。"
 
         cio_verdict = {
             "agent": cio_agent_name,
