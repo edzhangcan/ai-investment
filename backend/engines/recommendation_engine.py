@@ -23,12 +23,12 @@ from backend.engines.pricing_engine import PricingEngine
 logger = logging.getLogger(__name__)
 
 # -------------------------------------------------------------------------
-# 128 NORTH AMERICAN STOCK UNIVERSE SYMBOL REGISTRY (US & CANADA)
+# 132 NORTH AMERICAN STOCK UNIVERSE SYMBOL REGISTRY (US & CANADA)
 # -------------------------------------------------------------------------
 SECTOR_SYMBOLS = [
     # Canadian Energy, Financials & Mining (21)
     "SU.TO", "ENB.TO", "CNQ.TO", "TRP.TO", "CVE.TO", "IMO.TO", "TOU.TO", "ARX.TO", "KEY.TO", "PPL.TO",
-    "TD.TO", "RY.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "CWW.TO", "EQB.TO", "ABX.TO", "TECK.B.TO", "NTR.TO",
+    "TD.TO", "RY.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "CWW.TO", "EQB.TO", "ABX.TO", "TECK-B.TO", "NTR.TO",
     # US Energy, Financials & Mining Giants (21)
     "XOM", "CVX", "COP", "EOG", "SLB", "MPC", "PSX", "VLO", "WMB", "KMI",
     "JPM", "BAC", "WFC", "C", "GS", "MS", "BLK", "SCHW", "FCX", "NEM", "CF"
@@ -40,20 +40,20 @@ OVERALL_SYMBOLS = [
     "ADBE", "CSCO", "INTC", "QCOM", "TXN", "IBM", "AMAT", "LRCX", "MU", "NOW", "PANW", "CRWD",
     # Blue Chip Consumer & Industrial Leaders (15)
     "TSLA", "COST", "WMT", "PG", "HD", "UNH", "LLY", "JNJ", "V", "MA", "PEP", "KO", "DIS", "NFLX", "CAT",
-    # Canadian Blue-Chips (6)
-    "SHOP.TO", "CNR.TO", "CP.TO", "ATD.TO", "BCE.TO", "T.TO"
+    # Canadian Blue-Chips (10)
+    "SHOP.TO", "CNR.TO", "CP.TO", "ATD.TO", "BCE.TO", "T.TO", "BAM.TO", "BN.TO", "DOL.TO", "MFC.TO"
 ]
 
 GOLD_SYMBOLS = [
-    # Canadian Growth / Tech / Industrial Gems (21)
-    "CSU.TO", "TOI.V", "ONT.TO", "DRT.TO", "CFM.TO", "TFII.TO", "X.TO", "EFN.TO", "NVEI.TO", "LMN.V",
-    "DND.TO", "CTS.TO", "BB.TO", "KXS.TO", "GSY.TO", "PET.TO", "REAL.TO", "BLDP.TO", "LSPD.TO", "AIF.TO", "WPM.TO",
+    # Canadian Growth / Tech / Industrial / Mining Gems (21)
+    "CSU.TO", "TOI.V", "LMN.V", "TFII.TO", "X.TO", "EFN.TO", "OTEX.TO", "GIB-A.TO", "TIH.TO", "POW.TO",
+    "SLF.TO", "WCN.TO", "CCL-B.TO", "MG.TO", "CAE.TO", "BB.TO", "KXS.TO", "GSY.TO", "PET.TO", "BLDP.TO", "WPM.TO",
     # US Niche Growth & Cyber / Tech Gems (22)
     "CELH", "SNPS", "CDNS", "PLTR", "NET", "DDOG", "ZS", "SMCI", "ARM", "MDB",
     "PATH", "DUOL", "AXON", "ELF", "DECK", "ON", "MPWR", "NTNX", "IOT", "SYM", "TOST", "APP"
 ]
 
-# Combined 128 Stock Universe Registry
+# Combined 132 Stock Universe Registry
 ALL_STOCK_SYMBOLS = list(set(SECTOR_SYMBOLS + OVERALL_SYMBOLS + GOLD_SYMBOLS))
 
 # Category Mapping Lookup

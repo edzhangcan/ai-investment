@@ -17,7 +17,6 @@ interface WatchlistDrawerProps {
   onSelectTicker?: (symbol: string) => void;
   onSelectStock?: (symbol: string) => void;
   onWatchlistChange?: () => void;
-  isPlainTalk?: boolean;
 }
 
 export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
@@ -26,7 +25,6 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   onSelectTicker,
   onSelectStock,
   onWatchlistChange,
-  isPlainTalk = false,
 }) => {
   const { t } = useLanguage();
   const selectStockHandler = onSelectStock || onSelectTicker || (() => {});

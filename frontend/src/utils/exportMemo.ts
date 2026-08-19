@@ -80,7 +80,7 @@ ${(bear.key_points || ["Macro headwinds & interest rate sensitivity", "Competiti
 
 ### Chief Investment Officer (CIO) Verdict
 - **Verdict**: **${cio.verdict || "ACCUMULATE ON PULLBACKS"}**
-- **Risk / Reward Ratio**: **${cio.risk_reward_ratio || 2.4}:1**
+- **Risk / Reward Ratio**: **${typeof cio.risk_reward_ratio === 'number' ? cio.risk_reward_ratio.toFixed(1) : (cio.risk_reward_ratio ?? '2.1')}:1**
 - **Recommended Buy Bracket**: **${cio.recommended_buy_bracket || "Ideal Buy Zone"}**
 - **Position Sizing Advice**: **${cio.position_sizing_advice || "3.5% Portfolio Max Weight"}**
 - **CIO Decision Rationale**: ${cio.judge_summary || "Ground-truth audit confirms solid FCF conversion and wide economic moat."}
@@ -382,7 +382,7 @@ export const printInstitutionalMemo = (data: ExportMemoData): void => {
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 6px;">
       <div style="font-weight: 900; font-size: 11.5px; color: #b45309;">Chief Investment Officer (CIO) Verdict: ${cio.verdict || 'ACCUMULATE ON PULLBACKS'}</div>
       <div style="font-size: 9.5px; font-family: monospace; font-weight: 700;">
-        <span style="color: #0284c7;">Risk/Reward: ${cio.risk_reward_ratio || 2.4}:1</span> • 
+        <span style="color: #0284c7;">Risk/Reward: ${typeof cio.risk_reward_ratio === 'number' ? cio.risk_reward_ratio.toFixed(1) : (cio.risk_reward_ratio ?? '2.1')}:1</span> • 
         <span style="color: #047857;">Max Weight: ${cio.position_sizing_advice || '3.5%'}</span>
       </div>
     </div>

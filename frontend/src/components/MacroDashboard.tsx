@@ -9,7 +9,6 @@ interface MacroDashboardProps {
   policyNews?: PolicyNewsItem[];
   supportingFacts?: SupportingFact[];
   credibleSources?: (string | { name: string; domain?: string; type?: string })[];
-  isPlainTalk: boolean;
   onRefreshMacro?: () => Promise<void>;
 }
 
@@ -18,7 +17,6 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
   policyNews = [],
   supportingFacts = [],
   credibleSources = [],
-  isPlainTalk,
   onRefreshMacro
 }) => {
   const { t } = useLanguage();
@@ -106,15 +104,11 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       </div>
 
       {/* Cycle Stage Plain Explanation Banner */}
-      <div className={`p-4 rounded-2xl mb-6 border text-xs leading-relaxed font-medium transition-all ${
-        isPlainTalk
-          ? 'prism-card border-warning text-warning shadow-sm'
-          : 'prism-surface-subtle text-content-secondary'
-      }`}>
+      <div className="p-4 rounded-2xl mb-6 border text-xs leading-relaxed font-medium transition-all prism-surface-subtle text-content-secondary">
         <div className="flex items-center gap-2 font-bold mb-1 text-content-primary">
           <CheckCircle2 className="w-4 h-4 text-positive" />
           <span>
-            <BilingualHoverCard termKey="MacroCycle" isPlainTalk={isPlainTalk}>
+            <BilingualHoverCard termKey="MacroCycle">
               {t.cycleStage}
             </BilingualHoverCard>: <span className="text-positive font-bold">{macroData.cycle_stage}</span>
           </span>
@@ -131,9 +125,9 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
             <span>{t.overweightSectors}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {macroData.recommended_overweights.map((sec, idx) => (
+            {macroData.recommended_overweights.map((sector, idx) => (
               <span key={idx} className="prism-badge-positive text-xs">
-                {sec}
+                {sector}
               </span>
             ))}
           </div>
@@ -146,24 +140,24 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
             <span>{t.underweightSectors}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {macroData.recommended_underweights.map((sec, idx) => (
+            {macroData.recommended_underweights.map((sector, idx) => (
               <span key={idx} className="prism-badge-negative text-xs">
-                {sec}
+                {sector}
               </span>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Empirical Indicators Table */}
+      {/* Empirical Macro Indicators Supporting Facts Table */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-bold text-content-primary mb-3 uppercase tracking-wider">
+        <div className="flex items-center gap-2 mb-3 text-xs font-bold text-content-primary uppercase tracking-wider">
           <Database className="w-4 h-4 text-brand" />
           <span>{t.empiricalFacts}</span>
         </div>
-        <div className="overflow-x-auto rounded-2xl border border-border-subtle">
+        <div className="overflow-x-auto rounded-xl border border-border-subtle">
           <table className="w-full text-left text-xs">
-            <thead className="bg-surface-subtle text-content-muted font-bold border-b border-border-subtle">
+            <thead className="bg-surface-subtle text-content-muted font-bold border-b border-border-subtle uppercase text-[10px]">
               <tr>
                 <th className="p-3">{t.indicator}</th>
                 <th className="p-3">{t.value}</th>
@@ -180,7 +174,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
                 return (
                   <tr key={idx} className="hover:bg-surface-subtle transition-colors">
                     <td className="p-3 font-semibold text-content-primary">
-                      <BilingualHoverCard termKey={key} isPlainTalk={isPlainTalk}>
+                      <BilingualHoverCard termKey={key}>
                         {fact.indicator}
                       </BilingualHoverCard>
                     </td>

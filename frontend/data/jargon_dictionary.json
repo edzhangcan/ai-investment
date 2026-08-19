@@ -5,7 +5,10 @@
     "definition_en": "Target price range where a stock trades at a significant discount (e.g. 15-30%) below its intrinsic valuation, offering a strong margin of safety.",
     "definition_zh": "股票价格相比其内在真实估值出现大幅打折（如折价 15%-30%）的合理建仓价格区间，具备充裕的安全边际。",
     "analogy_en": "Buying a high-end designer winter coat during a Black Friday end-of-season clearance sale when it's discounted 30% below retail tag price.",
-    "analogy_zh": "就像在黑五打折季买大牌羽绒服，用 7 折甚至更高的折扣拿货，买得便宜自然不容易亏本。"
+    "analogy_zh": "就像在黑五打折季买大牌羽绒服，用 7 折甚至更高的折扣拿货，买得便宜自然不容易亏本。",
+    "favor_direction": "higher_discount",
+    "favor_explanation_en": "Higher discount is favorable (15%–30%+ below DCF Fair Value). A wider margin of safety minimizes downside capital loss while providing substantial upside potential.",
+    "favor_explanation_zh": "折价幅度越大越有利（较内在价值折价 15%-30% 以上）：充裕的安全边际能够有效吸收宏观意外冲击，大幅降低永久性亏损风险，并在价值回归时提供显著超额收益。"
   },
   "YieldCurveTransition": {
     "term_en": "Yield Curve Transition (Late-Cycle Phase)",
@@ -13,7 +16,10 @@
     "definition_en": "Macroeconomic transition phase where long-term and short-term bond yield spreads invert or un-invert, signaling a shift from peak interest rate hikes toward an economic slowdown.",
     "definition_zh": "长短期国债收益率利差发生倒挂或解挂的宏观阶段，标志着经济从央行加息顶峰向增速放缓转折。",
     "analogy_en": "The engine temperature warning dashboard light blinking on a long highway road trip — signaling it's time to ease off the gas pedal and inspect the brakes before a slowdown.",
-    "analogy_zh": "就像长途自驾游时仪表盘发动机水温警报灯开始闪烁，提醒司机该踩刹车减速、检查车况，防范前方路段坑洼。"
+    "analogy_zh": "就像长途自驾游时仪表盘发动机水温警报灯开始闪烁，提醒司机该踩刹车减速、检查车况，防范前方路段坑洼。",
+    "favor_direction": "stable",
+    "favor_explanation_en": "A normal upward-sloping yield curve is favorable for economic growth and bank lending. Deep inversion indicates late-cycle recession risks and warrants defensive posture.",
+    "favor_explanation_zh": "收益率曲线正常陡峭向上最有利（支持银行信贷扩张与实体投资）；若出现深度倒挂或倒挂后快速解挂，则提示经济进入晚期滞胀或衰退风险，需转向防守与高现金流标的。"
   },
   "YieldSpread": {
     "term_en": "10Y-2Y Treasury Yield Spread",
@@ -21,7 +27,10 @@
     "definition_en": "The interest rate difference between 10-year long-term benchmark bonds and 2-year short-term Treasury notes. Negative spread indicates yield curve inversion.",
     "definition_zh": "基准 10 年期长期国债与 2 年期短期国债收益率的利差。负利差代表‘倒挂’，属于历史可靠的经济衰退前兆。",
     "analogy_en": "Comparing a 10-year fixed mortgage interest rate against a 2-year short-term bank deposit rate. Normally long loans pay higher interest; when short rates pay higher, money is inverted.",
-    "analogy_zh": "对比 10 年期长期房贷利率与 2 年期短期存款利率。正常情况下借钱时间越长利息越高，如果存短期的利息比借长期的还高，说明市场资金‘颠倒错乱’。"
+    "analogy_zh": "对比 10 年期长期房贷利率与 2 年期短期存款利率。正常情况下借钱时间越长利息越高，如果存短期的利息比借长期的还高，说明市场资金‘颠倒错乱’。",
+    "favor_direction": "positive",
+    "favor_explanation_en": "Positive spread (> 0 bps) is favorable: Long-term yields exceed short-term rates, supporting healthy bank intermediation and sustainable macroeconomic growth.",
+    "favor_explanation_zh": "利差为正数（> 0%）最有利：长期收益率高于短期利率，商业银行存贷利差健康，实体经济信贷供给顺畅；负数倒挂则为宏观警报信号。"
   },
   "MDA": {
     "term_en": "MD&A (Management Discussion & Analysis)",
@@ -29,7 +38,10 @@
     "definition_en": "Section 7 of the SEC 10-K filing where corporate C-suite executives explain operating results, risk factors, liquidity, and future business guidance in plain narrative text.",
     "definition_zh": "SEC 10-K 财报第 7 章节，由公司 CEO 与 CFO 等高管亲自撰写，详细说明经营成败原因、资金流动性与未来风险隐患。",
     "analogy_en": "The company CEO's honest annual diary entry and report card explanation, detailing what went right, what went wrong, and potential storm clouds ahead.",
-    "analogy_zh": "公司 CEO 的年度自白书与体检问诊单，由高管亲笔交代这一年哪儿赚了钱、哪儿踩了坑以及后面有什么隐患。"
+    "analogy_zh": "公司 CEO 的年度自白书与体检问诊单，由高管亲笔交代这一年哪儿赚了钱、哪儿踩了坑以及后面有什么隐患。",
+    "favor_direction": "transparent",
+    "favor_explanation_en": "Consistent, transparent executive commentary without evasive disclaimer shifts is favorable. Subtle additions of supply-chain or demand warnings signal operational headwinds.",
+    "favor_explanation_zh": "前瞻表述稳定、坦诚透明且无避责免责声明突变最有利；若连续数年财报中新增‘利润率挤压’、‘宏观不确定性’等免责词汇，通常预示未来业绩承压。"
   },
   "ROIC": {
     "term_en": "Return on Invested Capital (ROIC)",
@@ -37,7 +49,10 @@
     "definition_en": "Measures how efficiently a company allocates capital to generate net operating profit. ROIC above 15% indicates superior capital efficiency and moat strength.",
     "definition_zh": "衡量公司将投入的资本转化为净营业利润的造血效率。ROIC > 15% 代表资金效率极高，护城河稳固。",
     "analogy_en": "Getting $20 back in clear profit every single year for every $100 you invested into building a lemonade stand.",
-    "analogy_zh": "你每给奶茶店投入 100 块钱本金，店里每年能净赚回 20 块钱利润，造血回报率就是 20%。"
+    "analogy_zh": "你每给奶茶店投入 100 块钱本金，店里每年能净赚回 20 块钱利润，造血回报率就是 20%。",
+    "favor_direction": "higher",
+    "favor_explanation_en": "Higher is favorable (> 15%+): Indicates high capital efficiency, strong pricing power, and durable economic moats that compound shareholder wealth.",
+    "favor_explanation_zh": "数值越高越有利（> 15% 为优秀）：表明企业每投入一元本金所产生的净营业利润极高，拥有强定价权与坚固护城河，能为股东持续创造超额复合回报。"
   },
   "FCF": {
     "term_en": "Free Cash Flow (FCF)",
@@ -45,7 +60,10 @@
     "definition_en": "The actual spendable cash remaining in a company's bank account after paying all operating expenses and capital expenditures (CapEx).",
     "definition_zh": "公司在扣除所有日常运营开销和购买设备/厂房等资本支出后，真正落在银行卡里的净现金。",
     "analogy_en": "Like your net savings deposited into your bank account after paying monthly rent, utilities, groceries, and debt payments.",
-    "analogy_zh": "就像你每月领完工资、交完房租水电扣除日常花销后，真正能存进银行卡自由支配的存折净余额。"
+    "analogy_zh": "就像你每月领完工资、交完房租水电扣除日常花销后，真正能存进银行卡自由支配的存折净余额。",
+    "favor_direction": "higher",
+    "favor_explanation_en": "Higher is favorable: Abundant free cash flow allows self-funded organic growth, debt deleveraging, opportunistic share buybacks, and dividend increases without diluting equity.",
+    "favor_explanation_zh": "数值越大越有利（且持续为正）：充沛的口袋净现金使企业无需依赖昂贵借贷或股权稀释，即可自主推进研发再投资、股票回购及股息派发。"
   },
   "PE": {
     "term_en": "Price-to-Earnings Ratio (P/E)",
@@ -53,7 +71,10 @@
     "definition_en": "The ratio of current stock price to annual net earnings per share. Represents roughly how many years it would take for company profits to recoup your investment cost.",
     "definition_zh": "股票价格与每股净利润的比值。粗略代表按当前盈利速度买下公司需要多少年能赚回本金。",
     "analogy_en": "If you buy a coffee shop for $200,000 that generates $10,000 in net profit per year, the P/E ratio is 20 years (20x).",
-    "analogy_zh": "如果你花 20 万元买下一家每年净赚 1 万元的奶茶店，P/E 就是 20 年（20倍）。"
+    "analogy_zh": "如果你花 20 万元买下一家每年净赚 1 万元的奶茶店，P/E 就是 20 年（20倍）。",
+    "favor_direction": "lower_relative",
+    "favor_explanation_en": "Lower relative to EPS growth is favorable (PEG < 1.5): Lower P/E means shorter payback period and reduced multiple compression risk; excessively high P/E requires near-perfect execution.",
+    "favor_explanation_zh": "在保持业绩增速前提下，市盈率越低越有利（PEG < 1.5 极具性价比）：较低的 P/E 代表回本年限短、估值泡沫小；过高的 P/E 容易在业绩轻微放缓时遭遇‘杀估值’。"
   },
   "PS": {
     "term_en": "Price-to-Sales Ratio (P/S)",
@@ -61,7 +82,10 @@
     "definition_en": "Ratio of market capitalization to total annual revenue. Used for high-growth tech companies prior to net profitability.",
     "definition_zh": "股价与每股营业收入的比值。常用于尚未盈利的高增长科技公司估值。",
     "analogy_en": "Evaluating a busy new store based on its gross annual register sales before subtracting store operating expenses.",
-    "analogy_zh": "评估一家尚未赚钱但顾客盈门的店面时，按照它一年卖出多少总营业额来定出让身价。"
+    "analogy_zh": "评估一家尚未赚钱但顾客盈门的店面时，按照它一年卖出多少总营业额来定出让身价。",
+    "favor_direction": "lower_relative",
+    "favor_explanation_en": "Lower relative to revenue growth rate is favorable: Reflects a reasonable price paid per dollar of gross sales, reducing risk if growth normalizes.",
+    "favor_explanation_zh": "与营收增速相比越低越有利：代表以合理的对价买入企业每单位的销售额，防范在行业增长降速时发生倍数塌陷。"
   },
   "DCF": {
     "term_en": "Discounted Cash Flow (DCF)",
@@ -69,7 +93,10 @@
     "definition_en": "A valuation model that projects a company's future cash flows over 10 years and discounts them back to present-day dollars using a cost of capital interest rate.",
     "definition_zh": "把公司未来 10 年能赚到的所有现金流，按照资金利息成本折算成今天值多少钱的估值方法。",
     "analogy_en": "A dollar received next year is worth less than a dollar today due to interest rates and inflation. DCF calculates total present value.",
-    "analogy_zh": "明年的 100 块钱不如今天的 100 块钱值钱。DCF 就是把未来每年赚的钱打折换算成今天的总价值。"
+    "analogy_zh": "明年的 100 块钱不如今天的 100 块钱值钱。DCF 就是把未来每年赚的钱打折换算成今天的总价值。",
+    "favor_direction": "above_market",
+    "favor_explanation_en": "DCF Fair Value higher than current market price is favorable: Implies the market is underpricing future cash flows, offering an attractive margin of safety.",
+    "favor_explanation_zh": "DCF 内在价值高于当前股价最有利：表明市场对企业未来自由现金流折现定价过低，当前处于打折估值区间，具备充足的安全边际与上涨空间。"
   },
   "SMA200": {
     "term_en": "200-Day Simple Moving Average (200D SMA)",
@@ -77,7 +104,10 @@
     "definition_en": "The average closing price over the past 200 trading days (~10 months). Institutional investors use this line to judge long-term bull vs. bear trend support.",
     "definition_zh": "过去 200 个交易日收盘价的平均值。机构投资者用来判定长期趋势的牛熊分界线与回调底线。",
     "analogy_en": "Like a student's 10-month average exam score. Stock prices falling near the 200D MA often present technical support levels.",
-    "analogy_zh": "就像一个学生过去 200 天考试的平均分。股价低于 200日均线通常代表中长期处于低迷观察期。"
+    "analogy_zh": "就像一个学生过去 200 天考试的平均分。股价低于 200日均线通常代表中长期处于低迷观察期。",
+    "favor_direction": "support_above",
+    "favor_explanation_en": "Price holding firmly above or pulling back near an upward-sloping 200D SMA is favorable: Confirms institutional accumulation and structural long-term bullish trend.",
+    "favor_explanation_zh": "股价维持在 200日均线上方或在上升均线附近获得支撑最有利：表明机构资金处于长期吸筹周期，中长期多头趋势确立。"
   },
   "SMA50": {
     "term_en": "50-Day Simple Moving Average (50D SMA)",
@@ -85,7 +115,10 @@
     "definition_en": "The average stock price over the past 50 trading days (~10 weeks), reflecting medium-term buyer momentum.",
     "definition_zh": "过去 50 个交易日（约 10 周）的平均股价，代表中短期资金的回调或向上动量趋势。",
     "analogy_en": "The average break-even cost for investors who bought the stock over the past two months.",
-    "analogy_zh": "代表过去两个月买入这只股票的人的平均成本。"
+    "analogy_zh": "代表过去两个月买入这只股票的人的平均成本。",
+    "favor_direction": "momentum_above",
+    "favor_explanation_en": "Price crossing and consolidating above the 50D SMA is favorable: Demonstrates active buyer momentum and positive earnings revision dynamics.",
+    "favor_explanation_zh": "股价突破并企稳在 50日均线上方最有利：代表中期资金买盘活跃，市场动量与盈利预期向上。"
   },
   "RiskReward": {
     "term_en": "Risk-Reward Ratio",
@@ -93,7 +126,10 @@
     "definition_en": "The ratio of potential upside gain to potential downside loss. A ratio of 2.0x or higher means you expect $2.00+ upside per $1.00 risk.",
     "definition_zh": "预期能赚取的潜在收益与可能面临的最大亏损风险的比值。通常 > 2.0 才值得考虑买入。",
     "analogy_en": "Risking $1.00 in a game where winning pays $2.50. High risk-reward ratios provide a strong margin of safety.",
-    "analogy_zh": "冒着损失 1 块钱的风险去搏取赚 2.5 块钱的机会，盈亏赔率比就是 2.5。"
+    "analogy_zh": "冒着损失 1 块钱的风险去搏取赚 2.5 块钱的机会，盈亏赔率比就是 2.5。",
+    "favor_direction": "higher",
+    "favor_explanation_en": "Higher is favorable (> 2.0:1): Indicates expected upside gains significantly outweigh maximum downside risk, tilting the probabilistic odds in your favor.",
+    "favor_explanation_zh": "数值越高越有利（通常 > 2.0:1 为优）：表明潜在获利空间显著大于潜在下行风险，在数学期望与长期胜率上对投资者极为有利。"
   },
   "MacroCycle": {
     "term_en": "Macro Economic Cycle Scanner",
@@ -101,7 +137,10 @@
     "definition_en": "Monitors GDP growth, CPI inflation, yield spreads, and central bank press releases to classify North American markets into Recovery, Overheat, Stagflation, or Recession.",
     "definition_zh": "监测通胀、GDP、美联储/加拿大央行利率决议，将经济阶段划分为复苏、过热、滞胀、衰退。",
     "analogy_en": "Like checking the weather forecast before dressing. You wear a raincoat during Stagflation and sunglasses during Recovery.",
-    "analogy_zh": "就像出门前看天气预报。滞胀期带雨伞（防守避险），复苏期穿轻便运动鞋（进攻成长）。"
+    "analogy_zh": "就像出门前看天气预报。滞胀期带雨伞（防守避险），复苏期穿轻便运动鞋（进攻成长）。",
+    "favor_direction": "context",
+    "favor_explanation_en": "Recovery and Early Expansion are favorable for growth/tech equities; Late Overheat & Stagflation favor energy, commodities, and low-beta cash flow leaders.",
+    "favor_explanation_zh": "复苏与早期扩张阶段最利好科技成长与高贝塔资产；过热与滞胀期则最利好能源、大宗商品、特许权及高现金流防守标的。"
   },
   "FedSentiment": {
     "term_en": "Central Bank (Fed) NLP Sentiment",
@@ -109,7 +148,10 @@
     "definition_en": "NLP sentiment algorithm scoring hawkish (+ interest rate hikes) vs. dovish (- interest rate cuts) signals in press release transcripts.",
     "definition_zh": "通过 NLP 自然语言算法深度解析央行新闻发布会措辞，判断央行倾向加息（鹰派）还是降息（鸽派）。",
     "analogy_en": "Listening to the referee's strictness before a match to anticipate how aggressive the players can be.",
-    "analogy_zh": "就像裁判在上场前表明本场吹罚尺度。鹰派代表裁判管得严（紧缩资金），鸽派代表放宽吹罚（注入流动性）。"
+    "analogy_zh": "就像裁判在上场前表明本场吹罚尺度。鹰派代表裁判管得严（紧缩资金），鸽派代表放宽吹罚（注入流动性）。",
+    "favor_direction": "dovish_easing",
+    "favor_explanation_en": "Dovish/accommodative sentiment is favorable for equity valuation expansion and liquidity; extreme hawkishness raises discount rates and capital costs.",
+    "favor_explanation_zh": "鸽派/宽松基调对股市估值中枢扩张最为有利；过度鹰派则会提高贴现率与资金成本，压制股票估值。"
   },
   "BullAgent": {
     "term_en": "Bull Agent (🐂)",
@@ -117,7 +159,10 @@
     "definition_en": "Evaluates competitive moats, cash flow quality, structural growth drivers, and upside valuation catalysts.",
     "definition_zh": "重点发掘公司的核心竞争壁垒、高现金流质量、行业增长催化剂与估值上涨空间。",
     "analogy_en": "The optimistic team partner searching for expansion opportunities and market leadership.",
-    "analogy_zh": "辩论场上的看好派辩手，专门寻找公司的商业亮点、垄断护城河与翻倍潜力。"
+    "analogy_zh": "辩论场上的看好派辩手，专门寻找公司的商业亮点、垄断护城河与翻倍潜力。",
+    "favor_direction": "conviction",
+    "favor_explanation_en": "Strong, data-backed bull conviction supported by real-world revenue growth drivers and FCF expansion is favorable for position accumulation.",
+    "favor_explanation_zh": "多头论据拥有实实在在的财务造血数据支撑与产品放量验证最有利，为建仓决策提供强有力正向依据。"
   },
   "BearAgent": {
     "term_en": "Bear Agent (🐻)",
@@ -125,7 +170,10 @@
     "definition_en": "Scrutinizes overvaluation risks, macro headwinds, 200D MA support gaps, and guidance warning disclaimers in SEC/SEDAR filings.",
     "definition_zh": "严苛审查高市盈率泡沫、宏观高利率逆风、技术面破位风险与高管财报措辞甩锅警告。",
     "analogy_en": "The cautious auditor searching for hidden balance sheet flaws, debt risks, and overextended stock prices.",
-    "analogy_zh": "辩论场上的唱衰派辩手，专门帮投资者挑刺避坑，防止买在历史最高位被套。"
+    "analogy_zh": "辩论场上的唱衰派辩手，专门帮投资者挑刺避坑，防止买在历史最高位被套。",
+    "favor_direction": "mitigated",
+    "favor_explanation_en": "Low severity bear risks (or risks fully priced into the stock discount) are favorable. Fatal governance or debt refinancing flaws warrant passing.",
+    "favor_explanation_zh": "空头所列风险多为已充分被市场定价的暂时性逆风最有利；若空头揭露致命债务隐患或管理层违规，则必须坚决回避。"
   },
   "CIOVerdict": {
     "term_en": "CIO Agent Verdict (👨‍⚖️)",
@@ -133,7 +181,10 @@
     "definition_en": "Impartial referee enforcing empirical evidence, calculating Risk-Reward odds ratios, and issuing strict BUY / HOLD / PASS decisions.",
     "definition_zh": "不带偏见的裁判长，强制两方辩手出示数据铁证，计算赔率比，给出最终买入/观望/放弃建仓指令。",
     "analogy_en": "The chief investment officer who approves capital allocation only when the margin of safety is clear.",
-    "analogy_zh": "基金公司的投资总监，只有在确定赔率划算、价格进入打折安全区时才批准打款下单。"
+    "analogy_zh": "基金公司的投资总监，只有在确定赔率划算、价格进入打折安全区时才批准打款下单。",
+    "favor_direction": "buy_conviction",
+    "favor_explanation_en": "An unambiguous BUY / ACCUMULATE decision backed by > 2.0:1 risk-reward ratio is favorable for capital deployment.",
+    "favor_explanation_zh": "获得明确的‘理想买入/分批建仓’指令且赔率比 > 2.0 时最有利，代表经量化裁决后确定性极高。"
   },
   "GuidanceShift": {
     "term_en": "5-Yr Guidance Shift Deltas",
@@ -141,7 +192,10 @@
     "definition_en": "Text diffing algorithm comparing Item 7 (MD&A) risk disclaimers across 5 consecutive years of 10-K/10-Q annual filings.",
     "definition_zh": "对比 5 年财报中高管对未来业绩的前瞻表述变动，捕捉悄悄加入的避责词汇（如‘供应链承压’、‘利润率挤压’）。",
     "analogy_en": "Detecting when a company executive subtly alters their tone from 'strong tailwinds' to 'macro uncertainty' before earnings crash.",
-    "analogy_zh": "就像观察一个人讲话从‘信心满满’悄悄变成‘大环境不佳’，提防高管提前甩锅。"
+    "analogy_zh": "就像观察一个人讲话从‘信心满满’悄悄变成‘大环境不佳’，提防高管提前甩锅。",
+    "favor_direction": "stable_positive",
+    "favor_explanation_en": "Zero new risk disclaimers and consistent forward-looking optimism are favorable; newly added disclaimer phrases signal hidden operational decelerations.",
+    "favor_explanation_zh": "无新增避责词条且表述积极稳定最有利；若连续新增多个高危预警词条，通常预示业绩即将暴雷。"
   },
   "MoatRating": {
     "term_en": "Morningstar Economic Moat Rating",
@@ -149,7 +203,10 @@
     "definition_en": "Evaluates 5 moat sources: Network Effects, Switching Costs, Cost Advantage, Intangible Assets, and Efficient Scale.",
     "definition_zh": "评估公司是否拥有同业难以抄袭的 5 大护城河（网络效应、转换成本、规模成本、专利/品牌、高效规模）。",
     "analogy_en": "A wide moat is like a castle surrounded by a deep river filled with crocodiles, stopping rival companies from stealing customers.",
-    "analogy_zh": "宽护城河就像城堡周围充满鳄鱼的深水护城河，对手就算知道你赚钱也无法轻易抢走你的客户。"
+    "analogy_zh": "宽护城河就像城堡周围充满鳄鱼的深水护城河，对手就算知道你赚钱也无法轻易抢走你的客户。",
+    "favor_direction": "wide",
+    "favor_explanation_en": "Wide Moat (宽护城河) is favorable: Guarantees high excess returns on capital will persist for 20+ years against competitive encroachment.",
+    "favor_explanation_zh": "宽护城河（Wide Moat）最有利：确保企业在未来 20 年以上仍能保持超额资本回报率，无惧竞争对手模仿侵蚀。"
   },
   "SEC10K": {
     "term_en": "SEC 10-K & SEDAR+ Filings",
@@ -157,7 +214,10 @@
     "definition_en": "Annual financial report mandated by the U.S. SEC (or SEDAR+ in Canada) containing audited financial statements and MD&A management disclosures.",
     "definition_zh": "上市公司每年必须提交给美国 SEC (或加拿大 SEDAR+) 的官方年度报告，包含经审计的财务报表与管理层讨论 (MD&A)。",
     "analogy_en": "The official annual health checkup report card of a public company, signed under criminal penalty for fraud.",
-    "analogy_zh": "上市公司的官方年度体检报告单，高管签字承担法律责任，最真实反映公司底细。"
+    "analogy_zh": "上市公司的官方年度体检报告单，高管签字承担法律责任，最真实反映公司底细。",
+    "favor_direction": "audited_clean",
+    "favor_explanation_en": "Unqualified (clean) audit opinions and consistent cash flow reporting are favorable, ensuring zero accounting distortion.",
+    "favor_explanation_zh": "获得无保留审计意见且现金流与净利润匹配最有利，确保财报真实度 100%，无做假账暴雷隐患。"
   },
   "Backtest": {
     "term_en": "Historical Quantitative Backtest",
@@ -165,7 +225,10 @@
     "definition_en": "Running an investment strategy against historical market data (e.g., 2021-2025) to test how it would have performed across real macro cycles.",
     "definition_zh": "将投资策略套用在过去数年 (如 2021-2025) 的真实历史数据上，模拟在经历加息、通胀与市场波折时该策略的实际盈亏与表现。",
     "analogy_en": "Replaying historical stock market matches in a time-machine simulator to test your strategy before putting real money on the line.",
-    "analogy_zh": "像搭乘时光机重演过去 5 年的股市大盘，在用真实资金下单前先在历史数据中打一场模拟演练。"
+    "analogy_zh": "像搭乘时光机重演过去 5 年的股市大盘，在用真实资金下单前先在历史数据中打一场模拟演练。",
+    "favor_direction": "multi_cycle",
+    "favor_explanation_en": "Consistent outperformance across both bull and bear historical cycles is favorable, proving the strategy does not rely on market luck.",
+    "favor_explanation_zh": "跨越牛市与熊市周期均能稳定跑赢基准最有利，验证策略具备真实的抗跌与进攻逻辑，而非纯靠运气。"
   },
   "CAGR": {
     "term_en": "Compound Annual Growth Rate (CAGR)",
@@ -173,7 +236,10 @@
     "definition_en": "The annualized rate of return required for an investment to grow from its initial balance to its final balance over a multi-year period.",
     "definition_zh": "投资组合或公司业绩在多年时间内平滑计算后的年复合收益率（考虑复利效应）。",
     "analogy_en": "If $10,000 grows to $20,000 in 3 years, your CAGR is ~26% per year with interest compounding on top of interest.",
-    "analogy_zh": "就像存折钱滚钱。如果 10 万元经过 3 年变成 20 万元，相当于每年以约 26% 的复利速度翻倍增值。"
+    "analogy_zh": "就像存折钱滚钱。如果 10 万元经过 3 年变成 20 万元，相当于每年以约 26% 的复利速度翻倍增值。",
+    "favor_direction": "higher",
+    "favor_explanation_en": "Higher is favorable (> 15-20%+ annualized): Demonstrates rapid, exponential wealth compounding over extended investment horizons.",
+    "favor_explanation_zh": "数值越高越有利（> 15%-20% 年化为优）：表明资产以更快的复利速度实现指数级倍增。"
   },
   "SharpeRatio": {
     "term_en": "Sharpe Ratio (Risk-Adjusted Return)",
@@ -181,7 +247,10 @@
     "definition_en": "Measures risk-adjusted return by dividing excess return over the risk-free rate by volatility. Higher ratio = better return per unit of risk.",
     "definition_zh": "评估每承担 1 单位波动风险能换回多少超额收益的比率。夏普比率越高，代表该投资“性价比”越高。",
     "analogy_en": "A high Sharpe ratio is like a smooth sports car reaching 100 mph effortlessly without bumpy shocks, whereas a low Sharpe ratio is a bumpy rollercoaster.",
-    "analogy_zh": "像赛车的舒适度。高夏普比率意味着车速又快又平稳（高收益低心慌），低夏普比率就像过山车让人心跳过速。"
+    "analogy_zh": "像赛车的舒适度。高夏普比率意味着车速又快又平稳（高收益低心慌），低夏普比率就像过山车让人心跳过速。",
+    "favor_direction": "higher",
+    "favor_explanation_en": "Higher is favorable (> 1.0 good, > 1.5 superior): Indicates you are generating high returns without taking excessive, stomach-churning volatility risk.",
+    "favor_explanation_zh": "数值越高越有利（> 1.0 为优，> 1.5 极佳）：表明每承受一分波动风险所获取的超额回报极高，收益平稳且回撤小。"
   },
   "MaxDrawdown": {
     "term_en": "Maximum Drawdown (MDD)",
@@ -189,7 +258,10 @@
     "definition_en": "The maximum observed peak-to-trough drop in portfolio value before a new peak is reached. Represents worst-case downside historical loss.",
     "definition_zh": "投资组合在选定时间内从最高点掉到最低点的最大跌幅百分比。代表在历史最糟糕时刻入场会遭受的最大账面亏损。",
     "analogy_en": "If your account peaked at $100,000 and dropped to $60,000 during a market crash, your Maximum Drawdown was -40%.",
-    "analogy_zh": "你的账户余额最高冲到 10 万元，但后来暴跌到 6 万元，最大回撤就是 -40%。越小代表防守越稳健。"
+    "analogy_zh": "你的账户余额最高冲到 10 万元，但后来暴跌到 6 万元，最大回撤就是 -40%。越小代表防守越稳健。",
+    "favor_direction": "lower",
+    "favor_explanation_en": "Lower absolute value (closer to 0%) is favorable: Limits psychological distress and capital loss during severe market dislocations.",
+    "favor_explanation_zh": "绝对值越小越有利（越接近 0% 越好）：表明组合防守能力极其优异，在大盘崩盘时本金回撤可控，不易产生恐慌割肉。"
   },
   "WinRate": {
     "term_en": "Backtest Win Rate",
@@ -197,7 +269,10 @@
     "definition_en": "The percentage of annual or quarterly market cycles in which the portfolio strategy beat its benchmark (e.g., 4 out of 5 years = 80% Win Rate).",
     "definition_zh": "在回测周期内，投资组合跑赢大盘基准（如标普500）的年份或季度占比（5年中跑赢4年 = 80% 胜率）。",
     "analogy_en": "Out of 10 basketball games played against the league benchmark, winning 8 games gives you an 80% win rate.",
-    "analogy_zh": "就像和标普 500 大盘打 10 场比赛，能赢得其中 8 场，胜率就是 80%。"
+    "analogy_zh": "就像和标普 500 大盘打 10 场比赛，能赢得其中 8 场，胜率就是 80%。",
+    "favor_direction": "higher",
+    "favor_explanation_en": "Higher is favorable (> 60%–75%+): Demonstrates high consistency in beating market benchmarks across different regimes.",
+    "favor_explanation_zh": "胜率越高越有利（> 60%-75% 为优）：代表策略在绝大多数年份都能稳定跑赢基准，具备高确定性。"
   },
   "Alpha": {
     "term_en": "Alpha (Excess Return)",
@@ -205,7 +280,10 @@
     "definition_en": "The percentage return generated by an investment strategy above and beyond the market benchmark return (e.g., Portfolio +25% vs Benchmark +15% = +10% Alpha).",
     "definition_zh": "投资组合超过大盘基准（如标普500）的额外收益部分（组合 25% - 大盘 15% = 10% Alpha）。",
     "analogy_en": "If the tidal wave lifts all boats by 10 feet, but your engine propels your boat an extra 5 feet higher, your Alpha is 5 feet.",
-    "analogy_zh": "水涨船高大盘涨了 10%，但因为你的精选个股额外多赚了 5%，这多赚的 5% 就是选股实力带来的 Alpha。"
+    "analogy_zh": "水涨船高大盘涨了 10%，但因为你的精选个股额外多赚了 5%，这多赚的 5% 就是选股实力带来的 Alpha。",
+    "favor_direction": "higher",
+    "favor_explanation_en": "Higher positive Alpha (> 0%) is favorable: Confirms true active stock picking skill rather than simply riding market beta up and down.",
+    "favor_explanation_zh": "正值越高越有利（> 0%）：证明超额收益来自真正的选股能力与护城河挖掘，而非单纯随大盘起落。"
   },
   "PositionSizing": {
     "term_en": "Position Sizing & Rebalancing",
@@ -213,6 +291,20 @@
     "definition_en": "Allocating risk-adjusted dollar amounts and exact share counts to each stock based on total capital and risk models (Conservative, Balanced, Aggressive).",
     "definition_zh": "根据投资者的总资金量与风险偏好（保守、稳健、激进），计算每只股票应该买入的精确股数与资金比例。",
     "analogy_en": "Putting eggs in multiple distinct baskets so if one basket breaks, your overall portfolio stays protected.",
-    "analogy_zh": "分仓避险。把资金按科学比例分装到不同篮子里，绝不把所有筹码梭哈在单一直播间。"
+    "analogy_zh": "分仓避险。把资金按科学比例分装到不同篮子里，绝不把所有筹码梭哈在单一直播间。",
+    "favor_direction": "disciplined",
+    "favor_explanation_en": "Disciplined position limits (e.g., max 3%-5% per single stock) are favorable: Prevents a single black-swan event from ruining portfolio compounding.",
+    "favor_explanation_zh": "严守单一持仓上限（如单票不超过 3%-5%）最有利：防止单一黑天鹅事件重创整个投资组合的长期复利能力。"
+  },
+  "SEDAR": {
+    "term_en": "SEDAR+ Canadian Regulatory Repository",
+    "term_zh": "加拿大 SEDAR+ 官方监管披露系统",
+    "definition_en": "The official electronic filing system for Canadian public securities, providing regulatory access to audited AIFs, MD&A, and quarterly financial reports.",
+    "definition_zh": "加拿大证券监管机构（CSA）运营的官方电子披露平台，上市公司必须在 SEDAR+ 提交经审计的年报、MD&A 和重大经营变动公告。",
+    "analogy_en": "The Canadian equivalent of the US SEC EDGAR system — the ultimate legal paper trail for TSX-listed companies.",
+    "analogy_zh": "相当于加拿大版的美国 SEC EDGAR 系统，所有多伦多交易所上市公司的官方体检与法律披露档案库。",
+    "favor_direction": "audited_clean",
+    "favor_explanation_en": "Direct filings with regulatory timestamps and official management signatures are favorable, ensuring 100% data authenticity.",
+    "favor_explanation_zh": "官方备案记录详尽、无监管整改通报最有利，保障底层财务与管理层讨论数据的绝对真实可靠。"
   }
 }

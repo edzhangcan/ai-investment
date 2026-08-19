@@ -79,6 +79,7 @@ def test_push_alert_channel(req: PushAlertTestRequest):
         raise HTTPException(status_code=400, detail=res.get("error", "Discord test failed"))
 
     return {
+        "status": "ok",
         "success": True,
         "message": "Instant test notification sent to Discord server channel!",
         "details": res
@@ -95,7 +96,7 @@ def test_macro_digest_alert(req: PushAlertTestRequest):
     if not res.get("success"):
         raise HTTPException(status_code=400, detail=res.get("error", "Macro digest dispatch failed"))
 
-    return {"success": True, "message": "Daily Macro & Policy Digest sent to Discord!", "details": res}
+    return {"status": "ok", "success": True, "message": "Daily Macro & Policy Digest sent to Discord!", "details": res}
 
 @router.post("/test/bundled-buy")
 def test_bundled_buy_alert(req: PushAlertTestRequest):
@@ -108,7 +109,7 @@ def test_bundled_buy_alert(req: PushAlertTestRequest):
     if not res.get("success"):
         raise HTTPException(status_code=400, detail=res.get("error", "Bundled buy alert dispatch failed"))
 
-    return {"success": True, "message": "Bundled Watchlist Buy-In alert sent to Discord!", "details": res}
+    return {"status": "ok", "success": True, "message": "Bundled Watchlist Buy-In alert sent to Discord!", "details": res}
 
 @router.post("/test/sell-danger")
 def test_sell_danger_alert(req: PushAlertTestRequest):
@@ -121,7 +122,7 @@ def test_sell_danger_alert(req: PushAlertTestRequest):
     if not res.get("success"):
         raise HTTPException(status_code=400, detail=res.get("error", "Sell danger alert dispatch failed"))
 
-    return {"success": True, "message": "Watchlist Sell & Danger alert sent to Discord!", "details": res}
+    return {"status": "ok", "success": True, "message": "Watchlist Sell & Danger alert sent to Discord!", "details": res}
 
 @router.post("/test/gold-nuggets")
 def test_gold_nuggets_alert(req: PushAlertTestRequest):
@@ -134,7 +135,7 @@ def test_gold_nuggets_alert(req: PushAlertTestRequest):
     if not res.get("success"):
         raise HTTPException(status_code=400, detail=res.get("error", "Gold nuggets dispatch failed"))
 
-    return {"success": True, "message": "Gold Nuggets Discovery alert sent to Discord!", "details": res}
+    return {"status": "ok", "success": True, "message": "Gold Nuggets Discovery alert sent to Discord!", "details": res}
 
 @router.post("/dispatch")
 def dispatch_push_alert(req: PushAlertDispatchRequest, session: Session = Depends(get_session)):
@@ -167,6 +168,7 @@ def dispatch_push_alert(req: PushAlertDispatchRequest, session: Session = Depend
         raise HTTPException(status_code=400, detail=res.get("error", "Dispatch alert failed"))
 
     return {
+        "status": "ok",
         "success": True,
         "message": f"Push alert ({alert_type}) dispatched successfully to Discord!",
         "details": res

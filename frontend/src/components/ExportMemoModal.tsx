@@ -31,7 +31,7 @@ interface ExportMemoModalProps {
 }
 
 export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClose, memoData }) => {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'preview' | 'markdown'>('preview');
   const [copied, setCopied] = useState(false);
 
@@ -82,10 +82,10 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
             </span>
             <div>
               <h2 className="text-xl md:text-2xl font-black text-content-primary tracking-tight">
-                Institutional Investment Memo Export
+                {t.exportMemoModalTitle}
               </h2>
               <p className="text-xs text-content-muted mt-0.5 font-medium">
-                1-Click Export for {stock.company_name} (${stock.symbol}) in Clean Printable PDF or Markdown
+                {stock.company_name} ({stock.symbol}) • {t.exportMemoModalSubtitle}
               </p>
             </div>
           </div>
@@ -104,54 +104,54 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('preview')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`h-8 px-4 rounded-xl text-xs font-extrabold transition-all inline-flex items-center gap-1.5 cursor-pointer box-border ${
                 activeTab === 'preview'
                   ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-400/40'
                   : 'text-content-secondary hover:text-content-primary hover:bg-surface'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>Styled Preview</span>
+              <span>{t.exportMemoStyledPreview}</span>
             </button>
             <button
               onClick={() => setActiveTab('markdown')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`h-8 px-4 rounded-xl text-xs font-extrabold transition-all inline-flex items-center gap-1.5 cursor-pointer box-border ${
                 activeTab === 'markdown'
                   ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-400/40'
                   : 'text-content-secondary hover:text-content-primary hover:bg-surface'
               }`}
             >
               <Code2 className="w-3.5 h-3.5" />
-              <span>Raw Markdown</span>
+              <span>{t.exportMemoRawMarkdown}</span>
             </button>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => downloadMarkdownMemo(memoData)}
-              className="px-4 py-2 bg-surface hover:bg-surface-subtle text-content-primary text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-border-subtle shadow-sm"
+              className="h-8 px-4 bg-surface hover:bg-surface-subtle text-content-primary text-xs font-bold rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer border border-border-subtle shadow-sm box-border"
               title="Download clean Markdown file"
             >
               <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Download .md</span>
+              <span>{t.exportMemoDownloadMd}</span>
             </button>
 
             <button
               onClick={handlePrintPdf}
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-extrabold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="h-8 px-4 bg-sky-600 hover:bg-sky-700 text-white text-xs font-extrabold rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm box-border"
               title="Print cleanly or Save as PDF"
             >
               <Printer className="w-4 h-4" />
-              <span>Print / Save PDF</span>
+              <span>{t.exportMemoPrintPdf}</span>
             </button>
 
             {activeTab === 'markdown' && (
               <button
                 onClick={handleCopyMarkdown}
-                className="px-3 py-2 bg-surface hover:bg-surface-subtle text-content-secondary text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-border-subtle shadow-sm"
+                className="h-8 px-3 bg-surface hover:bg-surface-subtle text-content-secondary text-xs font-bold rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer border border-border-subtle shadow-sm box-border"
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-content-muted" />}
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
+                <span>{copied ? t.exportMemoCopied : t.exportMemoCopy}</span>
               </button>
             )}
           </div>
@@ -319,7 +319,7 @@ export const ExportMemoModal: React.FC<ExportMemoModalProps> = ({ isOpen, onClos
                     Chief Investment Officer (CIO) Verdict: {cio.verdict || 'ACCUMULATE ON PULLBACKS'}
                   </div>
                   <div className="flex items-center gap-3 text-xs font-mono">
-                    <span className="font-bold text-brand print:text-sky-800">Risk/Reward: {cio.risk_reward_ratio || 2.4}:1</span>
+                    <span className="font-bold text-brand print:text-sky-800">Risk/Reward: {typeof cio.risk_reward_ratio === 'number' ? cio.risk_reward_ratio.toFixed(1) : (cio.risk_reward_ratio ?? '2.1')}:1</span>
                     <span className="font-bold text-positive print:text-emerald-800">Weight: {cio.position_sizing_advice || '3.5% Max'}</span>
                   </div>
                 </div>

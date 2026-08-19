@@ -10,7 +10,7 @@ export const LanguageSelector: React.FC = () => {
 
   const options: { mode: LanguageMode; label: string; badge: string }[] = [
     { mode: 'en', label: 'English (Default)', badge: 'EN' },
-    { mode: 'zh', label: '简体中文', badge: 'ZH' },
+    { mode: 'zh', label: '简体中文', badge: '中' },
     { mode: 'hybrid', label: '混合模式 (Hybrid)', badge: '中/EN' }
   ];
 
@@ -30,7 +30,7 @@ export const LanguageSelector: React.FC = () => {
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-1.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-brand rounded-xl text-xs font-semibold text-content-primary flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+        className="h-8 px-3 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-brand rounded-xl text-xs font-semibold text-content-primary inline-flex items-center gap-2 transition-all cursor-pointer shadow-sm"
         title="Switch Interface Language (切换系统语言)"
       >
         <Globe className="w-3.5 h-3.5 text-brand" />

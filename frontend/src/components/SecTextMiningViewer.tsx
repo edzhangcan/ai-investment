@@ -5,7 +5,6 @@ import { FileText, TrendingUp, AlertTriangle, ShieldCheck, Database, FileDiff } 
 
 interface SecTextMiningViewerProps {
   symbol: string;
-  isPlainTalk?: boolean;
 }
 
 interface MiningTimelineEntry {
@@ -25,7 +24,7 @@ interface MiningDataPayload {
   text_mining_timeline: MiningTimelineEntry[];
 }
 
-export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol, isPlainTalk = false }) => {
+export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol }) => {
   const { language, t } = useLanguage();
   const [data, setData] = useState<MiningDataPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +73,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
               <FileDiff className="w-5 h-5" />
             </span>
             <h3 className="text-xl font-extrabold text-content-primary">
-              <BilingualHoverCard termKey="SEC10K" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="SEC10K">
                 {t.secTitle}
               </BilingualHoverCard>
             </h3>
@@ -85,9 +84,11 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="prism-badge-neutral text-xs flex items-center gap-1.5 shadow-sm">
-            <Database className="w-3.5 h-3.5 text-positive" />
-            <span>{data.filing_repository}</span>
+          <span className="text-xs font-medium text-content-secondary flex items-center gap-1.5 bg-surface-subtle px-3 py-1.5 rounded-xl border border-border-subtle shadow-sm">
+            <Database className="w-3.5 h-3.5 text-positive shrink-0" />
+            <BilingualHoverCard termKey={data.filing_repository.includes("SEDAR") ? "SEDAR" : "SEC10K"}>
+              {data.filing_repository}
+            </BilingualHoverCard>
           </span>
         </div>
       </div>
@@ -104,7 +105,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
           <button
             key={entry.year}
             onClick={() => setActiveYearIndex(idx)}
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`h-8 px-4 rounded-xl text-xs font-extrabold transition-all inline-flex items-center gap-2 cursor-pointer shrink-0 box-border ${
               activeYearIndex === idx
                 ? 'bg-brand text-white shadow-sm'
                 : 'bg-surface border border-border-subtle text-content-secondary hover:text-content-primary hover:bg-surface-subtle'

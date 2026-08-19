@@ -7,7 +7,6 @@ interface PortfolioCalculatorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectStock?: (symbol: string) => void;
-  isPlainTalk?: boolean;
 }
 
 interface PositionBreakdownItem {
@@ -42,7 +41,6 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
   isOpen,
   onClose,
   onSelectStock,
-  isPlainTalk = false
 }) => {
   const { language, t } = useLanguage();
   const [cashBalance, setCashBalance] = useState<number>(50000);
@@ -107,7 +105,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
           </span>
           <div>
             <h2 id="portfolio-calc-title" className="text-xl md:text-2xl font-extrabold text-content-primary">
-              <BilingualHoverCard termKey="PositionSizing" isPlainTalk={isPlainTalk}>
+              <BilingualHoverCard termKey="PositionSizing">
                 {t.calcTitle}
               </BilingualHoverCard>
             </h2>
@@ -159,7 +157,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
                 <button
                   key={profile}
                   onClick={() => setRiskProfile(profile)}
-                  className={`w-full px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-between cursor-pointer ${
+                  className={`w-full h-9 px-3 rounded-xl text-xs font-bold border transition-all inline-flex items-center justify-between cursor-pointer box-border ${
                     riskProfile === profile
                       ? 'bg-brand text-white border-brand shadow-sm'
                       : 'bg-surface text-content-secondary border-border-subtle hover:text-content-primary'
@@ -191,7 +189,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
                 <button
                   key={curr}
                   onClick={() => setCurrency(curr)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  className={`flex-1 h-9 rounded-xl text-xs font-bold border transition-all inline-flex items-center justify-center cursor-pointer box-border ${
                     currency === curr
                       ? 'bg-warning text-white border-warning font-extrabold shadow-sm'
                       : 'bg-surface text-content-secondary border-border-subtle hover:text-content-primary'

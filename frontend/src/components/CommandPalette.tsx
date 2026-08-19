@@ -5,8 +5,6 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectTicker: (ticker: string) => void;
-  onTogglePlainTalk: () => void;
-  isPlainTalk: boolean;
   onOpenWatchlist?: () => void;
 }
 
@@ -14,8 +12,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
   onSelectTicker,
-  onTogglePlainTalk,
-  isPlainTalk,
   onOpenWatchlist,
 }) => {
   const [query, setQuery] = useState('');
@@ -89,21 +85,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             快捷操作命令 (Actions)
           </div>
 
-          <button
-            onClick={() => {
-              onTogglePlainTalk();
-              onClose();
-            }}
-            className="w-full flex items-center justify-between p-2.5 rounded-xl prism-surface-subtle hover:bg-surface text-content-primary transition-all text-left cursor-pointer shadow-sm"
-          >
-            <div className="flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-warning" />
-              <span>切换通俗白话解说模式</span>
-            </div>
-            <span className="text-[10px] px-2 py-0.5 rounded prism-badge-neutral font-mono">
-              {isPlainTalk ? '已开启' : '已关闭'}
-            </span>
-          </button>
 
           {onOpenWatchlist && (
             <button

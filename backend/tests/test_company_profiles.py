@@ -82,3 +82,32 @@ def test_recommendation_engine_get_stock_info():
     assert "growth_catalysts" in info
     assert "revenue_drivers" in info
     assert len(info["growth_catalysts"]) >= 3
+
+def test_full_universe_profile_registry_coverage():
+    """Verifies that all universe equities have verified non-templated institutional profiles."""
+    from backend.engines.recommendation_engine import SECTOR_SYMBOLS, OVERALL_SYMBOLS, GOLD_SYMBOLS
+    all_universe = list(set(SECTOR_SYMBOLS + OVERALL_SYMBOLS + GOLD_SYMBOLS))
+    
+    assert len(all_universe) >= 128
+    for sym in all_universe:
+        assert sym in COMPANY_PROFILES_REGISTRY, f"Symbol {sym} missing from COMPANY_PROFILES_REGISTRY"
+        reg = COMPANY_PROFILES_REGISTRY[sym]
+        assert len(reg["name"]) > 1
+        assert "General Equities" not in reg["sector"]
+        assert len(reg["background"]["en"]) > 40
+        assert len(reg["background"]["zh"]) > 20
+        assert len(reg["background"]["hybrid"]) > 30
+        assert len(reg["catalysts"]["en"]) >= 3
+        assert len(reg["revenue_drivers"]["en"]) >= 2
+
+def test_teck_resources_and_alias_profile_verification():
+    """Verifies Teck Resources profile and dual-class dot/hyphen alias consistency."""
+    prof_hyphen = CompanyProfileEngine.get_profile("TECK-B.TO", lang="en")
+    assert "Teck Resources" in prof_hyphen["company_name"]
+    assert "Copper" in prof_hyphen["company_background"] or "mining" in prof_hyphen["company_background"].lower()
+    assert prof_hyphen["is_institutional_verified"] is True
+
+    prof_dot = CompanyProfileEngine.get_profile("TECK.B.TO", lang="en")
+    assert "Teck Resources" in prof_dot["company_name"]
+    assert prof_dot["is_institutional_verified"] is True
+
