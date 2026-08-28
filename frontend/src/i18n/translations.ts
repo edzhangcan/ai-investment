@@ -198,7 +198,7 @@ export interface Translations {
   // Discord Push Alert Modal
   discordModalTitle: string;
   discordModalSubtitle: string;
-  discordZeroKycBadge: string;
+  discordDirectWebhookBadge: string;
   discordGuideTitle: string;
   discordGuideStep1: string;
   discordGuideStep2: string;
@@ -414,7 +414,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     discordModalTitle: "Discord Push Alerts",
     discordModalSubtitle: "Real-time automated institutional alerts sent directly to your Discord server.",
-    discordZeroKycBadge: "Zero-KYC Verified",
+    discordDirectWebhookBadge: "Direct Webhook Delivery",
     discordGuideTitle: "30-Second Discord Setup Guide",
     discordGuideStep1: "Open Discord → Server/Channel Settings → Integrations.",
     discordGuideStep2: "Click Webhooks → Create New Webhook.",
@@ -629,7 +629,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     discordModalTitle: "Discord 推送警报",
     discordModalSubtitle: "在 Discord 服务器中实时接收 4 种多类型投资警报。",
-    discordZeroKycBadge: "Zero-KYC 免认证",
+    discordDirectWebhookBadge: "直接推送 (Direct Webhook)",
     discordGuideTitle: "30秒 Discord 快速设置指南",
     discordGuideStep1: "打开 Discord → 频道设置 → 整合 (Integrations)。",
     discordGuideStep2: "点击 Webhooks → 新建 Webhook (New Webhook)。",
@@ -844,7 +844,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     discordModalTitle: "Discord 推送警报 (Push Alerts)",
     discordModalSubtitle: "在 Discord 服务器中实时接收 4 种多类型投资 alert。",
-    discordZeroKycBadge: "Zero-KYC 免认证",
+    discordDirectWebhookBadge: "直接推送 (Direct Webhook)",
     discordGuideTitle: "30秒 Discord 快速设置指南 (Setup Guide)",
     discordGuideStep1: "打开 Discord → 频道设置 → 整合 (Integrations)。",
     discordGuideStep2: "点击 Webhooks → 新建 Webhook (New Webhook)。",

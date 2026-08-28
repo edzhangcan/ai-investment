@@ -126,3 +126,43 @@ def test_dispatch_push_alert_endpoint(client: TestClient):
         })
         assert res2.status_code == 200
         assert res2.json()["success"] is True
+
+@patch("urllib.request.urlopen")
+def test_push_notifier_branding_and_kyc_elimination(mock_urlopen):
+    """Verifies that Discord embeds use official branding and contain zero KYC/KYB references."""
+    captured_payloads = []
+    
+    def fake_urlopen(req, timeout=8):
+        import json
+        payload = json.loads(req.data.decode("utf-8"))
+        captured_payloads.append(payload)
+        mock_resp = MagicMock()
+        mock_resp.status = 204
+        mock_resp.__enter__.return_value = mock_resp
+        mock_resp.__exit__.return_value = None
+        return mock_resp
+
+    mock_urlopen.side_effect = fake_urlopen
+    url = "https://discord.com/api/webhooks/999/brand-check"
+
+    # Test EN connection
+    res_en = PushNotifier.test_discord_connection(url, lang="en")
+    assert res_en["success"] is True
+    
+    # Test ZH connection
+    res_zh = PushNotifier.test_discord_connection(url, lang="zh")
+    assert res_zh["success"] is True
+
+    # Assert branding across all payloads
+    for p in captured_payloads:
+        assert p["username"] == "Prism Loop Intelligence"
+        assert len(p["embeds"]) == 1
+        embed = p["embeds"][0]
+        assert embed["author"]["name"] == "Prism Loop Autonomous Workstation"
+        assert "Prism Loop" in embed["footer"]["text"]
+        
+        # Verify complete elimination of KYC / KYB keywords
+        serialized = str(p).lower()
+        assert "kyc" not in serialized
+        assert "kyb" not in serialized
+

@@ -86,3 +86,29 @@ def test_alerts_rest_endpoints(client: TestClient, session: Session):
     check_res = client.post("/api/alerts/trigger-check")
     assert check_res.status_code == 200
     assert "alerts_triggered_count" in check_res.json()
+
+def test_alert_engine_scheduled_and_conditional_dual_run(session: Session):
+    """Verifies that evaluate_scheduled_and_conditional_alerts executes properly."""
+    async def run_test():
+        from backend.models.db_models import PushAlertConfigDB
+        # 1. Test when discord webhook is disabled
+        res1 = await alert_engine.evaluate_scheduled_and_conditional_alerts(session)
+        assert "conditional_alerts" in res1
+        assert "scheduled_alerts" in res1
+        assert res1["scheduled_alerts"]["status"] == "skipped"
+
+        # 2. Test when discord webhook is enabled
+        cfg = PushAlertConfigDB(
+            discord_webhook_url="https://discord.com/api/webhooks/123/alert-eval",
+            is_discord_enabled=True
+        )
+        session.add(cfg)
+        session.commit()
+
+        res2 = await alert_engine.evaluate_scheduled_and_conditional_alerts(session)
+        assert "conditional_alerts" in res2
+        assert "scheduled_alerts" in res2
+        assert res2["scheduled_alerts"]["status"] == "ok"
+
+    asyncio.run(run_test())
+

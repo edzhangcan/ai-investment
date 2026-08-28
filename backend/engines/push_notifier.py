@@ -16,7 +16,7 @@ import urllib.error
 logger = logging.getLogger(__name__)
 
 class DiscordNotifier:
-    """Zero-KYC Discord Webhook Push Notifier with Institutional Rich Embeds."""
+    """Discord Webhook Push Notifier with Institutional Rich Embeds."""
 
     # Curated Brand Color Palettes for Embeds
     DISCORD_COLOR_MACRO_DIGEST = 0x38BDF8   # Sky Brand Blue
@@ -45,7 +45,7 @@ class DiscordNotifier:
             "color": color,
             "fields": fields or [],
             "author": {
-                "name": "Prism Loop Intelligence",
+                "name": "Prism Loop Autonomous Workstation",
                 "icon_url": "https://raw.githubusercontent.com/edzhangcan/ai-investment/main/frontend/public/favicon.svg"
             },
             "footer": {
@@ -56,7 +56,7 @@ class DiscordNotifier:
         }
 
         body = json.dumps({
-            "username": "Prism Loop Workstation",
+            "username": "Prism Loop Intelligence",
             "avatar_url": "https://raw.githubusercontent.com/edzhangcan/ai-investment/main/frontend/public/favicon.svg",
             "embeds": [embed_payload]
         }).encode("utf-8")
@@ -392,7 +392,7 @@ class DiscordNotifier:
             fields = [
                 {"name": "通道状态", "value": "已激活就绪", "inline": True},
                 {"name": "通道类型", "value": "Discord Webhook", "inline": True},
-                {"name": "KYC 认证", "value": "Zero-KYC (免认证)", "inline": True}
+                {"name": "推送模式", "value": "直接推送 (Direct Webhook)", "inline": True}
             ]
         else:
             title = "Discord Webhook Connected Successfully!"
@@ -407,7 +407,7 @@ class DiscordNotifier:
             fields = [
                 {"name": "Status", "value": "Active & Ready", "inline": True},
                 {"name": "Channel Type", "value": "Discord Webhook", "inline": True},
-                {"name": "KYC Requirement", "value": "Zero-KYC", "inline": True}
+                {"name": "Delivery Mode", "value": "Direct Webhook", "inline": True}
             ]
 
         return cls.send_discord_alert(
