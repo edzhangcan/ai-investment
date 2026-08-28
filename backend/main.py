@@ -29,8 +29,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import Session
 from backend.config import settings
-from backend.database import init_db
+from backend.database import init_db, engine
 from backend.routers import macro, stock, debate, watchlist, alerts, portfolio, backtest, push_alerts
 
 # Configure logging format for production and development debugging
@@ -59,6 +60,24 @@ async def run_universe_refresh_daemon():
             logging.error(f"Error in stock universe refresh daemon: {e}")
         await asyncio.sleep(7200)
 
+async def run_alerts_scheduler_daemon():
+    """
+    Background Async Alert Scheduler Daemon:
+    Runs every 300 seconds (5 minutes) to evaluate:
+    1. Scheduled triggers (Morning Macro Digest at 8:00 AM EST, Midday Gold Nuggets at 12:00 PM EST).
+    2. Watchlist target price condition triggers with 12-hour anti-spam cooldown protection.
+    """
+    await asyncio.sleep(5)  # Allow uvicorn to bind port immediately
+    logging.info("Starting Automated Scheduled & Conditional Alerts Daemon...")
+    while True:
+        try:
+            from backend.services.alert_engine import alert_engine
+            with Session(engine) as session:
+                await alert_engine.evaluate_scheduled_and_conditional_alerts(session)
+        except Exception as e:
+            logging.error(f"Error in scheduled alerts daemon: {e}")
+        await asyncio.sleep(300)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -70,9 +89,10 @@ async def lifespan(app: FastAPI):
     init_db()
     logging.info("SQLite database tables initialized successfully.")
     
-    # 2. Launch non-blocking background daemon task in production (skip during pytest)
+    # 2. Launch non-blocking background daemon tasks in production (skip during pytest)
     if "pytest" not in sys.modules and os.getenv("TESTING") != "true":
         asyncio.create_task(run_universe_refresh_daemon())
+        asyncio.create_task(run_alerts_scheduler_daemon())
     yield
 
 # Create FastAPI application instance

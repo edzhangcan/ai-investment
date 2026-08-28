@@ -239,11 +239,10 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onToggleWatchlist) {
-                        onToggleWatchlist(
-                          rec.symbol,
-                          rec.company_name,
-                          typeof rec.key_metrics.dcf_fair_value === 'number' ? rec.key_metrics.dcf_fair_value : undefined
-                        );
+                        const targetVal = typeof rec.key_metrics.ideal_buy_range_max === 'number'
+                          ? rec.key_metrics.ideal_buy_range_max
+                          : (typeof rec.key_metrics.dcf_fair_value === 'number' ? rec.key_metrics.dcf_fair_value : undefined);
+                        onToggleWatchlist(rec.symbol, rec.company_name, targetVal);
                       }
                     }}
                     className={`h-6 px-2 rounded-lg text-[10px] font-bold border transition-all inline-flex items-center gap-1 cursor-pointer box-border ${

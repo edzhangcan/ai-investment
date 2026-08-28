@@ -66,6 +66,13 @@ export async function deleteWatchlistApi(symbol: string): Promise<any> {
   return res.json();
 }
 
+export async function syncWatchlistTargetsApi(): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/watchlist/sync-targets`;
+  const res = await fetch(url, { method: 'POST' });
+  if (!res.ok) throw new Error(`Sync watchlist targets failed: ${res.statusText}`);
+  return res.json();
+}
+
 export async function fetchPushAlertConfig(): Promise<any> {
   const url = `${getApiBaseUrl()}/api/push-alerts/config`;
   const res = await fetch(url);

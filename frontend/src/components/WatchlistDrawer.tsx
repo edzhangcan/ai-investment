@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Star, X, Trash2, Plus, Bell, ShieldCheck } from 'lucide-react';
+import { Star, X, Trash2, Plus, Bell, ShieldCheck, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { fetchWatchlistApi, addWatchlistApi, deleteWatchlistApi } from '../api/client';
+import { fetchWatchlistApi, addWatchlistApi, deleteWatchlistApi, syncWatchlistTargetsApi } from '../api/client';
 
 export interface WatchlistItem {
   id?: number;
@@ -30,6 +30,8 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   const selectStockHandler = onSelectStock || onSelectTicker || (() => {});
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [newSymbol, setNewSymbol] = useState('');
   const [newName, setNewName] = useState('');
   const [newTarget, setNewTarget] = useState('');
@@ -44,6 +46,21 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
       console.warn("Failed to fetch watchlist from API:", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSyncTargets = async () => {
+    setIsSyncing(true);
+    try {
+      const updated = await syncWatchlistTargetsApi();
+      setItems(updated);
+      setSyncNotice(t.syncTargetsSuccess || "Watchlist targets updated!");
+      setTimeout(() => setSyncNotice(null), 3000);
+      if (onWatchlistChange) onWatchlistChange();
+    } catch (e) {
+      console.warn("Failed to sync watchlist targets:", e);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -172,9 +189,31 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
 
           {/* Watchlist List */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-content-muted uppercase tracking-wider">
-              {t.starredItems} ({items.length})
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-content-muted uppercase tracking-wider">
+                {t.starredItems} ({items.length})
+              </h3>
+              {items.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleSyncTargets}
+                  disabled={isSyncing}
+                  title={t.syncTargetsBtn}
+                  className="text-[10px] font-semibold text-brand hover:text-brand-dark transition-colors inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <span>{isSyncing ? t.syncingTargets : t.syncTargetsBtn}</span>
+                </button>
+              )}
+            </div>
+
+            {syncNotice && (
+              <div className="prism-badge-positive p-2 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 animate-fade-in">
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                <span>{syncNotice}</span>
+              </div>
+            )}
+
             {loading && items.length === 0 ? (
               <div className="text-center py-6 text-xs text-content-muted">Loading...</div>
             ) : items.length === 0 ? (

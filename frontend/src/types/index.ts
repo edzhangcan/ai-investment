@@ -147,6 +147,8 @@ export interface StockRecommendation {
     moat_rating: string;
     two_hundred_day_sma: number;
     dcf_fair_value: number;
+    ideal_buy_range_min?: number;
+    ideal_buy_range_max?: number;
     ideal_buy_range: string;
   };
   downside_risk_summary: string;

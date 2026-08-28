@@ -198,7 +198,7 @@ export interface Translations {
   // Discord Push Alert Modal
   discordModalTitle: string;
   discordModalSubtitle: string;
-  discordZeroKycBadge: string;
+  discordDirectWebhookBadge: string;
   discordGuideTitle: string;
   discordGuideStep1: string;
   discordGuideStep2: string;
@@ -227,6 +227,18 @@ export interface Translations {
   discordSellSuccess: string;
   discordGoldSuccess: string;
   discordDispatchFailed: string;
+
+  // In-App Notification Toast
+  toastTargetHit: string;
+  toastEnteredBuyZone: string;
+  toastTargetLabel: string;
+  toastDeepDiveBtn: string;
+  toastCloseAria: string;
+
+  // Watchlist Sync
+  syncTargetsBtn: string;
+  syncingTargets: string;
+  syncTargetsSuccess: string;
 }
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
@@ -414,7 +426,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     discordModalTitle: "Discord Push Alerts",
     discordModalSubtitle: "Real-time automated institutional alerts sent directly to your Discord server.",
-    discordZeroKycBadge: "Zero-KYC Verified",
+    discordDirectWebhookBadge: "Direct Webhook Delivery",
     discordGuideTitle: "30-Second Discord Setup Guide",
     discordGuideStep1: "Open Discord → Server/Channel Settings → Integrations.",
     discordGuideStep2: "Click Webhooks → Create New Webhook.",
@@ -443,6 +455,18 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordSellSuccess: "Watchlist Sell & Danger Zone alert sent to Discord!",
     discordGoldSuccess: "Gold Nuggets Discovery alert sent to Discord!",
     discordDispatchFailed: "Alert dispatch failed:",
+
+    // In-App Notification Toast
+    toastTargetHit: "Target Price Hit!",
+    toastEnteredBuyZone: "entered your Buy Zone! Live:",
+    toastTargetLabel: "≤ Target:",
+    toastDeepDiveBtn: "Deep Dive Analysis",
+    toastCloseAria: "Dismiss alert",
+
+    // Watchlist Sync
+    syncTargetsBtn: "Sync to Live Buy Zones",
+    syncingTargets: "Syncing...",
+    syncTargetsSuccess: "Watchlist target buy prices synced to live Buy Zones!",
   },
 
   zh: {
@@ -629,7 +653,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     discordModalTitle: "Discord 推送警报",
     discordModalSubtitle: "在 Discord 服务器中实时接收 4 种多类型投资警报。",
-    discordZeroKycBadge: "Zero-KYC 免认证",
+    discordDirectWebhookBadge: "直接推送 (Direct Webhook)",
     discordGuideTitle: "30秒 Discord 快速设置指南",
     discordGuideStep1: "打开 Discord → 频道设置 → 整合 (Integrations)。",
     discordGuideStep2: "点击 Webhooks → 新建 Webhook (New Webhook)。",
@@ -658,6 +682,18 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordSellSuccess: "观察列表卖出与危险区间预警已发送至 Discord！",
     discordGoldSuccess: "淘金组合 (Gold Nuggets) 发现提醒已发送至 Discord！",
     discordDispatchFailed: "警报发送失败:",
+
+    // In-App Notification Toast
+    toastTargetHit: "已达目标买入价!",
+    toastEnteredBuyZone: "已进入理想买入区间！现价:",
+    toastTargetLabel: "≤ 目标价:",
+    toastDeepDiveBtn: "立即深度分析",
+    toastCloseAria: "关闭提醒",
+
+    // Watchlist Sync
+    syncTargetsBtn: "一键同步最新买入区间",
+    syncingTargets: "同步中...",
+    syncTargetsSuccess: "已成功将所有观察标的同步至最新买入区间！",
   },
 
   hybrid: {
@@ -844,7 +880,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
 
     discordModalTitle: "Discord 推送警报 (Push Alerts)",
     discordModalSubtitle: "在 Discord 服务器中实时接收 4 种多类型投资 alert。",
-    discordZeroKycBadge: "Zero-KYC 免认证",
+    discordDirectWebhookBadge: "直接推送 (Direct Webhook)",
     discordGuideTitle: "30秒 Discord 快速设置指南 (Setup Guide)",
     discordGuideStep1: "打开 Discord → 频道设置 → 整合 (Integrations)。",
     discordGuideStep2: "点击 Webhooks → 新建 Webhook (New Webhook)。",
@@ -873,5 +909,17 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordSellSuccess: "观察列表卖出与危险预警已发送至 Discord！",
     discordGoldSuccess: "Gold Nuggets 发现提醒已发送至 Discord！",
     discordDispatchFailed: "警报发送失败:",
+
+    // In-App Notification Toast
+    toastTargetHit: "已达目标买入价! (Target Hit)",
+    toastEnteredBuyZone: "已进入买入区间 (Buy Zone)！现价:",
+    toastTargetLabel: "≤ 目标价 (Target):",
+    toastDeepDiveBtn: "立即深度分析 (Deep Dive)",
+    toastCloseAria: "关闭提醒 (Dismiss)",
+
+    // Watchlist Sync
+    syncTargetsBtn: "同步买入区间 (Sync Buy Zones)",
+    syncingTargets: "同步中 (Syncing...)",
+    syncTargetsSuccess: "观察列表目标价已同步 (Synced to Buy Zones)！",
   }
 };
