@@ -22,24 +22,31 @@ class PriceAlertEngine:
 
     async def evaluate_watchlist_alerts(self, session: Session) -> List[Dict[str, Any]]:
         """
-        Scans all starred watchlist items with target_buy_price set.
-        Triggers price alert if current_price <= target_buy_price and cooldown has elapsed.
+        Scans all starred watchlist items.
+        If target_buy_price is set, evaluates current_price <= target_buy_price.
+        If target_buy_price is not set, dynamically computes latest ideal_buy_range_max from PricingEngine.
+        Triggers price alert if in buy zone and 12-hour anti-spam cooldown has elapsed.
         """
         triggered_results = []
-        watchlist_items = session.exec(
-            select(UserWatchlistDB).where(UserWatchlistDB.target_buy_price.is_not(None))
-        ).all()
+        watchlist_items = session.exec(select(UserWatchlistDB)).all()
 
         for item in watchlist_items:
-            if not item.target_buy_price or item.target_buy_price <= 0:
-                continue
-
             try:
                 # Fetch real-time price quote
                 quote = data_provider_manager.get_stock_quote(item.symbol)
                 current_price = quote.get("current_price", 0.0)
 
-                if current_price > 0 and current_price <= item.target_buy_price:
+                # Determine effective target buy price: saved snapshot, or dynamic fallback from PricingEngine
+                target_price = item.target_buy_price
+                if not target_price or target_price <= 0:
+                    from backend.engines.pricing_engine import PricingEngine
+                    pricing_eval = PricingEngine.evaluate_pricing_and_entry_zone(quote)
+                    target_price = pricing_eval.get("ideal_buy_range_max")
+
+                if not target_price or target_price <= 0:
+                    continue
+
+                if current_price > 0 and current_price <= target_price:
                     # Check anti-spam cooldown threshold (12 hours)
                     cutoff = get_utc_now() - timedelta(hours=COOLDOWN_HOURS)
                     recent_alert = session.exec(
@@ -54,10 +61,10 @@ class PriceAlertEngine:
                             symbol=item.symbol,
                             company_name=item.company_name,
                             current_price=current_price,
-                            target_buy_price=item.target_buy_price,
+                            target_buy_price=target_price,
                             notification_channel="IN_APP",
                             status="TRIGGERED",
-                            message=f"Stock ${item.symbol} reached target buy price (${current_price} <= ${item.target_buy_price})",
+                            message=f"Stock ${item.symbol} reached target buy price (${current_price} <= ${target_price})",
                             triggered_at=get_utc_now()
                         )
                         session.add(log_entry)

@@ -149,6 +149,8 @@ class RecommendationEngine:
                         "moat_rating": fundamental.get("moat_rating", "Wide Moat"),
                         "two_hundred_day_sma": pricing.get("two_hundred_day_sma", 100.0),
                         "dcf_fair_value": pricing.get("dcf_fair_value", 120.0),
+                        "ideal_buy_range_min": pricing.get("ideal_buy_range_min", 90.0),
+                        "ideal_buy_range_max": pricing.get("ideal_buy_range_max", 110.0),
                         "ideal_buy_range": f"${pricing.get('ideal_buy_range_min', 90.0)} - ${pricing.get('ideal_buy_range_max', 110.0)} {stock_raw.get('currency', 'USD')}"
                     },
                     "downside_risk_summary": f"Technical support at 200D SMA (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')}).",

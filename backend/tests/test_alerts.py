@@ -112,3 +112,23 @@ def test_alert_engine_scheduled_and_conditional_dual_run(session: Session):
 
     asyncio.run(run_test())
 
+def test_watchlist_sync_targets_endpoint(client: TestClient, session: Session):
+    """Verifies that /api/watchlist/sync-targets calculates and updates target buy prices."""
+    item = UserWatchlistDB(
+        symbol="NVDA",
+        company_name="NVIDIA Corporation",
+        target_buy_price=None,
+        portfolio_allocation_pct=4.0
+    )
+    session.add(item)
+    session.commit()
+
+    res = client.post("/api/watchlist/sync-targets")
+    assert res.status_code == 200
+    synced = res.json()
+    assert len(synced) == 1
+    assert synced[0]["symbol"] == "NVDA"
+    assert synced[0]["target_buy_price"] is not None
+    assert synced[0]["target_buy_price"] > 0
+
+

@@ -95,16 +95,33 @@ class PricingEngine:
 
         val_percentile = round(max(30.0, min(95.0, dcf_pts + ma_pts + pe_pts)), 1)
 
-        # 3. Technical Support & Institutional Margin of Safety Buy Bracket Synthesis (Conservative Dual-Constraint Gate)
-        mos_discount = 0.80  # 20% Institutional Margin of Safety discount below DCF
-        dcf_ceiling = round(dcf_fair_value * mos_discount, 2)
-        technical_ceiling = round(min(price, two_hundred_sma * 1.02), 2)
-        # Conservative intersection: must satisfy BOTH valuation Margin of Safety and technical support reasonableness
-        ideal_buy_max = round(min(dcf_ceiling, technical_ceiling), 2)
-        # Floor is set at a 15% discount to the ceiling (or bounded by 200 SMA support floor)
-        ideal_buy_min = round(min(ideal_buy_max * 0.85, two_hundred_sma * 0.85), 2)
-        if ideal_buy_min > ideal_buy_max:
-            ideal_buy_min = round(ideal_buy_max * 0.85, 2)
+        # 3. Technical Support & Institutional Adaptive Margin of Safety Buy Bracket Synthesis
+        # Adaptive Margin of Safety factor based on P/E multiple & moat valuation risk
+        if pe is not None and pe > 38.0:
+            mos_discount = 0.80  # 20% MoS for high-multiple growth equities
+        elif pe is not None and pe < 20.0:
+            mos_discount = 0.90  # 10% MoS for deep value / defensive dividends
+        else:
+            mos_discount = 0.85  # 15% MoS standard compounder benchmark
+
+        dcf_target = round(dcf_fair_value * mos_discount, 2)
+
+        # Technical Support Pullback Anchor (synthesizing 50D SMA, 200D SMA support, and healthy consolidations)
+        technical_anchor = round(
+            max(two_hundred_sma * 0.95, min(price * 0.94, max(fifty_sma * 0.98, two_hundred_sma * 1.05))), 2
+        )
+
+        if dcf_target >= price:
+            # Fundamentally undervalued: entry bracket allows entering on mild consolidation / 50D SMA
+            ideal_buy_max = round(min(dcf_target, max(price * 0.98, fifty_sma * 0.98)), 2)
+        else:
+            # Fairly valued or overvalued: ceiling is bounded by conservative intersection of DCF target & technical anchor
+            ideal_buy_max = round(min(dcf_target, technical_anchor), 2)
+
+        # Floor is set at 12-15% discount to ceiling, with support near 200D SMA floor
+        ideal_buy_min = round(min(ideal_buy_max * 0.88, two_hundred_sma * 0.90), 2)
+        if ideal_buy_min >= ideal_buy_max:
+            ideal_buy_min = round(ideal_buy_max * 0.88, 2)
 
         if price <= ideal_buy_max:
             if lang == "en":

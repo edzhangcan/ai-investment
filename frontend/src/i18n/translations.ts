@@ -234,6 +234,11 @@ export interface Translations {
   toastTargetLabel: string;
   toastDeepDiveBtn: string;
   toastCloseAria: string;
+
+  // Watchlist Sync
+  syncTargetsBtn: string;
+  syncingTargets: string;
+  syncTargetsSuccess: string;
 }
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
@@ -457,6 +462,11 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     toastTargetLabel: "≤ Target:",
     toastDeepDiveBtn: "Deep Dive Analysis",
     toastCloseAria: "Dismiss alert",
+
+    // Watchlist Sync
+    syncTargetsBtn: "Sync to Live Buy Zones",
+    syncingTargets: "Syncing...",
+    syncTargetsSuccess: "Watchlist target buy prices synced to live Buy Zones!",
   },
 
   zh: {
@@ -679,6 +689,11 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     toastTargetLabel: "≤ 目标价:",
     toastDeepDiveBtn: "立即深度分析",
     toastCloseAria: "关闭提醒",
+
+    // Watchlist Sync
+    syncTargetsBtn: "一键同步最新买入区间",
+    syncingTargets: "同步中...",
+    syncTargetsSuccess: "已成功将所有观察标的同步至最新买入区间！",
   },
 
   hybrid: {
@@ -901,5 +916,10 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     toastTargetLabel: "≤ 目标价 (Target):",
     toastDeepDiveBtn: "立即深度分析 (Deep Dive)",
     toastCloseAria: "关闭提醒 (Dismiss)",
+
+    // Watchlist Sync
+    syncTargetsBtn: "同步买入区间 (Sync Buy Zones)",
+    syncingTargets: "同步中 (Syncing...)",
+    syncTargetsSuccess: "观察列表目标价已同步 (Synced to Buy Zones)！",
   }
 };
