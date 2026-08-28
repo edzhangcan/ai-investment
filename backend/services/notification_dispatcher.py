@@ -63,7 +63,8 @@ class NotificationDispatcher:
                         title=title,
                         description=description,
                         color=PushNotifier.DISCORD_COLOR_BUY_ZONE,
-                        fields=fields
+                        fields=fields,
+                        footer_text="Prism Loop • Margin of Safety Buy Zone Alert"
                     )
             except Exception as e:
                 logger.error(f"Failed to check Discord alert config: {e}")

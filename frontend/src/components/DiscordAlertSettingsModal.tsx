@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Bell, Send, CheckCircle2, ShieldCheck, RefreshCw, Sparkles, TrendingUp, AlertTriangle, Newspaper } from 'lucide-react';
+import { X, Bell, Send, CheckCircle2, Radio, RefreshCw, Sparkles, TrendingUp, AlertTriangle, Newspaper } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import {
   fetchPushAlertConfig,
@@ -123,9 +123,9 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
                 <h2 id="discord-modal-title" className="text-lg md:text-xl font-extrabold text-content-primary">
                   {t.discordModalTitle}
                 </h2>
-                <span className="prism-badge-positive text-[10px] flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  <span>{t.discordZeroKycBadge}</span>
+                <span className="prism-badge-brand text-[10px] flex items-center gap-1">
+                  <Radio className="w-3 h-3 text-sky-400" />
+                  <span>{t.discordDirectWebhookBadge}</span>
                 </span>
               </div>
               <p className="text-xs text-content-muted">

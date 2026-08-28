@@ -58,6 +58,29 @@ def add_or_update_watchlist(payload: WatchlistCreateSchema, session: Session = D
     session.refresh(new_item)
     return new_item
 
+@router.post("/sync-targets", response_model=List[WatchlistResponseSchema])
+def sync_watchlist_targets(session: Session = Depends(get_session)):
+    """Synchronizes and updates all watchlist items with the latest computed ideal_buy_range_max."""
+    from backend.data_sources.data_provider import data_provider_manager
+    from backend.engines.pricing_engine import PricingEngine
+
+    items = session.exec(select(UserWatchlistDB)).all()
+    for item in items:
+        try:
+            quote = data_provider_manager.get_stock_quote(item.symbol)
+            pricing = PricingEngine.evaluate_pricing_and_entry_zone(quote)
+            new_target = pricing.get("ideal_buy_range_max")
+            if new_target and new_target > 0:
+                item.target_buy_price = new_target
+                session.add(item)
+        except Exception:
+            pass
+
+    session.commit()
+    for item in items:
+        session.refresh(item)
+    return items
+
 @router.delete("/{symbol}")
 def remove_from_watchlist(symbol: str, session: Session = Depends(get_session)):
     """Removes a stock from the watchlist."""
@@ -69,3 +92,4 @@ def remove_from_watchlist(symbol: str, session: Session = Depends(get_session)):
     session.delete(item)
     session.commit()
     return {"message": f"Successfully removed {normalized_symbol} from watchlist"}
+
