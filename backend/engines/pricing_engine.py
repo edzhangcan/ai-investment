@@ -95,11 +95,16 @@ class PricingEngine:
 
         val_percentile = round(max(30.0, min(95.0, dcf_pts + ma_pts + pe_pts)), 1)
 
-        # 3. Technical Support & Institutional Margin of Safety Buy Bracket Synthesis
-        mos_discount = 0.85
-        calculated_buy_max = round(max(two_hundred_sma * 0.95, dcf_fair_value * mos_discount), 2)
-        ideal_buy_max = calculated_buy_max
-        ideal_buy_min = round(min(two_hundred_sma * 0.88, ideal_buy_max * 0.85), 2)
+        # 3. Technical Support & Institutional Margin of Safety Buy Bracket Synthesis (Conservative Dual-Constraint Gate)
+        mos_discount = 0.80  # 20% Institutional Margin of Safety discount below DCF
+        dcf_ceiling = round(dcf_fair_value * mos_discount, 2)
+        technical_ceiling = round(min(price, two_hundred_sma * 1.02), 2)
+        # Conservative intersection: must satisfy BOTH valuation Margin of Safety and technical support reasonableness
+        ideal_buy_max = round(min(dcf_ceiling, technical_ceiling), 2)
+        # Floor is set at a 15% discount to the ceiling (or bounded by 200 SMA support floor)
+        ideal_buy_min = round(min(ideal_buy_max * 0.85, two_hundred_sma * 0.85), 2)
+        if ideal_buy_min > ideal_buy_max:
+            ideal_buy_min = round(ideal_buy_max * 0.85, 2)
 
         if price <= ideal_buy_max:
             if lang == "en":
