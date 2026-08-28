@@ -227,6 +227,13 @@ export interface Translations {
   discordSellSuccess: string;
   discordGoldSuccess: string;
   discordDispatchFailed: string;
+
+  // In-App Notification Toast
+  toastTargetHit: string;
+  toastEnteredBuyZone: string;
+  toastTargetLabel: string;
+  toastDeepDiveBtn: string;
+  toastCloseAria: string;
 }
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
@@ -443,6 +450,13 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordSellSuccess: "Watchlist Sell & Danger Zone alert sent to Discord!",
     discordGoldSuccess: "Gold Nuggets Discovery alert sent to Discord!",
     discordDispatchFailed: "Alert dispatch failed:",
+
+    // In-App Notification Toast
+    toastTargetHit: "Target Price Hit!",
+    toastEnteredBuyZone: "entered your Buy Zone! Live:",
+    toastTargetLabel: "≤ Target:",
+    toastDeepDiveBtn: "Deep Dive Analysis",
+    toastCloseAria: "Dismiss alert",
   },
 
   zh: {
@@ -658,6 +672,13 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordSellSuccess: "观察列表卖出与危险区间预警已发送至 Discord！",
     discordGoldSuccess: "淘金组合 (Gold Nuggets) 发现提醒已发送至 Discord！",
     discordDispatchFailed: "警报发送失败:",
+
+    // In-App Notification Toast
+    toastTargetHit: "已达目标买入价!",
+    toastEnteredBuyZone: "已进入理想买入区间！现价:",
+    toastTargetLabel: "≤ 目标价:",
+    toastDeepDiveBtn: "立即深度分析",
+    toastCloseAria: "关闭提醒",
   },
 
   hybrid: {
@@ -873,5 +894,12 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordSellSuccess: "观察列表卖出与危险预警已发送至 Discord！",
     discordGoldSuccess: "Gold Nuggets 发现提醒已发送至 Discord！",
     discordDispatchFailed: "警报发送失败:",
+
+    // In-App Notification Toast
+    toastTargetHit: "已达目标买入价! (Target Hit)",
+    toastEnteredBuyZone: "已进入买入区间 (Buy Zone)！现价:",
+    toastTargetLabel: "≤ 目标价 (Target):",
+    toastDeepDiveBtn: "立即深度分析 (Deep Dive)",
+    toastCloseAria: "关闭提醒 (Dismiss)",
   }
 };
