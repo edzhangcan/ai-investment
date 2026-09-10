@@ -153,7 +153,15 @@ class RecommendationEngine:
                         "ideal_buy_range_max": pricing.get("ideal_buy_range_max", 110.0),
                         "ideal_buy_range": f"${pricing.get('ideal_buy_range_min', 90.0)} - ${pricing.get('ideal_buy_range_max', 110.0)} {stock_raw.get('currency', 'USD')}"
                     },
-                    "downside_risk_summary": f"Technical support at 200D SMA (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')}).",
+                    "downside_risk_summary": (
+                        (f"技术面支撑位于 200日均线 (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')})。" if lang == "zh"
+                         else (f"技术支撑位位于 200D SMA (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')})。" if lang == "hybrid"
+                         else f"Technical support at 200D SMA (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')})."))
+                        if (stock_raw.get("current_price") or 0.0) >= pricing.get("two_hundred_day_sma", 100.0)
+                        else (f"下方支撑锚定于买入区间下沿 (${pricing.get('ideal_buy_range_min', 90.0)} {stock_raw.get('currency', 'USD')})，200日均线 (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')}) 构成上方阻力。" if lang == "zh"
+                         else (f"下方支撑锚定于 Buy Range Min (${pricing.get('ideal_buy_range_min', 90.0)} {stock_raw.get('currency', 'USD')})，200D SMA (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')}) 构成上方阻力。" if lang == "hybrid"
+                         else f"Support floor anchored at Buy Range Min (${pricing.get('ideal_buy_range_min', 90.0)} {stock_raw.get('currency', 'USD')}); 200D SMA (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')}) acts as overhead resistance."))
+                    ),
                     "action_status": pricing.get("action_status", "IN_BUY_ZONE")
                 }
             except Exception as e:

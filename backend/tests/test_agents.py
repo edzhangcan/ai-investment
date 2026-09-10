@@ -50,3 +50,132 @@ def test_dynamic_risk_reward_ratio_variation():
     assert rr_a >= 3.0  # High reward-to-risk (> 3.0:1)
     assert rr_c <= 0.5  # Low reward-to-risk (< 0.5:1)
 
+def test_bear_and_bull_arguments_below_200d_sma_en():
+    """Verify that when price is below 200D SMA, bear argument never outputs negative percentages and correctly cites overhead resistance and floor support."""
+    stock = {"symbol": "TSLA", "current_price": 95.0, "currency": "USD", "pe_ratio": 45.0}
+    macro = {"cycle_stage": "Late-Cycle", "fed_sentiment": {"tone": "Hawkish"}}
+    pricing = {
+        "valuation_status": "Fair Value",
+        "fifty_day_sma": 92.0,
+        "two_hundred_day_sma": 100.0,
+        "dcf_fair_value": 110.0,
+        "ideal_buy_range_min": 85.0,
+        "ideal_buy_range_max": 94.0
+    }
+    fundamental = {"fcf_quality": "High Quality", "moat_rating": "Wide Moat"}
+
+    debate = MultiAgentArena._run_fallback_debate(stock, macro, pricing, fundamental, lang="en")
+    bear = debate["bear_argument"]
+    bull = debate["bull_argument"]
+
+    # 1. Zero negative percentages in bear key points or downside risk
+    for pt in bear["key_points"]:
+        assert "-5.0%" not in pt
+        assert "-5%" not in pt
+        assert "above 200D MA support" not in pt
+
+    # 2. Bear cites trend breakdown below 200D MA and overhead resistance
+    assert any("Trend breakdown: Trading 5.0% below 200D MA ($100.0 USD)" in pt for pt in bear["key_points"])
+    assert "overhead resistance" in bear["downside_risk"]
+    assert "key value floor support lies at $85.0 USD" in bear["downside_risk"]
+
+    # 3. Bull cites mean-reversion discount rather than support anchor
+    assert any("Mean-reversion discount: Trading at a 5.0% discount below the 200-day moving average" in pt for pt in bull["key_points"])
+
+def test_bear_and_bull_arguments_below_200d_sma_zh():
+    """Verify Chinese localization when price is below 200D SMA."""
+    stock = {"symbol": "INTC", "current_price": 92.0, "currency": "USD", "pe_ratio": 15.0}
+    macro = {"cycle_stage": "Slowdown", "fed_sentiment": {"tone": "Neutral"}}
+    pricing = {
+        "valuation_status": "Deep Value",
+        "fifty_day_sma": 90.0,
+        "two_hundred_day_sma": 100.0,
+        "dcf_fair_value": 120.0,
+        "ideal_buy_range_min": 80.0,
+        "ideal_buy_range_max": 90.0
+    }
+    fundamental = {"fcf_quality": "Medium Quality", "moat_rating": "Narrow Moat"}
+
+    debate = MultiAgentArena._run_fallback_debate(stock, macro, pricing, fundamental, lang="zh")
+    bear = debate["bear_argument"]
+    bull = debate["bull_argument"]
+
+    # Zero negative percentages
+    for pt in bear["key_points"]:
+        assert "-8.0%" not in pt
+        assert "高于 200日均线支撑位" not in pt
+
+    assert any("技术面破位承压" in pt and "下方 8.0%" in pt and "阻力位" in pt for pt in bear["key_points"])
+    assert "下方关键估值底部支撑" in bear["downside_risk"]
+    assert any("均值回归折价契机" in pt for pt in bull["key_points"])
+
+def test_bear_and_bull_arguments_above_200d_sma():
+    """Verify that when price is above 200D SMA, bear argument cites pullback risk and bull cites support anchor."""
+    stock = {"symbol": "NVDA", "current_price": 120.0, "currency": "USD", "pe_ratio": 65.0}
+    macro = {"cycle_stage": "Expansion", "fed_sentiment": {"tone": "Dovish"}}
+    pricing = {
+        "valuation_status": "Overvalued",
+        "fifty_day_sma": 115.0,
+        "two_hundred_day_sma": 100.0,
+        "dcf_fair_value": 130.0,
+        "ideal_buy_range_min": 95.0,
+        "ideal_buy_range_max": 105.0
+    }
+    fundamental = {"fcf_quality": "High Quality", "moat_rating": "Wide Moat"}
+
+    debate = MultiAgentArena._run_fallback_debate(stock, macro, pricing, fundamental, lang="en")
+    bear = debate["bear_argument"]
+    bull = debate["bull_argument"]
+
+    assert any("Downside pullback risk: Price is extended 16.7% above 200D MA support" in pt for pt in bear["key_points"])
+    assert "Technical support lies at 200D SMA ($100.0 USD) indicating 16.7% downside pullback exposure" in bear["downside_risk"]
+    assert any("Technical strength: Price is holding support above the 200-day moving average" in pt for pt in bull["key_points"])
+
+def test_cio_verdict_pass_rationale_below_200d_sma():
+    """Verify that when a stock is in PASS/OVERVALUED status while below 200D SMA, CIO does not claim it is overextended above 200D SMA."""
+    stock = {"symbol": "FALLING", "current_price": 95.0, "currency": "USD", "pe_ratio": 50.0}
+    macro = {"cycle_stage": "Contraction", "fed_sentiment": {"tone": "Hawkish"}}
+    pricing = {
+        "valuation_status": "Overvalued",
+        "fifty_day_sma": 92.0,  # price > fifty_day_sma (triggers PASS/OVERVALUED)
+        "two_hundred_day_sma": 105.0,  # price < two_hundred_day_sma
+        "dcf_fair_value": 80.0,
+        "ideal_buy_range_min": 65.0,
+        "ideal_buy_range_max": 75.0  # price > buy_max
+    }
+    fundamental = {"fcf_quality": "Low Quality", "moat_rating": "None"}
+
+    debate = MultiAgentArena._run_fallback_debate(stock, macro, pricing, fundamental, lang="en")
+    cio = debate["cio_verdict"]
+
+    assert "PASS" in cio["verdict"]
+    assert "overextended above 200D SMA" not in cio["judge_summary"]
+    assert "below 200D SMA resistance" in cio["judge_summary"]
+
+def test_cae_to_debate_never_outputs_negative_downside_gap():
+    """Explicitly verify that CAE.TO ($33.74 CAD vs 200D SMA $35.65 CAD) never outputs negative downside gap."""
+    stock = {"symbol": "CAE.TO", "company_name": "CAE Inc.", "current_price": 33.74, "currency": "CAD", "pe_ratio": 37.9}
+    macro = {"cycle_stage": "Overheat", "fed_sentiment": {"tone": "Hawkish"}}
+    pricing = {
+        "valuation_status": "Fair Value",
+        "fifty_day_sma": 32.50,
+        "two_hundred_day_sma": 35.65,
+        "dcf_fair_value": 47.24,
+        "ideal_buy_range_min": 30.78,
+        "ideal_buy_range_max": 34.98
+    }
+    fundamental = {"fcf_quality": "High Quality", "moat_rating": "Narrow Moat"}
+
+    for lang in ["en", "zh", "hybrid"]:
+        debate = MultiAgentArena._run_fallback_debate(stock, macro, pricing, fundamental, lang=lang)
+        bear_pts = debate["bear_argument"]["key_points"]
+        bear_risk = debate["bear_argument"]["downside_risk"]
+
+        for pt in bear_pts:
+            assert "-5" not in pt
+            assert "above 200D MA support" not in pt
+            assert "高于 200日均线支撑位" not in pt
+        assert "-5" not in bear_risk
+
+
+
