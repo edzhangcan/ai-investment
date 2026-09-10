@@ -26,7 +26,7 @@ def analyze_stock(ticker: str, lang: str = "en"):
     stock_data = DataProviderManager.get_stock_data(symbol)
     macro_data = MacroEngine.analyze_macro_environment(lang=lang)
     fundamental_data = FundamentalEngine.evaluate_fundamentals(stock_data, lang=lang)
-    pricing_data = PricingEngine.evaluate_pricing_and_entry_zone(stock_data)
+    pricing_data = PricingEngine.evaluate_pricing_and_entry_zone(stock_data, lang=lang)
     debate_data = MultiAgentArena.run_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
     news_data = NewsClient.fetch_stock_news(symbol)
     profile_data = fundamental_data.get("company_profile")
