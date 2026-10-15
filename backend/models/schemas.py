@@ -23,6 +23,11 @@ class StockDataSchema(BaseModel):
     total_revenue: Optional[float] = None
     revenue_growth: Optional[float] = None
     rsi_14: float = 50.0
+    dividend_yield_pct: Optional[float] = 0.0
+    net_buyback_yield_pct: Optional[float] = 0.0
+    total_shareholder_yield_pct: Optional[float] = 0.0
+    roic: Optional[float] = 0.0
+    dilution_3y_pct: Optional[float] = 0.0
     source: str
 
 class SentimentSchema(BaseModel):
@@ -54,6 +59,36 @@ class MoatFactorScoreSchema(BaseModel):
     score: float  # 0.0 to 10.0
     status: str   # "Strong Moat", "Moderate Moat", "Weak / None"
 
+from enum import Enum
+
+class StockTaxonomyEnum(str, Enum):
+    TREE = "TREE"           # 种树: High-ROIC secular FCF compounder (~5% of equities)
+    GRAIN = "GRAIN"         # 种粮: Cyclical/Value/Dividend cash cow (~15% of equities)
+    VEGETABLE = "VEGETABLE" # 种菜: Negative-FCF or dilutive stock (~80% of equities)
+
+class TaxonomyResult(BaseModel):
+    taxonomy: StockTaxonomyEnum
+    badge_en: str
+    badge_zh: str
+    holding_rule_en: str
+    holding_rule_zh: str
+    total_shareholder_yield_pct: float = 0.0
+    net_buyback_yield_pct: float = 0.0
+    dilution_3y_pct: float = 0.0
+
+class ReverseDcfCell(BaseModel):
+    discount_rate_pct: float
+    ceiling_multiple: float
+    fair_pe: float
+
+class ReverseDcfResult(BaseModel):
+    current_pe: float
+    implied_10y_ceiling_multiple: float = Field(..., description="E_10 / E_0 implied at 10% discount rate")
+    implied_10y_profit_usd: Optional[float] = None
+    is_prosperity_trap: bool = False
+    prosperity_trap_note: Optional[str] = None
+    matrix: List[ReverseDcfCell] = Field(default_factory=list)
+
 class FundamentalAnalysisSchema(BaseModel):
     symbol: str
     free_cash_flow: Optional[float] = None
@@ -66,6 +101,8 @@ class FundamentalAnalysisSchema(BaseModel):
     guidance_shift_deltas: List[GuidanceDeltaSchema]
     guidance_drift_score: float = 0.0
     arr_nrr_metrics: Dict[str, Any] = Field(default_factory=dict)
+    taxonomy: Optional[TaxonomyResult] = None
+    total_shareholder_yield_pct: Optional[float] = 0.0
 
 class PricingAnalysisSchema(BaseModel):
     symbol: str
@@ -77,11 +114,17 @@ class PricingAnalysisSchema(BaseModel):
     valuation_status: str
     valuation_percentile: int
     dcf_fair_value: float
-    ideal_buy_range_min: float
-    ideal_buy_range_max: float
+    ideal_buy_range_min: Optional[float] = None
+    ideal_buy_range_max: Optional[float] = None
+    ideal_sell_range_min: Optional[float] = None
+    ideal_sell_range_max: Optional[float] = None
+    dcf_applicable: bool = True
     action_status: str
     timing_advice: str
     rsi_14: float
+    reverse_dcf: Optional[ReverseDcfResult] = None
+    taxonomy: Optional[TaxonomyResult] = None
+    total_shareholder_yield_pct: Optional[float] = None
 
 class BullArgumentSchema(BaseModel):
     agent: str
@@ -124,6 +167,8 @@ class StockRecommendationSchema(BaseModel):
     key_metrics: Dict[str, Any]
     downside_risk_summary: str
     action_status: str
+    taxonomy: Optional[TaxonomyResult] = None
+    taxonomy_badge: Optional[str] = None
 
 class CategorizedRecommendationsSchema(BaseModel):
     macro_context: Dict[str, Any]
@@ -137,3 +182,4 @@ class StockAnalysisResponseSchema(BaseModel):
     fundamentals: FundamentalAnalysisSchema
     pricing: PricingAnalysisSchema
     debate: DebateSchema
+

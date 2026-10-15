@@ -133,6 +133,9 @@ class FundamentalEngine:
 
         currency = stock_data.get("currency", "CAD" if symbol.endswith(".TO") else "USD")
 
+        # 6. Mianji Stock Taxonomy Classification (树/粮/菜)
+        taxonomy_info = cls.classify_stock_taxonomy(stock_data, lang=lang)
+
         return {
             "is_valid": True,
             "symbol": symbol,
@@ -152,7 +155,63 @@ class FundamentalEngine:
             "company_background": company_profile["company_background"],
             "growth_catalysts": company_profile["growth_catalysts"],
             "key_catalysts": company_profile["growth_catalysts"],
-            "revenue_drivers": company_profile["revenue_drivers"]
+            "revenue_drivers": company_profile["revenue_drivers"],
+            "taxonomy": taxonomy_info,
+            "total_shareholder_yield_pct": taxonomy_info["total_shareholder_yield_pct"]
+        }
+
+    @classmethod
+    def classify_stock_taxonomy(cls, stock_data: Dict[str, Any], lang: str = "en") -> Dict[str, Any]:
+        """
+        Classifies equity into Mianji 3-part taxonomy (树/粮/菜) per E169 / E158:
+        - TREE (种树): High-ROIC secular FCF compounders (~5%)
+        - GRAIN (种粮): Cyclical/Value/Dividend cash cows (~15%)
+        - VEGETABLE (种菜): Negative-FCF or high-dilution trend trades (~80%)
+        """
+        fcf = stock_data.get("free_cash_flow", 0) or 0
+        roic = stock_data.get("roic", 0.0) or 0.0
+        rev_growth = stock_data.get("revenue_growth", 0.0) or 0.0
+        div_yield = stock_data.get("dividend_yield_pct", 0.0) or 0.0
+        buyback_yield = stock_data.get("net_buyback_yield_pct", 0.0) or 0.0
+        dilution_3y = stock_data.get("dilution_3y_pct", 0.0) or 0.0
+        pe = stock_data.get("pe_ratio")
+        fcf_margin = stock_data.get("fcf_margin", 0.0) or 0.0
+
+        total_shareholder_yield_pct = round(float(div_yield) + float(buyback_yield), 2)
+
+        # Classification rules:
+        # 1. VEGETABLE (种菜): Negative FCF (fcf <= 0) or excessive dilution (dilution_3y > 8.0)
+        # 2. TREE (种树): High-ROIC (roic >= 0.15 or fcf_margin >= 0.12), steady growth (rev_growth >= 0.08), low dilution (dilution_3y <= 1.0)
+        # 3. GRAIN (种粮): All other positive-FCF value/cyclical assets
+
+        if fcf <= 0 or dilution_3y > 8.0:
+            taxonomy = "VEGETABLE"
+            badge_en = "🥬 Vegetable (Trend Only)"
+            badge_zh = "🥬 种菜股（无基本面价值，仅限趋势交易）"
+            holding_rule_en = "Trend trading only: No DCF anchor, strictly follow 4-state trend temperature and hard stop-loss."
+            holding_rule_zh = "无基本面锚，不可长期死扛，不可越跌越买，严格按趋势温度右侧交易并设硬止损。"
+        elif (roic >= 0.15 or fcf_margin >= 0.12) and rev_growth >= 0.08 and dilution_3y <= 1.0:
+            taxonomy = "TREE"
+            badge_en = "🌲 Tree (Compounder)"
+            badge_zh = "🌲 种树股（长期自由现金流复利）"
+            holding_rule_en = "Long-term compounding hold: Do not sell easily on valuation expansion alone."
+            holding_rule_zh = "做合格持有人，赚企业内生自由现金流增长的钱，非泡沫期不轻易卖出。"
+        else:
+            taxonomy = "GRAIN"
+            badge_en = "🌾 Grain (Cyclical / Value)"
+            badge_zh = "🌾 种粮股（春播秋收：估值回归+高股息）"
+            holding_rule_en = "Cyclical & Dividend harvesting: Spring sowing, Autumn harvest. Buy low, collect yield, sell into high valuation."
+            holding_rule_zh = "春播秋收：低估买入吃股息，估值中枢修复时果断止盈，警惕景气度陷阱。"
+
+        return {
+            "taxonomy": taxonomy,
+            "badge_en": badge_en,
+            "badge_zh": badge_zh,
+            "holding_rule_en": holding_rule_en,
+            "holding_rule_zh": holding_rule_zh,
+            "total_shareholder_yield_pct": total_shareholder_yield_pct,
+            "net_buyback_yield_pct": float(buyback_yield),
+            "dilution_3y_pct": float(dilution_3y)
         }
 
     @classmethod

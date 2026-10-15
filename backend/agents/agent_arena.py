@@ -152,7 +152,11 @@ class MultiAgentArena:
         else:
             below_pct = round(((two_hundred_sma - price) / max(1.0, two_hundred_sma)) * 100, 1)
 
-        floor_gap_pct = round(((price - buy_min) / max(1.0, price)) * 100, 1) if price > buy_min else 0.0
+        has_buy_bracket = buy_min is not None and buy_max is not None
+        safe_buy_min = buy_min if has_buy_bracket else round(two_hundred_sma * 0.88, 2)
+        safe_buy_max = buy_max if has_buy_bracket else round(two_hundred_sma * 0.95, 2)
+
+        floor_gap_pct = round(((price - safe_buy_min) / max(1.0, price)) * 100, 1) if price > safe_buy_min else 0.0
 
         if lang == "zh":
             bull_agent_name = "多头分析师 🐂"
@@ -166,10 +170,10 @@ class MultiAgentArena:
             else:
                 tech_bull_point = f"均值回归折价契机：股价较 200日均线 (${two_hundred_sma} {curr}) 产生 {below_pct}% 折价，具备逆向均值回归修复空间。"
                 tech_bear_point = f"技术面破位承压：股价处于 200日均线 (${two_hundred_sma} {curr}) 下方 {below_pct}%，均线已由支撑反转为上方强阻力位。"
-                if price > buy_min:
-                    tech_bear_risk = f"200日均线 (${two_hundred_sma} {curr}) 构成上方阻力，下方关键估值底部支撑位于 ${buy_min} {curr}（下行空间 {floor_gap_pct}%）。"
+                if price > safe_buy_min:
+                    tech_bear_risk = f"200日均线 (${two_hundred_sma} {curr}) 构成上方阻力，下方关键估值底部支撑位于 ${safe_buy_min} {curr}（下行空间 {floor_gap_pct}%）。"
                 else:
-                    tech_bear_risk = f"200日均线 (${two_hundred_sma} {curr}) 构成上方阻力，股价正测试价值底部区间 (${buy_min} {curr})，需警惕阴跌探底风险。"
+                    tech_bear_risk = f"200日均线 (${two_hundred_sma} {curr}) 构成上方阻力，股价正测试价值底部区间 (${safe_buy_min} {curr})，需警惕阴跌探底风险。"
 
             bull_points = [
                 f"{company} ({symbol}) 当前实时市场价格为 ${price} {curr}。",
@@ -197,10 +201,10 @@ class MultiAgentArena:
             else:
                 tech_bull_point = f"均值回归折价 (Mean-Reversion)：股价较 200D SMA (${two_hundred_sma} {curr}) 折价 {below_pct}%，具备均值回归修复空间。"
                 tech_bear_point = f"技术破位承压 (Trend Breakdown)：股价处于 200D SMA (${two_hundred_sma} {curr}) 下方 {below_pct}%，均线已转化为上方强阻力位 (Overhead Resistance)。"
-                if price > buy_min:
-                    tech_bear_risk = f"200D SMA (${two_hundred_sma} {curr}) 构成上方阻力，下方关键估值支撑位于 ${buy_min} {curr}（下行空间 {floor_gap_pct}%）。"
+                if price > safe_buy_min:
+                    tech_bear_risk = f"200D SMA (${two_hundred_sma} {curr}) 构成上方阻力，下方关键估值支撑位于 ${safe_buy_min} {curr}（下行空间 {floor_gap_pct}%）。"
                 else:
-                    tech_bear_risk = f"200D SMA (${two_hundred_sma} {curr}) 构成上方阻力，股价测试价值底部 (${buy_min} {curr})，需警惕探底与飞刀风险。"
+                    tech_bear_risk = f"200D SMA (${two_hundred_sma} {curr}) 构成上方阻力，股价测试价值底部 (${safe_buy_min} {curr})，需警惕探底与飞刀风险。"
 
             bull_points = [
                 f"{company} ({symbol}) 实时价格为 ${price} {curr}。",
@@ -228,10 +232,10 @@ class MultiAgentArena:
             else:
                 tech_bull_point = f"Mean-reversion discount: Trading at a {below_pct}% discount below the 200-day moving average (${two_hundred_sma} {curr}), offering contrarian value."
                 tech_bear_point = f"Trend breakdown: Trading {below_pct}% below 200D MA (${two_hundred_sma} {curr}), which now acts as overhead resistance rather than support."
-                if price > buy_min:
-                    tech_bear_risk = f"200D MA (${two_hundred_sma} {curr}) forms overhead resistance; key value floor support lies at ${buy_min} {curr} ({floor_gap_pct}% lower)."
+                if price > safe_buy_min:
+                    tech_bear_risk = f"200D MA (${two_hundred_sma} {curr}) forms overhead resistance; key value floor support lies at ${safe_buy_min} {curr} ({floor_gap_pct}% lower)."
                 else:
-                    tech_bear_risk = f"200D MA (${two_hundred_sma} {curr}) forms overhead resistance; price is testing deep value floor (${buy_min} {curr}), watch for falling knife momentum."
+                    tech_bear_risk = f"200D MA (${two_hundred_sma} {curr}) forms overhead resistance; price is testing deep value floor (${safe_buy_min} {curr}), watch for falling knife momentum."
 
             bull_points = [
                 f"{company} ({symbol}) real-time market price is ${price} {curr}.",
@@ -255,7 +259,7 @@ class MultiAgentArena:
         else:
             upside_potential = max(0.1, price * 0.03)
 
-        support_floor = min(two_hundred_sma, buy_min)
+        support_floor = min(two_hundred_sma, safe_buy_min)
         if price > support_floor:
             downside_exposure = max(price * 0.03, price - support_floor)
         else:
@@ -265,10 +269,14 @@ class MultiAgentArena:
         rr_ratio = max(0.2, min(9.9, calculated_rr))
 
         # 👨‍⚖️ CIO Agent Referee & Final Verdict
-        if price <= buy_max:
+        if has_buy_bracket and price <= buy_max:
             verdict = "ACCUMULATE IN BRACKETS" if lang == "en" else ("建议买入 (分批建仓)" if lang == "zh" else "建议买入 (BUY - Accumulate)")
             position_size = "Suggest allocating 3% - 5% of total portfolio." if lang == "en" else "建议配置总投资组合的 3% - 5% 仓位。"
             rationale = f"Real price ${price} {curr} for {company} is within safe buy bracket (${buy_min} - ${buy_max} {curr}). Risk-Reward Ratio is favorable at {rr_ratio}:1." if lang == "en" else f"{company} 的当前实时股价 ${price} {curr} 处于安全买入区间 (${buy_min} - ${buy_max} {curr})，风险收益比良好 ({rr_ratio}:1)。"
+        elif not has_buy_bracket:
+            verdict = "TREND_ONLY_NO_DCF" if lang == "en" else ("仅限趋势交易" if lang == "zh" else "仅限趋势 (TREND_ONLY)")
+            position_size = "Max 2% satellite position strictly with hard stop-loss." if lang == "en" else "卫星仓位上限2%，严格按趋势温度与硬止损操作。"
+            rationale = pricing_data.get("timing_advice", "")
         elif price <= pricing_data.get("fifty_day_sma", price * 1.05):
             verdict = "HOLD / WATCH PULLBACK" if lang == "en" else ("观望等待 (等待回调)" if lang == "zh" else "观望等待 (HOLD - Watch)")
             position_size = "0% new capital (Hold existing position if owned)." if lang == "en" else "0% 新增资金（已持仓者继续持有）。"
@@ -285,7 +293,7 @@ class MultiAgentArena:
             "agent": cio_agent_name,
             "verdict": verdict,
             "position_sizing_advice": position_size,
-            "recommended_buy_bracket": f"${buy_min} - ${buy_max} {curr}",
+            "recommended_buy_bracket": f"${buy_min} - ${buy_max} {curr}" if has_buy_bracket else "TREND_ONLY_NO_DCF",
             "risk_reward_ratio": rr_ratio,
             "judge_summary": rationale,
             "empirical_proof_verified": True

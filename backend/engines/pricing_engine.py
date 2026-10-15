@@ -5,7 +5,8 @@ technical moving averages (50D & 200D SMA), RSI momentum, and generates safe "Id
 Strict Policy: Zero fabrication of price or technical data.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
+from backend.engines.fundamental_engine import FundamentalEngine
 
 class PricingEngine:
     """Valuation & Technical Timing Engine."""
@@ -152,6 +153,7 @@ class PricingEngine:
         ideal_sell_range_min = round(max(dcf_fair_value * 1.10, price * 1.15), 2)
         ideal_sell_range_max = round(max(dcf_fair_value * 1.25, price * 1.30), 2)
 
+        # Base action status and advice based on price vs buy bracket / DCF
         if price <= ideal_buy_max:
             if lang == "en":
                 action_status = "IN_BUY_ZONE"
@@ -183,6 +185,38 @@ class PricingEngine:
                 action_status = "过度延伸 (OVEREXTENDED)"
                 advice = f"当前股价 ${price} {currency} 高于 DCF 固有价值 (${dcf_fair_value} {currency})。建议等待 Pullback 至 ${ideal_buy_max} {currency}。"
 
+        # 4. Mianji Taxonomy & Reverse-DCF Narrative Penetration Integration
+        taxonomy_result = stock_data.get("taxonomy")
+        if not taxonomy_result:
+            taxonomy_result = FundamentalEngine.classify_stock_taxonomy(stock_data, lang=lang)
+        taxonomy = taxonomy_result.get("taxonomy", "TREE")
+
+        reverse_dcf = cls.solve_implied_narrative_ceiling(
+            current_pe=pe,
+            net_income=stock_data.get("net_income")
+        )
+
+        rev_growth_raw = stock_data.get("revenue_growth") or 0.0
+        if rev_growth_raw > 0.25 and val_percentile < 25 and taxonomy == "GRAIN":
+            reverse_dcf["is_prosperity_trap"] = True
+            reverse_dcf["prosperity_trap_note"] = (
+                "Prosperity Trap Warning: High short-term growth at low PE percentile — check if terminal ceiling is saturated."
+                if lang == "en" else
+                "景气度陷阱预警：高增速+低PE分位，警惕行业终局天花板见顶导致估值压缩。"
+            )
+
+        dcf_applicable = True
+        if taxonomy == "VEGETABLE":
+            dcf_applicable = False
+            ideal_buy_min = None
+            ideal_buy_max = None
+            action_status = "TREND_ONLY_NO_DCF"
+            advice = (
+                "VEGETABLE stock (Negative FCF or dilutive): No fundamental DCF buy zone. Trade strictly with 4-state trend temperature and stop-loss."
+                if lang == "en" else
+                "🥬 种菜股（无内生现金流或严重稀释）：不设基本面 DCF 击球区，必须严格依趋势温度与硬止损交易。"
+            )
+
         return {
             "is_valid": True,
             "symbol": symbol,
@@ -198,9 +232,85 @@ class PricingEngine:
             "ideal_buy_range_max": ideal_buy_max,
             "ideal_sell_range_min": ideal_sell_range_min,
             "ideal_sell_range_max": ideal_sell_range_max,
+            "dcf_applicable": dcf_applicable,
             "applied_mos_pct": round((1.0 - mos_discount) * 100.0, 1),
             "applied_anchor_mode": anchor_mode,
             "action_status": action_status,
             "timing_advice": advice,
-            "rsi_14": stock_data.get("rsi_14", 54.0)
+            "rsi_14": stock_data.get("rsi_14", 54.0),
+            "reverse_dcf": reverse_dcf,
+            "taxonomy": taxonomy_result,
+            "total_shareholder_yield_pct": taxonomy_result.get("total_shareholder_yield_pct", 0.0)
+        }
+
+    @staticmethod
+    def _fair_pe_from_ceiling(m_ceiling: float, r: float = 0.10, term_pe: float = 15.0, payout: float = 0.30) -> float:
+        """
+        Calculates analytical fair dynamic PE given a 10-year earnings growth multiple M_ceiling per E173:
+        g = M_ceiling^(1/10) - 1
+        Fair PE = sum_{t=1}^{10} [alpha * (1+g)^t / (1+r)^t] + [M_ceiling * PE_term / (1+r)^10]
+        """
+        if m_ceiling <= 0:
+            return 0.0
+        g = (m_ceiling ** 0.1) - 1.0
+        pv_dividends = sum(payout * ((1.0 + g) ** t) / ((1.0 + r) ** t) for t in range(1, 11))
+        pv_terminal = (m_ceiling * term_pe) / ((1.0 + r) ** 10)
+        return pv_dividends + pv_terminal
+
+    @classmethod
+    def solve_implied_narrative_ceiling(
+        cls,
+        current_pe: Optional[float],
+        net_income: Optional[float] = None,
+        r_base: float = 0.10,
+        term_pe: float = 15.0,
+        payout: float = 0.30
+    ) -> Dict[str, Any]:
+        """
+        Solves for the 10-year implied earnings ceiling multiple via 30-step binary search.
+        Grounded in E173: Penetrate market narrative to find how much profit must grow in 10 years
+        to justify today's valuation multiple at 10% hurdle rate.
+        """
+        if current_pe is None or float(current_pe) <= 0:
+            return {
+                "current_pe": 0.0,
+                "implied_10y_ceiling_multiple": 1.0,
+                "implied_10y_profit_usd": None,
+                "is_prosperity_trap": False,
+                "prosperity_trap_note": None,
+                "matrix": []
+            }
+
+        target_pe = float(current_pe)
+        low, high = 0.1, 100.0
+        for _ in range(30):
+            mid = (low + high) / 2.0
+            val = cls._fair_pe_from_ceiling(mid, r=r_base, term_pe=term_pe, payout=payout)
+            if val < target_pe:
+                low = mid
+            else:
+                high = mid
+
+        implied_multiple = round((low + high) / 2.0, 2)
+        implied_profit = round(net_income * implied_multiple, 2) if net_income and net_income > 0 else None
+
+        # Build sensitivity matrix for discount rates [8%, 9%, 10%, 11%, 12%]
+        # and narrative multiples [1.5x, 2.0x, 3.0x, 5.0x, 8.0x, 10.0x]
+        matrix: List[Dict[str, float]] = []
+        for r_rate in [0.08, 0.09, 0.10, 0.11, 0.12]:
+            for m_mult in [1.5, 2.0, 3.0, 5.0, 8.0, 10.0]:
+                pe_val = round(cls._fair_pe_from_ceiling(m_mult, r=r_rate, term_pe=term_pe, payout=payout), 1)
+                matrix.append({
+                    "discount_rate_pct": round(r_rate * 100.0, 1),
+                    "ceiling_multiple": m_mult,
+                    "fair_pe": pe_val
+                })
+
+        return {
+            "current_pe": target_pe,
+            "implied_10y_ceiling_multiple": implied_multiple,
+            "implied_10y_profit_usd": implied_profit,
+            "is_prosperity_trap": False,
+            "prosperity_trap_note": None,
+            "matrix": matrix
         }

@@ -162,7 +162,13 @@ class RecommendationEngine:
                          else (f"下方支撑锚定于 Buy Range Min (${pricing.get('ideal_buy_range_min', 90.0)} {stock_raw.get('currency', 'USD')})，200D SMA (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')}) 构成上方阻力。" if lang == "hybrid"
                          else f"Support floor anchored at Buy Range Min (${pricing.get('ideal_buy_range_min', 90.0)} {stock_raw.get('currency', 'USD')}); 200D SMA (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')}) acts as overhead resistance."))
                     ),
-                    "action_status": pricing.get("action_status", "IN_BUY_ZONE")
+                    "action_status": pricing.get("action_status", "IN_BUY_ZONE"),
+                    "taxonomy": fundamental.get("taxonomy") or pricing.get("taxonomy"),
+                    "taxonomy_badge": (
+                        (fundamental.get("taxonomy") or pricing.get("taxonomy", {})).get("badge_zh")
+                        if lang in ["zh", "hybrid"]
+                        else (fundamental.get("taxonomy") or pricing.get("taxonomy", {})).get("badge_en", "🌲 Tree (Compounder)")
+                    )
                 }
             except Exception as e:
                 logger.debug(f"Error scoring symbol '{symbol}': {e}")

@@ -18,7 +18,40 @@ export interface StockData {
   total_revenue?: number | null;
   revenue_growth?: number | null;
   rsi_14?: number | null;
+  dividend_yield_pct?: number | null;
+  net_buyback_yield_pct?: number | null;
+  total_shareholder_yield_pct?: number | null;
+  roic?: number | null;
+  dilution_3y_pct?: number | null;
   source: string;
+}
+
+export type StockTaxonomyType = 'TREE' | 'GRAIN' | 'VEGETABLE';
+
+export interface TaxonomyResult {
+  taxonomy: StockTaxonomyType;
+  badge_en: string;
+  badge_zh: string;
+  holding_rule_en: string;
+  holding_rule_zh: string;
+  total_shareholder_yield_pct: number;
+  net_buyback_yield_pct: number;
+  dilution_3y_pct: number;
+}
+
+export interface ReverseDcfCell {
+  discount_rate_pct: number;
+  ceiling_multiple: number;
+  fair_pe: number;
+}
+
+export interface ReverseDcfResult {
+  current_pe: number;
+  implied_10y_ceiling_multiple: number;
+  implied_10y_profit_usd?: number | null;
+  is_prosperity_trap: boolean;
+  prosperity_trap_note?: string | null;
+  matrix: ReverseDcfCell[];
 }
 
 export interface SentimentData {
@@ -63,6 +96,8 @@ export interface FundamentalData {
   moat_scores?: MoatFactorScore[];
   guidance_shift_deltas: GuidanceDelta[];
   arr_nrr_metrics: Record<string, any>;
+  taxonomy?: TaxonomyResult;
+  total_shareholder_yield_pct?: number;
 }
 
 export interface PricingData {
@@ -75,11 +110,17 @@ export interface PricingData {
   valuation_status: string;
   valuation_percentile: number;
   dcf_fair_value: number;
-  ideal_buy_range_min: number;
-  ideal_buy_range_max: number;
+  ideal_buy_range_min?: number | null;
+  ideal_buy_range_max?: number | null;
+  ideal_sell_range_min?: number | null;
+  ideal_sell_range_max?: number | null;
+  dcf_applicable?: boolean;
   action_status: string;
   timing_advice: string;
   rsi_14: number;
+  reverse_dcf?: ReverseDcfResult;
+  taxonomy?: TaxonomyResult;
+  total_shareholder_yield_pct?: number;
 }
 
 export interface BullArgument {
@@ -153,6 +194,8 @@ export interface StockRecommendation {
   };
   downside_risk_summary: string;
   action_status: string;
+  taxonomy?: TaxonomyResult;
+  taxonomy_badge?: string;
 }
 
 export interface CategorizedRecommendationsPayload {
