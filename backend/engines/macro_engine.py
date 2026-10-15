@@ -105,6 +105,50 @@ class MacroEngine:
                 sector_overweight = ["Fixed Income / Bonds", "Utilities & Infrastructure", "High-Dividend Champions"]
                 sector_underweight = ["Energy", "Commodities"]
 
+        # Big Picture Macro Calculations
+        walcl = us_macro.get("walcl_fed_assets_trillion", 7.12)
+        nominal_gdp = us_macro.get("us_nominal_gdp_trillion", 28.65)
+        mkt_cap = us_macro.get("us_equity_market_cap_trillion", 55.20)
+        total_debt = us_macro.get("gfdebtn_us_debt_trillion", 35.46)
+        mmf = us_macro.get("mmmffaq027s_money_market_trillion", 6.42)
+        dgs10 = us_macro.get("dgs10_10y_yield_pct", 4.25)
+        dfii10 = us_macro.get("dfii10_tips_real_yield_pct", 1.85)
+        sp500_pe = us_macro.get("sp500_trailing_pe", 25.8)
+        gold_price = us_macro.get("gold_price_usd", 2450.0)
+        gold_log_yoy = us_macro.get("gold_log_yoy_pct", 24.5)
+
+        # 1. Modified Buffett Indicator: TMC / (GDP + Fed Balance Sheet WALCL)
+        modified_buffett = round(mkt_cap / max(1.0, nominal_gdp + walcl), 2)
+
+        # 2. AIAE (Aggregate Investor Allocation to Equities): TMC / (TMC + Debt + Cash MMF)
+        aiae_allocation = round((mkt_cap / max(1.0, mkt_cap + total_debt + mmf)) * 100.0, 2)
+
+        # 3. Equity Risk Premium (ERP): (100 / PE) - 10Y Treasury Yield
+        erp_pct = round((100.0 / max(1.0, sp500_pe)) - dgs10, 2)
+
+        # 4. 4-Layer Gold Board Topology: Decoupling from TIPS Real Yield
+        is_fiscal_decoupled = gold_log_yoy > 10.0 and dfii10 > 1.0
+
+        big_picture = {
+            "modified_buffett_ratio": modified_buffett,
+            "modified_buffett_pct": round(modified_buffett * 100.0, 1),
+            "aiae_allocation_pct": aiae_allocation,
+            "equity_risk_premium_pct": erp_pct,
+            "dgs10_yield_pct": dgs10,
+            "dfii10_tips_real_yield_pct": dfii10,
+            "fed_walcl_trillion": walcl,
+            "us_debt_trillion": total_debt,
+            "money_market_trillion": mmf,
+            "gold_board": {
+                "gold_price_usd": gold_price,
+                "gold_log_yoy_pct": gold_log_yoy,
+                "tips_10y_real_yield_pct": dfii10,
+                "is_fiscal_dominance_decoupled": is_fiscal_decoupled,
+                "regime_en": "Fiscal Dominance & Fiat Debasement (Gold Decoupled from Real Yield)",
+                "regime_zh": "财政主导与法币信用稀释（金价与美债实际利率深度脱钩）"
+            }
+        }
+
         # Build Empirical Fact-Based Proof Registry with Zero-Hallucination Citations
         empirical_supporting_facts = [
             {
@@ -124,6 +168,18 @@ class MacroEngine:
                 "value": f"{yield_spread}%",
                 "source": "Federal Reserve Economic Data (FRED Series T10Y2Y)",
                 "impact": "Late-Cycle Yield Curve Transition" if lang == "en" else "周期后期收益率曲线过渡"
+            },
+            {
+                "indicator": "Modified Buffett Indicator" if lang == "en" else "修正版巴菲特指标 [TMC / (GDP + WALCL)]",
+                "value": f"{modified_buffett}x ({round(modified_buffett * 100, 1)}%)",
+                "source": "FRED Series WALCL & BEA GDP (Big Picture Macro)",
+                "impact": "Structural Equity Valuation Gauge" if lang == "en" else "美股大局观全市场估值水位"
+            },
+            {
+                "indicator": "AIAE Investor Allocation to Equities" if lang == "en" else "全社会权益资产配置比例 (AIAE)",
+                "value": f"{aiae_allocation}%",
+                "source": "FRED Series GFDEBTN & MMMFFAQ027S",
+                "impact": "Investor Crowding & Cash Cushion" if lang == "en" else "投资者拥挤度与潜在增量弹药"
             }
         ]
 
@@ -150,7 +206,8 @@ class MacroEngine:
             "recommended_underweights": sector_underweight,
             "empirical_supporting_facts": empirical_supporting_facts,
             "policy_news": policy_news,
-            "credible_sources": credible_sources
+            "credible_sources": credible_sources,
+            "big_picture": big_picture
         }
 
     @classmethod

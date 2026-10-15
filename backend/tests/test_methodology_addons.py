@@ -396,3 +396,68 @@ def test_decision_journal_rest_endpoints():
     res_get = client.get("/api/watchlist/decision-journal/NVDA")
     assert res_get.status_code == 200
     assert len(res_get.json()) > 0
+
+# ==========================================
+# Phase 5 Tests: Big Picture Macro (Modified Buffett, AIAE, ERP) & 4-Layer Gold Board
+# ==========================================
+
+def test_big_picture_macro_indicators():
+    """Verify Big Picture macro indicators and 4-Layer Gold Board topology."""
+    from backend.engines.macro_engine import MacroEngine
+
+    macro = MacroEngine.analyze_macro_environment(force_refresh=True, lang="en")
+    assert "big_picture" in macro
+    bp = macro["big_picture"]
+
+    # 1. Modified Buffett Indicator: TMC / (GDP + Fed Balance Sheet WALCL)
+    assert "modified_buffett_ratio" in bp
+    assert bp["modified_buffett_ratio"] > 0
+    assert bp["modified_buffett_pct"] == round(bp["modified_buffett_ratio"] * 100.0, 1)
+
+    # 2. AIAE Allocation: TMC / (TMC + Debt + MMF)
+    assert "aiae_allocation_pct" in bp
+    assert 20.0 <= bp["aiae_allocation_pct"] <= 85.0
+
+    # 3. Equity Risk Premium: (100 / PE) - 10Y Yield
+    assert "equity_risk_premium_pct" in bp
+    assert "dgs10_yield_pct" in bp
+
+    # 4. FRED Macro aggregates
+    assert bp["fed_walcl_trillion"] > 0
+    assert bp["us_debt_trillion"] > 0
+    assert bp["money_market_trillion"] > 0
+
+    # 5. 4-Layer Gold Board Topology
+    assert "gold_board" in bp
+    gold = bp["gold_board"]
+    assert gold["gold_price_usd"] > 0
+    assert "gold_log_yoy_pct" in gold
+    assert "tips_10y_real_yield_pct" in gold
+    assert isinstance(gold["is_fiscal_dominance_decoupled"], bool)
+    assert len(gold["regime_en"]) > 0
+    assert len(gold["regime_zh"]) > 0
+
+def test_macro_dashboard_endpoint_delivers_big_picture():
+    """Verify GET /api/macro/dashboard delivers big_picture in macro_assessment."""
+    res = client.get("/api/macro/dashboard")
+    assert res.status_code == 200
+    data = res.json()
+    assert "macro_assessment" in data
+    assert "big_picture" in data["macro_assessment"]
+    bp = data["macro_assessment"]["big_picture"]
+    assert bp["modified_buffett_ratio"] > 0
+    assert "gold_board" in bp
+
+def test_fred_client_extended_series():
+    """Verify FredClient fetches or provides fallbacks for new macro series."""
+    from backend.data_sources.fred_client import FredClient
+
+    snap = FredClient.get_macro_snapshot()
+    assert "walcl_fed_assets_trillion" in snap
+    assert "gfdebtn_us_debt_trillion" in snap
+    assert "mmmffaq027s_money_market_trillion" in snap
+    assert "dgs10_10y_yield_pct" in snap
+    assert "dfii10_tips_real_yield_pct" in snap
+    assert snap["walcl_fed_assets_trillion"] > 0
+    assert snap["gfdebtn_us_debt_trillion"] > 0
+
