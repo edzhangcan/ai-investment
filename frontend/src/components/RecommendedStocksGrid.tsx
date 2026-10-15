@@ -226,13 +226,26 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
               }`}
             >
               <div>
-                {/* Header Row: Symbol, Flag, Market & Star Watchlist Toggle */}
+                {/* Header Row: Symbol, Flag, Market, Taxonomy Badge & Star Watchlist Toggle */}
                 <div className="flex items-center justify-between gap-2 mb-2 pb-2.5 border-b border-border-subtle">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-base">{flag}</span>
                     <span className="prism-badge-brand text-xs font-mono">
                       {rec.symbol}
                     </span>
+                    {(rec.taxonomy || rec.taxonomy_badge) && (
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                        (rec.taxonomy?.taxonomy === 'TREE' || rec.taxonomy_badge?.includes('树') || rec.taxonomy_badge?.includes('Tree'))
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
+                          : (rec.taxonomy?.taxonomy === 'GRAIN' || rec.taxonomy_badge?.includes('粮') || rec.taxonomy_badge?.includes('Grain'))
+                          ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
+                          : 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800'
+                      }`}>
+                        {language === 'zh'
+                          ? (rec.taxonomy?.badge_zh || rec.taxonomy_badge)
+                          : (rec.taxonomy?.badge_en || rec.taxonomy_badge)}
+                      </span>
+                    )}
                   </div>
 
                   <button

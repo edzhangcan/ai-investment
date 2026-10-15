@@ -23,6 +23,11 @@ class StockDataSchema(BaseModel):
     total_revenue: Optional[float] = None
     revenue_growth: Optional[float] = None
     rsi_14: float = 50.0
+    dividend_yield_pct: Optional[float] = 0.0
+    net_buyback_yield_pct: Optional[float] = 0.0
+    total_shareholder_yield_pct: Optional[float] = 0.0
+    roic: Optional[float] = 0.0
+    dilution_3y_pct: Optional[float] = 0.0
     source: str
 
 class SentimentSchema(BaseModel):
@@ -54,6 +59,36 @@ class MoatFactorScoreSchema(BaseModel):
     score: float  # 0.0 to 10.0
     status: str   # "Strong Moat", "Moderate Moat", "Weak / None"
 
+from enum import Enum
+
+class StockTaxonomyEnum(str, Enum):
+    TREE = "TREE"           # 种树: High-ROIC secular FCF compounder (~5% of equities)
+    GRAIN = "GRAIN"         # 种粮: Cyclical/Value/Dividend cash cow (~15% of equities)
+    VEGETABLE = "VEGETABLE" # 种菜: Negative-FCF or dilutive stock (~80% of equities)
+
+class TaxonomyResult(BaseModel):
+    taxonomy: StockTaxonomyEnum
+    badge_en: str
+    badge_zh: str
+    holding_rule_en: str
+    holding_rule_zh: str
+    total_shareholder_yield_pct: float = 0.0
+    net_buyback_yield_pct: float = 0.0
+    dilution_3y_pct: float = 0.0
+
+class ReverseDcfCell(BaseModel):
+    discount_rate_pct: float
+    ceiling_multiple: float
+    fair_pe: float
+
+class ReverseDcfResult(BaseModel):
+    current_pe: float
+    implied_10y_ceiling_multiple: float = Field(..., description="E_10 / E_0 implied at 10% discount rate")
+    implied_10y_profit_usd: Optional[float] = None
+    is_prosperity_trap: bool = False
+    prosperity_trap_note: Optional[str] = None
+    matrix: List[ReverseDcfCell] = Field(default_factory=list)
+
 class FundamentalAnalysisSchema(BaseModel):
     symbol: str
     free_cash_flow: Optional[float] = None
@@ -66,6 +101,8 @@ class FundamentalAnalysisSchema(BaseModel):
     guidance_shift_deltas: List[GuidanceDeltaSchema]
     guidance_drift_score: float = 0.0
     arr_nrr_metrics: Dict[str, Any] = Field(default_factory=dict)
+    taxonomy: Optional[TaxonomyResult] = None
+    total_shareholder_yield_pct: Optional[float] = 0.0
 
 class PricingAnalysisSchema(BaseModel):
     symbol: str
@@ -77,11 +114,17 @@ class PricingAnalysisSchema(BaseModel):
     valuation_status: str
     valuation_percentile: int
     dcf_fair_value: float
-    ideal_buy_range_min: float
-    ideal_buy_range_max: float
+    ideal_buy_range_min: Optional[float] = None
+    ideal_buy_range_max: Optional[float] = None
+    ideal_sell_range_min: Optional[float] = None
+    ideal_sell_range_max: Optional[float] = None
+    dcf_applicable: bool = True
     action_status: str
     timing_advice: str
     rsi_14: float
+    reverse_dcf: Optional[ReverseDcfResult] = None
+    taxonomy: Optional[TaxonomyResult] = None
+    total_shareholder_yield_pct: Optional[float] = None
 
 class BullArgumentSchema(BaseModel):
     agent: str
@@ -101,6 +144,7 @@ class CIOVerdictSchema(BaseModel):
     risk_reward_ratio: float
     judge_summary: str
     empirical_proof_verified: bool
+    discipline_audit: Optional[Dict[str, Any]] = None
 
 class DebateSchema(BaseModel):
     symbol: str
@@ -124,6 +168,8 @@ class StockRecommendationSchema(BaseModel):
     key_metrics: Dict[str, Any]
     downside_risk_summary: str
     action_status: str
+    taxonomy: Optional[TaxonomyResult] = None
+    taxonomy_badge: Optional[str] = None
 
 class CategorizedRecommendationsSchema(BaseModel):
     macro_context: Dict[str, Any]
@@ -137,3 +183,75 @@ class StockAnalysisResponseSchema(BaseModel):
     fundamentals: FundamentalAnalysisSchema
     pricing: PricingAnalysisSchema
     debate: DebateSchema
+
+# Phase 2: Portfolio, Kelly & Risk Schemas
+class KellyResult(BaseModel):
+    win_prob: float
+    upside_pct: float
+    stop_loss_pct: float
+    payoff_ratio_b: float
+    full_kelly_pct: float
+    quarter_kelly_pct: float
+    recommended_weight_pct: float
+    is_positive_edge: bool
+
+class CorrelationAlert(BaseModel):
+    pair: List[str]
+    rho_3y: float
+    rho_60d: float
+    diff: float
+    alert_en: str
+    alert_zh: str
+
+class FrontierPoint(BaseModel):
+    return_pct: float
+    volatility_pct: float
+    sharpe_ratio: float
+    weights: Dict[str, float]
+
+class EfficientFrontierResponse(BaseModel):
+    symbols: List[str]
+    correlation_matrix_3y: Dict[str, Dict[str, float]]
+    correlation_matrix_60d: Dict[str, Dict[str, float]]
+    correlation_decoupling_alerts: List[CorrelationAlert]
+    frontier_points: List[FrontierPoint]
+    max_sharpe_portfolio: FrontierPoint
+    min_variance_portfolio: FrontierPoint
+    equal_weight_portfolio: FrontierPoint
+
+class LiabilityStressResponse(BaseModel):
+    total_capital: float
+    est_max_drawdown_pct: float
+    max_drawdown_usd: float
+    monthly_living_expense: float
+    drawdown_months_of_living_expenses: float
+    annual_passive_income: float
+    passive_income_coverage_pct: float
+    remaining_capital: float
+    runway_months: float
+    is_runway_secure: bool
+    verdict_en: str
+    verdict_zh: str
+
+# Phase 3: Ergodicity Backtest Schemas
+class DrawdownEvent(BaseModel):
+    peak_date: str
+    trough_date: str
+    recovery_date: Optional[str] = None
+    depth_pct: float
+    drawdown_days: int
+    recovery_days: Optional[int] = None
+
+class UnderwaterPoint(BaseModel):
+    date: str
+    drawdown_pct: float
+    portfolio_value: float
+    peak_value: float
+
+class RebalancingComparison(BaseModel):
+    drift_cagr_pct: float
+    quarterly_rebalanced_cagr_pct: float
+    rebalancing_bonus_bps: float
+    explanation_en: str
+    explanation_zh: str
+

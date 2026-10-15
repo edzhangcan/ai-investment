@@ -98,3 +98,16 @@ class ValuationAlertSettingsDB(SQLModel, table=True):
     technical_anchor_mode: str = Field(default="adaptive_balanced")  # "adaptive_balanced", "strict_200d", "tactical_pullback"
     ticker_overrides_json: str = Field(default="{}")  # JSON string mapping symbol -> {"target_buy": float, "target_sell": float}
     updated_at: datetime = Field(default_factory=get_utc_now)
+
+class TradeDecisionJournalDB(SQLModel, table=True):
+    __tablename__ = "trade_decision_journals"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    symbol: str = Field(index=True)
+    q1_urgent_fomo: bool = Field(default=False)
+    q2_trend_temperature: str = Field(default="FLAT")  # "FREEZE", "FLAT", "WARM", "HOT"
+    q3_crowd_consensus: str = Field(default="")
+    q4_bayesian_prior_pct: float = Field(default=60.0)  # Capped at <= 95.0%
+    falsification_trigger: str = Field(default="")
+    decision_action: str = Field(default="BUY")  # "BUY", "PASS", "WATCH"
+    notes: Optional[str] = Field(default=None)
+    created_at: datetime = Field(default_factory=get_utc_now)

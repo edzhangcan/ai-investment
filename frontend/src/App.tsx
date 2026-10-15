@@ -19,7 +19,8 @@ import {
   FileText,
   Info,
   ExternalLink,
-  ArrowLeft
+  ArrowLeft,
+  Compass
 } from 'lucide-react';
 import { MacroDashboard } from './components/MacroDashboard';
 import { RecommendedStocksGrid } from './components/RecommendedStocksGrid';
@@ -52,6 +53,7 @@ const ValuationSettingsModal = lazy(() => import('./components/ValuationSettings
 const ExportMemoModal = lazy(() => import('./components/ExportMemoModal').then(m => ({ default: m.ExportMemoModal })));
 const SecTextMiningViewer = lazy(() => import('./components/SecTextMiningViewer').then(m => ({ default: m.SecTextMiningViewer })));
 const BacktestViewer = lazy(() => import('./components/BacktestViewer').then(m => ({ default: m.BacktestViewer })));
+const PreTradeSoulCheckModal = lazy(() => import('./components/PreTradeSoulCheckModal').then(m => ({ default: m.PreTradeSoulCheckModal })));
 
 export const App: React.FC = () => {
   const { t, language } = useLanguage();
@@ -65,6 +67,7 @@ export const App: React.FC = () => {
   const [isDiscordModalOpen, setIsDiscordModalOpen] = useState<boolean>(false);
   const [isValuationSettingsOpen, setIsValuationSettingsOpen] = useState<boolean>(false);
   const [isExportMemoModalOpen, setIsExportMemoModalOpen] = useState<boolean>(false);
+  const [isSoulCheckOpen, setIsSoulCheckOpen] = useState<boolean>(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<Set<string>>(new Set());
 
   const [dashboardData, setDashboardData] = useState<MacroDashboardResponse | null>(null);
@@ -462,6 +465,15 @@ export const App: React.FC = () => {
                                 <FileText className="w-3.5 h-3.5" />
                                 <span>{t.exportMemoBtn}</span>
                               </button>
+
+                              <button
+                                onClick={() => setIsSoulCheckOpen(true)}
+                                className="h-8 px-3 bg-surface border border-border-subtle hover:border-positive text-positive rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm box-border"
+                                title={language === 'zh' ? '投前灵魂四问与先验记录' : 'Pre-Trade Soul Check & Prior'}
+                              >
+                                <Compass className="w-3.5 h-3.5 text-positive" />
+                                <span>{language === 'zh' ? '投前自省' : 'Soul Check'}</span>
+                              </button>
                             </div>
                           );
                         })()}
@@ -732,6 +744,14 @@ export const App: React.FC = () => {
               }}
             />
           )}
+
+          {/* Pre-Trade Four Soul Questions & Bayesian Journal Modal */}
+          <PreTradeSoulCheckModal
+            isOpen={isSoulCheckOpen}
+            onClose={() => setIsSoulCheckOpen(false)}
+            symbol={stockData?.stock?.symbol || ticker}
+            currentPrice={stockData?.stock?.current_price}
+          />
         </Suspense>
       </div>
     </div>

@@ -13,12 +13,14 @@ class CustomBacktestRequest(BaseModel):
     symbols: Optional[List[str]] = Field(default=None, description="List of stock symbols to backtest")
     benchmark: str = Field("SPY", description="Benchmark symbol: SPY or XIU.TO")
     period_years: int = Field(5, ge=1, le=10, description="Backtesting time horizon in years")
+    use_live_data: bool = Field(False, description="Whether to pull live yfinance time-series")
     lang: str = Field("en", description="Target language: en, zh, or hybrid")
 
 @router.get("/stock/{ticker}")
 def backtest_single_stock(
     ticker: str,
     benchmark: str = Query("SPY", description="Benchmark symbol: SPY or XIU.TO"),
+    use_live_data: bool = Query(False, description="Whether to pull live yfinance time-series"),
     lang: str = Query("en", description="Target language: en, zh, or hybrid")
 ):
     """
@@ -32,6 +34,7 @@ def backtest_single_stock(
         symbols=[symbol],
         benchmark=benchmark,
         period_years=5,
+        use_live_data=use_live_data,
         lang=lang
     )
 
@@ -44,5 +47,6 @@ def run_custom_backtest(req: CustomBacktestRequest):
         symbols=req.symbols,
         benchmark=req.benchmark,
         period_years=req.period_years,
+        use_live_data=req.use_live_data,
         lang=req.lang
     )

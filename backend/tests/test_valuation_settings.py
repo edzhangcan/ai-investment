@@ -18,6 +18,7 @@ client = TestClient(app)
 
 def test_get_valuation_settings_default():
     """Verify default settings initialization with 15% MoS and Adaptive Balanced mode."""
+    client.post("/api/settings/valuation-alerts/reset")
     response = client.get("/api/settings/valuation-alerts")
     assert response.status_code == 200
     data = response.json()

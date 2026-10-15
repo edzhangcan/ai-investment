@@ -1,5 +1,6 @@
 """
-Portfolio Router: REST endpoints for Portfolio Position Sizing & Rebalancing Calculator
+Portfolio Router: REST endpoints for Portfolio Position Sizing, 80/20 Barbell Sizer,
+Kelly Sizing, Efficient Frontier Covariance Optimizer, and Liability-Side Stress Tester.
 """
 
 from fastapi import APIRouter, HTTPException
@@ -11,10 +12,27 @@ router = APIRouter(prefix="/api/portfolio", tags=["Portfolio Calculator"])
 
 class PortfolioCalculateRequest(BaseModel):
     cash_balance: float = Field(..., gt=0, description="Total capital cash balance (USD or CAD)")
-    risk_profile: str = Field("BALANCED", description="Risk profile: CONSERVATIVE, BALANCED, or AGGRESSIVE")
+    risk_profile: str = Field("BALANCED", description="Risk profile: CONSERVATIVE, BALANCED, AGGRESSIVE, or BARBELL_80_20")
     currency: str = Field("USD", description="Base currency (USD or CAD)")
     symbols: Optional[List[str]] = Field(default=None, description="Optional list of stock symbols to size")
     lang: str = Field("en", description="Target language: en, zh, or hybrid")
+
+class KellySizeRequest(BaseModel):
+    win_prob: float = Field(0.55, ge=0.01, le=0.99, description="Estimated win probability (p)")
+    upside_pct: float = Field(25.0, gt=0, description="Expected upside potential percentage")
+    stop_loss_pct: float = Field(8.0, gt=0, description="Hard stop-loss percentage")
+    kelly_fraction: float = Field(0.25, gt=0, le=1.0, description="Kelly fraction multiplier (default 0.25)")
+    max_cap_pct: float = Field(4.0, gt=0, le=25.0, description="Maximum finite bet cap percentage (default 4.0%)")
+
+class EfficientFrontierRequest(BaseModel):
+    symbols: Optional[List[str]] = Field(default=None, description="List of asset symbols (defaults to core asset mix)")
+    lookback_days: int = Field(756, ge=60, le=2520, description="Lookback window in trading days")
+
+class LiabilityStressRequest(BaseModel):
+    total_capital: float = Field(100000.0, gt=0, description="Total portfolio capital")
+    est_max_drawdown_pct: float = Field(25.0, ge=0.0, le=99.0, description="Estimated max drawdown percentage")
+    monthly_living_expense: float = Field(4000.0, gt=0, description="Monthly household living expense")
+    annual_passive_income: float = Field(12000.0, ge=0, description="Annual steady passive dividend/interest income")
 
 @router.post("/calculate")
 def calculate_portfolio(req: PortfolioCalculateRequest):
@@ -31,4 +49,41 @@ def calculate_portfolio(req: PortfolioCalculateRequest):
         currency=req.currency,
         selected_symbols=req.symbols,
         lang=req.lang
+    )
+
+@router.post("/kelly-size")
+def calculate_kelly_size(req: KellySizeRequest):
+    """
+    Computes Quarter-Kelly position size with finite bet cap (2%-4%).
+    """
+    return PortfolioEngine.calculate_kelly_position(
+        win_prob=req.win_prob,
+        upside_pct=req.upside_pct,
+        stop_loss_pct=req.stop_loss_pct,
+        kelly_fraction=req.kelly_fraction,
+        max_cap_pct=req.max_cap_pct
+    )
+
+@router.post("/efficient-frontier")
+def compute_efficient_frontier(req: EfficientFrontierRequest):
+    """
+    Computes 3Y covariance matrix, 60D rolling correlation matrix,
+    correlation decoupling alerts, and 400 Monte Carlo Efficient Frontier portfolios.
+    """
+    return PortfolioEngine.compute_efficient_frontier(
+        symbols=req.symbols,
+        lookback_days=req.lookback_days
+    )
+
+@router.post("/liability-stress")
+@router.post("/liability-stress-test")
+def evaluate_liability_stress(req: LiabilityStressRequest):
+    """
+    Evaluates investor liability-side runway and cash flow coverage against portfolio drawdowns.
+    """
+    return PortfolioEngine.evaluate_liability_stress_test(
+        total_capital=req.total_capital,
+        est_max_drawdown_pct=req.est_max_drawdown_pct,
+        monthly_living_expense=req.monthly_living_expense,
+        annual_passive_income=req.annual_passive_income
     )

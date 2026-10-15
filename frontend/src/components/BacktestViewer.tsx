@@ -1,7 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { BilingualHoverCard } from './BilingualHoverCard';
-import { LineChart as ChartIcon, TrendingUp } from 'lucide-react';
+import {
+  LineChart as ChartIcon,
+  TrendingUp,
+  ShieldAlert,
+  RefreshCw,
+  Activity,
+  Layers,
+  ArrowDownRight
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  CartesianGrid
+} from 'recharts';
+import {
+  DrawdownEvent,
+  UnderwaterPoint,
+  RebalanceComparison
+} from '../types';
 
 interface BacktestViewerProps {
   symbol: string;
@@ -32,6 +54,8 @@ interface BacktestResponsePayload {
   benchmark_cagr_pct: number;
   alpha_cagr_pct: number;
   sharpe_ratio: number;
+  calmar_ratio?: number;
+  robust_3y_calmar_ratio?: number;
   max_drawdown_pct: number;
   win_rate_pct: number;
   total_return_pct: number;
@@ -39,6 +63,9 @@ interface BacktestResponsePayload {
   summary_note: string;
   equity_curve: EquityPoint[];
   annual_breakdown: AnnualBreakdownItem[];
+  underwater_curve?: UnderwaterPoint[];
+  drawdown_events?: DrawdownEvent[];
+  rebalancing_simulation?: RebalanceComparison;
 }
 
 export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
@@ -124,51 +151,207 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
       </div>
 
       {/* Summary Note Banner */}
-      <div className="prism-surface-subtle p-4 mb-6 text-xs text-content-secondary font-medium flex items-start gap-2.5 shadow-sm">
+      <div className="prism-surface-subtle p-4 mb-6 text-xs text-content-secondary font-medium flex items-start gap-2.5 shadow-sm rounded-xl">
         <TrendingUp className="w-4 h-4 text-positive shrink-0 mt-0.5" />
         <div>{data.summary_note}</div>
       </div>
 
-      {/* 4 Quantitative Metric Badges */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="prism-surface-subtle p-4 shadow-sm">
-          <div className="text-[11px] text-content-muted font-semibold mb-1">
+      {/* 6 Quantitative Metric Badges (Including Calmar & Rebalancing Bonus) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        {/* CAGR */}
+        <div className="prism-surface-subtle p-3.5 shadow-sm rounded-xl">
+          <div className="text-[10px] text-content-muted font-semibold mb-1">
             <BilingualHoverCard termKey="CAGR">
               {t.cagr}
             </BilingualHoverCard>
           </div>
-          <div className="text-lg font-extrabold text-positive">+{data.cagr_pct}%</div>
+          <div className="text-base font-extrabold text-positive">+{data.cagr_pct}%</div>
           <div className="text-[10px] text-content-muted mt-0.5">Vs {data.benchmark}: +{data.benchmark_cagr_pct}%</div>
         </div>
 
-        <div className="prism-surface-subtle p-4 shadow-sm">
-          <div className="text-[11px] text-content-muted font-semibold mb-1">
+        {/* Sharpe Ratio */}
+        <div className="prism-surface-subtle p-3.5 shadow-sm rounded-xl">
+          <div className="text-[10px] text-content-muted font-semibold mb-1">
             <BilingualHoverCard termKey="SharpeRatio">
               {t.sharpeRatio}
             </BilingualHoverCard>
           </div>
-          <div className="text-lg font-extrabold text-brand">{data.sharpe_ratio}</div>
+          <div className="text-base font-extrabold text-brand">{data.sharpe_ratio}</div>
           <div className="text-[10px] text-content-muted mt-0.5">{t.riskFreeRate}</div>
         </div>
 
-        <div className="prism-surface-subtle p-4 shadow-sm">
-          <div className="text-[11px] text-content-muted font-semibold mb-1">
+        {/* Calmar Ratio */}
+        <div className="prism-surface-subtle p-3.5 shadow-sm rounded-xl">
+          <div className="text-[10px] text-content-muted font-semibold mb-1">
+            <span>{language === 'zh' ? '卡玛比率 Calmar' : 'Calmar Ratio'}</span>
+          </div>
+          <div className="text-base font-extrabold text-warning">
+            {data.calmar_ratio ?? (Math.round((data.cagr_pct / Math.max(0.01, data.max_drawdown_pct)) * 100) / 100)}
+          </div>
+          <div className="text-[10px] text-content-muted mt-0.5">
+            {data.robust_3y_calmar_ratio ? `3Y: ${data.robust_3y_calmar_ratio}` : 'CAGR / MaxDD'}
+          </div>
+        </div>
+
+        {/* Max Drawdown */}
+        <div className="prism-surface-subtle p-3.5 shadow-sm rounded-xl">
+          <div className="text-[10px] text-content-muted font-semibold mb-1">
             <BilingualHoverCard termKey="MaxDrawdown">
               {t.maxDrawdown}
             </BilingualHoverCard>
           </div>
-          <div className="text-lg font-extrabold text-negative">-{data.max_drawdown_pct}%</div>
+          <div className="text-base font-extrabold text-negative">-{data.max_drawdown_pct}%</div>
           <div className="text-[10px] text-content-muted mt-0.5">{t.peakToTroughRisk}</div>
         </div>
 
-        <div className="prism-surface-subtle p-4 shadow-sm">
-          <div className="text-[11px] text-content-muted font-semibold mb-1">
+        {/* Win Rate */}
+        <div className="prism-surface-subtle p-3.5 shadow-sm rounded-xl">
+          <div className="text-[10px] text-content-muted font-semibold mb-1">
             <BilingualHoverCard termKey="WinRate">
               {t.winRate}
             </BilingualHoverCard>
           </div>
-          <div className="text-lg font-extrabold text-warning">{data.win_rate_pct}%</div>
+          <div className="text-base font-extrabold text-content-primary">{data.win_rate_pct}%</div>
           <div className="text-[10px] text-content-muted mt-0.5">{t.outperformedBenchmark}</div>
+        </div>
+
+        {/* Rebalancing Bonus */}
+        <div className="prism-surface-subtle p-3.5 shadow-sm rounded-xl">
+          <div className="text-[10px] text-content-muted font-semibold mb-1">
+            <span>{t.rebalanceBonusLabel}</span>
+          </div>
+          <div className={`text-base font-extrabold ${
+            (data.rebalancing_simulation?.rebalancing_bonus_bps ?? 0) >= 0 ? 'text-positive' : 'text-content-secondary'
+          }`}>
+            {data.rebalancing_simulation?.rebalancing_bonus_bps !== undefined
+              ? `${data.rebalancing_simulation.rebalancing_bonus_bps > 0 ? '+' : ''}${data.rebalancing_simulation.rebalancing_bonus_bps} bps`
+              : '0.0 bps'}
+          </div>
+          <div className="text-[10px] text-content-muted mt-0.5">
+            {language === 'zh' ? '波动率收割' : 'Volatility Harvest'}
+          </div>
+        </div>
+      </div>
+
+      {/* Underwater Drawdown Area Curve */}
+      {data.underwater_curve && data.underwater_curve.length > 0 && (
+        <div className="prism-surface-subtle p-4 rounded-2xl border border-border-subtle shadow-sm mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-xs font-bold text-content-primary flex items-center gap-1.5">
+              <ArrowDownRight className="w-4 h-4 text-negative" />
+              <span>{t.underwaterDrawdownTitle}</span>
+            </h4>
+            <span className="text-[10px] text-content-muted">
+              {language === 'zh' ? '峰值至谷底最大跌幅监控' : 'Peak-to-Trough Decline Depth'}
+            </span>
+          </div>
+          <div className="h-44 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.underwater_curve} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
+                <defs>
+                  <linearGradient id="drawdownGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="year" tick={{ fontSize: 10 }} />
+                <YAxis unit="%" tick={{ fontSize: 10 }} domain={['dataMin - 2', 0]} />
+                <RechartsTooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const pt = payload[0].payload as UnderwaterPoint;
+                      return (
+                        <div className="bg-slate-900 text-white p-2.5 rounded-xl text-[10px] border border-slate-700 shadow-xl">
+                          <div className="font-bold text-content-primary mb-1">{pt.year} Status</div>
+                          <div className="text-negative font-bold">Drawdown: {pt.drawdown_pct}%</div>
+                          <div className="text-content-muted">Value: ${pt.portfolio_value.toLocaleString()}</div>
+                          <div className="text-content-muted">Peak: ${pt.peak_value.toLocaleString()}</div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="drawdown_pct"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#drawdownGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Rebalancing Simulation & Drawdown Events Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* Rebalancing Comparison Card */}
+        {data.rebalancing_simulation && (
+          <div className="prism-surface-subtle p-4 rounded-2xl border border-border-subtle shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <RefreshCw className="w-4 h-4 text-brand" />
+                <h4 className="text-xs font-bold text-content-primary">
+                  {language === 'zh' ? '动态再平衡对比 (Rebalancing Simulation)' : 'Rebalancing Simulation'}
+                </h4>
+              </div>
+              <p className="text-[11px] text-content-muted mb-3 leading-relaxed">
+                {language === 'zh'
+                  ? data.rebalancing_simulation.explanation_zh
+                  : data.rebalancing_simulation.explanation_en}
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 bg-surface p-3 rounded-xl border border-border-subtle text-center">
+              <div>
+                <span className="text-[9px] text-content-muted block">{language === 'zh' ? '自然漂移' : 'Drift CAGR'}</span>
+                <span className="text-xs font-bold text-content-secondary">+{data.rebalancing_simulation.drift_cagr_pct}%</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-content-muted block">{language === 'zh' ? '动态再平衡' : 'Rebalanced'}</span>
+                <span className="text-xs font-bold text-positive">+{data.rebalancing_simulation.quarterly_rebalanced_cagr_pct}%</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-content-muted block">{language === 'zh' ? '超额收割' : 'Bonus'}</span>
+                <span className="text-xs font-extrabold text-brand">
+                  {data.rebalancing_simulation.rebalancing_bonus_bps > 0 ? '+' : ''}{data.rebalancing_simulation.rebalancing_bonus_bps} bps
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Drawdown Events Card */}
+        <div className="prism-surface-subtle p-4 rounded-2xl border border-border-subtle shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldAlert className="w-4 h-4 text-warning" />
+            <h4 className="text-xs font-bold text-content-primary">
+              {language === 'zh' ? '历史大级别回撤事件 (≥10% Drawdowns)' : 'Major Drawdown Events (≥10%)'}
+            </h4>
+          </div>
+          {data.drawdown_events && data.drawdown_events.length > 0 ? (
+            <div className="space-y-2 mt-2">
+              {data.drawdown_events.map((evt, idx) => (
+                <div key={idx} className="bg-surface p-2.5 rounded-xl border border-border-subtle text-[11px] flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-negative">-{evt.depth_pct}%</span>
+                    <span className="text-content-muted mx-1.5">•</span>
+                    <span className="text-content-secondary">{evt.peak_date.slice(0, 4)} → {evt.trough_date.slice(0, 4)}</span>
+                  </div>
+                  <div className="text-[10px] text-content-muted font-mono">
+                    {evt.recovery_date ? `Recovered in ${evt.recovery_date.slice(0, 4)}` : 'Ongoing Recovery'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-content-muted text-xs">
+              {language === 'zh' ? '该标的在回测周期内未发生超过 10% 的严重回撤。' : 'No major drawdowns exceeding 10% recorded during this period.'}
+            </div>
+          )}
         </div>
       </div>
 

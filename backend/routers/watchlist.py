@@ -9,7 +9,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from backend.database import get_session
-from backend.models.db_models import UserWatchlistDB
+from backend.models.db_models import UserWatchlistDB, TradeDecisionJournalDB
 
 router = APIRouter(prefix="/api/watchlist", tags=["User Watchlist"])
 
@@ -108,4 +108,46 @@ def remove_from_watchlist(symbol: str, session: Session = Depends(get_session)):
     session.delete(item)
     session.commit()
     return {"message": f"Successfully removed {normalized_symbol} from watchlist"}
+
+class DecisionJournalCreateSchema(BaseModel):
+    symbol: str
+    q1_urgent_fomo: bool = False
+    q2_trend_temperature: str = "FLAT"
+    q3_crowd_consensus: str = ""
+    q4_bayesian_prior_pct: float = Field(60.0, ge=1.0, le=95.0, description="Bayesian Prior probability (strictly <= 95%)")
+    falsification_trigger: str = Field(..., min_length=3, description="Specific factual event that disproves thesis")
+    decision_action: str = "BUY"
+    notes: Optional[str] = None
+
+@router.post("/decision-journal")
+def create_decision_journal_entry(payload: DecisionJournalCreateSchema, session: Session = Depends(get_session)):
+    """Logs pre-trade four soul questions and Bayesian prior decision journal entry."""
+    if payload.q4_bayesian_prior_pct > 95.0:
+        raise HTTPException(status_code=400, detail="Bayesian prior probability cannot exceed 95.0% (Humility guardrail).")
+
+    entry = TradeDecisionJournalDB(
+        symbol=payload.symbol.upper().strip(),
+        q1_urgent_fomo=payload.q1_urgent_fomo,
+        q2_trend_temperature=payload.q2_trend_temperature,
+        q3_crowd_consensus=payload.q3_crowd_consensus,
+        q4_bayesian_prior_pct=payload.q4_bayesian_prior_pct,
+        falsification_trigger=payload.falsification_trigger,
+        decision_action=payload.decision_action,
+        notes=payload.notes
+    )
+    session.add(entry)
+    session.commit()
+    session.refresh(entry)
+    return entry
+
+@router.get("/decision-journal/{ticker}")
+def get_decision_journal_entries(ticker: str, session: Session = Depends(get_session)):
+    """Retrieves decision journal records for target symbol."""
+    norm = ticker.upper().strip()
+    entries = session.exec(
+        select(TradeDecisionJournalDB)
+        .where(TradeDecisionJournalDB.symbol == norm)
+        .order_by(TradeDecisionJournalDB.created_at.desc())
+    ).all()
+    return entries
 
