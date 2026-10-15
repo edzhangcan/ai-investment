@@ -42,14 +42,28 @@ class MultiAgentArena:
             }
 
         api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
+        debate_result = None
         if api_key:
             try:
-                return cls._run_gemini_llm_debate(api_key, stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
+                debate_result = cls._run_gemini_llm_debate(api_key, stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
             except Exception as e:
                 logger.warning(f"Gemini LLM debate generation failed ({e}), falling back to empirical engine rules.")
-                return cls._run_fallback_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
+                debate_result = cls._run_fallback_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
+        else:
+            debate_result = cls._run_fallback_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
 
-        return cls._run_fallback_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
+        # Audit against 《纪律.md》 Personal Investment Constitution
+        from backend.engines.discipline_engine import DisciplineEngine
+        audit = DisciplineEngine.audit_trade(stock_data, pricing_data, lang=lang)
+        if debate_result and "cio_verdict" in debate_result:
+            debate_result["cio_verdict"]["discipline_audit"] = audit
+            if not audit["is_compliant"]:
+                veto_str = "; ".join(audit["veto_reasons_zh"] if lang == "zh" else audit["veto_reasons"])
+                debate_result["cio_verdict"]["verdict"] = "DISCIPLINE_BLOCKED / 纪律否决"
+                debate_result["cio_verdict"]["position_sizing_advice"] = f"0% Allocation — Blocked by 《纪律.md》: {veto_str}"
+                debate_result["cio_verdict"]["judge_summary"] = f"[{audit['summary']}] {debate_result['cio_verdict'].get('judge_summary', '')}"
+
+        return debate_result
 
     @classmethod
     def _run_gemini_llm_debate(cls, api_key: str, stock_data: Dict[str, Any], macro_data: Dict[str, Any], pricing_data: Dict[str, Any], fundamental_data: Dict[str, Any], lang: str = "en") -> Dict[str, Any]:

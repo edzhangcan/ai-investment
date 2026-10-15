@@ -256,3 +256,143 @@ def test_portfolio_router_endpoints():
     })
     assert res_ls.status_code == 200
     assert res_ls.json()["runway_months"] > 0
+
+# ==========================================
+# Phase 4 Tests: 纪律.md Engine, Trend Temperature & Decision Journal
+# ==========================================
+
+def test_discipline_engine_four_horsemen_blocks():
+    """Verify Four Horsemen of Ruin blocks in DisciplineEngine."""
+    from backend.engines.discipline_engine import DisciplineEngine
+
+    # 1. Compliant scenario
+    clean_audit = DisciplineEngine.audit_trade(
+        stock_data={"symbol": "NVDA", "taxonomy": {"taxonomy": "TREE"}},
+        pricing_data={"reverse_dcf": {"is_prosperity_trap": False}},
+        position_data={"current_pnl_pct": 2.0, "current_weight_pct": 2.0},
+        trend_temperature="WARM"
+    )
+    assert clean_audit["is_compliant"] is True
+    assert clean_audit["audit_verdict"] == "COMPLIANT"
+
+    # 2. Veto 1: Counter-trend averaging down in FREEZE/FLAT
+    avg_down_audit = DisciplineEngine.audit_trade(
+        stock_data={"symbol": "FALLING_KNIFE", "taxonomy": {"taxonomy": "TREE"}},
+        pricing_data={"reverse_dcf": {"is_prosperity_trap": False}},
+        position_data={"current_pnl_pct": -8.0, "current_weight_pct": 2.0},
+        trend_temperature="FREEZE"
+    )
+    assert avg_down_audit["is_compliant"] is False
+    assert any("Counter-trend" in r for r in avg_down_audit["veto_reasons"])
+
+    # 3. Veto 2: Vegetable left-side buying
+    veg_left_audit = DisciplineEngine.audit_trade(
+        stock_data={"symbol": "VEG_SPEC", "taxonomy": {"taxonomy": "VEGETABLE"}},
+        pricing_data={"reverse_dcf": {"is_prosperity_trap": False}},
+        trend_temperature="FLAT"
+    )
+    assert veg_left_audit["is_compliant"] is False
+    assert any("VEGETABLE" in r for r in veg_left_audit["veto_reasons"])
+
+    # 4. Veto 3: Single stock finite bet cap (>= 4.0%)
+    oversize_audit = DisciplineEngine.audit_trade(
+        stock_data={"symbol": "OVERSIZED", "taxonomy": {"taxonomy": "TREE"}},
+        pricing_data={"reverse_dcf": {"is_prosperity_trap": False}},
+        position_data={"current_pnl_pct": 10.0, "current_weight_pct": 4.5},
+        trend_temperature="WARM"
+    )
+    assert oversize_audit["is_compliant"] is False
+    assert any("Finite Bet Cap" in r for r in oversize_audit["veto_reasons"])
+
+    # 5. Veto 4: Cyclical prosperity trap
+    trap_audit = DisciplineEngine.audit_trade(
+        stock_data={"symbol": "CYCLICAL_TRAP", "taxonomy": {"taxonomy": "GRAIN"}},
+        pricing_data={"reverse_dcf": {"is_prosperity_trap": True, "prosperity_trap_reason": "Saturated terminal ceiling"}},
+        trend_temperature="HOT"
+    )
+    assert trap_audit["is_compliant"] is False
+    assert any("Prosperity Trap" in r for r in trap_audit["veto_reasons"])
+
+def test_discipline_engine_wires_into_agent_arena():
+    """Verify that a discipline veto overrides MultiAgentArena CIO verdict."""
+    from backend.agents.agent_arena import MultiAgentArena
+
+    stock_data = {
+        "symbol": "TRAP_STOCK",
+        "company_name": "Trap Corp",
+        "current_price": 50.0,
+        "currency": "USD",
+        "pe_ratio": 12.0,
+        "is_valid": True,
+        "taxonomy": {"taxonomy": "GRAIN"}
+    }
+    pricing_data = {
+        "valuation_status": "UNDERVALUED",
+        "fifty_day_sma": 48.0,
+        "two_hundred_day_sma": 40.0,
+        "dcf_fair_value": 70.0,
+        "ideal_buy_range_min": 45.0,
+        "ideal_buy_range_max": 55.0,
+        "reverse_dcf": {"is_prosperity_trap": True, "prosperity_trap_reason": "Peak margin trap"}
+    }
+    macro_data = {"cycle_stage": "LATE_CYCLE", "fed_sentiment": {"tone": "NEUTRAL"}}
+    fundamental_data = {"fcf_quality": "HIGH", "moat_rating": "NARROW", "roic": 0.12}
+
+    res = MultiAgentArena.run_debate(stock_data, macro_data, pricing_data, fundamental_data, lang="zh")
+    assert "cio_verdict" in res
+    assert "DISCIPLINE_BLOCKED" in res["cio_verdict"]["verdict"]
+    assert "discipline_audit" in res["cio_verdict"]
+    assert res["cio_verdict"]["discipline_audit"]["is_compliant"] is False
+
+def test_alert_engine_trend_temperature():
+    """Verify compute_trend_temperature produces valid regimes."""
+    import pandas as pd
+    from backend.services.alert_engine import AlertEngine
+
+    # Upward momentum series (HOT or WARM)
+    hot_prices = [100.0 + i * 2.0 for i in range(210)]
+    df_hot = pd.DataFrame({"Close": hot_prices, "Volume": [1500000] * len(hot_prices)})
+    res_hot = AlertEngine.compute_trend_temperature(df_hot)
+    assert res_hot["state"] in ["HOT", "WARM"]
+    assert res_hot["z_trend"] > 0
+
+    # Downward plunging series (FREEZE)
+    freeze_prices = [100.0 * (0.985 ** i) for i in range(210)]
+    df_freeze = pd.DataFrame({"Close": freeze_prices, "Volume": [1000000] * len(freeze_prices)})
+    res_freeze = AlertEngine.compute_trend_temperature(df_freeze)
+    assert res_freeze["state"] == "FREEZE"
+    assert res_freeze["z_trend"] < 0
+
+def test_decision_journal_rest_endpoints():
+    """Verify trade decision journal endpoints and Bayesian prior guardrail."""
+    # 1. Valid journal entry with 75% prior
+    res_valid = client.post("/api/watchlist/decision-journal", json={
+        "symbol": "NVDA",
+        "q1_urgent_fomo": False,
+        "q2_trend_temperature": "WARM",
+        "q3_crowd_consensus": "Market underestimates inference demand",
+        "q4_bayesian_prior_pct": 75.0,
+        "falsification_trigger": "Data center revenue growth slows below 25% YoY",
+        "decision_action": "BUY"
+    })
+    assert res_valid.status_code == 200
+    data = res_valid.json()
+    assert data["symbol"] == "NVDA"
+    assert data["q4_bayesian_prior_pct"] == 75.0
+
+    # 2. Invalid journal entry with 100% prior (violates humility constraint)
+    res_invalid = client.post("/api/watchlist/decision-journal", json={
+        "symbol": "NVDA",
+        "q1_urgent_fomo": False,
+        "q2_trend_temperature": "HOT",
+        "q3_crowd_consensus": "Consensus",
+        "q4_bayesian_prior_pct": 99.0,
+        "falsification_trigger": "Price breaks support",
+        "decision_action": "BUY"
+    })
+    assert res_invalid.status_code in [400, 422]
+
+    # 3. Fetch journal entries
+    res_get = client.get("/api/watchlist/decision-journal/NVDA")
+    assert res_get.status_code == 200
+    assert len(res_get.json()) > 0

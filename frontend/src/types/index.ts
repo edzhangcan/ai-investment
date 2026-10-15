@@ -143,6 +143,15 @@ export interface CIOVerdict {
   risk_reward_ratio: number;
   judge_summary: string;
   empirical_proof_verified: boolean;
+  discipline_audit?: {
+    is_compliant: boolean;
+    audit_verdict: string;
+    veto_count: number;
+    veto_reasons: string[];
+    veto_reasons_zh: string[];
+    audit_summary_en: string;
+    audit_summary_zh: string;
+  };
 }
 
 export interface DebateData {

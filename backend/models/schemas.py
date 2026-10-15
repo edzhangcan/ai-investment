@@ -144,6 +144,7 @@ class CIOVerdictSchema(BaseModel):
     risk_reward_ratio: float
     judge_summary: str
     empirical_proof_verified: bool
+    discipline_audit: Optional[Dict[str, Any]] = None
 
 class DebateSchema(BaseModel):
     symbol: str

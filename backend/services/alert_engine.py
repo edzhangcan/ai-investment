@@ -215,4 +215,100 @@ class PriceAlertEngine:
             "scheduled_alerts": scheduled_results
         }
 
+    @classmethod
+    def compute_trend_temperature(cls, df_ohlcv: Any) -> Dict[str, Any]:
+        """
+        Computes 4-state Trend Temperature: FREEZE (冻), FLAT (平), WARM (温), HOT (热).
+        Grounded in volatility-normalized trend Z-score:
+          sma_50 = 50-day moving average of close
+          sma_200 = 200-day moving average of close
+          ret_20d = (close[-1] / close[-21]) - 1.0
+          vol_20d = close.pct_change().tail(20).std() * sqrt(252)
+          z_trend = ret_20d / max(0.005, vol_20d / sqrt(12))
+          vol_ratio = volume.tail(5).mean() / max(1.0, volume.tail(20).mean())
+
+        Mapping:
+          FREEZE (冻): close < sma_200 and z_trend < -0.8
+          HOT (热): close > sma_50 and z_trend >= 1.2
+          WARM (温): close > sma_50 and 0.3 <= z_trend < 1.2 and vol_ratio >= 1.0
+          FLAT (平): Otherwise.
+        """
+        import pandas as pd
+        import numpy as np
+
+        if df_ohlcv is None or (isinstance(df_ohlcv, pd.DataFrame) and df_ohlcv.empty):
+            return {
+                "state": "FLAT",
+                "state_label_en": "FLAT (Consolidation)",
+                "state_label_zh": "平（震荡整理）",
+                "z_trend": 0.0,
+                "ret_20d_pct": 0.0,
+                "vol_20d_pct": 0.0,
+                "vol_ratio": 1.0,
+                "sma_50": 0.0,
+                "sma_200": 0.0,
+                "transition": "NONE"
+            }
+
+        # Normalize column names
+        close_col = "Close" if "Close" in df_ohlcv.columns else ("close" if "close" in df_ohlcv.columns else df_ohlcv.columns[0])
+        close_series = df_ohlcv[close_col].dropna()
+
+        vol_col = "Volume" if "Volume" in df_ohlcv.columns else ("volume" if "volume" in df_ohlcv.columns else None)
+        vol_series = df_ohlcv[vol_col].dropna() if vol_col else pd.Series([1000000.0] * len(close_series), index=close_series.index)
+
+        curr_close = float(close_series.iloc[-1])
+        sma_50 = float(close_series.rolling(min(50, len(close_series))).mean().iloc[-1])
+        sma_200 = float(close_series.rolling(min(200, len(close_series))).mean().iloc[-1])
+
+        lookback = min(20, len(close_series) - 1)
+        if lookback >= 5:
+            ret_20d = float((curr_close / close_series.iloc[-(lookback + 1)]) - 1.0)
+            daily_returns = close_series.pct_change().dropna().tail(lookback)
+            daily_std = float(daily_returns.std()) if len(daily_returns) > 1 else 0.015
+            vol_20d = daily_std * (252.0 ** 0.5)
+        else:
+            ret_20d = 0.0
+            vol_20d = 0.20
+
+        # Volatility-normalized Z score
+        z_trend = round(ret_20d / max(0.005, vol_20d / (12.0 ** 0.5)), 2)
+
+        # Volume confirmation ratio (last 5D vs last 20D)
+        vol_5d_mean = float(vol_series.tail(min(5, len(vol_series))).mean()) if len(vol_series) > 0 else 1.0
+        vol_20d_mean = float(vol_series.tail(min(20, len(vol_series))).mean()) if len(vol_series) > 0 else 1.0
+        vol_ratio = round(vol_5d_mean / max(1.0, vol_20d_mean), 2)
+
+        # State mapping
+        if curr_close < sma_200 and z_trend < -0.8:
+            state = "FREEZE"
+            label_en = "FREEZE (Blood Chips Left-Side)"
+            label_zh = "冻（血筹区：左侧勿抄底）"
+        elif curr_close > sma_50 and z_trend >= 1.2:
+            state = "HOT"
+            label_en = "HOT (Fat-Tail Momentum)"
+            label_zh = "热（肥尾主升浪）"
+        elif curr_close > sma_50 and 0.3 <= z_trend < 1.2 and vol_ratio >= 1.0:
+            state = "WARM"
+            label_en = "WARM (Right-Side Batting Zone)"
+            label_zh = "温（温转热右侧击球区）"
+        else:
+            state = "FLAT"
+            label_en = "FLAT (Consolidation)"
+            label_zh = "平（震荡整理）"
+
+        return {
+            "state": state,
+            "state_label_en": label_en,
+            "state_label_zh": label_zh,
+            "z_trend": z_trend,
+            "ret_20d_pct": round(ret_20d * 100.0, 2),
+            "vol_20d_pct": round(vol_20d * 100.0, 2),
+            "vol_ratio": vol_ratio,
+            "sma_50": round(sma_50, 2),
+            "sma_200": round(sma_200, 2),
+            "transition": "NONE"
+        }
+
 alert_engine = PriceAlertEngine()
+AlertEngine = PriceAlertEngine
