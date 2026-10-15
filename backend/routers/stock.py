@@ -2,7 +2,11 @@
 Stock Analysis Router with multi-language support (en, zh, hybrid)
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
+from sqlmodel import Session, select
+from backend.database import get_session
+from backend.models.db_models import ValuationAlertSettingsDB
 from backend.data_sources.data_provider import DataProviderManager
 from backend.data_sources.news_client import NewsClient
 from backend.engines.macro_engine import MacroEngine
@@ -14,10 +18,11 @@ from backend.agents.agent_arena import MultiAgentArena
 router = APIRouter(prefix="/api/stock", tags=["Stock Analyzer"])
 
 @router.get("/{ticker}")
-def analyze_stock(ticker: str, lang: str = "en"):
+def analyze_stock(ticker: str, lang: str = "en", session: Optional[Session] = Depends(get_session)):
     """
     Synthesizes stock metrics, fundamental analysis, valuation models, technical overlays,
     and runs the Bull vs Bear vs CIO multi-agent debate in target language (en, zh, hybrid).
+    Respects user-configured Margin of Safety (MoS) and technical anchor mode settings.
     """
     if not ticker or len(ticker.strip()) == 0:
         raise HTTPException(status_code=400, detail="Ticker symbol cannot be empty")
@@ -26,7 +31,24 @@ def analyze_stock(ticker: str, lang: str = "en"):
     stock_data = DataProviderManager.get_stock_data(symbol)
     macro_data = MacroEngine.analyze_macro_environment(lang=lang)
     fundamental_data = FundamentalEngine.evaluate_fundamentals(stock_data, lang=lang)
-    pricing_data = PricingEngine.evaluate_pricing_and_entry_zone(stock_data, lang=lang)
+
+    custom_mos = None
+    anchor_mode = "adaptive_balanced"
+    if session and hasattr(session, "exec"):
+        try:
+            settings_rec = session.exec(select(ValuationAlertSettingsDB)).first()
+            if settings_rec:
+                custom_mos = settings_rec.global_mos_pct
+                anchor_mode = settings_rec.technical_anchor_mode
+        except Exception:
+            pass
+
+    pricing_data = PricingEngine.evaluate_pricing_and_entry_zone(
+        stock_data,
+        lang=lang,
+        custom_mos_pct=custom_mos,
+        anchor_mode=anchor_mode
+    )
     debate_data = MultiAgentArena.run_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
     news_data = NewsClient.fetch_stock_news(symbol)
     profile_data = fundamental_data.get("company_profile")

@@ -45,6 +45,7 @@ class UserWatchlistDB(SQLModel, table=True):
     symbol: str = Field(unique=True, index=True)
     company_name: str
     target_buy_price: Optional[float] = None
+    target_sell_price: Optional[float] = None
     portfolio_allocation_pct: float = 0.0
     created_at: datetime = Field(default_factory=get_utc_now)
 
@@ -88,4 +89,12 @@ class RecommendationSnapshotDB(SQLModel, table=True):
     total_recommendation_score: float
     financial_payload_json: str  # Serialized JSON of recommendation item
     lang: str = Field(default="en", index=True)
+    updated_at: datetime = Field(default_factory=get_utc_now)
+
+class ValuationAlertSettingsDB(SQLModel, table=True):
+    __tablename__ = "valuation_alert_settings"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    global_mos_pct: float = Field(default=15.0)  # 10.0 to 30.0%
+    technical_anchor_mode: str = Field(default="adaptive_balanced")  # "adaptive_balanced", "strict_200d", "tactical_pullback"
+    ticker_overrides_json: str = Field(default="{}")  # JSON string mapping symbol -> {"target_buy": float, "target_sell": float}
     updated_at: datetime = Field(default_factory=get_utc_now)

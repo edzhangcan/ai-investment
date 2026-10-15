@@ -239,6 +239,44 @@ export interface Translations {
   syncTargetsBtn: string;
   syncingTargets: string;
   syncTargetsSuccess: string;
+
+  // Alert Sensitivity & Valuation Range Settings
+  settingsButtonTitle: string;
+  settingsModalTitle: string;
+  settingsModalSubtitle: string;
+  settingsTabGlobal: string;
+  settingsTabOverrides: string;
+  settingsGlobalMosTitle: string;
+  settingsGlobalMosSubtitle: string;
+  settingsMosAggressive: string;
+  settingsMosBalanced: string;
+  settingsMosConservative: string;
+  settingsMosDeepValue: string;
+  settingsAnchorModeTitle: string;
+  settingsAnchorModeSubtitle: string;
+  settingsAnchorAdaptive: string;
+  settingsAnchorAdaptiveDesc: string;
+  settingsAnchorStrict: string;
+  settingsAnchorStrictDesc: string;
+  settingsAnchorTactical: string;
+  settingsAnchorTacticalDesc: string;
+  settingsOverridesTitle: string;
+  settingsOverridesSubtitle: string;
+  settingsTickerCol: string;
+  settingsMarketPriceCol: string;
+  settingsDynamicBuyCol: string;
+  settingsCustomBuyCol: string;
+  settingsDynamicSellCol: string;
+  settingsCustomSellCol: string;
+  settingsResetBtn: string;
+  settingsResetConfirm: string;
+  settingsSaveBtn: string;
+  settingsSavingBtn: string;
+  settingsSavedSuccess: string;
+  settingsResetSuccess: string;
+  settingsSaveFailed: string;
+  settingsTradeoffNoticeTitle: string;
+  settingsTradeoffNoticeDesc: string;
 }
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
@@ -467,6 +505,44 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     syncTargetsBtn: "Sync to Live Buy Zones",
     syncingTargets: "Syncing...",
     syncTargetsSuccess: "Watchlist target buy prices synced to live Buy Zones!",
+
+    // Alert Sensitivity & Valuation Range Settings
+    settingsButtonTitle: "Alert & Valuation Settings",
+    settingsModalTitle: "Alert Sensitivity & Valuation Settings",
+    settingsModalSubtitle: "Configure Margin of Safety discount, technical moving average anchors, and per-stock trigger overrides",
+    settingsTabGlobal: "Global Valuation & Anchors",
+    settingsTabOverrides: "Watchlist Ticker Overrides",
+    settingsGlobalMosTitle: "Global Margin of Safety (MoS) Discount",
+    settingsGlobalMosSubtitle: "Adjust the intrinsic discount applied to DCF fair value before calculating Ideal Buy Zone ceilings.",
+    settingsMosAggressive: "Aggressive Compounder (10%)",
+    settingsMosBalanced: "Balanced Standard (15%)",
+    settingsMosConservative: "Conservative Moat (20%)",
+    settingsMosDeepValue: "Deep Value Graham (30%)",
+    settingsAnchorModeTitle: "Technical Pullback Anchor Mode",
+    settingsAnchorModeSubtitle: "Defines the moving average synthesis used to anchor entry ceilings and prevent chasing rallies.",
+    settingsAnchorAdaptive: "Adaptive Balanced (50D & 200D)",
+    settingsAnchorAdaptiveDesc: "Synthesizes 50D & 200D SMA support to eliminate cash drag while guarding against overvaluation.",
+    settingsAnchorStrict: "Strict 200D SMA Support",
+    settingsAnchorStrictDesc: "Restricts buy zone ceilings strictly at or below the 200-day moving average for maximum cycle protection.",
+    settingsAnchorTactical: "Tactical 5% Pullback",
+    settingsAnchorTacticalDesc: "Optimized for high-momentum compounders, setting triggers near the 50D SMA or 5% pullbacks off peaks.",
+    settingsOverridesTitle: "Watchlist Per-Ticker Alert Overrides",
+    settingsOverridesSubtitle: "Override platform defaults with custom upper & lower trigger prices for individual stocks.",
+    settingsTickerCol: "Ticker",
+    settingsMarketPriceCol: "Current Price",
+    settingsDynamicBuyCol: "Dynamic Buy Ceiling",
+    settingsCustomBuyCol: "Custom Buy Target",
+    settingsDynamicSellCol: "Dynamic Sell Ceiling",
+    settingsCustomSellCol: "Custom Sell Target",
+    settingsResetBtn: "Reset to Institutional Defaults",
+    settingsResetConfirm: "Are you sure you want to reset all valuation settings and overrides to institutional defaults?",
+    settingsSaveBtn: "Save Settings & Overrides",
+    settingsSavingBtn: "Saving Changes...",
+    settingsSavedSuccess: "Valuation and alert sensitivity settings saved successfully!",
+    settingsResetSuccess: "Settings restored to institutional defaults (15% MoS, Adaptive Balanced)!",
+    settingsSaveFailed: "Failed to save settings:",
+    settingsTradeoffNoticeTitle: "Institutional Sensitivity Trade-Offs",
+    settingsTradeoffNoticeDesc: "Higher Margin of Safety (20%-30%) provides superior downside protection but can induce cash drag in bull markets. Lower MoS (10%) maximizes capital deployment into premium growth stocks at the cost of higher volatility.",
   },
 
   zh: {
@@ -694,6 +770,44 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     syncTargetsBtn: "一键同步最新买入区间",
     syncingTargets: "同步中...",
     syncTargetsSuccess: "已成功将所有观察标的同步至最新买入区间！",
+
+    // Alert Sensitivity & Valuation Range Settings
+    settingsButtonTitle: "估值与预警设置",
+    settingsModalTitle: "预警灵敏度与估值设置",
+    settingsModalSubtitle: "自定义安全边际折扣、技术均线回调锚点及个股买卖预警阈值",
+    settingsTabGlobal: "全局估值与技术锚点",
+    settingsTabOverrides: "自选股独立阈值覆盖",
+    settingsGlobalMosTitle: "全局安全边际 (Margin of Safety) 折扣",
+    settingsGlobalMosSubtitle: "调整基于 DCF 固有价值计算理想买入区间上限时的安全边际折扣率。",
+    settingsMosAggressive: "进攻型高成长股 (10%)",
+    settingsMosBalanced: "平衡基准标准 (15%)",
+    settingsMosConservative: "护城河稳健型 (20%)",
+    settingsMosDeepValue: "格雷厄姆深度价值 (30%)",
+    settingsAnchorModeTitle: "技术均线回调锚定模式",
+    settingsAnchorModeSubtitle: "定义用于锚定买入上限的技术均线综合逻辑，杜绝追高与假突破。",
+    settingsAnchorAdaptive: "自适应平衡模式 (50D & 200D)",
+    settingsAnchorAdaptiveDesc: "综合 50 日与 200 日均线支撑，杜绝永久现金踏空的同时提供严密估值保护。",
+    settingsAnchorStrict: "严格 200 日均线支撑 (Strict 200D)",
+    settingsAnchorStrictDesc: "严格将买入上限限制在 200 日均线支撑或以下，获取极致的周期回撤保护。",
+    settingsAnchorTactical: "战术性 5% 回调突破 (Tactical Pullback)",
+    settingsAnchorTacticalDesc: "专为强势成长复利股设计，将买入触发点设定在 50 日均线或自高点回调 5% 位置。",
+    settingsOverridesTitle: "自选股独立买卖预警覆盖",
+    settingsOverridesSubtitle: "针对特定自选标的覆盖平台默认计算结果，自定义专属买入与止盈上限。",
+    settingsTickerCol: "标的代码",
+    settingsMarketPriceCol: "当前现价",
+    settingsDynamicBuyCol: "动态买入上限",
+    settingsCustomBuyCol: "自定义买入价",
+    settingsDynamicSellCol: "动态止盈下限",
+    settingsCustomSellCol: "自定义止盈价",
+    settingsResetBtn: "恢复机构默认参数",
+    settingsResetConfirm: "确定要将所有估值灵敏度与自选股覆盖重置为机构默认值（15% 安全边际，自适应平衡）吗？",
+    settingsSaveBtn: "保存设置与覆盖",
+    settingsSavingBtn: "正在保存...",
+    settingsSavedSuccess: "估值灵敏度与预警设置保存成功！",
+    settingsResetSuccess: "已成功恢复至机构默认参数（15% 安全边际，自适应平衡）！",
+    settingsSaveFailed: "保存设置失败:",
+    settingsTradeoffNoticeTitle: "机构级灵敏度权衡说明",
+    settingsTradeoffNoticeDesc: "较高的安全边际（20%-30%）可提供卓越的下行保护，但在强劲牛市中可能带来现金踏空（Cash Drag）；较低的安全边际（10%）能提高资本周转率与成长股参与度，但波动回撤承受度要求更高。",
   },
 
   hybrid: {
@@ -921,5 +1035,43 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     syncTargetsBtn: "同步买入区间 (Sync Buy Zones)",
     syncingTargets: "同步中 (Syncing...)",
     syncTargetsSuccess: "观察列表目标价已同步 (Synced to Buy Zones)！",
+
+    // Alert Sensitivity & Valuation Range Settings
+    settingsButtonTitle: "估值与预警设置 (Settings)",
+    settingsModalTitle: "预警灵敏度与估值设置 (Alert Sensitivity & Valuation Settings)",
+    settingsModalSubtitle: "自定义安全边际折扣、技术均线回调锚点及个股买卖预警阈值 (MoS & Anchor Timing)",
+    settingsTabGlobal: "全局估值与技术锚点 (Global & Anchors)",
+    settingsTabOverrides: "自选股独立阈值覆盖 (Ticker Overrides)",
+    settingsGlobalMosTitle: "全局安全边际折扣 (Global Margin of Safety MoS)",
+    settingsGlobalMosSubtitle: "调整基于 DCF 固有价值计算理想买入区间上限时的安全边际折扣率 (10% - 30%)。",
+    settingsMosAggressive: "进攻型高成长股 (10% MoS)",
+    settingsMosBalanced: "平衡基准标准 (15% MoS)",
+    settingsMosConservative: "护城河稳健型 (20% MoS)",
+    settingsMosDeepValue: "格雷厄姆深度价值 (30% MoS)",
+    settingsAnchorModeTitle: "技术均线回调锚定模式 (Technical Anchor Mode)",
+    settingsAnchorModeSubtitle: "定义用于锚定买入上限的技术均线综合逻辑，杜绝追高 (Overextension Prevention)。",
+    settingsAnchorAdaptive: "自适应平衡模式 (Adaptive Balanced 50D & 200D)",
+    settingsAnchorAdaptiveDesc: "综合 50 日与 200 日均线支撑，杜绝永久现金踏空的同时提供严密估值保护。",
+    settingsAnchorStrict: "严格 200 日均线支撑 (Strict 200D SMA)",
+    settingsAnchorStrictDesc: "严格将买入上限限制在 200 日均线支撑或以下，获取极致的周期回撤保护。",
+    settingsAnchorTactical: "战术性 5% 回调突破 (Tactical 5% Pullback)",
+    settingsAnchorTacticalDesc: "专为强势成长复利股设计，将买入触发点设定在 50 日均线或自高点回调 5% 位置。",
+    settingsOverridesTitle: "自选股独立买卖预警覆盖 (Watchlist Overrides)",
+    settingsOverridesSubtitle: "针对特定自选标的覆盖平台默认计算结果，自定义专属买入与止盈上限。",
+    settingsTickerCol: "标的代码 (Ticker)",
+    settingsMarketPriceCol: "当前现价 (Price)",
+    settingsDynamicBuyCol: "动态买入上限 (Buy Ceiling)",
+    settingsCustomBuyCol: "自定义买入价 (Custom Buy)",
+    settingsDynamicSellCol: "动态止盈下限 (Sell Floor)",
+    settingsCustomSellCol: "自定义止盈价 (Custom Sell)",
+    settingsResetBtn: "恢复机构默认参数 (Reset)",
+    settingsResetConfirm: "确定要将所有估值灵敏度与自选股覆盖重置为机构默认值（15% MoS，自适应平衡）吗？",
+    settingsSaveBtn: "保存设置与覆盖 (Save Settings)",
+    settingsSavingBtn: "正在保存 (Saving...)",
+    settingsSavedSuccess: "估值灵敏度与预警设置保存成功 (Settings Saved)！",
+    settingsResetSuccess: "已成功恢复至机构默认参数（15% MoS，自适应平衡）！",
+    settingsSaveFailed: "保存设置失败 (Save Failed):",
+    settingsTradeoffNoticeTitle: "机构级灵敏度权衡说明 (Sensitivity Trade-Offs)",
+    settingsTradeoffNoticeDesc: "较高的安全边际（20%-30%）可提供卓越的下行保护，但在强劲牛市中可能带来现金踏空（Cash Drag）；较低的安全边际（10%）能提高资本周转率与成长股参与度，但波动回撤承受度要求更高。",
   }
 };

@@ -137,3 +137,39 @@ export async function testSellDangerAlert(discordWebhookUrl: string, lang: strin
 export async function testGoldNuggetsAlert(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
   return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'gold_nuggets', lang);
 }
+
+export async function fetchValuationAlertSettings(): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/settings/valuation-alerts`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch valuation settings failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function saveValuationAlertSettings(payload: {
+  global_mos_pct: number;
+  technical_anchor_mode: string;
+  ticker_overrides: Record<string, { target_buy?: number | null; target_sell?: number | null }>;
+}): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/settings/valuation-alerts`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Failed to save valuation settings');
+  }
+  return res.json();
+}
+
+export async function resetValuationAlertSettings(): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/settings/valuation-alerts/reset`;
+  const res = await fetch(url, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Failed to reset settings');
+  }
+  return res.json();
+}
+

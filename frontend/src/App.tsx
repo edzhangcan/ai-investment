@@ -15,6 +15,7 @@ import {
   Command,
   Calculator,
   Bell,
+  Sliders,
   FileText,
   Info,
   ExternalLink,
@@ -47,6 +48,7 @@ const WatchlistDrawer = lazy(() => import('./components/WatchlistDrawer').then(m
 const CommandPalette = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
 const PortfolioCalculator = lazy(() => import('./components/PortfolioCalculator').then(m => ({ default: m.PortfolioCalculator })));
 const DiscordAlertSettingsModal = lazy(() => import('./components/DiscordAlertSettingsModal').then(m => ({ default: m.DiscordAlertSettingsModal })));
+const ValuationSettingsModal = lazy(() => import('./components/ValuationSettingsModal').then(m => ({ default: m.ValuationSettingsModal })));
 const ExportMemoModal = lazy(() => import('./components/ExportMemoModal').then(m => ({ default: m.ExportMemoModal })));
 const SecTextMiningViewer = lazy(() => import('./components/SecTextMiningViewer').then(m => ({ default: m.SecTextMiningViewer })));
 const BacktestViewer = lazy(() => import('./components/BacktestViewer').then(m => ({ default: m.BacktestViewer })));
@@ -61,6 +63,7 @@ export const App: React.FC = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isPortfolioCalculatorOpen, setIsPortfolioCalculatorOpen] = useState<boolean>(false);
   const [isDiscordModalOpen, setIsDiscordModalOpen] = useState<boolean>(false);
+  const [isValuationSettingsOpen, setIsValuationSettingsOpen] = useState<boolean>(false);
   const [isExportMemoModalOpen, setIsExportMemoModalOpen] = useState<boolean>(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<Set<string>>(new Set());
 
@@ -279,6 +282,16 @@ export const App: React.FC = () => {
             >
               <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform" />
               <span>{t.discordButtonTitle}</span>
+            </button>
+
+            {/* 5. Alert & Valuation Settings (Purple / Violet Theme) */}
+            <button
+              onClick={() => setIsValuationSettingsOpen(true)}
+              className="px-3.5 py-2 bg-purple-50 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-700/80 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-900 dark:text-purple-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer shadow-sm group"
+              title={t.settingsButtonTitle}
+            >
+              <Sliders className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-105 transition-transform" />
+              <span>{t.settingsButtonTitle}</span>
             </button>
           </div>
         </header>
@@ -687,6 +700,19 @@ export const App: React.FC = () => {
           <DiscordAlertSettingsModal
             isOpen={isDiscordModalOpen}
             onClose={() => setIsDiscordModalOpen(false)}
+          />
+
+          {/* Alert Sensitivity & Valuation Settings Modal */}
+          <ValuationSettingsModal
+            isOpen={isValuationSettingsOpen}
+            onClose={() => setIsValuationSettingsOpen(false)}
+            onSettingsSaved={() => {
+              if (activeTab === 'stock' && ticker) {
+                loadStock(ticker);
+              } else {
+                loadDashboard();
+              }
+            }}
           />
 
           {/* Institutional Investment Memo Export Modal */}

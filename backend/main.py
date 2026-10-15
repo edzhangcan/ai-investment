@@ -32,7 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session
 from backend.config import settings
 from backend.database import init_db, engine
-from backend.routers import macro, stock, debate, watchlist, alerts, portfolio, backtest, push_alerts
+from backend.routers import macro, stock, debate, watchlist, alerts, portfolio, backtest, push_alerts, valuation_settings
 
 # Configure logging format for production and development debugging
 logging.basicConfig(
@@ -122,6 +122,7 @@ app.include_router(alerts.router)
 app.include_router(portfolio.router)
 app.include_router(backtest.router)
 app.include_router(push_alerts.router)
+app.include_router(valuation_settings.router)
 
 @app.get("/api/health")
 def health_check():
