@@ -238,3 +238,83 @@ export interface StockAnalysisResponse {
   debate: DebateData;
   news: any[];
 }
+
+// Phase 2: Kelly, Frontier & Liability
+export interface KellyResult {
+  win_prob: number;
+  upside_pct: number;
+  stop_loss_pct: number;
+  payoff_ratio_b: number;
+  full_kelly_pct: number;
+  quarter_kelly_pct: number;
+  recommended_weight_pct: number;
+  is_positive_edge: boolean;
+}
+
+export interface CorrelationAlert {
+  pair: [string, string];
+  rho_3y: number;
+  rho_60d: number;
+  diff: number;
+  alert_en: string;
+  alert_zh: string;
+}
+
+export interface FrontierPoint {
+  return_pct: number;
+  volatility_pct: number;
+  sharpe_ratio: number;
+  weights: Record<string, number>;
+}
+
+export interface EfficientFrontierResponse {
+  symbols: string[];
+  correlation_matrix_3y: Record<string, Record<string, number>>;
+  correlation_matrix_60d: Record<string, Record<string, number>>;
+  correlation_decoupling_alerts: CorrelationAlert[];
+  frontier_points: FrontierPoint[];
+  max_sharpe_portfolio: FrontierPoint;
+  min_variance_portfolio: FrontierPoint;
+  equal_weight_portfolio: FrontierPoint;
+}
+
+export interface LiabilityStressResponse {
+  total_capital: number;
+  est_max_drawdown_pct: number;
+  max_drawdown_usd: number;
+  monthly_living_expense: number;
+  drawdown_months_of_living_expenses: number;
+  annual_passive_income: number;
+  passive_income_coverage_pct: number;
+  remaining_capital: number;
+  runway_months: number;
+  is_runway_secure: boolean;
+  verdict_en: string;
+  verdict_zh: string;
+}
+
+// Phase 3: Ergodicity Backtest
+export interface DrawdownEvent {
+  peak_date: string;
+  trough_date: string;
+  recovery_date?: string | null;
+  depth_pct: number;
+  drawdown_days: number;
+  recovery_days?: number | null;
+}
+
+export interface UnderwaterPoint {
+  date: string;
+  year: string;
+  drawdown_pct: number;
+  portfolio_value: number;
+  peak_value: number;
+}
+
+export interface RebalanceComparison {
+  drift_cagr_pct: number;
+  quarterly_rebalanced_cagr_pct: number;
+  rebalancing_bonus_bps: number;
+  explanation_en: string;
+  explanation_zh: string;
+}

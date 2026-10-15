@@ -295,6 +295,12 @@ export interface Translations {
   logScaleLabel: string;
   linearScaleLabel: string;
   shareholderYieldLabel: string;
+  tabPositionSizing: string;
+  tabKellySizer: string;
+  tabFrontier: string;
+  tabLiabilityStress: string;
+  underwaterDrawdownTitle: string;
+  rebalanceBonusLabel: string;
 }
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
@@ -579,6 +585,12 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     logScaleLabel: "Log Scale",
     linearScaleLabel: "Linear Scale",
     shareholderYieldLabel: "Total Shareholder Yield (Div + Net Buyback)",
+    tabPositionSizing: "Position Sizing",
+    tabKellySizer: "80/20 Barbell & Kelly Sizer",
+    tabFrontier: "Efficient Frontier & Decoupling",
+    tabLiabilityStress: "Liability Stress Test",
+    underwaterDrawdownTitle: "Underwater Drawdown Curve",
+    rebalanceBonusLabel: "Rebalancing Bonus",
   },
 
   zh: {
@@ -862,6 +874,12 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     logScaleLabel: "对数坐标",
     linearScaleLabel: "普通坐标",
     shareholderYieldLabel: "总股东回报率（股息 + 净回购）",
+    tabPositionSizing: "仓位配比",
+    tabKellySizer: "80/20 哑铃与凯利计算器",
+    tabFrontier: "有效前沿与脱钩监控",
+    tabLiabilityStress: "负债端四笔钱压力测试",
+    underwaterDrawdownTitle: "自高点回撤面积图 (Underwater)",
+    rebalanceBonusLabel: "再平衡波动率收割收益",
   },
 
   hybrid: {
@@ -1145,6 +1163,12 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     logScaleLabel: "对数坐标 (Log)",
     linearScaleLabel: "线性坐标 (Linear)",
     shareholderYieldLabel: "总股东回报率 (Div + Buyback Yield)",
+    tabPositionSizing: "仓位配比 (Sizing)",
+    tabKellySizer: "80/20 哑铃 & Kelly Sizer",
+    tabFrontier: "有效前沿 (Frontier & Decoupling)",
+    tabLiabilityStress: "负债端压力测试 (Liability Stress)",
+    underwaterDrawdownTitle: "高点回撤图 (Underwater Curve)",
+    rebalanceBonusLabel: "再平衡收益 (Rebalancing Bonus)",
   }
 };
 

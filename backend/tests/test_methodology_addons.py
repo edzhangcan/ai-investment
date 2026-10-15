@@ -9,10 +9,16 @@ Covers:
 """
 
 import pytest
+from starlette.testclient import TestClient
+from backend.main import app
 from backend.models.schemas import StockTaxonomyEnum
 from backend.engines.fundamental_engine import FundamentalEngine
 from backend.engines.pricing_engine import PricingEngine
+from backend.engines.portfolio_engine import PortfolioEngine
+from backend.engines.backtest_engine import BacktestEngine
 from backend.data_sources.data_provider import DataProviderManager
+
+client = TestClient(app)
 
 # ==============================================================================
 # PHASE 1 TESTS: Taxonomy, Reverse-DCF Ceiling & Shareholder Yield
@@ -141,3 +147,112 @@ def test_data_provider_enriches_yield_and_taxonomy():
     assert "total_shareholder_yield_pct" in stock
     assert "roic" in stock
     assert stock["total_shareholder_yield_pct"] > 0
+
+# ==========================================
+# Phase 2 Tests: Barbell 80/20, Kelly, Frontier & Liability
+# ==========================================
+
+def test_barbell_80_20_portfolio_profile():
+    """Verify BARBELL_80_20 splits capital into 80% Core SAA and 20% Satellite TAA with finite bet cap."""
+    res = PortfolioEngine.calculate_position_sizes(
+        cash_balance=100000.0,
+        risk_profile="BARBELL_80_20",
+        selected_symbols=["NVDA", "AAPL", "MSFT"]
+    )
+    assert res["is_barbell"] is True
+    assert res["max_per_stock_pct"] == 4.0
+    # Core SAA contains 5 anchor ETFs
+    core_items = [p for p in res["position_breakdown"] if p.get("allocation_tier") == "CORE_SAA"]
+    sat_items = [p for p in res["position_breakdown"] if p.get("allocation_tier") == "SATELLITE_TAA"]
+    assert len(core_items) == 5
+    assert len(sat_items) == 3
+    # Every satellite stock must obey the 4% finite bet cap
+    for s in sat_items:
+        assert s["target_weight_pct"] <= 4.0
+
+def test_calculate_kelly_position_positive_and_negative_edge():
+    """Verify Quarter-Kelly computation and clamping."""
+    # Positive edge: 60% win prob, 3:1 payoff
+    pos = PortfolioEngine.calculate_kelly_position(win_prob=0.60, upside_pct=30.0, stop_loss_pct=10.0)
+    assert pos["is_positive_edge"] is True
+    assert pos["full_kelly_pct"] > 0
+    assert pos["quarter_kelly_pct"] > 0
+    assert 0.0 < pos["recommended_weight_pct"] <= 4.0
+
+    # Negative edge: 30% win prob, 0.5:1 payoff
+    neg = PortfolioEngine.calculate_kelly_position(win_prob=0.30, upside_pct=5.0, stop_loss_pct=10.0)
+    assert neg["is_positive_edge"] is False
+    assert neg["recommended_weight_pct"] == 0.0
+
+def test_compute_efficient_frontier_and_decoupling():
+    """Verify Efficient Frontier generates covariance, 400 points, and checks decoupling."""
+    ef = PortfolioEngine.compute_efficient_frontier(symbols=["SPY", "QQQ", "GLD", "TLT"])
+    assert len(ef["symbols"]) == 4
+    assert len(ef["frontier_points"]) > 0
+    assert "max_sharpe_portfolio" in ef
+    assert "min_variance_portfolio" in ef
+    assert "correlation_matrix_3y" in ef
+    assert "correlation_matrix_60d" in ef
+    assert isinstance(ef["correlation_decoupling_alerts"], list)
+
+def test_evaluate_liability_stress_test():
+    """Verify liability stress tester computes months of runway and passive coverage."""
+    res = PortfolioEngine.evaluate_liability_stress_test(
+        total_capital=200000.0,
+        est_max_drawdown_pct=25.0,
+        monthly_living_expense=5000.0,
+        annual_passive_income=15000.0
+    )
+    assert res["max_drawdown_usd"] == 50000.0
+    assert res["drawdown_months_of_living_expenses"] == 10.0
+    assert res["passive_income_coverage_pct"] == 25.0  # 15000 / 60000
+    assert res["remaining_capital"] == 150000.0
+    assert res["runway_months"] == 30.0
+    assert res["is_runway_secure"] is True
+
+# ==========================================
+# Phase 3 Tests: Calmar Analytics & Ergodicity Backtester
+# ==========================================
+
+def test_backtest_calmar_and_drawdown_events():
+    """Verify Calmar Ratio, robust 3Y Calmar, underwater curve, and drawdown events."""
+    bt = BacktestEngine.run_backtest(symbols=["NVDA", "MSFT", "AAPL"], benchmark="SPY")
+    assert "calmar_ratio" in bt
+    assert "robust_3y_calmar_ratio" in bt
+    assert bt["calmar_ratio"] > 0
+    assert len(bt["underwater_curve"]) == 6  # 2020 through 2025
+    assert "drawdown_events" in bt
+    assert "rebalancing_simulation" in bt
+    rebal = bt["rebalancing_simulation"]
+    assert "drift_cagr_pct" in rebal
+    assert "quarterly_rebalanced_cagr_pct" in rebal
+    assert "rebalancing_bonus_bps" in rebal
+
+def test_portfolio_router_endpoints():
+    """Verify REST API routes for Kelly, Frontier, and Liability stress tests."""
+    # Kelly endpoint
+    res_k = client.post("/api/portfolio/kelly-size", json={
+        "win_prob": 0.55,
+        "upside_pct": 25.0,
+        "stop_loss_pct": 8.0
+    })
+    assert res_k.status_code == 200
+    assert res_k.json()["is_positive_edge"] is True
+
+    # Efficient Frontier endpoint
+    res_ef = client.post("/api/portfolio/efficient-frontier", json={
+        "symbols": ["SPY", "QQQ", "GLD", "TLT"],
+        "lookback_days": 756
+    })
+    assert res_ef.status_code == 200
+    assert len(res_ef.json()["frontier_points"]) > 0
+
+    # Liability Stress endpoint
+    res_ls = client.post("/api/portfolio/liability-stress", json={
+        "total_capital": 100000.0,
+        "est_max_drawdown_pct": 20.0,
+        "monthly_living_expense": 3000.0,
+        "annual_passive_income": 9000.0
+    })
+    assert res_ls.status_code == 200
+    assert res_ls.json()["runway_months"] > 0

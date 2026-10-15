@@ -183,3 +183,74 @@ class StockAnalysisResponseSchema(BaseModel):
     pricing: PricingAnalysisSchema
     debate: DebateSchema
 
+# Phase 2: Portfolio, Kelly & Risk Schemas
+class KellyResult(BaseModel):
+    win_prob: float
+    upside_pct: float
+    stop_loss_pct: float
+    payoff_ratio_b: float
+    full_kelly_pct: float
+    quarter_kelly_pct: float
+    recommended_weight_pct: float
+    is_positive_edge: bool
+
+class CorrelationAlert(BaseModel):
+    pair: List[str]
+    rho_3y: float
+    rho_60d: float
+    diff: float
+    alert_en: str
+    alert_zh: str
+
+class FrontierPoint(BaseModel):
+    return_pct: float
+    volatility_pct: float
+    sharpe_ratio: float
+    weights: Dict[str, float]
+
+class EfficientFrontierResponse(BaseModel):
+    symbols: List[str]
+    correlation_matrix_3y: Dict[str, Dict[str, float]]
+    correlation_matrix_60d: Dict[str, Dict[str, float]]
+    correlation_decoupling_alerts: List[CorrelationAlert]
+    frontier_points: List[FrontierPoint]
+    max_sharpe_portfolio: FrontierPoint
+    min_variance_portfolio: FrontierPoint
+    equal_weight_portfolio: FrontierPoint
+
+class LiabilityStressResponse(BaseModel):
+    total_capital: float
+    est_max_drawdown_pct: float
+    max_drawdown_usd: float
+    monthly_living_expense: float
+    drawdown_months_of_living_expenses: float
+    annual_passive_income: float
+    passive_income_coverage_pct: float
+    remaining_capital: float
+    runway_months: float
+    is_runway_secure: bool
+    verdict_en: str
+    verdict_zh: str
+
+# Phase 3: Ergodicity Backtest Schemas
+class DrawdownEvent(BaseModel):
+    peak_date: str
+    trough_date: str
+    recovery_date: Optional[str] = None
+    depth_pct: float
+    drawdown_days: int
+    recovery_days: Optional[int] = None
+
+class UnderwaterPoint(BaseModel):
+    date: str
+    drawdown_pct: float
+    portfolio_value: float
+    peak_value: float
+
+class RebalancingComparison(BaseModel):
+    drift_cagr_pct: float
+    quarterly_rebalanced_cagr_pct: float
+    rebalancing_bonus_bps: float
+    explanation_en: str
+    explanation_zh: str
+

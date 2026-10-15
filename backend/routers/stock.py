@@ -79,3 +79,24 @@ def get_sec_text_mining(ticker: str, lang: str = "en"):
     if not ticker or len(ticker.strip()) == 0:
         raise HTTPException(status_code=400, detail="Ticker symbol cannot be empty")
     return SECTextMiner.mine_filings_mda(ticker.strip().upper(), lang=lang)
+
+@router.get("/{ticker}/backtest")
+def get_stock_backtest(
+    ticker: str,
+    benchmark: str = "SPY",
+    use_live_data: bool = False,
+    lang: str = "en"
+):
+    """
+    Executes 5-year quantitative backtest simulation (2021-2025) for a single stock symbol.
+    """
+    if not ticker or len(ticker.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Ticker symbol cannot be empty")
+    from backend.engines.backtest_engine import BacktestEngine
+    return BacktestEngine.run_backtest(
+        symbols=[ticker.strip().upper()],
+        benchmark=benchmark,
+        period_years=5,
+        use_live_data=use_live_data,
+        lang=lang
+    )
