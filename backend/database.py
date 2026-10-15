@@ -19,7 +19,7 @@ Developer Guide for Beginners:
 
 import os
 from sqlmodel import SQLModel, create_engine, Session
-from sqlalchemy import event
+from sqlalchemy import event, text
 from backend.config import settings
 
 # Step 1: Define SQLite File Path and Database URL
@@ -41,6 +41,14 @@ def init_db():
     """
     from backend.models import db_models  # Import registers SQLModel metadata
     SQLModel.metadata.create_all(engine)
+
+    # Ensure backward-compatible column addition for SQLite
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE user_watchlists ADD COLUMN target_sell_price REAL"))
+            conn.commit()
+        except Exception:
+            pass  # Column already exists or table freshly created
 
 def get_session():
     """

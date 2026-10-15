@@ -4,11 +4,12 @@ Evaluates live stock quotes against user watchlists in SQLModel database, enforc
 """
 
 import logging
+import json
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any
 from sqlmodel import Session, select
 
-from backend.models.db_models import UserWatchlistDB, PriceAlertLogDB, get_utc_now
+from backend.models.db_models import UserWatchlistDB, PriceAlertLogDB, ValuationAlertSettingsDB, get_utc_now
 from backend.data_sources.data_provider import data_provider_manager
 from backend.services.notification_dispatcher import dispatcher
 
@@ -22,62 +23,90 @@ class PriceAlertEngine:
 
     async def evaluate_watchlist_alerts(self, session: Session) -> List[Dict[str, Any]]:
         """
-        Scans all starred watchlist items.
-        If target_buy_price is set, evaluates current_price <= target_buy_price.
-        If target_buy_price is not set, dynamically computes latest ideal_buy_range_max from PricingEngine.
-        Triggers price alert if in buy zone and 12-hour anti-spam cooldown has elapsed.
+        Scans all starred watchlist items against user sensitivity settings and overrides.
+        Evaluates both Buy Zone triggers (current_price <= target_buy) and
+        Profit-Taking triggers (current_price >= target_sell).
+        Triggers price alerts when condition is met and 12-hour anti-spam cooldown has elapsed.
         """
         triggered_results = []
         watchlist_items = session.exec(select(UserWatchlistDB)).all()
+
+        # Load valuation and alert sensitivity settings
+        settings_rec = session.exec(select(ValuationAlertSettingsDB)).first()
+        custom_mos = settings_rec.global_mos_pct if settings_rec else None
+        anchor_mode = settings_rec.technical_anchor_mode if settings_rec else "adaptive_balanced"
+        overrides: Dict[str, Dict[str, Any]] = {}
+        if settings_rec and settings_rec.ticker_overrides_json:
+            try:
+                overrides = json.loads(settings_rec.ticker_overrides_json)
+            except Exception:
+                overrides = {}
 
         for item in watchlist_items:
             try:
                 # Fetch real-time price quote
                 quote = data_provider_manager.get_stock_quote(item.symbol)
                 current_price = quote.get("current_price", 0.0)
-
-                # Determine effective target buy price: saved snapshot, or dynamic fallback from PricingEngine
-                target_price = item.target_buy_price
-                if not target_price or target_price <= 0:
-                    from backend.engines.pricing_engine import PricingEngine
-                    pricing_eval = PricingEngine.evaluate_pricing_and_entry_zone(quote)
-                    target_price = pricing_eval.get("ideal_buy_range_max")
-
-                if not target_price or target_price <= 0:
+                if current_price <= 0:
                     continue
 
-                if current_price > 0 and current_price <= target_price:
-                    # Check anti-spam cooldown threshold (12 hours)
-                    cutoff = get_utc_now() - timedelta(hours=COOLDOWN_HOURS)
-                    recent_alert = session.exec(
+                override_data = overrides.get(item.symbol.upper(), {})
+
+                # Compute dynamic pricing brackets using active settings
+                from backend.engines.pricing_engine import PricingEngine
+                pricing_eval = PricingEngine.evaluate_pricing_and_entry_zone(
+                    quote,
+                    custom_mos_pct=custom_mos,
+                    anchor_mode=anchor_mode
+                )
+
+                # 1. Determine effective target buy price (override -> saved target -> dynamic ideal_buy_range_max)
+                target_buy = override_data.get("target_buy")
+                if not target_buy or target_buy <= 0:
+                    target_buy = item.target_buy_price
+                if not target_buy or target_buy <= 0:
+                    target_buy = pricing_eval.get("ideal_buy_range_max")
+
+                # 2. Determine effective target sell price (override -> saved target -> dynamic ideal_sell_range_min)
+                target_sell = override_data.get("target_sell")
+                if not target_sell or target_sell <= 0:
+                    target_sell = item.target_sell_price
+                if not target_sell or target_sell <= 0:
+                    target_sell = pricing_eval.get("ideal_sell_range_min")
+
+                cutoff = get_utc_now() - timedelta(hours=COOLDOWN_HOURS)
+
+                # Evaluate Buy Zone Alert Trigger
+                if target_buy and target_buy > 0 and current_price <= target_buy:
+                    recent_buy = session.exec(
                         select(PriceAlertLogDB)
                         .where(PriceAlertLogDB.symbol == item.symbol)
+                        .where(PriceAlertLogDB.status.in_(["TRIGGERED", "BUY_TRIGGERED"]))
                         .where(PriceAlertLogDB.triggered_at >= cutoff)
                     ).first()
 
-                    if not recent_alert:
-                        # Log trigger event in SQLite database
+                    if not recent_buy:
                         log_entry = PriceAlertLogDB(
                             symbol=item.symbol,
                             company_name=item.company_name,
                             current_price=current_price,
-                            target_buy_price=target_price,
+                            target_buy_price=target_buy,
                             notification_channel="IN_APP",
-                            status="TRIGGERED",
-                            message=f"Stock ${item.symbol} reached target buy price (${current_price} <= ${target_price})",
+                            status="BUY_TRIGGERED",
+                            message=f"Stock ${item.symbol} reached target buy price (${current_price} <= ${target_buy})",
                             triggered_at=get_utc_now()
                         )
                         session.add(log_entry)
                         session.commit()
                         session.refresh(log_entry)
 
-                        # Dispatch alert notification (In-App + Discord Webhook)
                         dispatch_res = await dispatcher.dispatch_price_alert(
                             symbol=item.symbol,
                             company_name=item.company_name,
                             current_price=current_price,
-                            target_buy_price=item.target_buy_price,
-                            session=session
+                            target_buy_price=target_buy,
+                            session=session,
+                            alert_type="BUY"
                         )
 
                         triggered_results.append({
@@ -85,7 +114,51 @@ class PriceAlertEngine:
                             "symbol": item.symbol,
                             "company_name": item.company_name,
                             "current_price": current_price,
-                            "target_buy_price": item.target_buy_price,
+                            "target_price": target_buy,
+                            "alert_type": "BUY",
+                            "dispatch": dispatch_res
+                        })
+
+                # Evaluate Sell / Profit-Taking Alert Trigger
+                if target_sell and target_sell > 0 and current_price >= target_sell:
+                    recent_sell = session.exec(
+                        select(PriceAlertLogDB)
+                        .where(PriceAlertLogDB.symbol == item.symbol)
+                        .where(PriceAlertLogDB.status == "SELL_TRIGGERED")
+                        .where(PriceAlertLogDB.triggered_at >= cutoff)
+                    ).first()
+
+                    if not recent_sell:
+                        log_entry = PriceAlertLogDB(
+                            symbol=item.symbol,
+                            company_name=item.company_name,
+                            current_price=current_price,
+                            target_buy_price=target_sell,
+                            notification_channel="IN_APP",
+                            status="SELL_TRIGGERED",
+                            message=f"Stock ${item.symbol} reached profit-taking price (${current_price} >= ${target_sell})",
+                            triggered_at=get_utc_now()
+                        )
+                        session.add(log_entry)
+                        session.commit()
+                        session.refresh(log_entry)
+
+                        dispatch_res = await dispatcher.dispatch_price_alert(
+                            symbol=item.symbol,
+                            company_name=item.company_name,
+                            current_price=current_price,
+                            target_buy_price=target_sell,
+                            session=session,
+                            alert_type="SELL"
+                        )
+
+                        triggered_results.append({
+                            "log_id": log_entry.id,
+                            "symbol": item.symbol,
+                            "company_name": item.company_name,
+                            "current_price": current_price,
+                            "target_price": target_sell,
+                            "alert_type": "SELL",
                             "dispatch": dispatch_res
                         })
             except Exception as e:

@@ -11,7 +11,13 @@ class PricingEngine:
     """Valuation & Technical Timing Engine."""
 
     @classmethod
-    def evaluate_pricing_and_entry_zone(cls, stock_data: Dict[str, Any], lang: str = "en") -> Dict[str, Any]:
+    def evaluate_pricing_and_entry_zone(
+        cls,
+        stock_data: Dict[str, Any],
+        lang: str = "en",
+        custom_mos_pct: Optional[float] = None,
+        anchor_mode: str = "adaptive_balanced"
+    ) -> Dict[str, Any]:
         symbol = stock_data.get("symbol", "UNKNOWN")
 
         # 0. Check validity
@@ -34,6 +40,10 @@ class PricingEngine:
                 "dcf_fair_value": None,
                 "ideal_buy_range_min": None,
                 "ideal_buy_range_max": None,
+                "ideal_sell_range_min": None,
+                "ideal_sell_range_max": None,
+                "applied_mos_pct": 15.0,
+                "applied_anchor_mode": anchor_mode,
                 "action_status": "NO DATA" if lang == "en" else "暂无数据",
                 "timing_advice": no_data_msg,
                 "rsi_14": None
@@ -96,22 +106,37 @@ class PricingEngine:
         val_percentile = round(max(30.0, min(95.0, dcf_pts + ma_pts + pe_pts)), 1)
 
         # 3. Technical Support & Institutional Adaptive Margin of Safety Buy Bracket Synthesis
-        # Adaptive Margin of Safety factor based on P/E multiple & moat valuation risk
-        if pe is not None and pe > 38.0:
-            mos_discount = 0.80  # 20% MoS for high-multiple growth equities
-        elif pe is not None and pe < 20.0:
-            mos_discount = 0.90  # 10% MoS for deep value / defensive dividends
+        # Margin of Safety factor: Custom override or Adaptive based on P/E multiple
+        if custom_mos_pct is not None:
+            clamped_mos = max(10.0, min(30.0, float(custom_mos_pct)))
+            mos_discount = round(1.0 - (clamped_mos / 100.0), 4)
         else:
-            mos_discount = 0.85  # 15% MoS standard compounder benchmark
+            if pe is not None and pe > 38.0:
+                mos_discount = 0.80  # 20% MoS for high-multiple growth equities
+            elif pe is not None and pe < 20.0:
+                mos_discount = 0.90  # 10% MoS for deep value / defensive dividends
+            else:
+                mos_discount = 0.85  # 15% MoS standard compounder benchmark
 
         dcf_target = round(dcf_fair_value * mos_discount, 2)
 
-        # Technical Support Pullback Anchor (synthesizing 50D SMA, 200D SMA support, and healthy consolidations)
-        technical_anchor = round(
-            max(two_hundred_sma * 0.95, min(price * 0.94, max(fifty_sma * 0.98, two_hundred_sma * 1.05))), 2
-        )
+        # Technical Support Pullback Anchor based on anchor_mode
+        if anchor_mode == "strict_200d":
+            # Strict 200D SMA support: anchor entry at 200D SMA support
+            technical_anchor = round(min(two_hundred_sma * 1.0, price * 0.95), 2)
+        elif anchor_mode == "tactical_pullback":
+            # Tactical 5% Pullback: aggressive momentum entry near 50D SMA or 5% off price
+            technical_anchor = round(max(fifty_sma * 0.98, price * 0.95), 2)
+        else:
+            # Default "adaptive_balanced": synthesizes 50D & 200D SMA
+            technical_anchor = round(
+                max(two_hundred_sma * 0.95, min(price * 0.94, max(fifty_sma * 0.98, two_hundred_sma * 1.05))), 2
+            )
 
-        if dcf_target >= price:
+        if anchor_mode == "strict_200d":
+            # Strict 200D mode strictly bounds entry ceiling to 200D SMA support
+            ideal_buy_max = round(min(dcf_target, technical_anchor), 2)
+        elif dcf_target >= price:
             # Fundamentally undervalued: entry bracket allows entering on mild consolidation / 50D SMA
             ideal_buy_max = round(min(dcf_target, max(price * 0.98, fifty_sma * 0.98)), 2)
         else:
@@ -122,6 +147,10 @@ class PricingEngine:
         ideal_buy_min = round(min(ideal_buy_max * 0.88, two_hundred_sma * 0.90), 2)
         if ideal_buy_min >= ideal_buy_max:
             ideal_buy_min = round(ideal_buy_max * 0.88, 2)
+
+        # Profit-taking / Sell alert bracket
+        ideal_sell_range_min = round(max(dcf_fair_value * 1.10, price * 1.15), 2)
+        ideal_sell_range_max = round(max(dcf_fair_value * 1.25, price * 1.30), 2)
 
         if price <= ideal_buy_max:
             if lang == "en":
@@ -167,6 +196,10 @@ class PricingEngine:
             "dcf_fair_value": dcf_fair_value,
             "ideal_buy_range_min": ideal_buy_min,
             "ideal_buy_range_max": ideal_buy_max,
+            "ideal_sell_range_min": ideal_sell_range_min,
+            "ideal_sell_range_max": ideal_sell_range_max,
+            "applied_mos_pct": round((1.0 - mos_discount) * 100.0, 1),
+            "applied_anchor_mode": anchor_mode,
             "action_status": action_status,
             "timing_advice": advice,
             "rsi_14": stock_data.get("rsi_14", 54.0)
