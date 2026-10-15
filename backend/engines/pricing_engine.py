@@ -185,7 +185,7 @@ class PricingEngine:
                 action_status = "过度延伸 (OVEREXTENDED)"
                 advice = f"当前股价 ${price} {currency} 高于 DCF 固有价值 (${dcf_fair_value} {currency})。建议等待 Pullback 至 ${ideal_buy_max} {currency}。"
 
-        # 4. Mianji Taxonomy & Reverse-DCF Narrative Penetration Integration
+        # 4. Three-Part Equity Taxonomy & Reverse-DCF Narrative Penetration Integration
         taxonomy_result = stock_data.get("taxonomy")
         if not taxonomy_result:
             taxonomy_result = FundamentalEngine.classify_stock_taxonomy(stock_data, lang=lang)

@@ -278,7 +278,7 @@ export interface Translations {
   settingsTradeoffNoticeTitle: string;
   settingsTradeoffNoticeDesc: string;
 
-  // Mianji Methodology Fields
+  // Advanced Methodology & Taxonomy Fields
   taxonomyTree: string;
   taxonomyGrain: string;
   taxonomyVegetable: string;
@@ -562,13 +562,13 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     settingsTradeoffNoticeTitle: "Institutional Sensitivity Trade-Offs",
     settingsTradeoffNoticeDesc: "Higher Margin of Safety (20%-30%) provides superior downside protection but can induce cash drag in bull markets. Lower MoS (10%) maximizes capital deployment into premium growth stocks at the cost of higher volatility.",
 
-    // Mianji Methodology Fields
+    // Advanced Methodology & Taxonomy Fields
     taxonomyTree: "🌲 Tree (Compounder)",
     taxonomyGrain: "🌾 Grain (Cyclical / Value)",
     taxonomyVegetable: "🥬 Vegetable (Trend Only)",
     impliedCeilingTitle: "Reverse-DCF Implied 10Y Earnings Ceiling",
     prosperityTrapAlert: "Prosperity Trap Warning: High short-term growth at low PE percentile — check if terminal ceiling is saturated.",
-    barbell8020Label: "Mianji 80/20 Barbell (2%–4% Finite Bet Cap)",
+    barbell8020Label: "Barbell 80/20 (2%–4% Finite Bet Cap)",
     calmarRatioLabel: "Calmar Ratio (CAGR / Max Drawdown)",
     trendTempFreeze: "❄️ Freeze (Blood Chips)",
     trendTempFlat: "➖ Flat (Consolidation)",
@@ -845,13 +845,13 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     settingsTradeoffNoticeTitle: "机构级灵敏度权衡说明",
     settingsTradeoffNoticeDesc: "较高的安全边际（20%-30%）可提供卓越的下行保护，但在强劲牛市中可能带来现金踏空（Cash Drag）；较低的安全边际（10%）能提高资本周转率与成长股参与度，但波动回撤承受度要求更高。",
 
-    // Mianji Methodology Fields
+    // Advanced Methodology & Taxonomy Fields
     taxonomyTree: "🌲 种树股（长期自由现金流复利）",
     taxonomyGrain: "🌾 种粮股（春播秋收：估值回归+高股息）",
     taxonomyVegetable: "🥬 种菜股（无基本面价值，仅限趋势交易）",
     impliedCeilingTitle: "穿透叙事：当前股价隐含 10 年利润天花板倍数",
     prosperityTrapAlert: "景气度陷阱预警：高增速+低PE分位，警惕行业终局天花板见顶导致估值压缩。",
-    barbell8020Label: "面基 80/20 哑铃配置（单票 2%–4% 有限下注）",
+    barbell8020Label: "80/20 哑铃配置（单票 2%–4% 有限下注）",
     calmarRatioLabel: "卡玛比率（年化收益 ÷ 最大回撤）",
     trendTempFreeze: "❄️ 冻（血筹区：左侧勿抄底）",
     trendTempFlat: "➖ 平（震荡整理）",
@@ -1128,13 +1128,13 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     settingsTradeoffNoticeTitle: "机构级灵敏度权衡说明 (Sensitivity Trade-Offs)",
     settingsTradeoffNoticeDesc: "较高的安全边际（20%-30%）可提供卓越的下行保护，但在强劲牛市中可能带来现金踏空（Cash Drag）；较低的安全边际（10%）能提高资本周转率与成长股参与度，但波动回撤承受度要求更高。",
 
-    // Mianji Methodology Fields
+    // Advanced Methodology & Taxonomy Fields
     taxonomyTree: "🌲 种树股 (Tree Compounder)",
     taxonomyGrain: "🌾 种粮股 (Grain Value/Yield)",
     taxonomyVegetable: "🥬 种菜股 (Vegetable Trend Only)",
     impliedCeilingTitle: "穿透叙事: 隐含 10Y 天花板倍数 (Reverse-DCF)",
     prosperityTrapAlert: "景气度陷阱预警 (Prosperity Trap): 高增速+低PE分位，警惕行业终局见顶估值压缩。",
-    barbell8020Label: "面基 80/20 哑铃配置 (2%–4% Cap)",
+    barbell8020Label: "80/20 哑铃配置 (2%–4% Cap)",
     calmarRatioLabel: "卡玛比率 Calmar Ratio (CAGR / Max DD)",
     trendTempFreeze: "❄️ 冻 Freeze (血筹左侧勿抄底)",
     trendTempFlat: "➖ 平 Flat (震荡整理)",
@@ -1148,14 +1148,14 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
   }
 };
 
-export const MIANJI_I18N_PATCH = {
+export const METHODOLOGY_I18N_PATCH = {
   en: {
     taxonomy_tree: "🌲 Tree (Compounder)",
     taxonomy_grain: "🌾 Grain (Cyclical / Value)",
     taxonomy_vegetable: "🥬 Vegetable (Trend Only)",
     implied_ceiling_title: "Reverse-DCF Implied 10Y Earnings Ceiling",
     prosperity_trap_alert: "Prosperity Trap Warning: High short-term growth at low PE percentile — check if terminal ceiling is saturated.",
-    barbell_80_20_label: "Mianji 80/20 Barbell (2%–4% Finite Bet Cap)",
+    barbell_80_20_label: "Barbell 80/20 (2%–4% Finite Bet Cap)",
     calmar_ratio_label: "Calmar Ratio (CAGR / Max Drawdown)",
     trend_temp_freeze: "❄️ Freeze (Blood Chips)",
     trend_temp_flat: "➖ Flat (Consolidation)",
@@ -1170,7 +1170,7 @@ export const MIANJI_I18N_PATCH = {
     taxonomy_vegetable: "🥬 种菜股（无基本面价值，仅限趋势交易）",
     implied_ceiling_title: "穿透叙事：当前股价隐含 10 年利润天花板倍数",
     prosperity_trap_alert: "景气度陷阱预警：高增速+低PE分位，警惕行业终局天花板见顶导致估值压缩。",
-    barbell_80_20_label: "面基 80/20 哑铃配置（单票 2%–4% 有限下注）",
+    barbell_80_20_label: "80/20 哑铃配置（单票 2%–4% 有限下注）",
     calmar_ratio_label: "卡玛比率（年化收益 ÷ 最大回撤）",
     trend_temp_freeze: "❄️ 冻（血筹区：左侧勿抄底）",
     trend_temp_flat: "➖ 平（震荡整理）",
@@ -1180,3 +1180,5 @@ export const MIANJI_I18N_PATCH = {
     soul_check_title: "投资灵魂四问与贝叶斯先验记录"
   }
 };
+
+export const MIANJI_I18N_PATCH = METHODOLOGY_I18N_PATCH;

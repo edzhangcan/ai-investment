@@ -133,7 +133,7 @@ class FundamentalEngine:
 
         currency = stock_data.get("currency", "CAD" if symbol.endswith(".TO") else "USD")
 
-        # 6. Mianji Stock Taxonomy Classification (树/粮/菜)
+        # 6. Three-Part Equity Taxonomy Classification (Tree/Grain/Vegetable)
         taxonomy_info = cls.classify_stock_taxonomy(stock_data, lang=lang)
 
         return {
@@ -163,7 +163,7 @@ class FundamentalEngine:
     @classmethod
     def classify_stock_taxonomy(cls, stock_data: Dict[str, Any], lang: str = "en") -> Dict[str, Any]:
         """
-        Classifies equity into Mianji 3-part taxonomy (树/粮/菜) per E169 / E158:
+        Classifies equity into Three-Part Taxonomy (Tree / Grain / Vegetable):
         - TREE (种树): High-ROIC secular FCF compounders (~5%)
         - GRAIN (种粮): Cyclical/Value/Dividend cash cows (~15%)
         - VEGETABLE (种菜): Negative-FCF or high-dilution trend trades (~80%)

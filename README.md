@@ -136,6 +136,14 @@ npm --prefix frontend run build
 
 ---
 
+## Conceptual Credits & Methodology Acknowledgments
+
+The investment philosophy, risk guardrails, and valuation frameworks in Prism Loop draw deep inspiration from:
+- **《面基》 (Mianji Podcast)**: Core mental models for *Qualified Holders (只做合格持有人)*, *Bayesian Updating (贝叶斯更新)*, *Three-Part Equity Taxonomy (树/粮/菜: Trees, Grain, Vegetables)*, and *Pre-Trade Investment Constitution (《纪律.md》)*.
+- **老钱日日谈与开源投研资料库**: Methodologies for *Reverse-DCF Narrative Penetration (穿透叙事)*, *Big Picture Macro Indicators (美股看板)*, and *Gold 4-Layer Topology (黄金看板)*.
+
+---
+
 ## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for details.

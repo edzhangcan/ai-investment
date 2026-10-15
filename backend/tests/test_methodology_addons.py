@@ -1,7 +1,7 @@
 """
-Automated Test Suite for Mianji Equity Methodology Transformation
+Automated Test Suite for Advanced Equity Methodology Transformation
 Covers:
-- Phase 1: Stock Taxonomy (树/粮/菜), Reverse-DCF Implied Narrative Ceiling, & Prosperity Trap
+- Phase 1: Stock Taxonomy (Tree/Grain/Vegetable), Reverse-DCF Implied Narrative Ceiling, & Prosperity Trap
 - Phase 2: Efficient Frontier, 80/20 Barbell Kelly Sizing, & Liability Stress Test
 - Phase 3: High-Resolution Live Backtester & Calmar Analytics
 - Phase 4: 纪律.md Engine, 4-State Trend Temperature (冻/平/温/热), & Bayesian Soul Check
