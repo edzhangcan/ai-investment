@@ -62,7 +62,8 @@ export interface SentimentData {
 }
 
 export interface GoldBoardData {
-  gold_price_usd: number;
+  gold_price_usd?: number;
+  gold_price_cad?: number;
   gold_log_yoy_pct: number;
   tips_10y_real_yield_pct: number;
   is_fiscal_dominance_decoupled: boolean;
@@ -71,28 +72,64 @@ export interface GoldBoardData {
 }
 
 export interface BigPictureMacro {
+  country?: string;
+  country_name?: string;
+  currency?: string;
   modified_buffett_ratio: number;
   modified_buffett_pct: number;
   aiae_allocation_pct: number;
   equity_risk_premium_pct: number;
-  dgs10_yield_pct: number;
-  dfii10_tips_real_yield_pct: number;
-  fed_walcl_trillion: number;
-  us_debt_trillion: number;
-  money_market_trillion: number;
+  dgs10_yield_pct?: number;
+  dfii10_tips_real_yield_pct?: number;
+  fed_walcl_trillion?: number;
+  us_debt_trillion?: number;
+  money_market_trillion?: number;
+  goc_10y_yield_pct?: number;
+  goc_real_return_yield_pct?: number;
+  boc_assets_billion_cad?: number;
+  ca_debt_trillion_cad?: number;
+  money_market_trillion_cad?: number;
+  cad_usd_rate?: number;
+  usd_cad_rate?: number;
+  household_debt_to_income_pct?: number;
   gold_board: GoldBoardData;
 }
 
 export interface MacroData {
+  country?: string;
+  country_name?: string;
+  country_flag?: string;
   cycle_stage: string;
   cycle_code: string;
   plain_explanation: string;
-  us_indicators: Record<string, any>;
-  ca_indicators: Record<string, any>;
-  fed_sentiment: SentimentData;
-  boc_sentiment: SentimentData;
+  us_indicators?: Record<string, any>;
+  ca_indicators?: Record<string, any>;
+  active_indicators?: Record<string, any>;
+  fed_sentiment?: SentimentData;
+  boc_sentiment?: SentimentData;
+  central_bank_sentiment?: SentimentData;
   recommended_overweights: string[];
   recommended_underweights: string[];
+  empirical_supporting_facts?: Array<{
+    indicator: string;
+    value: string;
+    source: string;
+    impact: string;
+  }>;
+  policy_news?: Array<{
+    title: string;
+    source: string;
+    url: string;
+    published_at: string;
+    summary: string;
+    credibility_tier: string;
+    relevance: string;
+  }>;
+  credible_sources?: Array<{
+    name: string;
+    domain: string;
+    type: string;
+  }>;
   big_picture?: BigPictureMacro;
 }
 

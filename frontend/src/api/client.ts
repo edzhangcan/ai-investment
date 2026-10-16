@@ -8,15 +8,15 @@ export const getApiBaseUrl = () => {
   return 'http://127.0.0.1:8000';
 };
 
-export async function fetchMacroAnalysis(lang: string = "en"): Promise<MacroData> {
-  const url = `${getApiBaseUrl()}/api/macro?lang=${lang}`;
+export async function fetchMacroAnalysis(lang: string = "en", country: string = "US"): Promise<MacroData> {
+  const url = `${getApiBaseUrl()}/api/macro?lang=${lang}&country=${country.toUpperCase()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Macro API failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function fetchMacroDashboard(lang: string = "en", forceRefresh: boolean = false): Promise<any> {
-  const url = `${getApiBaseUrl()}/api/macro/dashboard?lang=${lang}&force_refresh=${forceRefresh}`;
+export async function fetchMacroDashboard(lang: string = "en", forceRefresh: boolean = false, country: string = "US"): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/macro/dashboard?lang=${lang}&force_refresh=${forceRefresh}&country=${country.toUpperCase()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Macro Dashboard API failed: ${res.statusText}`);
   return res.json();

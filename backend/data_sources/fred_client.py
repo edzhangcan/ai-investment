@@ -49,18 +49,35 @@ class MacroDataClient:
                 "source": "FRED Series WALCL, DGS10, DFII10, GFDEBTN, CPIAUCSL / FOMC Press Release"
             },
             "ca_macro": {
-                "cpi_yoy": 2.7,                 # Canada CPI %
+                "cpi_yoy": 2.7,                 # Canada CPI % (StatCan)
+                "core_cpi_median_yoy": 2.5,     # Bank of Canada CPI-Median %
                 "boc_overnight_rate": 4.50,     # Bank of Canada Policy Rate %
                 "gdp_growth_qoq": 1.8,          # Canada Real GDP %
                 "unemployment_rate": 6.2,       # Canada Unemployment %
+                "ten_two_yield_spread": -0.08,  # 10Y - 2Y GoC Sovereign Bond Spread %
+                # Big Picture Macro Series for Canada
+                "boc_assets_billion_cad": 312.4,        # Bank of Canada Total Balance Sheet in $B CAD
+                "goc_10y_yield_pct": 3.35,              # 10Y Government of Canada Benchmark Bond Yield %
+                "ca_real_yield_pct": 1.55,              # Canada Real Return Bond Yield %
+                "ca_total_debt_trillion_cad": 2.25,     # Total Public Debt (Federal + Provincial) in $T CAD
+                "ca_money_market_trillion_cad": 0.38,   # Canadian MMF & High-Interest Savings in $T CAD
+                "ca_nominal_gdp_trillion_cad": 3.05,    # Canada Nominal GDP in $T CAD
+                "tsx_market_cap_trillion_cad": 3.85,    # S&P/TSX Composite Total Market Cap in $T CAD
+                "tsx_trailing_pe": 15.2,                # S&P/TSX Composite Trailing P/E
+                "cadusd_exchange_rate": 0.731,          # CAD/USD FX Spot Rate
+                "usdcad_exchange_rate": 1.368,          # USD/CAD FX Spot Rate
+                "gold_price_cad": 3351.6,               # Spot Gold Price in Canadian Dollars ($CAD/oz)
+                "gold_cad_log_yoy_pct": 26.8,           # Gold YoY Return in CAD terms %
+                "household_debt_to_income_pct": 178.5,  # StatCan Household Debt-to-Income %
                 "central_bank_name": "Bank of Canada (BoC)",
                 "latest_statement_text": (
-                    "The Bank of Canada today maintained its target for the overnight rate at 4.50%. "
+                    "The Bank of Canada today maintained its target for the overnight rate at 4.50%, with the Bank Rate at 4.75% and the deposit rate at 4.50%. "
                     "Governing Council is continuing its policy of balance sheet normalization. "
-                    "Global economic growth continues at a moderate rate, while wage pressures in Canada are moderating gradually."
+                    "Global economic growth continues at a moderate pace, while wage pressures in Canada are moderating gradually toward sustainable levels. "
+                    "Shelter price inflation remains the largest contributor to total inflation, but broader price pressures have cooled."
                 ),
                 "statement_date": "2026-07-24",
-                "source": "Bank of Canada Policy Rate Announcement / StatCan"
+                "source": "Bank of Canada Policy Rate Announcement / Statistics Canada (StatCan)"
             }
         }
 

@@ -17,18 +17,19 @@ class RefreshRecommendationsRequest(BaseModel):
     lang: str = "en"
 
 @router.get("")
-def get_macro_analysis(force_refresh: bool = False, lang: str = "en"):
+def get_macro_analysis(force_refresh: bool = False, lang: str = "en", country: str = "US"):
     """Returns current US & Canada economic cycle status and sector rotation weights."""
-    return MacroEngine.analyze_macro_environment(force_refresh=force_refresh, lang=lang)
+    return MacroEngine.analyze_macro_environment(force_refresh=force_refresh, lang=lang, country=country)
 
 @router.get("/dashboard")
-def get_macro_dashboard(force_refresh: bool = False, lang: str = "en"):
+def get_macro_dashboard(force_refresh: bool = False, lang: str = "en", country: str = "US"):
     """
     Returns complete Macro Dashboard payload:
     Macro cycle assessment, empirical indicator proof array, policy news feed,
     and TOP 3-5 macro-driven stock recommendations with 'Why Invest Now' rationale.
+    Supports country='US' and country='CA'.
     """
-    macro_data = MacroEngine.analyze_macro_environment(force_refresh=force_refresh, lang=lang)
+    macro_data = MacroEngine.analyze_macro_environment(force_refresh=force_refresh, lang=lang, country=country)
     recommendations_data = RecommendationEngine.get_top_recommendations(force_refresh=force_refresh, lang=lang)
 
     return {

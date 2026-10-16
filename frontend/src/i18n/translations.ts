@@ -49,6 +49,11 @@ export interface Translations {
   // Macro Dashboard & Scanner Bar
   macroTitle: string;
   macroSubtitle: string;
+  macroMarketUS: string;
+  macroMarketCA: string;
+  macroSelectMarket: string;
+  usMarketDesc: string;
+  caMarketDesc: string;
   liveMacroStream: string;
   cycleStage: string;
   fedSentiment: string;
@@ -380,8 +385,13 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     loadingStepCounter: "Step",
     loadingOf: "of",
 
-    macroTitle: "North American Macro Economic Cycle Scanner (US & CA)",
-    macroSubtitle: "Empirical proof array derived from FRED economic data, Fed & Bank of Canada NLP statements",
+    macroTitle: "Macro Economic Cycle Scanner",
+    macroSubtitle: "Empirical proof array derived from FRED economic data, Central Bank NLP statements & Sovereign Yields",
+    macroMarketUS: "United States (US)",
+    macroMarketCA: "Canada (CA)",
+    macroSelectMarket: "Jurisdiction",
+    usMarketDesc: "Federal Reserve monetary policy, BLS inflation, BEA growth & S&P 500 valuation",
+    caMarketDesc: "Bank of Canada policy rate, StatCan inflation, GoC yields & TSX Composite valuation",
     liveMacroStream: "Live Policy & Economic News Stream",
     cycleStage: "Macro Cycle Stage",
     fedSentiment: "Fed Hawkish / Dovish Sentiment",
@@ -701,8 +711,13 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     loadingStepCounter: "步骤",
     loadingOf: "/",
 
-    macroTitle: "北美宏观经济周期扫描仪 (美股与加股)",
-    macroSubtitle: "基于美联储 FRED 经济指标、美联储与加拿大央行 NLP 语句分析的客观实证数组",
+    macroTitle: "宏观经济周期扫描仪",
+    macroSubtitle: "基于官方经济指标、央行政策声明 NLP 与主权国债收益率的客观实证数组",
+    macroMarketUS: "美国市场 (US)",
+    macroMarketCA: "加拿大市场 (CA)",
+    macroSelectMarket: "宏观扫描区域",
+    usMarketDesc: "美联储货币政策、劳工统计局通胀、经济分析局增长与标普500估值水位",
+    caMarketDesc: "加拿大央行政策利率、统计局通胀、加拿大国债收益率与TSX多伦多综指估值",
     liveMacroStream: "实时央行政策与宏观新闻流",
     cycleStage: "宏观经济周期阶段",
     fedSentiment: "美联储鹰鸽情绪指数",
@@ -1022,8 +1037,13 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     loadingStepCounter: "Step",
     loadingOf: "/",
 
-    macroTitle: "北美宏观经济周期扫描仪 (Macro Cycle Scanner US & CA)",
-    macroSubtitle: "基于 FRED 经济数据、Fed 与 Bank of Canada NLP 语句分析的客观实证数组",
+    macroTitle: "宏观经济周期扫描仪 (Macro Cycle Scanner)",
+    macroSubtitle: "基于官方经济数据、央行政策声明 NLP 与主权国债收益率的客观实证数组",
+    macroMarketUS: "美国市场 (United States)",
+    macroMarketCA: "加拿大市场 (Canada)",
+    macroSelectMarket: "宏观区域 (Macro Jurisdiction)",
+    usMarketDesc: "Fed 货币政策、BLS 通胀、BEA 增长与 S&P 500 估值水位",
+    caMarketDesc: "BoC 政策利率、StatCan 通胀、GoC 收益率与 TSX 综指估值",
     liveMacroStream: "实时央行政策与新闻 (Live Macro Stream)",
     cycleStage: "宏观周期阶段 (Macro Cycle Stage)",
     fedSentiment: "美联储 (Fed) 鹰鸽情绪",
