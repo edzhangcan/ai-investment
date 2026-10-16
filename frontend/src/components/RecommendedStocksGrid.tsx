@@ -279,7 +279,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
         id="recommended-stocks-grid-panel"
         role="region"
         aria-label="Stock Recommendation Grid"
-        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
         {currentDisplayPool.map((rec) => {
           const isCa = rec.symbol.endsWith('.TO');
@@ -300,23 +300,23 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                   onSelectStock(rec.symbol);
                 }
               }}
-              className={`prism-card p-4.5 hover:border-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none transition-all flex flex-col justify-between group/card cursor-pointer shadow-sm ${
-                activeCategory === 'GOLD' ? 'border-warning/70 hover:border-warning' : ''
+              className={`prism-card p-5 sm:p-6 rounded-2xl flex flex-col justify-between group/card cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 border border-border-subtle hover:border-brand ${
+                activeCategory === 'GOLD' ? 'border-amber-400/60 dark:border-amber-600/60 hover:border-amber-500' : ''
               }`}
             >
               <div>
                 {/* Header Row: Symbol, Country Flag, Market, Taxonomy Badge & Star Watchlist Toggle */}
-                <div className="flex items-center justify-between gap-2 mb-2 pb-2.5 border-b border-border-subtle">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center justify-between gap-3 mb-4 pb-3.5 border-b border-border-subtle">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-base">{flag}</span>
-                    <span className="prism-badge-brand text-xs font-mono font-bold">
+                    <span className="prism-badge-brand text-xs font-mono font-bold px-2 py-0.5">
                       {rec.symbol}
                     </span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-surface-subtle border border-border-subtle text-content-muted">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-surface-subtle border border-border-subtle text-content-muted">
                       {rec.market || (isCa ? 'TSX' : 'US')}
                     </span>
                     {(rec.taxonomy || rec.taxonomy_badge) && (
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                         (rec.taxonomy?.taxonomy === 'TREE' || rec.taxonomy_badge?.includes('树') || rec.taxonomy_badge?.includes('Tree'))
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
                           : (rec.taxonomy?.taxonomy === 'GRAIN' || rec.taxonomy_badge?.includes('粮') || rec.taxonomy_badge?.includes('Grain'))
@@ -329,7 +329,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                       </span>
                     )}
                     {rec.macro_alignment_tag && (
-                      <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-brand/10 text-brand border border-brand/20">
+                      <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold bg-brand/10 text-brand border border-brand/20">
                         {rec.macro_alignment_tag}
                       </span>
                     )}
@@ -345,97 +345,101 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                         onToggleWatchlist(rec.symbol, rec.company_name, targetVal);
                       }
                     }}
-                    className={`h-6 px-2.5 rounded-lg text-[10px] font-bold border transition-all inline-flex items-center gap-1 cursor-pointer box-border shrink-0 ${
+                    className={`h-7 px-3 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-1.5 cursor-pointer box-border shrink-0 shadow-sm ${
                       isStarred
-                        ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/80 shadow-sm'
+                        ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/80'
                         : 'bg-surface-subtle text-content-muted border-border-subtle hover:border-warning hover:text-warning'
                     }`}
                     title={isStarred ? t.starred : t.addStar}
                   >
-                    <Star className={`w-3 h-3 ${isStarred ? 'fill-warning text-warning' : 'text-content-muted'}`} />
+                    <Star className={`w-3.5 h-3.5 ${isStarred ? 'fill-warning text-warning' : 'text-content-muted'}`} />
                     <span>{isStarred ? t.starred : t.addStar}</span>
                   </button>
                 </div>
 
                 {/* Company Name, Price & Score Row */}
-                <div className="mb-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-sm sm:text-base font-extrabold text-content-primary group-hover/card:text-brand transition-colors line-clamp-1">
-                      {rec.company_name}
-                    </h3>
-                    <div className="flex items-center gap-2 shrink-0">
+                <div className="mb-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base sm:text-lg font-black text-content-primary group-hover/card:text-brand transition-colors line-clamp-1 tracking-tight">
+                        {rec.company_name}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2.5 shrink-0">
                       <div className="text-right">
-                        <span className="text-base sm:text-lg font-black text-content-primary">
+                        <span className="text-lg sm:text-xl font-black text-content-primary">
                           ${rec.current_price}
                         </span>
-                        <span className="text-[10px] font-medium text-content-muted ml-1">
+                        <span className="text-xs font-semibold text-content-muted ml-1">
                           {rec.currency}
                         </span>
                       </div>
-                      <span className="prism-badge-positive text-xs font-mono font-bold px-2 py-0.5">
+                      <span className="prism-badge-positive text-xs font-mono font-bold px-2.5 py-0.5 shadow-sm">
                         {Math.round(rec.total_recommendation_score * 100)}/100
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Macro Rationale Snippet (takes advantage of wider card) */}
+                {/* Macro Rationale Snippet */}
                 {rec.why_recommend_rationale && (
-                  <p className="text-[11px] text-content-secondary line-clamp-2 mb-3 bg-surface-subtle/80 p-2.5 rounded-xl border border-border-subtle leading-relaxed">
-                    <span className="font-bold text-brand mr-1">
-                      {language === 'zh' ? '【选股逻辑】' : '[Rationale]'}
-                    </span>
-                    {rec.why_recommend_rationale}
-                  </p>
+                  <div className="mb-4 bg-surface-subtle/80 p-3 rounded-xl border border-border-subtle">
+                    <p className="text-xs text-content-secondary line-clamp-2 leading-relaxed">
+                      <span className="font-extrabold text-brand mr-1">
+                        {language === 'zh' ? '【选股逻辑】' : '[Rationale]'}
+                      </span>
+                      {rec.why_recommend_rationale}
+                    </p>
+                  </div>
                 )}
 
                 {/* Key Metrics Grid - 4 Columns with Guaranteed No Cut-Off for Ideal Buy Zone */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] mb-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-4">
                   {/* Metric 1: Free Cash Flow */}
-                  <div className="prism-surface-subtle p-2 rounded-xl border border-border-subtle">
-                    <span className="text-[10px] text-content-muted block truncate font-medium">
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-border-subtle flex flex-col justify-between">
+                    <span className="text-[10px] text-content-muted block truncate font-bold uppercase tracking-wider">
                       <BilingualHoverCard termKey="FCF">
                         {t.freeCashFlow}
                       </BilingualHoverCard>
                     </span>
-                    <span className="font-bold text-positive text-xs block truncate mt-0.5">
+                    <span className="font-black text-positive text-xs sm:text-sm block truncate mt-1">
                       {rec.key_metrics?.free_cash_flow || (rec.key_metrics?.free_cash_flow_b ? `$${rec.key_metrics.free_cash_flow_b}B` : 'N/A')}
                     </span>
                   </div>
 
                   {/* Metric 2: P/E Ratio */}
-                  <div className="prism-surface-subtle p-2 rounded-xl border border-border-subtle">
-                    <span className="text-[10px] text-content-muted block truncate font-medium">
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-border-subtle flex flex-col justify-between">
+                    <span className="text-[10px] text-content-muted block truncate font-bold uppercase tracking-wider">
                       <BilingualHoverCard termKey="PE">
                         {t.peRatio}
                       </BilingualHoverCard>
                     </span>
-                    <span className="font-bold text-brand text-xs block truncate mt-0.5">
+                    <span className="font-black text-brand text-xs sm:text-sm block truncate mt-1">
                       {rec.key_metrics?.pe_ratio ? `${rec.key_metrics.pe_ratio}x` : 'N/A'}
                     </span>
                   </div>
 
                   {/* Metric 3: Moat Rating */}
-                  <div className="prism-surface-subtle p-2 rounded-xl border border-border-subtle">
-                    <span className="text-[10px] text-content-muted block truncate font-medium">
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-border-subtle flex flex-col justify-between">
+                    <span className="text-[10px] text-content-muted block truncate font-bold uppercase tracking-wider">
                       <BilingualHoverCard termKey="MoatRating">
                         {t.moatRating}
                       </BilingualHoverCard>
                     </span>
-                    <span className="font-bold text-content-primary text-xs block truncate mt-0.5">
+                    <span className="font-black text-content-primary text-xs sm:text-sm block truncate mt-1">
                       {rec.key_metrics?.moat_rating || 'STANDARD'}
                     </span>
                   </div>
 
                   {/* Metric 4: Ideal Buy Zone (Guaranteed No Cut Off, upper limit fully visible) */}
-                  <div className="prism-surface-subtle p-2 rounded-xl border border-warning/30 bg-warning/5 dark:bg-warning/10 flex flex-col justify-between">
-                    <span className="text-[10px] text-warning dark:text-warning/90 font-bold block truncate">
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-warning/40 bg-warning/5 dark:bg-warning/10 flex flex-col justify-between shadow-sm">
+                    <span className="text-[10px] text-warning dark:text-warning/90 font-black block truncate uppercase tracking-wider">
                       <BilingualHoverCard termKey="IdealBuyZone">
                         {t.buyZone}
                       </BilingualHoverCard>
                     </span>
                     <span 
-                      className="font-black text-warning text-xs block whitespace-nowrap overflow-visible mt-0.5 tracking-tight"
+                      className="font-black text-warning text-xs sm:text-sm block whitespace-nowrap overflow-visible mt-1 tracking-tight"
                       title={buyZoneText}
                     >
                       {buyZoneText}
@@ -445,17 +449,17 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
               </div>
 
               {/* Drill-down Footer Link */}
-              <div className="pt-2 border-t border-border-subtle flex items-center justify-between text-xs">
-                <span className="text-[10px] font-bold text-content-muted group-hover/card:text-brand transition-colors flex items-center gap-1">
+              <div className="pt-3.5 border-t border-border-subtle flex items-center justify-between text-xs">
+                <span className="text-xs font-bold text-content-muted group-hover/card:text-brand transition-colors flex items-center gap-1.5">
                   <span>{t.drillDownAnalysis}</span>
                   {rec.key_metrics?.dcf_fair_value && (
-                    <span className="text-content-secondary font-normal ml-1">
+                    <span className="text-content-secondary font-medium ml-1">
                       (DCF Fair: ${rec.key_metrics.dcf_fair_value})
                     </span>
                   )}
                 </span>
-                <span className="p-1 prism-badge-brand rounded-lg transition-all group-hover/card:scale-105">
-                  <ChevronRight className="w-3.5 h-3.5" />
+                <span className="p-1.5 prism-badge-brand rounded-xl transition-all group-hover/card:scale-110 shadow-sm">
+                  <ChevronRight className="w-4 h-4" />
                 </span>
               </div>
             </div>
