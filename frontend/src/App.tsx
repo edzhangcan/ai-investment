@@ -20,6 +20,7 @@ import {
   Info,
   ExternalLink,
   ArrowLeft,
+  ChevronRight,
   Compass
 } from 'lucide-react';
 import { MacroDashboard } from './components/MacroDashboard';
@@ -58,7 +59,7 @@ const PreTradeSoulCheckModal = lazy(() => import('./components/PreTradeSoulCheck
 export const App: React.FC = () => {
   const { t, language } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState<'macro' | 'stock'>('macro');
+  const [activeTab, setActiveTab] = useState<'macro' | 'picks' | 'stock'>('macro');
   const [ticker, setTicker] = useState<string>('NVDA');
   const [searchInput, setSearchInput] = useState<string>('NVDA');
   const [isWatchlistOpen, setIsWatchlistOpen] = useState<boolean>(false);
@@ -301,11 +302,11 @@ export const App: React.FC = () => {
 
         {/* Navigation Tabs Bar with Multi-Color Selected States */}
         <div className="flex items-center justify-between gap-2 mb-8 bg-surface border border-border-subtle p-1.5 rounded-2xl shadow-sm">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
             {/* Tab 1: Macro Dashboard (Sky Blue Signature) */}
             <button
               onClick={() => setActiveTab('macro')}
-              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'macro'
                   ? 'bg-sky-600 hover:bg-sky-700 text-white shadow-md ring-2 ring-sky-400/40 border border-sky-600'
                   : 'bg-surface-subtle text-content-secondary hover:text-sky-600 hover:bg-surface border border-border-subtle'
@@ -315,30 +316,43 @@ export const App: React.FC = () => {
               <span>1. {t.tabMacro}</span>
             </button>
 
-            {/* Tab 2: Single Stock Deep-Dive (Indigo Signature) */}
+            {/* Tab 2: Stock Picks (Emerald Green Signature) */}
+            <button
+              onClick={() => setActiveTab('picks')}
+              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
+                activeTab === 'picks'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-400/40 border border-emerald-600'
+                  : 'bg-surface-subtle text-content-secondary hover:text-emerald-600 hover:bg-surface border border-border-subtle'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>2. {t.tabPicks}</span>
+            </button>
+
+            {/* Tab 3: Single Stock Deep-Dive (Indigo Signature) */}
             <button
               onClick={() => setActiveTab('stock')}
-              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
                 activeTab === 'stock'
                   ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md ring-2 ring-indigo-400/40 border border-indigo-600'
                   : 'bg-surface-subtle text-content-secondary hover:text-indigo-600 hover:bg-surface border border-border-subtle'
               }`}
             >
               <LineChart className="w-4 h-4" />
-              <span>2. {t.tabStock} (${ticker})</span>
+              <span>3. {t.tabStock} (${ticker})</span>
             </button>
           </div>
         </div>
 
-        {/* TAB 1: MACRO & RECOMMENDED STOCKS DASHBOARD */}
+        {/* TAB 1: MACRO DASHBOARD */}
         {activeTab === 'macro' && (
           loadingDashboard ? (
             <div className="flex flex-col items-center justify-center py-20 text-content-muted gap-3">
               <RefreshCw className="w-8 h-8 animate-spin text-brand" />
-              <p className="text-xs">Fetching North American Macro Data & Recommendations...</p>
+              <p className="text-xs">Fetching North American Macro Data...</p>
             </div>
           ) : dashboardData ? (
-            <>
+            <div className="space-y-6">
               <MacroDashboard
                 macroData={dashboardData.macro_assessment}
                 policyNews={dashboardData.policy_news}
@@ -350,11 +364,70 @@ export const App: React.FC = () => {
                 }}
               />
 
+              {/* Call to Action to proceed to Tab 2: Stock Picks */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 md:p-5 bg-surface border border-border-subtle rounded-2xl shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs md:text-sm font-bold text-content-primary">
+                      {language === 'zh'
+                        ? '根据宏观周期策略探索精选股票池'
+                        : 'Explore Sector Champions & Macro-Driven Stock Universe'}
+                    </h4>
+                    <p className="text-[11px] text-content-secondary mt-0.5">
+                      {language === 'zh'
+                        ? `当前宏观判定为「${dashboardData.macro_assessment.cycle_stage}」，点击前往精选股票池查看行业领跑者与隐形冠军`
+                        : `Current cycle is identified as "${dashboardData.macro_assessment.cycle_stage}". Proceed to view curated champions and gold nuggets.`}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveTab('picks')}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer shrink-0 group"
+                >
+                  <span>{t.tabPicks}</span>
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="prism-card p-6 text-center max-w-2xl mx-auto my-12 border-negative">
+              <ShieldAlert className="w-10 h-10 text-negative mx-auto mb-3" />
+              <h3 className="text-base font-bold text-negative mb-2">Backend Service Connection Timeout</h3>
+              <p className="text-xs text-content-secondary mb-4 leading-relaxed">
+                Unable to reach backend service at <code className="bg-surface-subtle px-2 py-0.5 rounded font-mono text-content-primary">{`http://${window.location.hostname}:8000`}</code>.
+                <br />
+                If connecting from another device on your Wi-Fi network, Windows Defender Firewall may be blocking inbound traffic on port 8000.
+              </p>
+              <button
+                onClick={() => loadDashboard()}
+                className="px-4 py-2 bg-negative hover:opacity-90 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer inline-flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Retry Connection</span>
+              </button>
+            </div>
+          )
+        )}
+
+        {/* TAB 2: STOCK PICKS (RECOMMENDED STOCKS GRID) */}
+        {activeTab === 'picks' && (
+          loadingDashboard ? (
+            <div className="flex flex-col items-center justify-center py-20 text-content-muted gap-3">
+              <RefreshCw className="w-8 h-8 animate-spin text-emerald-600" />
+              <p className="text-xs">Fetching Macro-Driven Stock Recommendations...</p>
+            </div>
+          ) : dashboardData ? (
+            <div className="space-y-6">
               <RecommendedStocksGrid
                 recommendations={dashboardData.recommendations}
                 onSelectStock={handleSelectRecommendedStock}
                 watchlistSymbols={watchlistSymbols}
                 onToggleWatchlist={toggleWatchlist}
+                cycleStage={dashboardData.macro_assessment.cycle_stage}
+                onBackToMacro={() => setActiveTab('macro')}
                 onRefreshRecommendations={async (category, offset) => {
                   try {
                     const res = await refreshRecommendationsApi(category, offset, language);
@@ -376,15 +449,13 @@ export const App: React.FC = () => {
                   }
                 }}
               />
-            </>
+            </div>
           ) : (
             <div className="prism-card p-6 text-center max-w-2xl mx-auto my-12 border-negative">
               <ShieldAlert className="w-10 h-10 text-negative mx-auto mb-3" />
               <h3 className="text-base font-bold text-negative mb-2">Backend Service Connection Timeout</h3>
               <p className="text-xs text-content-secondary mb-4 leading-relaxed">
-                Unable to reach backend service at <code className="bg-surface-subtle px-2 py-0.5 rounded font-mono text-content-primary">{`http://${window.location.hostname}:8000`}</code>.
-                <br />
-                If connecting from another device on your Wi-Fi network, Windows Defender Firewall may be blocking inbound traffic on port 8000.
+                Unable to reach backend service for stock recommendations.
               </p>
               <button
                 onClick={() => loadDashboard()}
@@ -397,7 +468,7 @@ export const App: React.FC = () => {
           )
         )}
 
-        {/* TAB 2: SINGLE STOCK DEEP-DIVE ANALYSIS */}
+        {/* TAB 3: SINGLE STOCK DEEP-DIVE ANALYSIS */}
         {activeTab === 'stock' && (
           loadingStock ? (
             <div className="flex flex-col items-center justify-center py-20 text-content-muted gap-3">
@@ -420,15 +491,23 @@ export const App: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {/* Back to Macro Dashboard & Stock Picks Navigation Button */}
-                  <div className="mb-4">
+                  {/* Back to Stock Picks & Macro Dashboard Navigation Buttons */}
+                  <div className="mb-4 flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => setActiveTab('picks')}
+                      className="h-8 px-3.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-emerald-500 text-content-secondary hover:text-emerald-600 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm group"
+                      title={t.backToStockPicks}
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-emerald-600" />
+                      <span>{t.backToStockPicks}</span>
+                    </button>
                     <button
                       onClick={() => setActiveTab('macro')}
-                      className="h-8 px-3.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-brand text-content-secondary hover:text-brand rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm group"
-                      title={t.backToMacroPicks}
+                      className="h-8 px-3.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-sky-500 text-content-secondary hover:text-sky-600 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm group"
+                      title={t.backToMacro}
                     >
-                      <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-brand" />
-                      <span>{t.backToMacroPicks}</span>
+                      <LayoutDashboard className="w-3.5 h-3.5 group-hover:scale-105 transition-transform text-sky-600" />
+                      <span>{t.backToMacro}</span>
                     </button>
                   </div>
 

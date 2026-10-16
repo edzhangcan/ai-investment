@@ -7,6 +7,7 @@ export interface Translations {
   searchPlaceholder: string;
   searchButton: string;
   tabMacro: string;
+  tabPicks: string;
   tabStock: string;
   plainTalkOn: string;
   plainTalkOff: string;
@@ -25,6 +26,8 @@ export interface Translations {
   exportMemoBtn: string;
   exportMemoTitle: string;
   backToMacroPicks: string;
+  backToStockPicks: string;
+  backToMacro: string;
   exportMemoModalTitle: string;
   exportMemoModalSubtitle: string;
   exportMemoStyledPreview: string;
@@ -309,7 +312,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     appSubtitle: "Multi-Spectrum Equity Intelligence",
     searchPlaceholder: "Search US & Canadian Stocks ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "Analyze Ticker",
-    tabMacro: "Macro Dashboard & Picks",
+    tabMacro: "Macro Dashboard",
+    tabPicks: "Stock Picks",
     tabStock: "Single Stock Deep-Dive",
     plainTalkOn: "PlainTalk Mode: ON",
     plainTalkOff: "Professional Mode",
@@ -328,6 +332,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     exportMemoBtn: "Export Memo",
     exportMemoTitle: "Export Institutional Investment Memo (.md / .pdf)",
     backToMacroPicks: "← Back to Macro Dashboard & Stock Picks",
+    backToStockPicks: "← Back to Stock Picks",
+    backToMacro: "← Back to Macro Dashboard",
     exportMemoModalTitle: "Institutional Investment Memo Export",
     exportMemoModalSubtitle: "1-Click Export in Clean Printable PDF or Markdown",
     exportMemoStyledPreview: "Styled Preview",
@@ -598,8 +604,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     appSubtitle: "多维光谱智能投研工作站",
     searchPlaceholder: "搜索美股与加拿大股票 ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "深度剖析标的",
-    tabMacro: "宏观仪表盘与选股阵列",
-    tabStock: "个股深度剖析引擎",
+    tabMacro: "宏观周期看板",
+    tabPicks: "精选股票池",
+    tabStock: "个股深度研报",
     plainTalkOn: "通俗白话模式: 开",
     plainTalkOff: "专业机构模式",
     watchlistDrawerTitle: "自选股与价格提醒",
@@ -617,6 +624,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     exportMemoBtn: "导出投研备忘录",
     exportMemoTitle: "导出机构级投资备忘录 (.md / .pdf)",
     backToMacroPicks: "← 返回宏观大盘与精选标的",
+    backToStockPicks: "← 返回精选股票池",
+    backToMacro: "← 返回宏观周期看板",
     exportMemoModalTitle: "机构级投研备忘录导出",
     exportMemoModalSubtitle: "一键导出排版规范的 PDF 报告或 Markdown 文档",
     exportMemoStyledPreview: "精美排版预览",
@@ -887,8 +896,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     appSubtitle: "多维光谱投研工作站 (Multi-Spectrum Equity Intelligence)",
     searchPlaceholder: "搜索美股与加拿大股票 ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "深度剖析标的",
-    tabMacro: "宏观仪表盘与选股阵列 (Macro Dashboard & Picks)",
-    tabStock: "个股深度剖析 (Stock Deep-Dive)",
+    tabMacro: "宏观周期看板 (Macro Dashboard)",
+    tabPicks: "精选股票池 (Stock Picks)",
+    tabStock: "个股深度研报 (Stock Deep-Dive)",
     plainTalkOn: "通俗白话模式: 开",
     plainTalkOff: "专业机构模式 (Pro)",
     watchlistDrawerTitle: "自选股与价格提醒 (Watchlist & Price Alerts)",
@@ -906,6 +916,8 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     exportMemoBtn: "导出备忘录 (Export Memo)",
     exportMemoTitle: "导出机构级投资备忘录 (Export Memo .md / .pdf)",
     backToMacroPicks: "← 返回宏观大盘与精选标的 (Back to Macro Dashboard)",
+    backToStockPicks: "← 返回精选股票池 (Back to Stock Picks)",
+    backToMacro: "← 返回宏观周期看板 (Back to Macro Dashboard)",
     exportMemoModalTitle: "机构级投研备忘录导出 (Memo Export)",
     exportMemoModalSubtitle: "一键导出 PDF 或 Markdown (Printable PDF / Markdown)",
     exportMemoStyledPreview: "精美排版预览 (Styled Preview)",
