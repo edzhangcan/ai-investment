@@ -421,41 +421,13 @@ export const App: React.FC = () => {
             </div>
           ) : dashboardData ? (
             <div className="space-y-6">
-              {/* Context Header for Tab 2 */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-surface border border-border-subtle rounded-2xl shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-sm font-extrabold text-content-primary tracking-tight">
-                        {t.recsTitle}
-                      </h2>
-                      <span className="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60">
-                        {dashboardData.macro_assessment.cycle_stage}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-content-secondary mt-0.5">
-                      {t.recsSubtitle}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setActiveTab('macro')}
-                  className="h-8 px-3.5 bg-surface-subtle hover:bg-surface border border-border-subtle hover:border-sky-500 text-content-secondary hover:text-sky-600 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer shadow-sm group shrink-0"
-                  title={t.backToMacro}
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-sky-600" />
-                  <span>{t.backToMacro}</span>
-                </button>
-              </div>
-
               <RecommendedStocksGrid
                 recommendations={dashboardData.recommendations}
                 onSelectStock={handleSelectRecommendedStock}
                 watchlistSymbols={watchlistSymbols}
                 onToggleWatchlist={toggleWatchlist}
+                cycleStage={dashboardData.macro_assessment.cycle_stage}
+                onBackToMacro={() => setActiveTab('macro')}
                 onRefreshRecommendations={async (category, offset) => {
                   try {
                     const res = await refreshRecommendationsApi(category, offset, language);
