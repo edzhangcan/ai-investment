@@ -250,6 +250,23 @@ export interface Translations {
   toastDeepDiveBtn: string;
   toastCloseAria: string;
 
+  // Responsive Left-Side Navigation Drawer (Workstation Hub)
+  navDrawerTitle: string;
+  navDrawerSubtitle: string;
+  navMemberProfile: string;
+  navGuestAnalyst: string;
+  navFreeTier: string;
+  navSignInPlaceholder: string;
+  navCoreModules: string;
+  navPreferences: string;
+  navQuickTabs: string;
+  navWatchlistDesc: string;
+  navDiscordDesc: string;
+  navValuationDesc: string;
+  navCalcDesc: string;
+  navCommandDesc: string;
+  navCloseDrawer: string;
+
   // Watchlist Sync
   syncTargetsBtn: string;
   syncingTargets: string;
@@ -555,6 +572,23 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     toastDeepDiveBtn: "Deep Dive Analysis",
     toastCloseAria: "Dismiss alert",
 
+    // Responsive Left-Side Navigation Drawer (Workstation Hub)
+    navDrawerTitle: "Workstation Hub",
+    navDrawerSubtitle: "Multi-Spectrum Equity Intelligence",
+    navMemberProfile: "Analyst Account",
+    navGuestAnalyst: "Guest Analyst",
+    navFreeTier: "Local Session • Free Tier",
+    navSignInPlaceholder: "Sign In / Multi-Tenant (Coming Soon)",
+    navCoreModules: "Core Tools & Modules",
+    navPreferences: "Preferences & Appearance",
+    navQuickTabs: "Quick Jump Perspectives",
+    navWatchlistDesc: "Tracked tickers & live entry triggers",
+    navDiscordDesc: "Webhook alerts & automated push",
+    navValuationDesc: "Margin of Safety (MoS) & moving average anchors",
+    navCalcDesc: "80/20 Barbell & fractional Kelly sizing",
+    navCommandDesc: "Search universe & keyboard shortcuts",
+    navCloseDrawer: "Close navigation drawer",
+
     // Watchlist Sync
     syncTargetsBtn: "Sync to Live Buy Zones",
     syncingTargets: "Syncing...",
@@ -859,6 +893,23 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     toastDeepDiveBtn: "立即深度分析",
     toastCloseAria: "关闭提醒",
 
+    // Responsive Left-Side Navigation Drawer (Workstation Hub)
+    navDrawerTitle: "投研工作站导航",
+    navDrawerSubtitle: "多维光谱智能投研工作站",
+    navMemberProfile: "分析师账户",
+    navGuestAnalyst: "访客分析师",
+    navFreeTier: "本地会话 • 免费版",
+    navSignInPlaceholder: "登录 / 多租户身份认证 (即将推出)",
+    navCoreModules: "核心投研模块与工具",
+    navPreferences: "工作台外观与偏好",
+    navQuickTabs: "研报视角快速切换",
+    navWatchlistDesc: "已关注标的与实时买入信号",
+    navDiscordDesc: "Discord Webhook 实时推送通道",
+    navValuationDesc: "安全边际与技术均线锚点",
+    navCalcDesc: "80/20 哑铃与凯利仓位配比",
+    navCommandDesc: "全市场标的索引与快捷指令",
+    navCloseDrawer: "关闭工作站导航",
+
     // Watchlist Sync
     syncTargetsBtn: "一键同步最新买入区间",
     syncingTargets: "同步中...",
@@ -1162,6 +1213,23 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     toastTargetLabel: "≤ 目标价 (Target):",
     toastDeepDiveBtn: "立即深度分析 (Deep Dive)",
     toastCloseAria: "关闭提醒 (Dismiss)",
+
+    // Responsive Left-Side Navigation Drawer (Workstation Hub)
+    navDrawerTitle: "投研工作站导航 (Workstation Hub)",
+    navDrawerSubtitle: "多维光谱投研工作站 (Prism Loop)",
+    navMemberProfile: "分析师账户 (Analyst Account)",
+    navGuestAnalyst: "访客分析师 (Guest Analyst)",
+    navFreeTier: "本地会话 • 免费版 (Free Tier)",
+    navSignInPlaceholder: "登录 / 多租户身份认证 (Coming Soon)",
+    navCoreModules: "核心投研模块与工具 (Core Modules)",
+    navPreferences: "工作台外观与偏好 (Preferences)",
+    navQuickTabs: "研报视角快速切换 (Quick Jump)",
+    navWatchlistDesc: "已关注标的与实时买入信号 (Watchlist & Triggers)",
+    navDiscordDesc: "Discord Webhook 实时推送通道 (Push Channel)",
+    navValuationDesc: "安全边际与技术均线锚点 (MoS & Anchors)",
+    navCalcDesc: "80/20 哑铃与凯利仓位配比 (Kelly & Barbell)",
+    navCommandDesc: "全市场标的索引与快捷指令 (Command Palette)",
+    navCloseDrawer: "关闭工作站导航 (Close Drawer)",
 
     // Watchlist Sync
     syncTargetsBtn: "同步买入区间 (Sync Buy Zones)",

@@ -21,7 +21,8 @@ import {
   ExternalLink,
   ArrowLeft,
   ChevronRight,
-  Compass
+  Compass,
+  Menu
 } from 'lucide-react';
 import { MacroDashboard } from './components/MacroDashboard';
 import { RecommendedStocksGrid } from './components/RecommendedStocksGrid';
@@ -46,6 +47,7 @@ import {
 import { MacroDashboardResponse, StockAnalysisResponse } from './types';
 
 // Code Splitting & Lazy-Loaded Modals / Viewers
+const NavigationDrawer = lazy(() => import('./components/NavigationDrawer').then(m => ({ default: m.NavigationDrawer })));
 const WatchlistDrawer = lazy(() => import('./components/WatchlistDrawer').then(m => ({ default: m.WatchlistDrawer })));
 const CommandPalette = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
 const PortfolioCalculator = lazy(() => import('./components/PortfolioCalculator').then(m => ({ default: m.PortfolioCalculator })));
@@ -62,6 +64,7 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'macro' | 'picks' | 'stock'>('macro');
   const [ticker, setTicker] = useState<string>('NVDA');
   const [searchInput, setSearchInput] = useState<string>('NVDA');
+  const [isNavDrawerOpen, setIsNavDrawerOpen] = useState<boolean>(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isPortfolioCalculatorOpen, setIsPortfolioCalculatorOpen] = useState<boolean>(false);
@@ -162,6 +165,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        setIsNavDrawerOpen(false);
         setIsWatchlistOpen(false);
         setIsCommandPaletteOpen(false);
         setIsPortfolioCalculatorOpen(false);
@@ -184,30 +188,41 @@ export const App: React.FC = () => {
       <div className="max-w-6xl mx-auto relative z-10">
         
         {/* Main Navigation Header */}
-        <header className="flex flex-col gap-4 mb-6 pb-4 border-b border-border-subtle">
-          {/* Top Row: App Title, Search Bar, Language, Theme, & PlainTalk Switchers */}
+        <header className="flex flex-col gap-4 mb-6 pb-2">
+          {/* Top Row: Hamburger Hub, Brand Mark, Search Bar, Notification Centre, Language & Theme */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 w-full">
-            {/* Title & Brand Mark */}
-            <div className="flex items-center gap-3 shrink-0">
-              <PrismLoopLogo size="lg" className="hover:scale-105 transition-transform duration-200" />
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5 leading-none">
-                  <span className="text-xl md:text-2xl font-black tracking-tight text-content-primary">
-                    PRISM
-                  </span>
-                  <span className="text-xl md:text-2xl font-black tracking-tight text-brand">
-                    LOOP
-                  </span>
+            {/* Left: Hamburger Menu Button + Brand Mark */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                onClick={() => setIsNavDrawerOpen(true)}
+                aria-label={t.navDrawerTitle || 'Toggle Workstation Hub'}
+                title={t.navDrawerTitle || 'Toggle Workstation Hub'}
+                className="p-2.5 rounded-xl border border-border-subtle bg-surface hover:bg-surface-subtle text-content-secondary hover:text-content-primary transition-all cursor-pointer shadow-sm group"
+              >
+                <Menu className="w-5 h-5 text-content-primary group-hover:scale-105 transition-transform" />
+              </button>
+
+              <div className="flex items-center gap-2.5">
+                <PrismLoopLogo size="lg" className="hover:scale-105 transition-transform duration-200" />
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1.5 leading-none">
+                    <span className="text-xl md:text-2xl font-black tracking-tight text-content-primary">
+                      PRISM
+                    </span>
+                    <span className="text-xl md:text-2xl font-black tracking-tight text-brand">
+                      LOOP
+                    </span>
+                  </div>
+                  {t.appSubtitle && (
+                    <span className="text-[11px] font-medium text-content-muted tracking-wide mt-0.5 hidden sm:inline">
+                      {t.appSubtitle}
+                    </span>
+                  )}
                 </div>
-                {t.appSubtitle && (
-                  <span className="text-[11px] font-medium text-content-muted tracking-wide mt-0.5">
-                    {t.appSubtitle}
-                  </span>
-                )}
               </div>
             </div>
 
-            {/* Expanded Search Bar */}
+            {/* Center: Expanded Search Bar */}
             <form onSubmit={handleSearch} className="relative flex-1 w-full md:max-w-2xl lg:max-w-3xl">
               <input
                 type="text"
@@ -231,64 +246,6 @@ export const App: React.FC = () => {
               <LanguageSelector />
               <ThemeToggle />
             </div>
-          </div>
-
-          {/* Sub-Header Toolbar with Distinct Multi-Color Accents */}
-          <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-border-subtle w-full justify-start md:justify-center">
-            {/* 1. Watchlist Drawer Button (Amber Gold Theme) */}
-            <button
-              onClick={() => setIsWatchlistOpen(true)}
-              className="px-3.5 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold relative cursor-pointer group shadow-sm"
-              title={t.watchlistDrawerTitle}
-            >
-              <Star className="w-4 h-4 text-amber-600 dark:text-amber-400 fill-amber-500 group-hover:scale-105 transition-transform" />
-              <span>{t.watchlistTitle}</span>
-              {watchlistSymbols.size > 0 && (
-                <span className="min-w-[18px] h-[18px] px-1.5 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white text-[10px] font-black rounded-md shadow-sm ml-0.5">
-                  {watchlistSymbols.size}
-                </span>
-              )}
-            </button>
-
-            {/* 2. Command Palette (Sky Blue Theme) */}
-            <button
-              onClick={() => setIsCommandPaletteOpen(true)}
-              className="px-3.5 py-2 bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-700/80 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-900 dark:text-sky-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer shadow-sm group"
-              title={t.commandPaletteTitle}
-            >
-              <Command className="w-4 h-4 text-sky-600 dark:text-sky-400 group-hover:scale-105 transition-transform" />
-              <span>{t.commandPaletteTitle}</span>
-            </button>
-
-            {/* 3. Position Sizing Calculator (Emerald Green Theme) */}
-            <button
-              onClick={() => setIsPortfolioCalculatorOpen(true)}
-              className="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-900 dark:text-emerald-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer shadow-sm group"
-              title={t.calcButtonTitle}
-            >
-              <Calculator className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform" />
-              <span>{t.calcButtonTitle}</span>
-            </button>
-
-            {/* 4. Discord Push Alerts (Indigo Violet Theme) */}
-            <button
-              onClick={() => setIsDiscordModalOpen(true)}
-              className="px-3.5 py-2 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-300 dark:border-indigo-700/80 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-900 dark:text-indigo-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer shadow-sm group"
-              title={t.discordButtonTitle}
-            >
-              <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform" />
-              <span>{t.discordButtonTitle}</span>
-            </button>
-
-            {/* 5. Alert & Valuation Settings (Purple / Violet Theme) */}
-            <button
-              onClick={() => setIsValuationSettingsOpen(true)}
-              className="px-3.5 py-2 bg-purple-50 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-700/80 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-900 dark:text-purple-300 rounded-xl transition-all flex items-center gap-2 text-xs font-extrabold cursor-pointer shadow-sm group"
-              title={t.settingsButtonTitle}
-            >
-              <Sliders className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-105 transition-transform" />
-              <span>{t.settingsButtonTitle}</span>
-            </button>
           </div>
         </header>
 
@@ -754,6 +711,21 @@ export const App: React.FC = () => {
         
         {/* Suspended Lazy Modals & Drawers */}
         <Suspense fallback={null}>
+          {/* Responsive Left-Side Navigation Drawer (Workstation Hub) */}
+          <NavigationDrawer
+            isOpen={isNavDrawerOpen}
+            onClose={() => setIsNavDrawerOpen(false)}
+            onOpenWatchlist={() => setIsWatchlistOpen(true)}
+            onOpenDiscord={() => setIsDiscordModalOpen(true)}
+            onOpenValuationSettings={() => setIsValuationSettingsOpen(true)}
+            onOpenCalculator={() => setIsPortfolioCalculatorOpen(true)}
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            activeTab={activeTab}
+            onSelectTab={setActiveTab}
+            currentTicker={ticker}
+            watchlistCount={watchlistSymbols.size}
+          />
+
           {/* Command Palette Modal */}
           <CommandPalette
             isOpen={isCommandPaletteOpen}
