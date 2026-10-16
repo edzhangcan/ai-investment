@@ -29,7 +29,7 @@ import { PricingChart } from './components/PricingChart';
 import { DebateArena } from './components/DebateArena';
 import { BilingualHoverCard } from './components/BilingualHoverCard';
 import { MacroScannerBar } from './components/MacroScannerBar';
-import { NotificationToast } from './components/NotificationToast';
+import { NotificationCenter } from './components/NotificationCenter';
 import { StartupLoadingOverlay } from './components/StartupLoadingOverlay';
 import { LanguageSelector } from './components/LanguageSelector';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -181,15 +181,6 @@ export const App: React.FC = () => {
       {/* Startup Loading Overlay */}
       <StartupLoadingOverlay isLoading={loadingDashboard} />
 
-      {/* Notification Toast for Triggered Buy-Zone Price Alerts */}
-      <NotificationToast
-        onSelectTicker={(sym) => {
-          setTicker(sym);
-          setSearchInput(sym);
-          setActiveTab('stock');
-        }}
-      />
-
       <div className="max-w-6xl mx-auto relative z-10">
         
         {/* Main Navigation Header */}
@@ -234,8 +225,9 @@ export const App: React.FC = () => {
               </button>
             </form>
 
-            {/* Right Controls: Language & Theme Switchers */}
+            {/* Right Controls: Notification Centre, Language & Theme Switchers */}
             <div className="flex items-center gap-2 shrink-0">
+              <NotificationCenter onSelectTicker={handleSelectRecommendedStock} />
               <LanguageSelector />
               <ThemeToggle />
             </div>
