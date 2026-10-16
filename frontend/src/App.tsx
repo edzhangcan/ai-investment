@@ -74,6 +74,7 @@ export const App: React.FC = () => {
   const [isSoulCheckOpen, setIsSoulCheckOpen] = useState<boolean>(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<Set<string>>(new Set());
 
+  const [macroCountry, setMacroCountry] = useState<'US' | 'CA'>('US');
   const [dashboardData, setDashboardData] = useState<MacroDashboardResponse | null>(null);
   const [loadingDashboard, setLoadingDashboard] = useState<boolean>(true);
 
@@ -109,15 +110,10 @@ export const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadDashboard();
-    fetchWatchlistSymbols();
-  }, [language]);
-
-  const loadDashboard = async () => {
+  const loadDashboard = async (targetCountry: 'US' | 'CA' = macroCountry, forceRefresh: boolean = false) => {
     setLoadingDashboard(true);
     try {
-      const data = await fetchMacroDashboard(language);
+      const data = await fetchMacroDashboard(language, forceRefresh, targetCountry);
       setDashboardData(data);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
@@ -125,6 +121,11 @@ export const App: React.FC = () => {
       setLoadingDashboard(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboard(macroCountry);
+    fetchWatchlistSymbols();
+  }, [language, macroCountry]);
 
   const loadStock = async (sym: string) => {
     setLoadingStock(true);
@@ -263,6 +264,7 @@ export const App: React.FC = () => {
             >
               <LayoutDashboard className="w-4 h-4" />
               <span>1. {t.tabMacro}</span>
+              <span className="text-[11px] font-bold opacity-90">({macroCountry === 'CA' ? '🇨🇦 CA' : '🇺🇸 US'})</span>
             </button>
 
             {/* Tab 2: Stock Picks (Emerald Green Signature) */}
@@ -307,9 +309,12 @@ export const App: React.FC = () => {
                 policyNews={dashboardData.policy_news}
                 supportingFacts={dashboardData.empirical_supporting_facts}
                 credibleSources={dashboardData.credible_sources}
-                onRefreshMacro={async () => {
-                  const res = await fetchMacroDashboard(language, true);
-                  setDashboardData(res);
+                selectedCountry={macroCountry}
+                onSelectCountry={(country) => {
+                  setMacroCountry(country);
+                }}
+                onRefreshMacro={async (country) => {
+                  await loadDashboard(country || macroCountry, true);
                 }}
               />
 
@@ -724,6 +729,10 @@ export const App: React.FC = () => {
             onSelectTab={setActiveTab}
             currentTicker={ticker}
             watchlistCount={watchlistSymbols.size}
+            macroCountry={macroCountry}
+            onSelectMacroCountry={(country) => {
+              setMacroCountry(country);
+            }}
           />
 
           {/* Command Palette Modal */}

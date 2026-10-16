@@ -37,6 +37,9 @@ interface NavigationDrawerProps {
   currentTicker: string;
   // Badges & Metrics
   watchlistCount: number;
+  // Macro jurisdiction
+  macroCountry?: 'US' | 'CA';
+  onSelectMacroCountry?: (country: 'US' | 'CA') => void;
 }
 
 export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
@@ -51,6 +54,8 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   onSelectTab,
   currentTicker,
   watchlistCount,
+  macroCountry = 'US',
+  onSelectMacroCountry,
 }) => {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -286,25 +291,72 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               {t.navQuickTabs}
             </div>
 
-            <div className="grid grid-cols-1 gap-1.5">
-              {/* Tab 1: Macro Dashboard */}
-              <button
-                onClick={() => {
-                  onSelectTab('macro');
-                  onClose();
-                }}
-                className={`p-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
-                  activeTab === 'macro'
-                    ? 'bg-sky-600 text-white shadow-sm'
-                    : 'bg-surface hover:bg-surface-subtle text-content-secondary hover:text-content-primary border border-border-subtle'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span>1. {t.tabMacro}</span>
+            <div className="grid grid-cols-1 gap-2">
+              {/* Tab 1: Macro Dashboard with US / CA Selection */}
+              <div className="space-y-1.5 p-1 rounded-2xl bg-surface-subtle border border-border-subtle">
+                <button
+                  onClick={() => {
+                    onSelectTab('macro');
+                    onClose();
+                  }}
+                  className={`w-full p-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                    activeTab === 'macro'
+                      ? 'bg-sky-600 text-white shadow-sm'
+                      : 'bg-surface hover:bg-surface-subtle text-content-secondary hover:text-content-primary'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span>1. {t.tabMacro}</span>
+                    <span className="text-xs">{macroCountry === 'CA' ? '🇨🇦' : '🇺🇸'}</span>
+                  </div>
+                  {activeTab === 'macro' && <ShieldCheck className="w-4 h-4" />}
+                </button>
+
+                {/* Sub-selector: US vs CA Macro */}
+                <div className="grid grid-cols-2 gap-1.5 px-1 pb-1">
+                  <button
+                    onClick={() => {
+                      onSelectMacroCountry?.('US');
+                      onSelectTab('macro');
+                      onClose();
+                    }}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-between transition-all cursor-pointer border ${
+                      activeTab === 'macro' && macroCountry === 'US'
+                        ? 'bg-sky-50 dark:bg-sky-950/60 border-sky-400 dark:border-sky-700 text-sky-700 dark:text-sky-300'
+                        : 'bg-surface border-border-subtle text-content-secondary hover:text-content-primary hover:border-brand'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>🇺🇸</span>
+                      <span>{t.macroMarketUS}</span>
+                    </div>
+                    {activeTab === 'macro' && macroCountry === 'US' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSelectMacroCountry?.('CA');
+                      onSelectTab('macro');
+                      onClose();
+                    }}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-between transition-all cursor-pointer border ${
+                      activeTab === 'macro' && macroCountry === 'CA'
+                        ? 'bg-sky-50 dark:bg-sky-950/60 border-sky-400 dark:border-sky-700 text-sky-700 dark:text-sky-300'
+                        : 'bg-surface border-border-subtle text-content-secondary hover:text-content-primary hover:border-brand'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>🇨🇦</span>
+                      <span>{t.macroMarketCA}</span>
+                    </div>
+                    {activeTab === 'macro' && macroCountry === 'CA' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                    )}
+                  </button>
                 </div>
-                {activeTab === 'macro' && <ShieldCheck className="w-4 h-4" />}
-              </button>
+              </div>
 
               {/* Tab 2: Stock Picks */}
               <button

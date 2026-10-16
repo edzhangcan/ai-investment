@@ -11,8 +11,11 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData }) =
   const { t } = useLanguage();
   if (!macroData) return null;
 
+  const isCA = macroData.country === "CA";
   const cycle = macroData.cycle_stage || "Overheat / Late Expansion";
-  const fed = macroData.fed_sentiment || {};
+  const centralBank = isCA
+    ? (macroData.boc_sentiment || macroData.central_bank_sentiment || {})
+    : (macroData.fed_sentiment || macroData.central_bank_sentiment || {});
   const overweights = macroData.recommended_overweights || [];
   const underweights = macroData.recommended_underweights || [];
 
@@ -30,12 +33,13 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData }) =
               <BilingualHoverCard termKey="MacroCycle">
                 {t.macroTitle}
               </BilingualHoverCard>
+              <span className="text-base">{macroData.country_flag || (isCA ? '🇨🇦' : '🇺🇸')}</span>
               <span className="prism-badge-positive text-[10px]">
                 {t.liveMacroStream}
               </span>
             </div>
             <h2 className="text-lg font-bold text-content-primary mt-0.5">
-              {t.cycleStage}: <span className="text-positive">{cycle}</span>
+              {t.cycleStage}: <span className="text-positive">{cycle}</span> ({isCA ? 'Canada' : 'United States'})
             </h2>
           </div>
         </div>
@@ -46,10 +50,10 @@ export const MacroScannerBar: React.FC<MacroScannerBarProps> = ({ macroData }) =
           <div>
             <div className="text-content-muted">
               <BilingualHoverCard termKey="FedSentiment">
-                {t.fedSentiment}
+                {isCA ? t.bocSentiment : t.fedSentiment}
               </BilingualHoverCard>:
             </div>
-            <div className="font-semibold text-brand">{fed.tone || "Hawkish"}</div>
+            <div className="font-semibold text-brand">{centralBank.tone || (isCA ? "Neutral / Wait-and-See" : "Hawkish")}</div>
           </div>
         </div>
       </div>
