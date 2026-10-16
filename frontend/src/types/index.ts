@@ -223,6 +223,11 @@ export interface CIOVerdict {
       variant_view_penetration?: string;
       bayesian_prior?: string;
       mandatory_falsification_trigger?: string;
+      bottom_threshold?: number;
+      is_falsified?: boolean;
+      threshold_currency?: string;
+      implied_ceiling_mult?: number;
+      is_prosperity_trap?: boolean;
     };
     barbell_allocation?: string;
     qualified_holder_creed?: string;

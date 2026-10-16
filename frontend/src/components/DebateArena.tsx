@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
-import { ShieldAlert, Award, ArrowUpRight, Scale, Share2 } from 'lucide-react';
+import { ShieldAlert, Award, ArrowUpRight, Scale, Share2, AlertTriangle, BellRing, CheckCircle2 } from 'lucide-react';
 import { ShareVerdictModal } from './ShareVerdictModal';
 import { StockData, PricingData, DebateData } from '../types';
 
@@ -14,12 +14,39 @@ interface DebateArenaProps {
 export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pricing }) => {
   const { t } = useLanguage();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isNotifyingFalsification, setIsNotifyingFalsification] = useState(false);
+  const [falsificationSent, setFalsificationSent] = useState(false);
 
   if (!debateData) return null;
 
   const bull = debateData.bull_argument || {};
   const bear = debateData.bear_argument || {};
   const cio = debateData.cio_verdict || {};
+
+  const handleNotifyFalsification = async (bottomThreshold: number, currPrice: number) => {
+    const sym = stock?.symbol || debateData?.symbol;
+    if (!sym) return;
+    setIsNotifyingFalsification(true);
+    try {
+      const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/alerts/notify-falsification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          symbol: sym,
+          company_name: stock?.company_name || sym,
+          current_price: currPrice,
+          bottom_threshold: bottomThreshold
+        })
+      });
+      if (res.ok) {
+        setFalsificationSent(true);
+      }
+    } catch (err) {
+      console.error('Failed to dispatch falsification alert:', err);
+    } finally {
+      setIsNotifyingFalsification(false);
+    }
+  };
 
   return (
     <div className="prism-card p-5 mb-6 transition-all">
@@ -154,9 +181,11 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
                   </span>
                 )}
                 {cio.mianji_framework.barbell_allocation && (
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-surface-subtle text-content-secondary border border-border-subtle">
-                    {cio.mianji_framework.barbell_allocation}
-                  </span>
+                  <BilingualHoverCard termKey="CoreSAA">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-surface-subtle text-content-secondary border border-border-subtle cursor-help">
+                      {cio.mianji_framework.barbell_allocation}
+                    </span>
+                  </BilingualHoverCard>
                 )}
               </div>
             </div>
@@ -165,7 +194,11 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
             {cio.mianji_framework.taxonomy_diagnosis && (
               <div className="p-2.5 rounded-lg bg-surface-subtle/80 border border-border-subtle text-[11px] leading-relaxed">
                 <div className="font-bold text-brand mb-1 flex items-center gap-1.5">
-                  <span>🎯 标的定性归因 (Asset Diagnosis):</span>
+                  <BilingualHoverCard termKey="AssetDiagnosis">
+                    <span className="cursor-help flex items-center gap-1">
+                      <span>🎯 {t.assetDiagnosisTitle || "标的定性归因"}:</span>
+                    </span>
+                  </BilingualHoverCard>
                 </div>
                 <p className="text-content-primary font-medium leading-relaxed">
                   {cio.mianji_framework.taxonomy_diagnosis}
@@ -173,38 +206,145 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
               </div>
             )}
 
-            {cio.mianji_framework.soul_check && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
-                <div className="text-content-secondary">
-                  <span className="text-content-muted">量价温度 / 击球区: </span>
-                  <span className="font-bold text-content-primary">
-                    {cio.mianji_framework.soul_check.trend_temperature} ({cio.mianji_framework.soul_check.hitting_zone === 'RIGHT_SIDE' ? '右侧击球区' : '左侧观察'})
-                  </span>
-                </div>
-                <div className="text-content-secondary">
-                  <span className="text-content-muted">贝叶斯先验置信度: </span>
-                  <span className="font-bold text-brand font-mono">
-                    {cio.mianji_framework.soul_check.bayesian_prior}
-                  </span>
-                </div>
-                {cio.mianji_framework.soul_check.variant_view_penetration && (
-                  <div className="sm:col-span-2 text-content-secondary">
-                    <span className="text-content-muted">穿透叙事 (10年天花板): </span>
-                    <span className="font-medium text-content-primary">
-                      {cio.mianji_framework.soul_check.variant_view_penetration}
+            {cio.mianji_framework.soul_check && (() => {
+              const sc = cio.mianji_framework.soul_check;
+              const currPrice = Number(stock?.current_price ?? pricing?.current_price ?? 0);
+              const bottomFloor = sc.bottom_threshold ? Number(sc.bottom_threshold) : null;
+              const isFalsified = Boolean(sc.is_falsified || (bottomFloor && currPrice > 0 && currPrice < bottomFloor));
+              const currency = sc.threshold_currency || stock?.currency || 'USD';
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                  <div className="text-content-secondary">
+                    <span className="text-content-muted">
+                      <BilingualHoverCard termKey="TrendTemperature">
+                        <span className="cursor-help">{t.trendTemperatureTitle || "量价温度 / 击球区"}: </span>
+                      </BilingualHoverCard>
+                    </span>
+                    <span className="font-bold text-content-primary">
+                      {sc.trend_temperature} (
+                      <BilingualHoverCard termKey="BattingZone">
+                        <span className="cursor-help underline decoration-dotted decoration-border-subtle">
+                          {sc.hitting_zone === 'RIGHT_SIDE' 
+                            ? (t.rightSideBattingZone || "右侧击球区") 
+                            : (t.leftSideObservation || "左侧观察")}
+                        </span>
+                      </BilingualHoverCard>
+                      )
                     </span>
                   </div>
-                )}
-                {cio.mianji_framework.soul_check.mandatory_falsification_trigger && (
-                  <div className="sm:col-span-2 p-2 rounded-lg bg-negative/5 border border-negative/20 text-content-secondary">
-                    <span className="text-negative font-bold">⚠️ 离场铁律 (Falsification Trigger): </span>
-                    <span className="font-medium text-content-primary">
-                      {cio.mianji_framework.soul_check.mandatory_falsification_trigger}
+
+                  <div className="text-content-secondary">
+                    <span className="text-content-muted">
+                      <BilingualHoverCard termKey="BayesianPrior">
+                        <span className="cursor-help">{t.bayesianPriorTitle || "贝叶斯先验置信度"}: </span>
+                      </BilingualHoverCard>
+                    </span>
+                    <span className="font-bold text-brand font-mono">
+                      {sc.bayesian_prior}
                     </span>
                   </div>
-                )}
-              </div>
-            )}
+
+                  {sc.variant_view_penetration && (
+                    <div className="sm:col-span-2 text-content-secondary flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="text-content-muted">
+                        <BilingualHoverCard termKey="NarrativePenetration">
+                          <span className="cursor-help">{t.narrativePenetrationTitle || "穿透叙事 (10年天花板)"}: </span>
+                        </BilingualHoverCard>
+                      </span>
+                      {sc.implied_ceiling_mult !== undefined ? (
+                        <span className="inline-flex items-center gap-1.5 flex-wrap">
+                          <BilingualHoverCard termKey="Implied10YCeiling">
+                            <span className="font-semibold text-content-primary underline decoration-dotted decoration-border-subtle cursor-help">
+                              {t.implied10YCeilingLabel || "逆向10年利润天花板"}: {sc.implied_ceiling_mult}x
+                            </span>
+                          </BilingualHoverCard>
+                          <span className="text-content-muted">|</span>
+                          <BilingualHoverCard termKey="ProsperityTrap">
+                            <span className={`font-semibold underline decoration-dotted decoration-border-subtle cursor-help ${sc.is_prosperity_trap ? 'text-negative font-bold' : 'text-positive'}`}>
+                              {t.prosperityTrapLabel || "景气度陷阱"}: {sc.is_prosperity_trap ? (t.trapTriggered || "已触发") : (t.trapSafe || "安全")}
+                            </span>
+                          </BilingualHoverCard>
+                        </span>
+                      ) : (
+                        <span className="font-medium text-content-primary">
+                          {sc.variant_view_penetration}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {sc.mandatory_falsification_trigger && (
+                    <div className={`sm:col-span-2 p-2.5 rounded-lg border text-content-secondary transition-all ${
+                      isFalsified 
+                        ? 'bg-negative/10 border-negative shadow-sm' 
+                        : 'bg-negative/5 border-negative/20'
+                    }`}>
+                      <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <BilingualHoverCard termKey="FalsificationTrigger">
+                            <span className="text-negative font-bold flex items-center gap-1 cursor-help">
+                              {isFalsified ? (
+                                <AlertTriangle className="w-4 h-4 text-negative animate-bounce shrink-0" />
+                              ) : (
+                                <ShieldAlert className="w-3.5 h-3.5 text-negative shrink-0" />
+                              )}
+                              <span>{isFalsified ? (t.falsificationBreachedWarning || "证伪底线已击穿") : (t.falsificationTriggerTitle || "离场铁律与证伪底线")}:</span>
+                            </span>
+                          </BilingualHoverCard>
+                        </div>
+                        {bottomFloor !== null && (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                            isFalsified 
+                              ? 'bg-negative text-white border-negative' 
+                              : 'bg-negative/10 text-negative border-negative/20'
+                          }`}>
+                            Floor: ${bottomFloor.toFixed(2)} {currency}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className={`font-medium leading-relaxed ${isFalsified ? 'text-negative font-semibold' : 'text-content-primary'}`}>
+                        {isFalsified 
+                          ? `${t.falsificationBreachedDesc || "当前股价已跌破量化止损底线。恪守反破产投资宪法：破位机械离场，严禁左侧逆势加仓补仓！"} (${sc.mandatory_falsification_trigger})`
+                          : sc.mandatory_falsification_trigger}
+                      </p>
+
+                      {/* Immediate Falsification Alert Dispatch Trigger */}
+                      {isFalsified && bottomFloor !== null && (
+                        <div className="mt-2 pt-2 border-t border-negative/20 flex items-center justify-between flex-wrap gap-2">
+                          <span className="text-[10px] text-negative font-medium">
+                            {currency} ${currPrice.toFixed(2)} &lt; Floor ${bottomFloor.toFixed(2)} (-3% 200D MA)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleNotifyFalsification(bottomFloor, currPrice)}
+                            disabled={isNotifyingFalsification || falsificationSent}
+                            className={`h-7 px-3 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 transition-all shadow-sm cursor-pointer ${
+                              falsificationSent 
+                                ? 'bg-positive text-white' 
+                                : 'bg-negative hover:bg-negative/90 text-white'
+                            } disabled:opacity-70`}
+                          >
+                            {falsificationSent ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>{t.falsificationNotified || "证伪告警已推送！"}</span>
+                              </>
+                            ) : (
+                              <>
+                                <BellRing className="w-3.5 h-3.5" />
+                                <span>{isNotifyingFalsification ? "..." : (t.notifyFalsificationBtn || "推送告警通知 (Discord/应用内)")}</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 

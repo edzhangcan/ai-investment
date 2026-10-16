@@ -94,7 +94,7 @@ class MultiAgentArena:
             "3. CIO Agent (Judge): Impartial referee enforcing empirical evidence, Risk-Reward ratio, and institutional investment discipline (pre-trade soul check & prior framework):\n"
             "   - judge_summary: Decisive executive investment conclusion synthesizing Bull and Bear arguments, valuation margin of safety, and recommended entry price. STRICTLY DO NOT repeat generic checklist text or static boilerplate here as it is rendered separately below.\n"
             "   - mianji_framework.taxonomy_diagnosis: Analyze THIS specific stock's business engine, FCF conversion ($X), ROIC (X%), and cyclicality to diagnose why it belongs to 🌲 Tree (compounder), 🌾 Grain (cyclical/dividend value), or 🥬 Vegetable (trend-only satellite). Avoid generic boilerplate; evaluate the real business.\n"
-            "   - Pre-trade Soul Check (投前灵魂四问): Check FOMO emotional urgency (eliminate anxiety), verify Trend Temperature (regime FREEZE/FLAT/WARM/HOT, favoring right-side entry over left-side knife-catching), penetrate narrative with Reverse-DCF 10Y ceiling multiple and Prosperity Trap warnings, cap Bayesian prior confidence at <= 95% (never 100% certainty, respect unknown), and establish a mandatory pre-set falsification exit trigger.\n"
+            "   - Pre-trade Soul Check (投前灵魂四问): Check FOMO emotional urgency (eliminate anxiety), verify Trend Temperature (regime FREEZE/FLAT/WARM/HOT, favoring right-side entry over left-side knife-catching), penetrate narrative with Reverse-DCF 10Y ceiling multiple and Prosperity Trap warnings, cap Bayesian prior confidence at <= 95% (never 100% certainty, respect unknown), and establish a mandatory pre-set falsification exit trigger with a quantified bottom threshold (e.g., breach below $X.XX, calculated as 3% below 200D MA, or quarterly FCF turning negative).\n"
             "   - Position Sizing & Barbell: Core SAA (80% Tree/Grain) vs Satellite TAA (20% Vegetable). Anti-ruin rule: strictly block counter-trend averaging down.\n"
             "   - Qualified Holder Mindset (只做合格持有人): '不是人在做投资，是纪律在做投资。'\n\n"
             "STRICT MANDATE: Base all numbers strictly on the provided real-time stock parameters. Never hallucinate fake prices or company names. Never output negative percentages like '-X% above support'. IMPORTANT: Strictly DO NOT mention the words 'Mianji' or '面基' anywhere in the output text.\n"
@@ -127,7 +127,9 @@ class MultiAgentArena:
             '        "trend_temperature": "FREEZE" OR "FLAT" OR "WARM" OR "HOT",\n'
             '        "variant_view_penetration": "Summary of 10Y ceiling and prosperity trap check",\n'
             '        "bayesian_prior": "<= 95% confidence cap",\n'
-            '        "mandatory_falsification_trigger": "Exit trigger condition"\n'
+            '        "mandatory_falsification_trigger": "Decisive breach below bottom threshold $X.XX (-3% below 200D MA), or quarterly FCF turning negative",\n'
+            '        "bottom_threshold": 123.45,\n'
+            '        "is_falsified": false\n'
             '      },\n'
             '      "barbell_allocation": "Core SAA (80%)" OR "Satellite TAA (20%)",\n'
             '      "qualified_holder_creed": "只做合格持有人：不是人在做投资，是纪律在做投资。"\n'
@@ -175,6 +177,24 @@ class MultiAgentArena:
 
         parsed = json.loads(response.text)
         parsed["symbol"] = stock_data["symbol"]
+
+        # Ensure quantified falsification parameters exist in parsed verdict
+        cio_verdict = parsed.get("cio_verdict", {})
+        mianji_framework = cio_verdict.get("mianji_framework", {})
+        if "soul_check" in mianji_framework:
+            sc = mianji_framework["soul_check"]
+            price_val = float(stock_data.get("current_price", 0.0))
+            two_hundred_sma_val = float(pricing_data.get("two_hundred_day_sma", price_val))
+            curr_val = stock_data.get("currency", "USD")
+            bottom_thresh = round(two_hundred_sma_val * 0.97, 2) if two_hundred_sma_val > 0 else round(price_val * 0.95, 2)
+
+            if "bottom_threshold" not in sc or not sc["bottom_threshold"]:
+                sc["bottom_threshold"] = bottom_thresh
+            if "is_falsified" not in sc:
+                sc["is_falsified"] = bool(price_val < float(sc["bottom_threshold"]))
+            if "threshold_currency" not in sc:
+                sc["threshold_currency"] = curr_val
+
         return parsed
 
     @classmethod
@@ -365,8 +385,13 @@ class MultiAgentArena:
         tax_label_en = "🌲 Tree (FCF Compounder)" if taxonomy == "TREE" else ("🌾 Grain (Cyclical / Dividend Value)" if taxonomy == "GRAIN" else "🥬 Vegetable (Trend Only)")
 
         prior_confidence = 70 if (has_buy_bracket and price <= buy_max) else 45
-        falsification_zh = f"有效跌破200日均线 (${two_hundred_sma} {curr}) 且连续3日无法收复，或季度自由现金流质量转负"
-        falsification_en = f"Decisive break below 200D MA (${two_hundred_sma} {curr}) for 3 sessions, or quarterly FCF turning negative"
+        
+        # Quantify the decisive break below 200D MA: -3.0% buffer floor
+        bottom_threshold = round(two_hundred_sma * 0.97, 2) if two_hundred_sma > 0 else round(price * 0.95, 2)
+        is_falsified = bool(price < bottom_threshold)
+
+        falsification_zh = f"有效跌破底线阈值 ${bottom_threshold} {curr}（200日均线 ${two_hundred_sma} 下方 -3.0% 且连续3日无法收复），或季度自由现金流质量转负"
+        falsification_en = f"Decisive break below bottom threshold ${bottom_threshold} {curr} (-3.0% buffer under 200D MA ${two_hundred_sma} for 3 sessions), or quarterly FCF turning negative"
 
         # Extract concrete stock fundamentals for genuine asset diagnosis
         fcf_val = stock_data.get("free_cash_flow") or fundamental_data.get("free_cash_flow") or 0
@@ -530,9 +555,18 @@ class MultiAgentArena:
                     "urgency_fomo_check": fomo_status,
                     "trend_temperature": trend_temp,
                     "hitting_zone": hitting_zone,
-                    "variant_view_penetration": f"Implied 10Y Ceiling: {ceiling_mult}x | Prosperity Trap: {'YES' if is_prosperity_trap else 'NO'}",
+                    "variant_view_penetration": (
+                        f"Implied 10Y Ceiling: {ceiling_mult}x | Prosperity Trap: {'YES' if is_prosperity_trap else 'NO'}"
+                        if lang == "en" else
+                        f"逆向10年利润天花板: {ceiling_mult}x | 景气度陷阱预警: {'已触发' if is_prosperity_trap else '安全'}"
+                    ),
                     "bayesian_prior": f"{prior_confidence}% (Cap <=95%)",
-                    "mandatory_falsification_trigger": falsification_en if lang == "en" else falsification_zh
+                    "mandatory_falsification_trigger": falsification_en if lang == "en" else falsification_zh,
+                    "bottom_threshold": bottom_threshold,
+                    "is_falsified": is_falsified,
+                    "threshold_currency": curr,
+                    "implied_ceiling_mult": ceiling_mult,
+                    "is_prosperity_trap": is_prosperity_trap
                 },
                 "barbell_allocation": "Core SAA (80%)" if taxonomy in ["TREE", "GRAIN"] else "Satellite TAA (20%)",
                 "qualified_holder_creed": "只做合格持有人：不是人在做投资，是纪律在做投资。" if lang != "en" else "Qualified Holder Mindset: Discipline executes trades, not human emotion."

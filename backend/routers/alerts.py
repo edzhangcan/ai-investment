@@ -44,6 +44,53 @@ async def trigger_price_alert_check(session: Session = Depends(get_session)):
         "triggered_alerts": results
     }
 
+class FalsificationNotifyRequest(BaseModel):
+    symbol: str
+    company_name: Optional[str] = None
+    current_price: float
+    bottom_threshold: float
+    reason: Optional[str] = None
+    lang: Optional[str] = "en"
+
+@router.post("/notify-falsification")
+async def notify_falsification(payload: FalsificationNotifyRequest, session: Session = Depends(get_session)):
+    """Dispatches an immediate Falsification Trigger alert to in-app log and Discord webhook."""
+    from backend.services.notification_dispatcher import dispatcher
+    from backend.models.db_models import get_utc_now
+    
+    # Save log entry
+    log_entry = PriceAlertLogDB(
+        symbol=payload.symbol.upper(),
+        company_name=payload.company_name or payload.symbol.upper(),
+        current_price=payload.current_price,
+        target_buy_price=payload.bottom_threshold,
+        notification_channel="IN_APP",
+        status="FALSIFICATION_TRIGGERED",
+        message=f"🚨 Falsification Triggered: ${payload.symbol.upper()} breached bottom threshold (${payload.current_price} < ${payload.bottom_threshold})",
+        triggered_at=get_utc_now()
+    )
+    session.add(log_entry)
+    session.commit()
+    session.refresh(log_entry)
+
+    dispatch_res = await dispatcher.dispatch_price_alert(
+        symbol=payload.symbol.upper(),
+        company_name=payload.company_name or payload.symbol.upper(),
+        current_price=payload.current_price,
+        target_buy_price=payload.bottom_threshold,
+        session=session,
+        alert_type="FALSIFICATION"
+    )
+
+    return {
+        "status": "ok",
+        "log_id": log_entry.id,
+        "symbol": payload.symbol.upper(),
+        "current_price": payload.current_price,
+        "bottom_threshold": payload.bottom_threshold,
+        "dispatch": dispatch_res
+    }
+
 @router.delete("/history")
 def clear_all_alert_history(session: Session = Depends(get_session)):
     """Clears all triggered price alert history records."""
