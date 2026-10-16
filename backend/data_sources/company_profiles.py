@@ -25,6 +25,1039 @@ logger = logging.getLogger(__name__)
 
 # Verified Corporate Profile Store for Universe Equities (132 North American Stocks)
 COMPANY_PROFILES_REGISTRY: Dict[str, Dict[str, Any]] = {
+    "OXY": {
+        "name": "Occidental Petroleum Corporation",
+        "sector": "Energy (Oil & Gas E&P)",
+        "background": {
+                "en": "Occidental Petroleum is an international energy company with premier upstream operations in the Permian Basin, DJ Basin, and offshore Gulf of Mexico, alongside chemicals subsidiary OxyChem and low-carbon carbon capture ventures.",
+                "zh": "西方石油公司（Occidental Petroleum）是一家国际化综合能源巨头，在二叠纪盆地、DJ盆地及墨西哥湾拥有优质上游油气资产，同时控股化工子公司 OxyChem 并积极布局直接空气碳捕集（DAC）低碳技术。",
+                "hybrid": "西方石油 (OXY) 是国际能源巨头，拥有二叠纪盆地 (Permian) 核心低成本资产，控股 OxyChem 化工并由伯克希尔哈撒韦重仓支持 DAC 碳捕集。"
+        },
+        "catalysts": {
+                "en": [
+                        "Permian Basin unconventional drilling cost efficiencies",
+                        "Direct Air Capture (DAC) carbon credit monetization",
+                        "CrownRock acquisition integration boosting free cash flow"
+                ],
+                "zh": [
+                        "二叠纪盆地页岩油开发钻井成本持续优化",
+                        "直接空气碳捕集（DAC）碳信用与工业脱碳变现",
+                        "CrownRock 资产整合显著增厚自由现金流"
+                ],
+                "hybrid": [
+                        "Permian 钻井效率提升与低成本放量",
+                        "Direct Air Capture 商业化与碳信用变现",
+                        "CrownRock 整合增厚 FCF"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Oil and Gas Exploration & Production (Upstream)",
+                        "OxyChem Chemical Manufacturing",
+                        "Midstream Transportation & Marketing"
+                ],
+                "zh": [
+                        "原油与天然气勘探与开采（上游）",
+                        "OxyChem 化工产品制造",
+                        "中游管输与大宗商品贸易"
+                ],
+                "hybrid": [
+                        "Upstream 油气勘探开采",
+                        "OxyChem 化工制造",
+                        "Midstream 管网与贸易"
+                ]
+        }
+},
+    "DVN": {
+        "name": "Devon Energy Corporation",
+        "sector": "Energy (Oil & Gas E&P)",
+        "background": {
+                "en": "Devon Energy is a leading independent oil and natural gas exploration and production company with a diversified multi-basin portfolio across the Delaware Basin, Eagle Ford, Anadarko, and Williston basins.",
+                "zh": "德文能源（Devon Energy）是美国领先的独立油气勘探与生产商，业务横跨特拉华盆地（Delaware Basin）、鹰滩（Eagle Ford）、阿纳达科与威利斯顿等核心页岩油气盆地。",
+                "hybrid": "德文能源 (DVN) 是美国独立 E&P 龙头，在 Delaware Basin 等核心盆地拥有深厚多产层储备，开创固定+浮动分红机制。"
+        },
+        "catalysts": {
+                "en": [
+                        "Delaware Basin multi-zone capital deployment optimization",
+                        "Fixed-plus-variable dividend framework returning 50%+ free cash",
+                        "Strict capital reinvestment rate cap preserving balance sheet"
+                ],
+                "zh": [
+                        "特拉华盆地多层位钻探资本效率持续提升",
+                        "固定加浮动股息框架向股东返还 50% 以上自由现金流",
+                        "严格资本再投资率上限锁定健康资产负债表"
+                ],
+                "hybrid": [
+                        "Delaware Basin 高回报层位钻探优化",
+                        "Fixed-Plus-Variable 股息回购回馈股东",
+                        "严格控制 CapEx 再投资比例"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Oil Production & Sales",
+                        "Natural Gas Liquids (NGL) Sales",
+                        "Natural Gas Production & Marketing"
+                ],
+                "zh": [
+                        "原油开采与销售",
+                        "天然气凝析液（NGL）销售",
+                        "天然气生产与管输销售"
+                ],
+                "hybrid": [
+                        "Oil 原油开采销售",
+                        "NGL 凝析液销售",
+                        "Natural Gas 天然气销售"
+                ]
+        }
+},
+    "ET": {
+        "name": "Energy Transfer LP",
+        "sector": "Energy (Oil & Gas Midstream)",
+        "background": {
+                "en": "Energy Transfer is one of North America's largest midstream infrastructure providers, operating over 125,000 miles of pipelines transporting natural gas, crude oil, NGLs, and refined products across 41 US states.",
+                "zh": "能源转移（Energy Transfer LP）是北美规模最大的中游油气管道基础设施巨头之一，运营超过 125,000 英里的核心管网，覆盖全美 41 个州的天然气、原油、NGL 与成品油输送。",
+                "hybrid": "Energy Transfer (ET) 是北美顶尖 Midstream 基础设施巨头，拥有 125,000 英里核心管网，掌控关键出海口与出口终端。"
+        },
+        "catalysts": {
+                "en": [
+                        "Nederland and Marcus Hook terminal export capacity expansion",
+                        "Rising domestic demand for natural gas power generation",
+                        "Accretive midstream consolidation and distribution per unit growth"
+                ],
+                "zh": [
+                        "Nederland 与 Marcus Hook 出口码头吞吐能力扩建",
+                        "美国本土数据中心与工商业天然气发电需求爆发",
+                        "增值性中游资产并购与每单位分红持续提高"
+                ],
+                "hybrid": [
+                        "Gulf Coast 出口终端 LNG/NGL 吞吐量扩张",
+                        "AI 数据中心天然气发电用量激增",
+                        "中游行业并购整合与现金分红提升"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Natural Gas Transportation & Storage",
+                        "Crude Oil Pipelines & Terminals",
+                        "NGL and Refined Products Transportation"
+                ],
+                "zh": [
+                        "天然气长输管网与地下储气库服务",
+                        "原油管道网络与储运码头",
+                        "NGL 凝析液与成品油长距离输送"
+                ],
+                "hybrid": [
+                        "Natural Gas 管输与储气",
+                        "Crude Oil 原油管网码头",
+                        "NGL 与成品油分馏输送"
+                ]
+        }
+},
+    "CEG": {
+        "name": "Constellation Energy Corporation",
+        "sector": "Utilities (Independent Power Producer)",
+        "background": {
+                "en": "Constellation Energy is the largest producer of carbon-free energy in the United States, operating the nation's premier merchant nuclear generation fleet and supplying mission-critical baseload power to AI hyperscalers.",
+                "zh": "星座能源（Constellation Energy）是全美规模最大的零碳清洁能源生产商，运营全国最大的商用核电站机组集群，为人工智能超大规模数据中心提供关键 24/7 全天候基荷电力。",
+                "hybrid": "星座能源 (CEG) 是全美最大无碳核能发电巨头，运营顶尖 Nuclear Fleet，签订长期核能供电协议直连 AI Hyperscalers。"
+        },
+        "catalysts": {
+                "en": [
+                        "Long-term behind-the-meter nuclear PPA contracts with hyperscalers",
+                        "Crane Clean Energy Center (Three Mile Island) restart contracted to Microsoft",
+                        "Nuclear Production Tax Credit (PTC) establishing inflation-protected revenue floor"
+                ],
+                "zh": [
+                        "与云巨头签订表后长期核能直供购电协议（PPA）",
+                        "Crane 清洁能源中心（三里岛）机组重启直供微软数据中心",
+                        "通胀保护型联邦核电生产税收抵免（PTC）锁定收益底线"
+                ],
+                "hybrid": [
+                        "AI Hyperscaler 签订长期核能直供 PPA",
+                        "Crane Clean Energy Center 重启锁定高溢价长期售电",
+                        "IRA 核电 PTC 税收补贴托底现金流"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Nuclear Generation Baseload Sales",
+                        "Commercial & Industrial Clean Power Supply",
+                        "Renewable Energy & Storage Services"
+                ],
+                "zh": [
+                        "商用核电基荷发电电力销售",
+                        "工商业与大科技客户清洁电力合约",
+                        "可再生能源配额与储能增值服务"
+                ],
+                "hybrid": [
+                        "Nuclear Baseload 核电售电收入",
+                        "C&I 大客户清洁电能直供",
+                        "Clean Energy 绿色能源解决方案"
+                ]
+        }
+},
+    "VST": {
+        "name": "Vistra Corp.",
+        "sector": "Utilities (Independent Power Producer)",
+        "background": {
+                "en": "Vistra Corp is a Fortune 500 integrated power company combining innovative merchant generation assets (nuclear, natural gas, and battery energy storage) with premier retail electricity brands across Texas, PJM, and California.",
+                "zh": "维斯特拉能源（Vistra Corp）是一家财富 500 强综合性发电与电力零售龙头，拥有涵盖核电、天然气发电机组及大规模电池储能的优质资产，在德州（ERCOT）与 PJM 市场具备极高定价弹性。",
+                "hybrid": "Vistra (VST) 是美国综合发电与电力零售领军者，整合 Comanche Peak 核电与高效气电机组，充分捕获 ERCOT 与 PJM 电力紧缺红利。"
+        },
+        "catalysts": {
+                "en": [
+                        "Explosion in ERCOT and PJM power demand from AI datacenter clustering",
+                        "Comanche Peak nuclear facility 20-year license extension",
+                        "Massive utility-scale battery storage deployments capturing price arbitrage"
+                ],
+                "zh": [
+                        "AI 数据中心集群在德州与东部电网爆发式推升电力负荷",
+                        "Comanche Peak 核电站获得 20 年运行许可延期",
+                        "百兆瓦级电网储能系统充分套取峰谷电价差价红利"
+                ],
+                "hybrid": [
+                        "AI Datacenter 导致 ERCOT/PJM 峰值电力需求激增",
+                        "Comanche Peak 核电机组延寿锁定低成本基荷",
+                        "Battery Storage 电池储能套利能力"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Retail Electricity & Gas Supply (TXU Energy)",
+                        "Wholesale Generation Capacity & Energy Sales",
+                        "Battery Energy Storage System Ancillary Services"
+                ],
+                "zh": [
+                        "终端零售电力与天然气供应（TXU Energy 品牌）",
+                        "批发电力现货、远期合约与容量市场销售",
+                        "电池储能系统辅助服务与调频套利"
+                ],
+                "hybrid": [
+                        "Retail Electricity 零售电力",
+                        "Wholesale Generation 批发发电",
+                        "Storage 电池储能与调频"
+                ]
+        }
+},
+    "GEV": {
+        "name": "GE Vernova Inc.",
+        "sector": "Industrials (Electrical Equipment)",
+        "background": {
+                "en": "GE Vernova is a global purpose-built energy company spun off from General Electric, comprising gas power turbines, grid electrification software/hardware, and onshore/offshore wind turbines generating ~30% of the world's electricity.",
+                "zh": "通用电气维诺瓦（GE Vernova）是从通用电气（GE）分拆独立的全球综合能源装备与软件巨头，业务涵盖重型燃气轮机、电网电气化软硬件设备及风力发电，支撑全球约 30% 的电力供应。",
+                "hybrid": "GE Vernova (GEV) 是全球能源转型装备核心龙头，业务包括 HA 级重型燃机、Grid 电网自动化互联与风力发电装备。"
+        },
+        "catalysts": {
+                "en": [
+                        "Record multi-year backlog in H-Class heavy-duty gas turbines for datacenters",
+                        "Grid electrification upgrades and high-voltage direct current (HVDC) orders",
+                        "Power Services margin expansion via long-term contractual service agreements"
+                ],
+                "zh": [
+                        "重型燃气轮机在数据中心备用与主电源领域创下历史新高在手订单",
+                        "全美与欧洲电网现代化改造及高压直流输电（HVDC）强劲放量",
+                        "燃机长期服务维护协议（CSA）驱动高利润率经常性收入"
+                ],
+                "hybrid": [
+                        "Gas Power 燃气轮机在手订单强劲增长",
+                        "Grid Electrification 电网电气化硬件与软件",
+                        "Power Services 长期维护维保高毛利放量"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Gas Power Equipment & Services",
+                        "Grid Solutions & Electrification Software",
+                        "Wind Energy (Onshore & Offshore Turbines)"
+                ],
+                "zh": [
+                        "燃气发电成套装备与长期技术服务",
+                        "智能电网解决方案与电气化工业软件",
+                        "陆上与海上风力发电机组及运维"
+                ],
+                "hybrid": [
+                        "Gas Power 燃机装备与服务",
+                        "Grid Solutions 电网解决方案",
+                        "Wind Energy 风能装备"
+                ]
+        }
+},
+    "AXP": {
+        "name": "American Express Company",
+        "sector": "Financial Services (Credit Services)",
+        "background": {
+                "en": "American Express is a globally integrated payments company providing high-spending consumers and commercial enterprises with charge and credit card products, merchant acquiring services, and travel lifestyle experiences.",
+                "zh": "美国运通（American Express）是全球顶尖的一体化支付服务集团，通过闭环支付网络为高净值个人与企业客户提供高消费额度的签账卡与信用卡，享有顶级的商户费率与客户忠诚度。",
+                "hybrid": "美国运通 (AXP) 是全球 Closed-Loop 闭环支付巨头，聚焦高消费粘性 Affluent 客户群体，享有高商户扣率与净利息收入。"
+        },
+        "catalysts": {
+                "en": [
+                        "Accelerated acquisition of Millennial and Gen Z affluent cardholders",
+                        "Premium card fee increases supported by experiential travel benefits",
+                        "Expanding B2B cross-border commercial card payments volume"
+                ],
+                "zh": [
+                        "千禧一代与 Z 世代高消费客群获取速度创历史新高",
+                        "基于高净值旅行权益的高端白金卡年费稳健上调",
+                        "B2B 企业级跨境支付与供应链卡结算规模扩张"
+                ],
+                "hybrid": [
+                        "Millennial/Gen Z 年轻高净值用户快速渗透",
+                        "Premium Card 年费经常性收入持续提升",
+                        "B2B Commercial Payments 商业支付增长"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Discount Revenue (Merchant Processing Fees)",
+                        "Net Card Fees (Platinum & Centurion Annual Fees)",
+                        "Net Interest Income on Revolving Loans"
+                ],
+                "zh": [
+                        "商户折扣结算费（刷卡手续费）",
+                        "高端信用卡净年费收入（白金卡/黑卡年费）",
+                        "循环信贷借贷净利息收入"
+                ],
+                "hybrid": [
+                        "Discount Revenue 商户手续费",
+                        "Net Card Fees 高端卡年费",
+                        "Net Interest Income 净利息收入"
+                ]
+        }
+},
+    "CB": {
+        "name": "Chubb Limited",
+        "sector": "Financial Services (Insurance)",
+        "background": {
+                "en": "Chubb Limited is the world's largest publicly traded property and casualty insurance company, renowned for disciplined underwriting excellence, commercial specialty risk coverage, and high-net-worth personal insurance.",
+                "zh": "丘博保险（Chubb Limited）是全球规模最大的上市财产及责任保险公司，以极具纪律性的核保水准、商业特种风险承保及高净值个人家庭综合财产保险享誉全球，长年保持顶尖综合成本率。",
+                "hybrid": "Chubb (CB) 是全球最大上市 P&C 财险巨头，以严苛 Underwriting 核保纪律与高净值私人保险护城河著称，被伯克希尔哈撒韦建仓。"
+        },
+        "catalysts": {
+                "en": [
+                        "Consistently superior combined ratio below 90% demonstrating underwriting discipline",
+                        "Strong investment yield expansion on multi-billion fixed-income portfolio",
+                        "Global expansion of high-margin specialty excess and surplus (E&S) lines"
+                ],
+                "zh": [
+                        "综合成本率（Combined Ratio）长年稳居 90% 以下彰显极致核保纪律",
+                        "数百亿美元高等级固收投资组合收益率显著扩张",
+                        "全球高毛利超额责任与特种险（E&S Lines）业务快速扩张"
+                ],
+                "hybrid": [
+                        "Combined Ratio 远优于行业平均水平",
+                        "Fixed-Income 浮存金投资回报率提升",
+                        "Global Specialty 商业特种险与再保拓展"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Commercial Property & Casualty Premiums",
+                        "Personal Lines High-Net-Worth Premiums",
+                        "Net Investment Income on Float"
+                ],
+                "zh": [
+                        "企业商业财产险与特种责任险保费",
+                        "高净值私人定制财产与人身意外保费",
+                        "数千亿浮存金净投资收益"
+                ],
+                "hybrid": [
+                        "Commercial P&C 商业财险保费",
+                        "Personal Lines 高净值私人保险",
+                        "Investment Income 浮存金投资收益"
+                ]
+        }
+},
+    "PGR": {
+        "name": "The Progressive Corporation",
+        "sector": "Financial Services (Insurance)",
+        "background": {
+                "en": "The Progressive Corporation is one of the largest auto and commercial property insurers in the United States, pioneering telematics-based driver risk pricing (Snapshot) and direct-to-consumer digital insurance models.",
+                "zh": "前进保险（Progressive Corporation）是美国最大的汽车险与商用车保险集团之一，开创了基于车联网大数据驾驶行为的精准差异化定价体系（Snapshot），在直销车险领域占据领先市场份额。",
+                "hybrid": "Progressive (PGR) 是美国车险直销龙头，依托 Snapshot 车载车联网数据进行精准算法核保，保费增长与承保利润率均大幅跑赢同行。"
+        },
+        "catalysts": {
+                "en": [
+                        "Market share gains resulting from superior algorithmic rate adequacy and telematics",
+                        "Rapid policy-in-force (PIF) expansion in personal auto and commercial lines",
+                        "High investment income derived from elevated cash interest rates"
+                ],
+                "zh": [
+                        "依托行业领先的算法费率调整能力与车联网数据实现份额逆势扩张",
+                        "个人车险与商用车险有效保单量（PIF）强劲两位数增长",
+                        "高利率环境下充裕现金浮存金产生极高投资收益"
+                ],
+                "hybrid": [
+                        "Telematics 算法定价带来保费份额扩张",
+                        "PIF 有效保单规模两位数放量",
+                        "Float 投资收益受益于无风险利率"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Personal Lines Auto Insurance Premiums",
+                        "Commercial Lines Fleet & Trucking Premiums",
+                        "Net Investment Income on Reserves"
+                ],
+                "zh": [
+                        "个人私家车保险净签单保费",
+                        "商用卡车与车队综合保险保费",
+                        "保险准备金与浮存金净投资回报"
+                ],
+                "hybrid": [
+                        "Personal Lines 个人车险保费",
+                        "Commercial Lines 商用车保费",
+                        "Investment Income 准备金投资回报"
+                ]
+        }
+},
+    "SCCO": {
+        "name": "Southern Copper Corporation",
+        "sector": "Basic Materials (Copper Mining)",
+        "background": {
+                "en": "Southern Copper Corporation is one of the world's lowest cash-cost integrated copper producers, possessing the largest copper reserves of any listed company, with open-pit mining operations across Mexico and Peru.",
+                "zh": "南方铜业（Southern Copper）是全球现金开采成本最低的综合性铜矿开采巨头，拥有全球所有上市公司中最庞大的铜储量储备（超 70 年可采年限），在墨西哥和秘鲁拥有多座世界级露天矿山。",
+                "hybrid": "南方铜业 (SCCO) 是全球最低开采成本纯铜矿巨头，拥有 70 年+ 超长储量寿命，充分受益于 AI 数据中心、电网升级与新能源用铜超级周期。"
+        },
+        "catalysts": {
+                "en": [
+                        "Lowest net cash cost of copper production globally after by-product credits",
+                        "Accelerated demand from artificial intelligence datacenter power infrastructure and grid rewiring",
+                        "Tia Maria and Los Chancas mega-project expansion pipeline in Peru"
+                ],
+                "zh": [
+                        "副产品钼银扣减后拥有全球最低的净现金开采成本",
+                        "全球 AI 数据中心电力设施、电网升级改造及工业电气化对精铜需求爆发",
+                        "秘鲁 Tia Maria 与 Los Chancas 巨型铜矿扩建项目稳步推进"
+                ],
+                "hybrid": [
+                        "全球最低开采成本 (Lowest Cash Cost)",
+                        "AI 数据中心电网电缆需求激增",
+                        "Peru 扩建项目驱动中长期产量释放"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Refined Copper Cathodes & Concentrates",
+                        "Molybdenum By-Product Sales",
+                        "Silver and Zinc By-Product Mining"
+                ],
+                "zh": [
+                        "精炼铜阴极板与铜精矿销售",
+                        "副产战略金属钼的开采与销售",
+                        "副产白银与锌伴生矿深加工销售"
+                ],
+                "hybrid": [
+                        "Copper 铜产品销售",
+                        "Molybdenum 钼副产品销售",
+                        "Silver & Zinc 白银锌矿"
+                ]
+        }
+},
+    "ALB": {
+        "name": "Albemarle Corporation",
+        "sector": "Basic Materials (Specialty Chemicals & Lithium)",
+        "background": {
+                "en": "Albemarle Corporation is the global premier producer of lithium compounds, bromine specialties, and catalysts, operating world-class low-cost brine resources in Chile's Salar de Atacama and hard-rock mines in Australia.",
+                "zh": "雅宝公司（Albemarle Corporation）是全球最大的高品质锂化合物制造龙头，在智利阿塔卡马盐湖及西澳格林布什硬岩矿拥有无可匹敌的低成本资源禀赋，产品广泛用于电动汽车动力电池与储能系统。",
+                "hybrid": "雅宝 (ALB) 是全球锂盐核心供应商，坐拥 Atacama 盐湖与 Greenbushes 锂矿绝对成本优势，布局全球锂化工转化网络。"
+        },
+        "catalysts": {
+                "en": [
+                        "Tier-1 lowest-quartile cash cost lithium brine assets in Salar de Atacama",
+                        "Global grid-scale energy storage system (BESS) installation growth",
+                        "Long-term offtake partnership contracts with tier-1 EV battery manufacturers"
+                ],
+                "zh": [
+                        "智利阿塔卡马盐湖处于全球前 25% 的绝对低成本现金分位",
+                        "全球工商业与电网级储能电池（BESS）装机需求高速放量",
+                        "与全球一线动力电池制造商深度绑定长期供应长约"
+                ],
+                "hybrid": [
+                        "Atacama 最低成本盐湖资源护城河",
+                        "Grid BESS 电网储能锂用量爆发",
+                        "长期长约长单锁定优质客户"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Energy Storage (Lithium Carbonate & Hydroxide)",
+                        "Specialties (Bromine-based Flame Retardants)",
+                        "Ketjen Petroleum Refining Catalysts"
+                ],
+                "zh": [
+                        "储能事业部（电池级碳酸锂与氢氧化锂）",
+                        "特种化学品事业部（溴系阻燃剂等）",
+                        "Ketjen 石油精炼与清洁化工催化剂"
+                ],
+                "hybrid": [
+                        "Energy Storage 电池级锂盐",
+                        "Specialties 溴化物特化",
+                        "Catalysts 工业催化剂"
+                ]
+        }
+},
+    "BRK-B": {
+        "name": "Berkshire Hathaway Inc.",
+        "sector": "Financial Services (Multi-Sector Conglomerate)",
+        "background": {
+                "en": "Berkshire Hathaway is a diversified holding company managed by Warren Buffett, operating core subsidiaries in property and casualty insurance (GEICO, Gen Re), freight rail transportation (BNSF), energy utilities (BHE), and manufacturing.",
+                "zh": "伯克希尔哈撒韦（Berkshire Hathaway）是由沃伦·巴菲特领导的全球顶尖投资控股集团，旗下全资拥有 GEICO 保险、BNSF 跨大陆货运铁路、伯克希尔哈撒韦能源（BHE）及海量消费工业实体企业。",
+                "hybrid": "伯克希尔哈撒韦 (BRK-B) 掌控 3000 亿美元现金堡垒，囊括 GEICO 财险、BNSF 核心铁路与能源公用事业，具备极强的抗周期护城河。"
+        },
+        "catalysts": {
+                "en": [
+                        "Record $300B+ fortress cash and Treasury bill reserves generating high risk-free income",
+                        "BNSF Railway intermodal volume recovery and cost rationalization",
+                        "Underwriting turnaround and compounding float at GEICO Insurance"
+                ],
+                "zh": [
+                        "创纪录的超过 3000 亿美元超安全现金及短期美债储备产生极高确定性收益",
+                        "BNSF 铁路集装箱多式联运运量复苏与运营效率优化",
+                        "GEICO 车险数字化核保全面好转与千亿低成本浮存金复利扩张"
+                ],
+                "hybrid": [
+                        "3000 亿美元 Cash Reserves 赚取无风险高息",
+                        "BNSF 铁路干线运量与运营利润复苏",
+                        "GEICO 承保利润大幅反转与 Float 增长"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Insurance Premiums & Net Investment Income (GEICO / Gen Re)",
+                        "BNSF Freight Rail Operations",
+                        "Berkshire Hathaway Energy (Regulated Utilities)"
+                ],
+                "zh": [
+                        "保险业务保费与千亿浮存金投资收益（GEICO / 通用再保险）",
+                        "BNSF 跨大陆铁路货运网络运输收入",
+                        "伯克希尔哈撒韦能源受监管电网与天然气公用事业"
+                ],
+                "hybrid": [
+                        "Insurance 保险保费与投资收益",
+                        "BNSF 铁路货运收入",
+                        "BHE 能源公用事业"
+                ]
+        }
+},
+    "FSLY": {
+        "name": "Fastly, Inc.",
+        "sector": "Technology (Software Infrastructure)",
+        "background": {
+                "en": "Fastly operates an ultra-low-latency edge cloud platform designed for modern web developers, delivering programmable content delivery networks (CDN), web application security, and compute-at-the-edge services.",
+                "zh": "Fastly 运营全球领先的超低延迟可编程边缘云平台，为全球顶级科技与数字媒体企业提供可编程内容分发网络（CDN）、Web 应用与 API 安全防护及边缘算力（Compute@Edge）服务。",
+                "hybrid": "Fastly (FSLY) 聚焦 Programmable Edge Cloud 架构，提供高吞吐低延迟 CDN 与边缘安全计算服务。"
+        },
+        "catalysts": {
+                "en": [
+                        "Compute@Edge programmable serverless workloads adoption by AI developers",
+                        "Next-gen Web Application and API Protection (WAAP) security upsells",
+                        "Network efficiency optimizations expanding gross margin"
+                ],
+                "zh": [
+                        "Compute@Edge 边缘无服务器计算在 AI 与流媒体领域的深度采用",
+                        "下一代 Web 应用与 API 统一安全防护（WAAP）客单价提升",
+                        "全网流量分发效率升级驱动毛利率持续向好"
+                ],
+                "hybrid": [
+                        "Compute@Edge 边缘算力服务渗透",
+                        "Next-Gen WAAP 边缘网络安全产品放量",
+                        "带宽成本优化增厚 Gross Margin"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Edge Cloud Delivery & Streaming Traffic",
+                        "Web Application & API Security Software",
+                        "Compute@Edge Serverless Subscriptions"
+                ],
+                "zh": [
+                        "边缘云内容分发与流媒体高并发流量",
+                        "Web 应用与 API 安全防护软件订阅",
+                        "Compute@Edge 无服务器边缘计算服务"
+                ],
+                "hybrid": [
+                        "Edge Delivery 流量计费",
+                        "Security 安全软件订阅",
+                        "Compute@Edge 算力服务"
+                ]
+        }
+},
+    "CAVA": {
+        "name": "CAVA Group, Inc.",
+        "sector": "Consumer Cyclical (Restaurants)",
+        "background": {
+                "en": "CAVA Group is the category-defining Mediterranean fast-casual restaurant chain in the United States, offering healthy, customizable bowls and pitas with industry-leading unit economics and high average unit volume (AUV).",
+                "zh": "CAVA Group 是美国地中海风味健康快休闲连锁餐厅的开创性龙头品牌，主打高品质、可定制的健康地中海轻食餐碗与皮塔饼，拥有极具吸引力的单店经济模型与同店销售增长率。",
+                "hybrid": "CAVA (CAVA) 被誉为地中海风味版 Chipotle，依托高 AUV 与稳健单店利润率快速在全美开店扩张。"
+        },
+        "catalysts": {
+                "en": [
+                        "Industry-leading unit economics with AUV exceeding $2.8M and 25%+ restaurant-level margins",
+                        "Long-term national store expansion runway from ~350 units toward 1,000+ units",
+                        "New loyalty rewards program and dinner daypart menu innovations"
+                ],
+                "zh": [
+                        "单店平均年营收（AUV）突破 280 万美元且餐厅层面利润率超 25%",
+                        "全美开店空间广阔（从当前约 350 家向 1000 家以上门店稳步挺进）",
+                        "新版会员忠诚度计划与高毛利晚餐时段菜单推新激发复购"
+                ],
+                "hybrid": [
+                        "AUV 与 Restaurant-Level Margin 表现优异",
+                        "全美 1000 家中长期开店空间 (Store Runway)",
+                        "Loyalty Program 会员复购与客单价提升"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Company-Owned Restaurant Food & Beverage Sales",
+                        "CPG Grocery Retail Dips & Dressings",
+                        "Digital & Catering Delivery Orders"
+                ],
+                "zh": [
+                        "自营直营门店食品与饮品销售",
+                        "全美超市零售渠道独家地中海酱料销售",
+                        "线上数字化与企业团体团餐外送服务"
+                ],
+                "hybrid": [
+                        "Restaurant Sales 门店餐饮直营",
+                        "CPG Dips 超市酱料零售",
+                        "Digital Orders 线上外送"
+                ]
+        }
+},
+    "WING": {
+        "name": "Wingstop Inc.",
+        "sector": "Consumer Cyclical (Restaurants)",
+        "background": {
+                "en": "Wingstop is a high-growth franchised restaurant concept specializing in cooked-to-order chicken wings, tenders, and sandwiches, renowned for 20+ consecutive years of positive same-store sales growth and a 98% franchised model.",
+                "zh": "Wingstop 是一家以现点现炸风味炸鸡翅、鸡柳及鸡肉三明治为核心特色的高成长快休闲餐饮连锁集团，拥有超过 98% 的特许加盟高资本回报轻资产模式，并创下连续 20 年同店销售正增长的商业神话。",
+                "hybrid": "Wingstop (WING) 拥有 98% 加盟轻资产模型，连续 20+ 年 Same-Store Sales 正增长，数字化订单占比超 65%。"
+        },
+        "catalysts": {
+                "en": [
+                        "Over 20 consecutive years of positive domestic same-store sales compounding",
+                        "98% asset-light franchised model generating 30%+ adjusted EBITDA margins",
+                        "Proprietary tech stack with digital sales mix surpassing 68%"
+                ],
+                "zh": [
+                        "连续 20 余年保持美国本土同店销售额正增长复合扩张",
+                        "98% 加盟轻资产模式带来超过 30% 的优异经调整 EBITDA 利润率",
+                        "自研数字化点餐系统推动线上销售额占比突破 68%"
+                ],
+                "hybrid": [
+                        "20 年连续 SSS 同店销售增长纪录",
+                        "98% Franchise 轻资产高 ROIC 商业模式",
+                        "Digital Mix 数字化订单占比超 68%"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Franchise Royalty Fees & Advertising Contributions",
+                        "Company-Owned Restaurant Operations",
+                        "Franchise Development & Territory Fees"
+                ],
+                "zh": [
+                        "加盟商特许权使用费与全国联合广告分成",
+                        "自营直营标杆餐厅运营收入",
+                        "特许加盟区域开发授权费"
+                ],
+                "hybrid": [
+                        "Franchise Royalties 加盟特许权费",
+                        "Company-Owned 门店自营收入",
+                        "Franchise Fees 区域授权费"
+                ]
+        }
+},
+    "FOUR": {
+        "name": "Shift4 Payments, Inc.",
+        "sector": "Technology (Software Infrastructure)",
+        "background": {
+                "en": "Shift4 Payments is an integrated payment processing and point-of-sale software leader powering complex commerce across sports stadiums, luxury hospitality, premier restaurants, and global airline e-commerce.",
+                "zh": "Shift4 Payments 是美国领先的一体化支付处理与智能 POS 软件集团，深度赋能全美顶级职业体育场馆、豪华酒店度假村、米其林餐饮及全球航空票务等复杂高吞吐商业支付场景。",
+                "hybrid": "Shift4 (FOUR) 掌控全美头部体育场馆、主题公园与连锁酒店的核心收单网关，依托 SkyTab 软硬件生态加速出海。"
+        },
+        "catalysts": {
+                "en": [
+                        "Dominance in professional sports stadiums and entertainment venue ticketing",
+                        "International enterprise expansion and SkyTab POS workstation rollouts",
+                        "Aggressive free cash flow per share compounding and strategic acquisitions"
+                ],
+                "zh": [
+                        "在北美职业体育场馆与大型娱乐演艺中心票务支付领域占据主导地位",
+                        "欧洲及全球国际化企业支付拓展与 SkyTab POS 智能终端规模铺设",
+                        "每股自由现金流（FCF per share）保持高复合增长并持续进行增值并购"
+                ],
+                "hybrid": [
+                        "Stadiums & Venues 顶级场馆支付高壁垒",
+                        "SkyTab POS 软硬件国际化拓展",
+                        "FCF per share 强劲复合增长"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Gross Payment Volume Processing Fees",
+                        "SaaS and POS Technology Subscriptions",
+                        "Value-Added Services and Gateway Gatekeeper Fees"
+                ],
+                "zh": [
+                        "总支付处理量（GPV）净刷卡手续费分成",
+                        "SaaS 云端管理平台与 SkyTab POS 智能终端软件订阅",
+                        "增值网络安全服务与支付网关接入年费"
+                ],
+                "hybrid": [
+                        "Payment Processing 支付刷卡手续费",
+                        "SaaS & POS 软件订阅",
+                        "Gateway 增值网关接入费"
+                ]
+        }
+},
+    "TMDX": {
+        "name": "TransMedics Group, Inc.",
+        "sector": "Healthcare (Medical Devices & Logistics)",
+        "background": {
+                "en": "TransMedics Group is a medical technology company revolutionizing human organ transplantation through its Organ Care System (OCS), preserving donor hearts, lungs, and livers in warm, oxygenated, functioning states.",
+                "zh": "TransMedics Group 是一家颠覆全球人体器官移植领域的先锋医疗器械与航空物流集团，其独家研发的器官关怀系统（OCS）能将供体心脏、肺部及肝脏维持在温热、含氧且跳动工作的生理状态。",
+                "hybrid": "TransMedics (TMDX) 是全球活体器官温热灌注系统 (OCS) 绝对垄断者，自建全国航空机队构建移植闭环生态。"
+        },
+        "catalysts": {
+                "en": [
+                        "FDA approvals across all three major organs: heart, lung, and liver warm perfusion",
+                        "National OCS Program (NOP) dedicated aviation fleet capturing logistics value",
+                        "Substantial expansion in post-transplant patient survival and organ utilization"
+                ],
+                "zh": [
+                        "获得 FDA 在心脏、肺脏及肝脏三大器官温热灌注领域的全牌照垄断认证",
+                        "自建全国国家级器官维护航空机队（NOP Aviation）捕获高毛利转运价值",
+                        "显著提高供体器官临床利用率并大幅降低移植后排异并发症"
+                ],
+                "hybrid": [
+                        "Heart/Lung/Liver OCS FDA 全牌照独家壁垒",
+                        "NOP Aviation 专有机队垄断物流转运",
+                        "大幅提高器官临床利用率"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "National OCS Program (NOP) Turnkey Clinical Services",
+                        "OCS Heart, Lung, and Liver Disposable Kits",
+                        "Aviation Logistics and Organ Transportation Flights"
+                ],
+                "zh": [
+                        "国家级 OCS 一站式临床器官维护综合服务",
+                        "OCS 心脏、肺部及肝脏单次使用一次性核心耗材套包",
+                        "专业医疗航空机队器官专机转运调度服务"
+                ],
+                "hybrid": [
+                        "NOP Clinical 临床综合服务",
+                        "OCS Disposables 耗材套包",
+                        "Aviation 专机医疗物流"
+                ]
+        }
+},
+    "PODD": {
+        "name": "Insulet Corporation",
+        "sector": "Healthcare (Medical Devices)",
+        "background": {
+                "en": "Insulet Corporation is an innovative medical device pioneer dedicated to improving the lives of people with diabetes through its tubeless insulin management system, Omnipod, featuring automated closed-loop delivery algorithms.",
+                "zh": "Insulet Corporation 是一家致力于改善糖尿病患者生活的创新型医疗器械龙头，其开创的 Omnipod 是全球首款无导管贴片式智能胰岛素泵，搭载先进制动闭环人工胰腺算法，提供极高的患者依从性。",
+                "hybrid": "Insulet (PODD) 是无导管胰岛素贴片泵 Omnipod 领跑者，已打通主流 CGM 传感器构建闭环控制人工胰腺。"
+        },
+        "catalysts": {
+                "en": [
+                        "Omnipod 5 automated insulin delivery integration with Dexcom and Abbott CGMs",
+                        "Accelerating penetration into Type 2 diabetes intensive insulin user market",
+                        "Recurring pharmacy channel distribution model ensuring high revenue visibility"
+                ],
+                "zh": [
+                        "Omnipod 5 自动输注系统深度融合 Dexcom 与雅培 CGM 血糖连续监测传感器",
+                        "加速向需要强化胰岛素治疗的 2 型糖尿病庞大患者蓝海渗透",
+                        "全美处方药房渠道（Pharmacy Channel）高频复购订阅式极高收入能见度"
+                ],
+                "hybrid": [
+                        "Omnipod 5 自动闭环控制系统全球普及",
+                        "Type 2 糖尿病广阔蓝海市场渗透",
+                        "Pharmacy 药房渠道高频耗材订阅"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "US Omnipod Automated Delivery System Pods",
+                        "International Omnipod Systems and Consumables",
+                        "Drug Delivery Specialty Partner Devices"
+                ],
+                "zh": [
+                        "美国本土 Omnipod 智能无导管胰岛素泵贴片耗材销售",
+                        "国际市场 Omnipod 硬件与定期耗材处方销售",
+                        "非胰岛素特种药物皮下靶向输送合作伙伴代工"
+                ],
+                "hybrid": [
+                        "US Omnipod 美国贴片耗材",
+                        "International 国际耗材销售",
+                        "Drug Delivery 特药输送合作"
+                ]
+        }
+},
+    "SAIA": {
+        "name": "Saia, Inc.",
+        "sector": "Industrials (Ground Transportation)",
+        "background": {
+                "en": "Saia is a premier less-than-truckload (LTL) trucking carrier in North America, operating an extensive multi-regional network of breakbulk freight terminals known for operational execution and high on-time delivery metrics.",
+                "zh": "Saia 是北美顶尖的零担货运（LTL）干线物流运输巨头，运营覆盖全美的数十座现代化大型分拣集散货运枢纽网络，以卓越的准时交付率、极低货损率与出色的跨周期货运定价能力著称。",
+                "hybrid": "Saia (SAIA) 是北美顶尖 LTL 零担物流干线巨头，承接 Yellow 破产释放的黄金枢纽网络，实现运力与定价双增。"
+        },
+        "catalysts": {
+                "en": [
+                        "Strategic acquisition and integration of Yellow Corp freight terminal assets",
+                        "Industry-wide pricing power and yield discipline across North American LTL market",
+                        "Ongoing expansion of cross-regional direct freight lanes boosting operating margins"
+                ],
+                "zh": [
+                        "战略性收购并顺利整合破产 Yellow 留下的优质核心干线集散中心资产",
+                        "北美零担货运市场寡头格局下强劲的运价指数与运费费率支撑",
+                        "持续开辟跨大区直达干线物流链路大幅优化营业利润率"
+                ],
+                "hybrid": [
+                        "整合 Yellow 破产黄金枢纽资产",
+                        "LTL 寡头格局运费定价能力",
+                        "Direct Freight 直达干线网络提升利润率"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "LTL Inter-Regional Freight Transportation",
+                        "Truckload and Dedicated Hauling Services",
+                        "Logistics Solutions and Value-Added Services"
+                ],
+                "zh": [
+                        "跨区域零担货运（LTL）干线干线集装运输",
+                        "整车整包与定制化专属干线运力调配",
+                        "第三方综合仓储物流与供应链增值服务"
+                ],
+                "hybrid": [
+                        "LTL Freight 零担干线运费",
+                        "Truckload 整车物流业务",
+                        "Logistics 增值物流服务"
+                ]
+        }
+},
+    "POWI": {
+        "name": "Power Integrations, Inc.",
+        "sector": "Technology (Semiconductors)",
+        "background": {
+                "en": "Power Integrations is a leading innovator in semiconductor technologies for high-voltage power conversion, producing proprietary gallium nitride (GaN) and silicon ICs used in clean energy, consumer electronics, and automotive.",
+                "zh": "Power Integrations 是一家专注于高压电能转换功率半导体领域的全球创新先锋，自主研发业内领先的氮化镓（GaN）高集成芯片，产品广泛应用于快速充电、高压电网、工业自动化与电动汽车充电。",
+                "hybrid": "Power Integrations (POWI) 是高压电源管理芯片与氮化镓 (GaN) 龙头，产品具备极高能效比与紧凑架构。"
+        },
+        "catalysts": {
+                "en": [
+                        "Pioneering PowiGaN gallium nitride technology replacing legacy silicon in fast chargers",
+                        "Automotive qualification of high-voltage inverter gate drivers for electric vehicles",
+                        "Government efficiency mandates enforcing stringent idle-power consumption limits"
+                ],
+                "zh": [
+                        "先锋级 PowiGaN 氮化镓技术全面替代传统硅基芯片引领快充能效革命",
+                        "车规级高压电机逆变器栅极驱动芯片在主流电动汽车平台导入量产",
+                        "全球碳中和能效法规强制要求大幅削减设备待机空载电耗"
+                ],
+                "hybrid": [
+                        "PowiGaN 氮化镓技术替代硅基芯片",
+                        "EV 电动汽车高压逆变器芯片放量",
+                        "全球待机能耗强制环保法规利好"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Industrial & Clean Power Conversion ICs",
+                        "Communications & Consumer Fast Chargers",
+                        "Automotive High-Voltage Gate Drivers"
+                ],
+                "zh": [
+                        "工业自动化设备与清洁能源高压逆变电源芯片",
+                        "移动通信与消费级超高功率氮化镓快充芯片",
+                        "电动汽车与新能源动力电池高压驱动芯片"
+                ],
+                "hybrid": [
+                        "Industrial 工业与清洁电源芯片",
+                        "Consumer 消费快充芯片",
+                        "Automotive 车规高压芯片"
+                ]
+        }
+},
+    "WSP.TO": {
+        "name": "WSP Global Inc.",
+        "sector": "Industrials (Engineering & Construction)",
+        "background": {
+                "en": "WSP Global is one of the world's leading professional engineering and environmental consulting firms, partnering with governments and corporations to design critical transportation, clean water, and social infrastructure.",
+                "zh": "WSP Global 是全球顶级的专业工程咨询与环境可持续发展解决方案跨国集团，长年作为各国政府与跨国企业的核心技术智囊，负责设计极其复杂的交通干线、水利环保工程与高科技绿色建筑。",
+                "hybrid": "WSP Global (WSP.TO) 是全球工程与环境设计咨询龙头，采用轻资产纯技术咨询服务模式，通过连续并购优秀工程行实现复利扩张。"
+        },
+        "catalysts": {
+                "en": [
+                        "Global secular tailwinds in transport decarbonization, grid resiliency, and clean water",
+                        "Proven M&A playbook executing accretive roll-ups of regional engineering firms",
+                        "High-margin ESG and environmental advisory consulting services growth"
+                ],
+                "zh": [
+                        "全球交通脱碳、电网抗灾韧性改造与清洁水务基建长期超级投资周期",
+                        "成熟稳健的轻资产跨国工程并购整合打法不断增厚每股净收益",
+                        "高利润率的环境、社会与治理（ESG）环境评估咨询业务快速放量"
+                ],
+                "hybrid": [
+                        "全球基础设施现代化改造超级周期",
+                        "Accretive M&A 连续并购整合经验",
+                        "Environmental ESG 高毛利咨询放量"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Transportation & Infrastructure Engineering Consulting",
+                        "Earth & Environment Environmental Sciences Advisory",
+                        "Property & Buildings Green Architecture Design"
+                ],
+                "zh": [
+                        "大型交通路网与公共基础设施专业工程设计咨询",
+                        "地球与生态环境科学评估及污染治理技术咨询",
+                        "商业地产与高科技产业建筑绿色节能工程规划"
+                ],
+                "hybrid": [
+                        "Transportation 交通基建工程咨询",
+                        "Environment 环境科学治理咨询",
+                        "Property 绿色建筑工程规划"
+                ]
+        }
+},
+    "STN.TO": {
+        "name": "Stantec Inc.",
+        "sector": "Industrials (Engineering & Construction)",
+        "background": {
+                "en": "Stantec is a global leader in sustainable engineering, architecture, and environmental science consulting, renowned for delivering premier water infrastructure, environmental remediation, and urban planning projects.",
+                "zh": "Stantec 是全球可持续工程咨询、建筑设计与环境科学技术领域的杰出领导者，在全球水资源基建、工业污染修复治理、智慧城市规划及大型医疗科研建筑领域享有无与伦比的专业声誉。",
+                "hybrid": "Stantec (STN.TO) 是全球顶尖水利水务与可持续基础设施设计咨询巨头，纯轻资产商业模式，无直接施工风险。"
+        },
+        "catalysts": {
+                "en": [
+                        "Massive funding allocations from the US Infrastructure Investment and Jobs Act (IIJA)",
+                        "Global water security investments and strict PFAS chemical remediation regulations",
+                        "Consistent organic net revenue growth paired with disciplined serial M&A"
+                ],
+                "zh": [
+                        "美国《基础设施投资与就业法案》（IIJA）数十亿美元水务与基建资金集中落地",
+                        "全球水资源安全保护及史上最严 PFAS 永久化学物净化治理法规生效",
+                        "强劲的内生性净营收有机增长与极具纪律性的战略并购双轮驱动"
+                ],
+                "hybrid": [
+                        "US IIJA 万亿基建法案水务项目加速落地",
+                        "PFAS 水污染治理法规驱动专业需求",
+                        "Organic Growth 内生增长与并购协同"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Water & Wastewater Treatment Infrastructure Engineering",
+                        "Buildings Architecture and MEP Engineering Services",
+                        "Environmental Services & Ecological Remediation"
+                ],
+                "zh": [
+                        "市政供水、雨水管理与大型污水处理基础设施工程规划",
+                        "医疗科研与商业建筑高端综合工程设计服务",
+                        "生态环境影响评估、场地修复与生态治理综合咨询"
+                ],
+                "hybrid": [
+                        "Water 水务与污水基建设计",
+                        "Buildings 建筑与工程设计",
+                        "Environmental 生态环境修复咨询"
+                ]
+        }
+},
+    "DSG.TO": {
+        "name": "The Descartes Systems Group Inc.",
+        "sector": "Technology (Software Infrastructure)",
+        "background": {
+                "en": "Descartes Systems Group is the global leader in logistics-oriented software-as-a-service (SaaS) and the operator of the Global Logistics Network (GLN), managing mission-critical global customs, routing, and freight data.",
+                "zh": "笛卡尔系统集团（Descartes Systems Group）是全球物流与供应链 SaaS 领域的行业龙头，运营全球最大的全球物流网络（GLN），连接数万家跨国货主、海运空运承运商及海关边境安全机构。",
+                "hybrid": "Descartes (DSG.TO) 是全球物流软件与海关合规网络 GLN 绝对龙头，拥有 90%+ 经常性高毛利软件订阅收入。"
+        },
+        "catalysts": {
+                "en": [
+                        "Irreplaceable Global Logistics Network connecting thousands of carriers and customs authorities",
+                        "Heightened global supply chain complexity and tariffs requiring automated trade compliance",
+                        "Consistent 40%+ adjusted EBITDA margins and disciplined software serial acquisitions"
+                ],
+                "zh": [
+                        "连接全球数万家承运人与海关边检不可替代的全球物流网络（GLN）网络效应",
+                        "全球地缘政治关税动荡推升企业对自动化贸易合规与报关申报软件的刚需",
+                        "长年保持 40% 以上高 EBITDA 利润率并践行极度严谨的垂直软件并购策略"
+                ],
+                "hybrid": [
+                        "Global Logistics Network 极高网络效应",
+                        "全球贸易合规与进出口关税申报刚性需求",
+                        "40%+ EBITDA 利润率与稳健并购复利"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Global Logistics Network Services Subscriptions",
+                        "Routing, Mobile & Telematics Fleet Management Software",
+                        "Global Trade Intelligence and Customs Compliance Systems"
+                ],
+                "zh": [
+                        "全球物流网络（GLN）通信与交易处理数据订阅",
+                        "车队路径动态智能优化与移动远程监控软件服务",
+                        "全球贸易情报数据库检索与多国海关自动化申报系统"
+                ],
+                "hybrid": [
+                        "GLN Services 物流网络订阅",
+                        "Routing & Fleet 车队路径管理",
+                        "Trade & Customs 贸易情报海关合规"
+                ]
+        }
+},
+    "FNV.TO": {
+        "name": "Franco-Nevada Corporation",
+        "sector": "Basic Materials (Gold Royalty & Streaming)",
+        "background": {
+                "en": "Franco-Nevada Corporation is the leading gold-focused royalty and streaming company in the world, providing non-dilutive financing to mining operators in exchange for long-term rights to precious metals revenue.",
+                "zh": "法兰克-内华达（Franco-Nevada）是全球规模最大、历史最悠久的黄金特许权权益（Royalty）与金属流（Streaming）投资巨头，通过向矿业公司提供非稀释性资本获取永久性黄金分成。",
+                "hybrid": "Franco-Nevada (FNV.TO) 是全球黄金 Royalty/Streaming 商业模式开创者，员工仅几十人管理数十亿资产，资产负债表长年零负债。"
+        },
+        "catalysts": {
+                "en": [
+                        "Asset-light royalty model with zero direct mining operating cost or CapEx inflation exposure",
+                        "Top-tier portfolio of 400+ precious metals, base metals, and energy assets",
+                        "Fortress debt-free balance sheet enabling counter-cyclical royalty acquisitions during downturns"
+                ],
+                "zh": [
+                        "纯轻资产特许权模型，完全免受采矿运营成本通胀与资本开支超支风险",
+                        "拥有横跨美洲、澳洲等 400 余处世界级贵金属与优质能源资产的多元化权益组合",
+                        "长年保持无负债现金堡垒资产负债表，在矿业低谷期拥有极强逆周期收购能力"
+                ],
+                "hybrid": [
+                        "零通胀风险的轻资产 Royalty 模式",
+                        "400+ 核心贵金属矿山权益组合",
+                        "零负债资产负债表逆周期并购优势"
+                ]
+        },
+        "revenue_drivers": {
+                "en": [
+                        "Precious Metals Royalty and Stream Deliveries (Gold, Silver, PGM)",
+                        "Diversified Energy Royalty Interests (Oil & Natural Gas)",
+                        "Advanced Project Development Milestone Royalties"
+                ],
+                "zh": [
+                        "贵金属特许权提成与流式交付（黄金、白银及铂族金属）",
+                        "多元化能源权益提成收益（原油与天然气特许权）",
+                        "在建大型矿山项目达产后的长期分成权益"
+                ],
+                "hybrid": [
+                        "Precious Metals 贵金属分成交付",
+                        "Energy Royalties 能源特许权收益",
+                        "Advanced Mining 矿山发展权益"
+                ]
+        }
+},
+
     "NVDA": {
         "name": "NVIDIA Corporation",
         "sector": "Semiconductors & AI Hardware",

@@ -82,6 +82,7 @@ class PushAlertConfigDB(SQLModel, table=True):
 class RecommendationSnapshotDB(SQLModel, table=True):
     __tablename__ = "recommendation_snapshots"
     id: Optional[int] = Field(default=None, primary_key=True)
+    country: str = Field(default="US", index=True)  # "US" or "CA"
     category: str = Field(index=True)  # "SECTOR", "OVERALL", "GOLD"
     symbol: str = Field(index=True)
     company_name: str

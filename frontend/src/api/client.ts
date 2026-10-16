@@ -22,12 +22,12 @@ export async function fetchMacroDashboard(lang: string = "en", forceRefresh: boo
   return res.json();
 }
 
-export async function refreshRecommendationsApi(category?: string, offset: number = 0, lang: string = "en"): Promise<any> {
+export async function refreshRecommendationsApi(category?: string, offset: number = 0, lang: string = "en", country: string = "US"): Promise<any> {
   const url = `${getApiBaseUrl()}/api/macro/recommendations/refresh`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ category, offset, lang })
+    body: JSON.stringify({ category, offset, lang, country: country.toUpperCase() })
   });
   if (!res.ok) throw new Error(`Refresh recommendations API failed: ${res.statusText}`);
   return res.json();

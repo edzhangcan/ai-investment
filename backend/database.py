@@ -49,6 +49,11 @@ def init_db():
             conn.commit()
         except Exception:
             pass  # Column already exists or table freshly created
+        try:
+            conn.execute(text("ALTER TABLE recommendation_snapshots ADD COLUMN country TEXT DEFAULT 'US'"))
+            conn.commit()
+        except Exception:
+            pass
 
 def get_session():
     """

@@ -268,10 +268,14 @@ export interface StockRecommendation {
 }
 
 export interface CategorizedRecommendationsPayload {
+  country?: 'US' | 'CA';
   macro_context: {
     cycle_stage: string;
     cycle_code: string;
     plain_explanation: string;
+    country?: string;
+    country_name?: string;
+    country_flag?: string;
   };
   sector_overweight_stocks?: StockRecommendation[];
   overall_recommended_stocks?: StockRecommendation[];
