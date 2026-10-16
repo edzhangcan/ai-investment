@@ -161,8 +161,20 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
               </div>
             </div>
 
+            {/* Real Stock Asset Taxonomy Diagnosis */}
+            {cio.mianji_framework.taxonomy_diagnosis && (
+              <div className="p-2.5 rounded-lg bg-surface-subtle/80 border border-border-subtle text-[11px] leading-relaxed">
+                <div className="font-bold text-brand mb-1 flex items-center gap-1.5">
+                  <span>🎯 标的定性归因 (Asset Diagnosis):</span>
+                </div>
+                <p className="text-content-primary font-medium leading-relaxed">
+                  {cio.mianji_framework.taxonomy_diagnosis}
+                </p>
+              </div>
+            )}
+
             {cio.mianji_framework.soul_check && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
                 <div className="text-content-secondary">
                   <span className="text-content-muted">量价温度 / 击球区: </span>
                   <span className="font-bold text-content-primary">

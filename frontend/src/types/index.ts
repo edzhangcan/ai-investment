@@ -215,6 +215,7 @@ export interface CIOVerdict {
   mianji_framework?: {
     taxonomy?: string;
     taxonomy_label?: string;
+    taxonomy_diagnosis?: string;
     soul_check?: {
       urgency_fomo_check?: string;
       trend_temperature?: string;
