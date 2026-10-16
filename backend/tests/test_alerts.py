@@ -87,6 +87,32 @@ def test_alerts_rest_endpoints(client: TestClient, session: Session):
     assert check_res.status_code == 200
     assert "alerts_triggered_count" in check_res.json()
 
+    # DELETE /api/alerts/history/{alert_id}
+    del_res = client.delete(f"/api/alerts/history/{log.id}")
+    assert del_res.status_code == 200
+    assert del_res.json()["deleted_id"] == log.id
+
+    # Verify deleted
+    empty_res = client.get("/api/alerts/history")
+    assert empty_res.status_code == 200
+    assert len(empty_res.json()) == 0
+
+    # 404 on non-existent
+    del_404 = client.delete("/api/alerts/history/999999")
+    assert del_404.status_code == 404
+
+    # Seed 2 logs for DELETE /api/alerts/history (clear all)
+    session.add(PriceAlertLogDB(symbol="AAPL", company_name="Apple", current_price=150, target_buy_price=160, notification_channel="IN_APP", status="TRIGGERED", message="Apple hit target", triggered_at=get_utc_now()))
+    session.add(PriceAlertLogDB(symbol="MSFT", company_name="Microsoft", current_price=300, target_buy_price=310, notification_channel="IN_APP", status="TRIGGERED", message="MSFT hit target", triggered_at=get_utc_now()))
+    session.commit()
+
+    clear_res = client.delete("/api/alerts/history")
+    assert clear_res.status_code == 200
+    assert clear_res.json()["deleted_count"] == 2
+
+    # Verify all cleared
+    assert len(client.get("/api/alerts/history").json()) == 0
+
 def test_alert_engine_scheduled_and_conditional_dual_run(session: Session):
     """Verifies that evaluate_scheduled_and_conditional_alerts executes properly."""
     async def run_test():

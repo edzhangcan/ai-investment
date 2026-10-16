@@ -173,3 +173,31 @@ export async function resetValuationAlertSettings(): Promise<any> {
   return res.json();
 }
 
+export async function fetchAlertHistoryApi(): Promise<any[]> {
+  const url = `${getApiBaseUrl()}/api/alerts/history`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch alert history failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function deleteAlertHistoryItemApi(alertId: number): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/alerts/history/${alertId}`;
+  const res = await fetch(url, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Delete alert item failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function clearAllAlertHistoryApi(): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/alerts/history`;
+  const res = await fetch(url, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Clear all alert history failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function triggerPriceAlertCheckApi(): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/alerts/trigger-check`;
+  const res = await fetch(url, { method: 'POST' });
+  if (!res.ok) throw new Error(`Trigger price alert check failed: ${res.statusText}`);
+  return res.json();
+}
+

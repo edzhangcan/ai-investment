@@ -231,7 +231,19 @@ export interface Translations {
   discordGoldSuccess: string;
   discordDispatchFailed: string;
 
-  // In-App Notification Toast
+  // In-App Notification Center & Alerts
+  notificationCenterTitle: string;
+  notificationInbox: string;
+  notificationCenterAria: string;
+  clearAllNotifications: string;
+  noNotificationsTitle: string;
+  noNotificationsDesc: string;
+  checkAlertsNow: string;
+  checkingAlerts: string;
+  dismissNotification: string;
+  viewDeepDive: string;
+  unreadCountBadge: string;
+  triggeredAt: string;
   toastTargetHit: string;
   toastEnteredBuyZone: string;
   toastTargetLabel: string;
@@ -524,7 +536,19 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordGoldSuccess: "Gold Nuggets Discovery alert sent to Discord!",
     discordDispatchFailed: "Alert dispatch failed:",
 
-    // In-App Notification Toast
+    // In-App Notification Center & Alerts
+    notificationCenterTitle: "Notification Centre",
+    notificationInbox: "Alert Inbox",
+    notificationCenterAria: "Toggle notification center",
+    clearAllNotifications: "Clear All",
+    noNotificationsTitle: "All Caught Up",
+    noNotificationsDesc: "No active price triggers or valuation alerts. Stocks entering your Ideal Buy Zone will appear here.",
+    checkAlertsNow: "Check Live Alerts",
+    checkingAlerts: "Scanning...",
+    dismissNotification: "Dismiss",
+    viewDeepDive: "Deep Dive",
+    unreadCountBadge: "unread alerts",
+    triggeredAt: "Triggered",
     toastTargetHit: "Target Price Hit!",
     toastEnteredBuyZone: "entered your Buy Zone! Live:",
     toastTargetLabel: "≤ Target:",
@@ -816,7 +840,19 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordGoldSuccess: "淘金组合 (Gold Nuggets) 发现提醒已发送至 Discord！",
     discordDispatchFailed: "警报发送失败:",
 
-    // In-App Notification Toast
+    // In-App Notification Center & Alerts
+    notificationCenterTitle: "消息通知中心",
+    notificationInbox: "预警收件箱",
+    notificationCenterAria: "打开或关闭通知中心",
+    clearAllNotifications: "清空全部",
+    noNotificationsTitle: "暂无新通知",
+    noNotificationsDesc: "当前没有触发的买入或估值预警。当自选股或精选股票进入理想买入区间时将在此通知。",
+    checkAlertsNow: "立即扫描预警",
+    checkingAlerts: "扫描中...",
+    dismissNotification: "清除此条",
+    viewDeepDive: "深度分析",
+    unreadCountBadge: "条未读预警",
+    triggeredAt: "触发时间",
     toastTargetHit: "已达目标买入价!",
     toastEnteredBuyZone: "已进入理想买入区间！现价:",
     toastTargetLabel: "≤ 目标价:",
@@ -1108,7 +1144,19 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     discordGoldSuccess: "Gold Nuggets 发现提醒已发送至 Discord！",
     discordDispatchFailed: "警报发送失败:",
 
-    // In-App Notification Toast
+    // In-App Notification Center & Alerts
+    notificationCenterTitle: "消息通知中心 (Notification Centre)",
+    notificationInbox: "预警收件箱 (Alert Inbox)",
+    notificationCenterAria: "打开或关闭通知中心 (Toggle Notifications)",
+    clearAllNotifications: "清空全部 (Clear All)",
+    noNotificationsTitle: "暂无新通知 (All Caught Up)",
+    noNotificationsDesc: "当前没有触发的买入或估值预警。当自选股或精选股票进入理想买入区间时将在此通知。",
+    checkAlertsNow: "立即扫描预警 (Check Live Alerts)",
+    checkingAlerts: "扫描中 (Scanning...)",
+    dismissNotification: "清除此条 (Dismiss)",
+    viewDeepDive: "深度分析 (Deep Dive)",
+    unreadCountBadge: "条未读预警 (Unread)",
+    triggeredAt: "触发时间 (Triggered)",
     toastTargetHit: "已达目标买入价! (Target Hit)",
     toastEnteredBuyZone: "已进入买入区间 (Buy Zone)！现价:",
     toastTargetLabel: "≤ 目标价 (Target):",
