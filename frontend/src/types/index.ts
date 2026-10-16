@@ -212,6 +212,20 @@ export interface CIOVerdict {
     audit_summary_en: string;
     audit_summary_zh: string;
   };
+  mianji_framework?: {
+    taxonomy?: string;
+    taxonomy_label?: string;
+    soul_check?: {
+      urgency_fomo_check?: string;
+      trend_temperature?: string;
+      hitting_zone?: string;
+      variant_view_penetration?: string;
+      bayesian_prior?: string;
+      mandatory_falsification_trigger?: string;
+    };
+    barbell_allocation?: string;
+    qualified_holder_creed?: string;
+  };
 }
 
 export interface DebateData {

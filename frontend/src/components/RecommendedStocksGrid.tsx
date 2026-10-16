@@ -177,7 +177,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                 }`}
               >
                 <span>🇨🇦</span>
-                <span>{language === 'zh' ? '加股市场 (16只池)' : 'CA Market (16 Pool)'}</span>
+                <span>{language === 'zh' ? '加股市场 (32只池)' : 'CA Market (32 Pool)'}</span>
               </button>
             </div>
 
@@ -217,7 +217,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
               activeCategory === 'SECTOR' ? 'bg-emerald-700/80 text-white' : 'bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-200'
             }`}>
-              {sectorStocks.length || (activeCountry === 'CA' ? 16 : 32)}
+              {sectorStocks.length || 32}
             </span>
           </button>
 
@@ -239,7 +239,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
               activeCategory === 'OVERALL' ? 'bg-sky-700/80 text-white' : 'bg-sky-200 dark:bg-sky-800 text-sky-900 dark:text-sky-200'
             }`}>
-              {overallStocks.length || (activeCountry === 'CA' ? 16 : 32)}
+              {overallStocks.length || 32}
             </span>
           </button>
 
@@ -261,7 +261,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
               activeCategory === 'GOLD' ? 'bg-amber-600/80 text-white' : 'bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-200'
             }`}>
-              {goldNuggetStocks.length || (activeCountry === 'CA' ? 16 : 32)}
+              {goldNuggetStocks.length || 32}
             </span>
           </button>
         </div>

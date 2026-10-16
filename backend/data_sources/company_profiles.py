@@ -7285,6 +7285,13 @@ COMPANY_PROFILES_REGISTRY: Dict[str, Dict[str, Any]] = {
     }
 }
 
+# Import and integrate Canadian expansion profiles (96 TSX universe equities)
+try:
+    from backend.data_sources.canadian_profiles_addon import CANADIAN_ADDITIONAL_PROFILES
+    COMPANY_PROFILES_REGISTRY.update(CANADIAN_ADDITIONAL_PROFILES)
+except Exception as _e:
+    logger.warning(f"Failed to load CANADIAN_ADDITIONAL_PROFILES: {_e}")
+
 class CompanyProfileEngine:
     """
     High-Performance Institutional Company Profile Engine with multi-source verified extraction.

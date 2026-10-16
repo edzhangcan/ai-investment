@@ -29,7 +29,17 @@ def analyze_stock(ticker: str, lang: str = "en", session: Optional[Session] = De
 
     symbol = ticker.strip().upper()
     stock_data = DataProviderManager.get_stock_data(symbol)
-    macro_data = MacroEngine.analyze_macro_environment(lang=lang)
+
+    # Detect country: CA for TSX/TSXV tickers or CAD currency or market == CA
+    is_ca = (
+        stock_data.get("market") == "CA"
+        or stock_data.get("currency") == "CAD"
+        or symbol.endswith(".TO")
+        or symbol.endswith(".V")
+    )
+    country = "CA" if is_ca else "US"
+
+    macro_data = MacroEngine.analyze_macro_environment(lang=lang, country=country)
     fundamental_data = FundamentalEngine.evaluate_fundamentals(stock_data, lang=lang)
 
     custom_mos = None
@@ -49,7 +59,7 @@ def analyze_stock(ticker: str, lang: str = "en", session: Optional[Session] = De
         custom_mos_pct=custom_mos,
         anchor_mode=anchor_mode
     )
-    debate_data = MultiAgentArena.run_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang)
+    debate_data = MultiAgentArena.run_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang, country=country)
     news_data = NewsClient.fetch_stock_news(symbol)
     profile_data = fundamental_data.get("company_profile")
 

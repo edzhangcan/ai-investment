@@ -11,8 +11,8 @@ from backend.engines.recommendation_engine import (
 
 def test_universe_symbols_count():
     assert len(US_STOCK_SYMBOLS) == 96
-    assert len(CA_STOCK_SYMBOLS) == 48
-    assert len(ALL_STOCK_SYMBOLS) == 144
+    assert len(CA_STOCK_SYMBOLS) == 96
+    assert len(ALL_STOCK_SYMBOLS) == 192
 
 def test_get_top_recommendations_us_categorized():
     # Force refresh cache to test fresh generation logic for US
@@ -58,29 +58,29 @@ def test_get_top_recommendations_ca_categorized():
     assert "overall_recommended_stocks" in result
     assert "gold_nugget_stocks" in result
 
-    # 1. CA Sector Champions count == 16
+    # 1. CA Sector Champions count == 32
     sector_stocks = result["sector_overweight_stocks"]
-    assert len(sector_stocks) == 16
+    assert len(sector_stocks) == 32
     sector_symbols = [s["symbol"] for s in sector_stocks]
     for stock in sector_stocks:
         assert stock["category_badge"] == "SECTOR_OVERWEIGHT"
         assert stock["symbol"].endswith(".TO") or stock["symbol"].endswith(".V")
 
-    # 2. CA Overall Market Leaders count == 16
+    # 2. CA Overall Market Leaders count == 32
     overall_stocks = result["overall_recommended_stocks"]
-    assert len(overall_stocks) == 16
+    assert len(overall_stocks) == 32
     overall_symbols = [s["symbol"] for s in overall_stocks]
     for stock in overall_stocks:
         assert stock["symbol"].endswith(".TO") or stock["symbol"].endswith(".V")
 
-    # 3. CA Gold Nuggets count == 16
+    # 3. CA Gold Nuggets count == 32
     gold_stocks = result["gold_nugget_stocks"]
-    assert len(gold_stocks) == 16
+    assert len(gold_stocks) == 32
     gold_symbols = [s["symbol"] for s in gold_stocks]
     for stock in gold_stocks:
         assert stock["symbol"].endswith(".TO") or stock["symbol"].endswith(".V")
 
-    # STRICT MUTUAL EXCLUSIVITY ASSERTIONS (ZERO OVERLAP ACROSS ALL 48 CA STOCKS)
+    # STRICT MUTUAL EXCLUSIVITY ASSERTIONS (ZERO OVERLAP ACROSS ALL 96 CA STOCKS)
     sector_set = set(sector_symbols)
     overall_set = set(overall_symbols)
     gold_set = set(gold_symbols)
@@ -117,7 +117,7 @@ def test_refresh_stock_recommendations_endpoints_by_country():
     assert res_ca.status_code == 200
     json_ca = res_ca.json()
     assert "stocks" in json_ca
-    assert len(json_ca["stocks"]) == 16
+    assert len(json_ca["stocks"]) == 32
     for s in json_ca["stocks"]:
         assert s["symbol"].endswith(".TO") or s["symbol"].endswith(".V")
 
@@ -139,9 +139,9 @@ def test_get_macro_dashboard_recommendations_segregation():
     assert res_ca.status_code == 200
     recs_ca = res_ca.json()["recommendations"]
     assert recs_ca["country"] == "CA"
-    assert len(recs_ca["sector_overweight_stocks"]) == 16
-    assert len(recs_ca["overall_recommended_stocks"]) == 16
-    assert len(recs_ca["gold_nugget_stocks"]) == 16
+    assert len(recs_ca["sector_overweight_stocks"]) == 32
+    assert len(recs_ca["overall_recommended_stocks"]) == 32
+    assert len(recs_ca["gold_nugget_stocks"]) == 32
 
 def test_zero_hallucination_and_credible_backgrounds():
     """Verifies that all recommended stocks have non-templated credible corporate profiles."""

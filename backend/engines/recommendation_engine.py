@@ -51,24 +51,30 @@ US_GOLD_SYMBOLS = [
 ]
 
 # -------------------------------------------------------------------------
-# 2. CANADIAN TSX UNIVERSE (48 STOCKS: 16 × 3)
+# 2. CANADIAN TSX UNIVERSE (96 STOCKS: 32 × 3)
 # -------------------------------------------------------------------------
 CA_SECTOR_SYMBOLS = [
-    # Canadian Oil Sands, Pipelines, Big 6 Banks & Resource Majors (16)
+    # Canadian Oil Sands, Pipelines, Utilities, Financials & Resource Majors (32)
     "SU.TO", "CNQ.TO", "CVE.TO", "IMO.TO", "ENB.TO", "TRP.TO", "TOU.TO", "PPL.TO",
-    "RY.TO", "TD.TO", "BMO.TO", "BNS.TO", "NA.TO", "ABX.TO", "TECK-B.TO", "NTR.TO"
+    "ARX.TO", "KEY.TO", "WCP.TO", "MEG.TO", "GEI.TO", "ALA.TO", "FTS.TO", "EMA.TO",
+    "AQN.TO", "H.TO", "RY.TO", "TD.TO", "BMO.TO", "BNS.TO", "NA.TO", "EQB.TO",
+    "ABX.TO", "AEM.TO", "K.TO", "TECK-B.TO", "IVN.TO", "LUN.TO", "FM.TO", "NTR.TO"
 ]
 
 CA_OVERALL_SYMBOLS = [
-    # Canadian Core Blue-Chips, Continental Rails, Brookfield & Retail Moats (16)
+    # Canadian Core Blue-Chips, Continental Rails, Brookfield & Retail Moats (32)
     "CNR.TO", "CP.TO", "SHOP.TO", "BN.TO", "BAM.TO", "ATD.TO", "DOL.TO", "T.TO",
-    "BCE.TO", "MFC.TO", "SLF.TO", "WCN.TO", "CAE.TO", "WSP.TO", "STN.TO", "CM.TO"
+    "BCE.TO", "RCI-B.TO", "QBR-B.TO", "MFC.TO", "SLF.TO", "GWO.TO", "IFC.TO", "CM.TO",
+    "WCN.TO", "CAE.TO", "WSP.TO", "STN.TO", "GIB-A.TO", "TRI.TO", "WN.TO", "L.TO",
+    "MRU.TO", "EMP-A.TO", "CTC-A.TO", "BIP-UN.TO", "BEP-UN.TO", "WTE.TO", "CFP.TO", "TIH.TO"
 ]
 
 CA_GOLD_SYMBOLS = [
-    # Canadian Niche Compounders, Serial VMS Acquirers, Logistics & Royalties (16)
+    # Canadian Niche Compounders, Serial VMS Acquirers, Logistics & Royalties (32)
     "CSU.TO", "TOI.V", "LMN.V", "DSG.TO", "OTEX.TO", "KXS.TO", "TFII.TO", "X.TO",
-    "EFN.TO", "GSY.TO", "WPM.TO", "FNV.TO", "TIH.TO", "CCL-B.TO", "MG.TO", "POW.TO"
+    "EFN.TO", "GSY.TO", "WPM.TO", "FNV.TO", "CCL-B.TO", "MG.TO", "POW.TO", "ENGH.TO",
+    "CTS.TO", "BB.TO", "PET.TO", "BYD.TO", "ATZ.TO", "DOO.TO", "MTY.TO", "MAL.TO",
+    "HBM.TO", "SSRM.TO", "DPM.TO", "ALS.TO", "EDV.TO", "BLDP.TO", "CGY.TO", "CJT.TO"
 ]
 
 # Combined Registries
@@ -142,7 +148,7 @@ class RecommendationEngine:
         Scans stock universe for given country jurisdiction, scores candidates against
         macroeconomic regime rules, and saves TOP candidates per category into SQLite:
         - For US: 32 Sector Champions, 32 Market Leaders, 32 Gold Nuggets (96 total)
-        - For CA: 16 Sector Champions, 16 Market Leaders, 16 Gold Nuggets (48 total)
+        - For CA: 32 Sector Champions, 32 Market Leaders, 32 Gold Nuggets (96 total)
         """
         country = country.upper().strip()
         if country not in ["US", "CA"]:
@@ -162,7 +168,7 @@ class RecommendationEngine:
             target_overall = CA_OVERALL_SYMBOLS
             target_gold = CA_GOLD_SYMBOLS
             target_symbols = CA_STOCK_SYMBOLS
-            pool_quota = 16
+            pool_quota = 32
         else:
             target_sector = US_SECTOR_SYMBOLS
             target_overall = US_OVERALL_SYMBOLS

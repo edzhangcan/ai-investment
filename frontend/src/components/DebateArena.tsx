@@ -139,6 +139,63 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
           {cio.judge_summary || "Ground-truth audit confirms solid FCF conversion and wide economic moat, supporting disciplined DCA allocation."}
         </p>
 
+        {/* Mianji Podcast Principles & Soul Check Alignment */}
+        {cio.mianji_framework && (
+          <div className="mb-3 p-3 rounded-xl bg-surface/70 border border-border-subtle text-xs space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-1.5 pb-2 border-b border-border-subtle">
+              <span className="font-bold text-content-primary flex items-center gap-1.5 text-[11px]">
+                <Scale className="w-3.5 h-3.5 text-brand shrink-0" />
+                <span>《面基》投前灵魂四问与先验审计</span>
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {cio.mianji_framework.taxonomy_label && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-brand/10 text-brand border border-brand/20">
+                    {cio.mianji_framework.taxonomy_label}
+                  </span>
+                )}
+                {cio.mianji_framework.barbell_allocation && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-surface-subtle text-content-secondary border border-border-subtle">
+                    {cio.mianji_framework.barbell_allocation}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {cio.mianji_framework.soul_check && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <div className="text-content-secondary">
+                  <span className="text-content-muted">量价温度 / 击球区: </span>
+                  <span className="font-bold text-content-primary">
+                    {cio.mianji_framework.soul_check.trend_temperature} ({cio.mianji_framework.soul_check.hitting_zone === 'RIGHT_SIDE' ? '右侧击球区' : '左侧观察'})
+                  </span>
+                </div>
+                <div className="text-content-secondary">
+                  <span className="text-content-muted">贝叶斯先验置信度: </span>
+                  <span className="font-bold text-brand font-mono">
+                    {cio.mianji_framework.soul_check.bayesian_prior}
+                  </span>
+                </div>
+                {cio.mianji_framework.soul_check.variant_view_penetration && (
+                  <div className="sm:col-span-2 text-content-secondary">
+                    <span className="text-content-muted">穿透叙事 (10年天花板): </span>
+                    <span className="font-medium text-content-primary">
+                      {cio.mianji_framework.soul_check.variant_view_penetration}
+                    </span>
+                  </div>
+                )}
+                {cio.mianji_framework.soul_check.mandatory_falsification_trigger && (
+                  <div className="sm:col-span-2 p-2 rounded-lg bg-negative/5 border border-negative/20 text-content-secondary">
+                    <span className="text-negative font-bold">⚠️ 离场铁律 (Falsification Trigger): </span>
+                    <span className="font-medium text-content-primary">
+                      {cio.mianji_framework.soul_check.mandatory_falsification_trigger}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs border-t border-border-subtle pt-2.5">
           <div className="text-content-secondary">
             <span className="text-content-muted">
