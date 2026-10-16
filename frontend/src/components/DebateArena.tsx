@@ -139,13 +139,13 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
           {cio.judge_summary || "Ground-truth audit confirms solid FCF conversion and wide economic moat, supporting disciplined DCA allocation."}
         </p>
 
-        {/* Mianji Podcast Principles & Soul Check Alignment */}
+        {/* Pre-Trade Soul Check & Prior Audit Framework */}
         {cio.mianji_framework && (
           <div className="mb-3 p-3 rounded-xl bg-surface/70 border border-border-subtle text-xs space-y-2">
             <div className="flex items-center justify-between flex-wrap gap-1.5 pb-2 border-b border-border-subtle">
               <span className="font-bold text-content-primary flex items-center gap-1.5 text-[11px]">
                 <Scale className="w-3.5 h-3.5 text-brand shrink-0" />
-                <span>《面基》投前灵魂四问与先验审计</span>
+                <span>{t.soulCheckTitle || "投前灵魂四问与先验审计"}</span>
               </span>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {cio.mianji_framework.taxonomy_label && (

@@ -91,13 +91,13 @@ class MultiAgentArena:
             f"You are an institutional investment debate orchestrator managing three agents for equities in {country_context}. {lang_instruction}\n"
             "1. Bull Agent (Advocate): Highlights real competitive moats, cash flow quality, DCF upside, growth catalysts, and region-specific macroeconomic tailwinds (for Canada: Bank of Canada monetary easing cycle, TSX structural valuation discount vs US, resource export demand and high dividend yields; for US: GDP resilience, tech innovation, domestic consumption, and strong corporate cash flows).\n"
             "2. Bear Agent (Prosecutor): Scrutinizes overvaluation, P/E percentiles, technical pullback risk to 200D MA support (if price > 200D MA) or trend breakdown below 200D MA overhead resistance (if price < 200D MA), and region-specific macro cycle headwinds (for Canada: household debt sensitivity, mortgage resets, growth softening; for US: restrictive Fed rates, negative Equity Risk Premium).\n"
-            "3. CIO Agent (Judge): Impartial referee enforcing empirical evidence, Risk-Reward ratio, and Mianji Podcast investment principles (《面基》心智对齐):\n"
-            "   - judge_summary: Decisive executive investment conclusion synthesizing Bull and Bear arguments, valuation margin of safety, and recommended entry price. STRICTLY DO NOT repeat generic Mianji checklist text or static boilerplate here as it is rendered separately below.\n"
+            "3. CIO Agent (Judge): Impartial referee enforcing empirical evidence, Risk-Reward ratio, and institutional investment discipline (pre-trade soul check & prior framework):\n"
+            "   - judge_summary: Decisive executive investment conclusion synthesizing Bull and Bear arguments, valuation margin of safety, and recommended entry price. STRICTLY DO NOT repeat generic checklist text or static boilerplate here as it is rendered separately below.\n"
             "   - mianji_framework.taxonomy_diagnosis: Analyze THIS specific stock's business engine, FCF conversion ($X), ROIC (X%), and cyclicality to diagnose why it belongs to 🌲 Tree (compounder), 🌾 Grain (cyclical/dividend value), or 🥬 Vegetable (trend-only satellite). Avoid generic boilerplate; evaluate the real business.\n"
             "   - Pre-trade Soul Check (投前灵魂四问): Check FOMO emotional urgency (eliminate anxiety), verify Trend Temperature (regime FREEZE/FLAT/WARM/HOT, favoring right-side entry over left-side knife-catching), penetrate narrative with Reverse-DCF 10Y ceiling multiple and Prosperity Trap warnings, cap Bayesian prior confidence at <= 95% (never 100% certainty, respect unknown), and establish a mandatory pre-set falsification exit trigger.\n"
             "   - Position Sizing & Barbell: Core SAA (80% Tree/Grain) vs Satellite TAA (20% Vegetable). Anti-ruin rule: strictly block counter-trend averaging down.\n"
             "   - Qualified Holder Mindset (只做合格持有人): '不是人在做投资，是纪律在做投资。'\n\n"
-            "STRICT MANDATE: Base all numbers strictly on the provided real-time stock parameters. Never hallucinate fake prices or company names. Never output negative percentages like '-X% above support'.\n"
+            "STRICT MANDATE: Base all numbers strictly on the provided real-time stock parameters. Never hallucinate fake prices or company names. Never output negative percentages like '-X% above support'. IMPORTANT: Strictly DO NOT mention the words 'Mianji' or '面基' anywhere in the output text.\n"
             "Respond ONLY with a valid JSON object matching this exact schema:\n"
             "{\n"
             '  "symbol": "TICKER",\n'
@@ -117,7 +117,7 @@ class MultiAgentArena:
             '    "position_sizing_advice": "Advice string",\n'
             '    "recommended_buy_bracket": "$MIN - $MAX CURR",\n'
             '    "risk_reward_ratio": 2.1,\n'
-            '    "judge_summary": "Executive debate synthesis and timing verdict evaluating pricing and margin of safety (without repeating Mianji checklist bullets)",\n'
+            '    "judge_summary": "Executive debate synthesis and timing verdict evaluating pricing and margin of safety (without repeating checklist bullets)",\n'
             '    "empirical_proof_verified": true,\n'
             '    "mianji_framework": {\n'
             '      "taxonomy": "TREE" OR "GRAIN" OR "VEGETABLE",\n'
@@ -399,11 +399,11 @@ class MultiAgentArena:
         elif taxonomy == "GRAIN":
             diagnosis_zh = (
                 f"{company} 判定为【种粮资产】：年产自由现金流规模达 {fcf_display} {curr}，综合股东回报率（股息+净回购）达 {total_sh_yield}%，但盈利能力强依赖大宗商品价格或宏观周期波动。"
-                f"投资策略严格遵循《面基》‘春播秋收’纪律：在估值折价与周期低谷建仓吃股息，在估值中枢修复进入过热期必须果断兑现收割，切忌将其误判为长青树而承受剧烈回撤。"
+                f"投资策略严格遵循‘春播秋收’纪律：在估值折价与周期低谷建仓吃股息，在估值中枢修复进入过热期必须果断兑现收割，切忌将其误判为长青树而承受剧烈回撤。"
             )
             diagnosis_en = (
                 f"{company} diagnosed as [Grain Asset]: Generates {fcf_display} {curr} in cash flow with {total_sh_yield}% total shareholder return, but remains structurally cyclical. "
-                f"Follow Mianji 'Spring Sowing, Autumn Harvest' discipline: accumulate during valuation troughs for dividends, harvest into valuation peaks; never mistake cyclicals for secular compounders."
+                f"Follow 'Spring Sowing, Autumn Harvest' discipline: accumulate during valuation troughs for dividends, harvest into valuation peaks; never mistake cyclicals for secular compounders."
             )
             diagnosis_hy = (
                 f"{company} 判定为【种粮资产 (Grain)】：现金流规模达 {fcf_display} {curr}，股东综合回报率 {total_sh_yield}%，盈利受宏观周期约束。恪守‘春播秋收’纪律：估值折价期低估买入享股息，估值中枢修复时果断止盈收割。"
@@ -443,11 +443,11 @@ class MultiAgentArena:
         elif has_buy_bracket and price <= buy_max:
             verdict = "ACCUMULATE IN BRACKETS" if lang == "en" else ("建议买入 (分批建仓)" if lang == "zh" else "建议买入 (BUY - Accumulate)")
             if taxonomy == "TREE":
-                position_size = "Mianji 80/20 Core SAA: Allocate 3% - 5% core compounding weight." if lang == "en" else "《面基》80/20 哑铃策略：配置 3% - 5% 核心 SAA 种树复利仓位。"
+                position_size = "80/20 Core SAA: Allocate 3% - 5% core compounding weight." if lang == "en" else "80/20 哑铃策略：配置 3% - 5% 核心 SAA 种树复利仓位。"
             elif taxonomy == "GRAIN":
-                position_size = "Mianji 80/20 Core/Satellite: Allocate 2% - 4% cyclical/dividend value position." if lang == "en" else "《面基》春播秋收：配置 2% - 4% 种粮周期高股息仓位，估值达到上限及时收割。"
+                position_size = "80/20 Core/Satellite: Allocate 2% - 4% cyclical/dividend value position." if lang == "en" else "春播秋收策略：配置 2% - 4% 种粮周期高股息仓位，估值达到上限及时收割。"
             else:
-                position_size = "Mianji Satellite TAA: Max 2% trial position with right-side trend & hard stop." if lang == "en" else "《面基》种菜股卫星仓位：试仓上限 2%，严格依托右侧温度与 -7% 硬止损。"
+                position_size = "Satellite TAA: Max 2% trial position with right-side trend & hard stop." if lang == "en" else "种菜股卫星仓位：试仓上限 2%，严格依托右侧温度与 -7% 硬止损。"
 
             rationale_zh = (
                 f"综合多空审议，{company} ({symbol}) 当前实时股价 ${price} {curr} 稳居理想买入区间 (${buy_min} - ${buy_max} {curr}) 内，风险收益比达 {rr_ratio}:1。"
@@ -463,7 +463,7 @@ class MultiAgentArena:
             )
         elif not has_buy_bracket:
             verdict = "TREND_ONLY_NO_DCF" if lang == "en" else ("仅限趋势交易" if lang == "zh" else "仅限趋势 (TREND_ONLY)")
-            position_size = "Mianji Satellite TAA: Max 2% satellite position strictly with hard stop-loss." if lang == "en" else "《面基》卫星仓位上限2%，严格按趋势温度与硬止损操作。"
+            position_size = "Satellite TAA: Max 2% satellite position strictly with hard stop-loss." if lang == "en" else "卫星仓位上限2%，严格按趋势温度与硬止损操作。"
             rationale_zh = f"{pricing_data.get('timing_advice', '')} 该标的当前缺乏确定性长期自由现金流估值模型，投委会建议仅限顺势战术交易，严格依托技术均线与止损纪律执行，严禁左侧盲目死扛。"
             rationale_en = f"{pricing_data.get('timing_advice', '')} The stock lacks a predictable long-term DCF model. Capital allocation must remain tactical and disciplined, strictly anchored to moving averages and risk parameters."
             rationale_hy = f"{pricing_data.get('timing_advice', '')} 标的缺乏确定性 DCF 模型，投委会建议仅限顺势战术交易，严格执行均线与止损纪律。"
