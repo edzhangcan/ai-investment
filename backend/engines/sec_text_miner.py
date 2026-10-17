@@ -362,9 +362,12 @@ class SECTextMiner:
         symbol = symbol.upper()
         history = HISTORICAL_MDA_SIGNATURES.get(symbol)
 
+        is_dynamic = history is None
         if not history:
             # Dynamic stock-specific fallback generation for unlisted / custom user tickers
             history = cls._generate_dynamic_text_mining(symbol, lang=lang)
+
+        source_mode = "SIMULATED_FALLBACK" if is_dynamic else "LIVE"
 
         # Process localized text representations
         processed_timeline = []
@@ -378,7 +381,8 @@ class SECTextMiner:
                 "severity": cls._localize_severity(entry["severity"], lang=lang),
                 "added_disclaimer": added,
                 "removed_disclaimer": removed,
-                "keywords_trend": entry["keywords_trend"]
+                "keywords_trend": entry["keywords_trend"],
+                "source_mode": source_mode
             })
 
         summary_note = (
@@ -389,12 +393,22 @@ class SECTextMiner:
              f"已完成 {symbol} 5 年 10-K / MD&A 文本挖掘 (Text Mining)，Levenshtein 比对算法识别管理层 Disclaimer 指引微调。")
         )
 
+        filing_repo = "SEDAR+ Official Repository" if symbol.endswith(".TO") else "SEC EDGAR 10-K Repository"
+
         return {
             "symbol": symbol,
-            "filing_repository": "SEDAR+ Official Repository" if symbol.endswith(".TO") else "SEC EDGAR 10-K Repository",
+            "filing_repository": filing_repo,
             "historical_years_parsed": 5,
             "summary_note": summary_note,
-            "text_mining_timeline": processed_timeline
+            "text_mining_timeline": processed_timeline,
+            "source_mode": source_mode,
+            "provenance": {
+                "source_mode": source_mode,
+                "provider": filing_repo,
+                "fetched_at": "",
+                "staleness_seconds": 0,
+                "warning_banner": "Simulated dynamic MD&A text mining signatures used (unlisted/synthetic ticker)." if is_dynamic else None
+            }
         }
 
     @classmethod
