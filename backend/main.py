@@ -51,11 +51,11 @@ async def run_universe_refresh_daemon():
     while True:
         try:
             from backend.engines.recommendation_engine import RecommendationEngine
-            logging.info("Daemon scanning North American stock universe for macro recommendation refresh...")
-            RecommendationEngine.refresh_stock_universe_job(force=True, lang="en")
-            RecommendationEngine.refresh_stock_universe_job(force=True, lang="zh")
-            RecommendationEngine.refresh_stock_universe_job(force=True, lang="hybrid")
-            logging.info("Daemon stock universe scan complete. Next background refresh in 2 hours.")
+            logging.info("Daemon scanning US & Canadian stock universes for macro recommendation refresh...")
+            for c in ["US", "CA"]:
+                for l in ["en", "zh", "hybrid"]:
+                    RecommendationEngine.refresh_stock_universe_job(force=True, lang=l, country=c)
+            logging.info("Daemon US & CA stock universe scan complete. Next background refresh in 2 hours.")
         except Exception as e:
             logging.error(f"Error in stock universe refresh daemon: {e}")
         await asyncio.sleep(7200)

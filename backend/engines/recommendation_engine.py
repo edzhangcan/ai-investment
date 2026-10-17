@@ -1,17 +1,17 @@
 """
-RecommendationEngine (宏观驱动 200+ 股票大盘推荐引擎 & 2小时自动刷新 Daemon)
-Analyzes North American macroeconomic cycles and sector overweights across a 200+ stock universe,
-evaluates US & Canadian equities, and persists 40 TOP picks per category into SQLite for instantaneous < 10ms responses:
-1. Sector Overweight Champions (40 top picks matching macro overweight sectors)
-2. Overall Market Leaders (40 mega/large-cap core picks)
-3. Hidden Gold Nuggets (40 mid-cap/niche growth stocks)
-Multi-language support for 'en', 'zh', and 'hybrid' modes.
+RecommendationEngine: Multi-Jurisdiction Macro-Conditioned Recommendation Engine (PL-708)
+Segregates North American equity recommendations into dedicated US and Canadian universes:
+- US Stock Universe (96 total): 32 Sector Champions, 32 Market Leaders, 32 Hidden Gold Nuggets
+- Canadian Stock Universe (48 total): 16 Sector Champions, 16 Market Leaders, 16 Hidden Gold Nuggets
+Conditioned directly on regional macroeconomic regimes (Fed late expansion vs BoC rate cuts / TSX value).
+Multi-language support for 'en', 'zh', and 'hybrid' modes with SQLite persistence and memory caching.
 """
 
 from typing import Dict, Any, List, Set, Optional
 import logging
 import time
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from sqlmodel import Session, select, delete
 from backend.database import engine
 from backend.models.db_models import RecommendationSnapshotDB
@@ -19,60 +19,105 @@ from backend.engines.macro_engine import MacroEngine
 from backend.data_sources.data_provider import DataProviderManager
 from backend.engines.fundamental_engine import FundamentalEngine
 from backend.engines.pricing_engine import PricingEngine
+from backend.data_sources.company_profiles import CompanyProfileEngine
 
 logger = logging.getLogger(__name__)
 
 # -------------------------------------------------------------------------
-# 132 NORTH AMERICAN STOCK UNIVERSE SYMBOL REGISTRY (US & CANADA)
+# 1. UNITED STATES UNIVERSE (96 STOCKS: 32 × 3)
 # -------------------------------------------------------------------------
-SECTOR_SYMBOLS = [
-    # Canadian Energy, Financials & Mining (21)
-    "SU.TO", "ENB.TO", "CNQ.TO", "TRP.TO", "CVE.TO", "IMO.TO", "TOU.TO", "ARX.TO", "KEY.TO", "PPL.TO",
-    "TD.TO", "RY.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "CWW.TO", "EQB.TO", "ABX.TO", "TECK-B.TO", "NTR.TO",
-    # US Energy, Financials & Mining Giants (21)
+US_SECTOR_SYMBOLS = [
+    # US Energy, Power Generation, Grid Electrification & Financials (32)
     "XOM", "CVX", "COP", "EOG", "SLB", "MPC", "PSX", "VLO", "WMB", "KMI",
-    "JPM", "BAC", "WFC", "C", "GS", "MS", "BLK", "SCHW", "FCX", "NEM", "CF"
+    "OXY", "DVN", "ET", "CEG", "VST", "GEV", "JPM", "BAC", "WFC", "C",
+    "GS", "MS", "BLK", "SCHW", "AXP", "CB", "PGR", "FCX", "NEM", "CF",
+    "SCCO", "ALB"
 ]
 
-OVERALL_SYMBOLS = [
-    # Tech & AI Leaders (22)
+US_OVERALL_SYMBOLS = [
+    # US Tech Titans, Enterprise Platforms & Blue-Chip Consumer Moats (32)
     "NVDA", "MSFT", "AAPL", "GOOGL", "AMZN", "META", "AVGO", "ORCL", "AMD", "CRM",
-    "ADBE", "CSCO", "INTC", "QCOM", "TXN", "IBM", "AMAT", "LRCX", "MU", "NOW", "PANW", "CRWD",
-    # Blue Chip Consumer & Industrial Leaders (15)
-    "TSLA", "COST", "WMT", "PG", "HD", "UNH", "LLY", "JNJ", "V", "MA", "PEP", "KO", "DIS", "NFLX", "CAT",
-    # Canadian Blue-Chips (10)
-    "SHOP.TO", "CNR.TO", "CP.TO", "ATD.TO", "BCE.TO", "T.TO", "BAM.TO", "BN.TO", "DOL.TO", "MFC.TO"
+    "ADBE", "CSCO", "QCOM", "TXN", "AMAT", "NOW", "COST", "WMT", "PG", "HD",
+    "UNH", "LLY", "JNJ", "V", "MA", "CAT", "TSLA", "PEP", "KO", "DIS",
+    "NFLX", "BRK-B"
 ]
 
-GOLD_SYMBOLS = [
-    # Canadian Growth / Tech / Industrial / Mining Gems (21)
-    "CSU.TO", "TOI.V", "LMN.V", "TFII.TO", "X.TO", "EFN.TO", "OTEX.TO", "GIB-A.TO", "TIH.TO", "POW.TO",
-    "SLF.TO", "WCN.TO", "CCL-B.TO", "MG.TO", "CAE.TO", "BB.TO", "KXS.TO", "GSY.TO", "PET.TO", "BLDP.TO", "WPM.TO",
-    # US Niche Growth & Cyber / Tech Gems (22)
+US_GOLD_SYMBOLS = [
+    # US Niche Growth, Cybersecurity, MedTech & Vertical Compounders (32)
     "CELH", "SNPS", "CDNS", "PLTR", "NET", "DDOG", "ZS", "SMCI", "ARM", "MDB",
-    "PATH", "DUOL", "AXON", "ELF", "DECK", "ON", "MPWR", "NTNX", "IOT", "SYM", "TOST", "APP"
+    "PATH", "DUOL", "AXON", "ELF", "DECK", "ON", "MPWR", "NTNX", "IOT", "SYM",
+    "TOST", "APP", "CRWD", "PANW", "FSLY", "CAVA", "WING", "FOUR", "TMDX", "PODD",
+    "SAIA", "POWI"
 ]
 
-# Combined 132 Stock Universe Registry
-ALL_STOCK_SYMBOLS = list(set(SECTOR_SYMBOLS + OVERALL_SYMBOLS + GOLD_SYMBOLS))
+# -------------------------------------------------------------------------
+# 2. CANADIAN TSX UNIVERSE (96 STOCKS: 32 × 3)
+# -------------------------------------------------------------------------
+CA_SECTOR_SYMBOLS = [
+    # Canadian Oil Sands, Pipelines, Utilities, Financials & Resource Majors (32)
+    "SU.TO", "CNQ.TO", "CVE.TO", "IMO.TO", "ENB.TO", "TRP.TO", "TOU.TO", "PPL.TO",
+    "ARX.TO", "KEY.TO", "WCP.TO", "MEG.TO", "GEI.TO", "ALA.TO", "FTS.TO", "EMA.TO",
+    "AQN.TO", "H.TO", "RY.TO", "TD.TO", "BMO.TO", "BNS.TO", "NA.TO", "EQB.TO",
+    "ABX.TO", "AEM.TO", "K.TO", "TECK-B.TO", "IVN.TO", "LUN.TO", "FM.TO", "NTR.TO"
+]
 
-# Category Mapping Lookup
-SYMBOL_CATEGORY_MAP = {}
-for s in SECTOR_SYMBOLS:
+CA_OVERALL_SYMBOLS = [
+    # Canadian Core Blue-Chips, Continental Rails, Brookfield & Retail Moats (32)
+    "CNR.TO", "CP.TO", "SHOP.TO", "BN.TO", "BAM.TO", "ATD.TO", "DOL.TO", "T.TO",
+    "BCE.TO", "RCI-B.TO", "QBR-B.TO", "MFC.TO", "SLF.TO", "GWO.TO", "IFC.TO", "CM.TO",
+    "WCN.TO", "CAE.TO", "WSP.TO", "STN.TO", "GIB-A.TO", "TRI.TO", "WN.TO", "L.TO",
+    "MRU.TO", "EMP-A.TO", "CTC-A.TO", "BIP-UN.TO", "BEP-UN.TO", "WTE.TO", "CFP.TO", "TIH.TO"
+]
+
+CA_GOLD_SYMBOLS = [
+    # Canadian Niche Compounders, Serial VMS Acquirers, Logistics & Royalties (32)
+    "CSU.TO", "TOI.V", "LMN.V", "DSG.TO", "OTEX.TO", "KXS.TO", "TFII.TO", "X.TO",
+    "EFN.TO", "GSY.TO", "WPM.TO", "FNV.TO", "CCL-B.TO", "MG.TO", "POW.TO", "ENGH.TO",
+    "CTS.TO", "BB.TO", "PET.TO", "BYD.TO", "ATZ.TO", "DOO.TO", "MTY.TO", "MAL.TO",
+    "HBM.TO", "SSRM.TO", "DPM.TO", "ALS.TO", "EDV.TO", "BLDP.TO", "CGY.TO", "CJT.TO"
+]
+
+# Combined Registries
+US_STOCK_SYMBOLS = list(dict.fromkeys(US_SECTOR_SYMBOLS + US_OVERALL_SYMBOLS + US_GOLD_SYMBOLS))
+CA_STOCK_SYMBOLS = list(dict.fromkeys(CA_SECTOR_SYMBOLS + CA_OVERALL_SYMBOLS + CA_GOLD_SYMBOLS))
+ALL_STOCK_SYMBOLS = list(dict.fromkeys(US_STOCK_SYMBOLS + CA_STOCK_SYMBOLS))
+
+# Backward Compatibility Aliases
+SECTOR_SYMBOLS = US_SECTOR_SYMBOLS + CA_SECTOR_SYMBOLS
+OVERALL_SYMBOLS = US_OVERALL_SYMBOLS + CA_OVERALL_SYMBOLS
+GOLD_SYMBOLS = US_GOLD_SYMBOLS + CA_GOLD_SYMBOLS
+
+# Category & Country Mapping Lookup
+SYMBOL_CATEGORY_MAP: Dict[str, str] = {}
+SYMBOL_COUNTRY_MAP: Dict[str, str] = {}
+
+for s in US_SECTOR_SYMBOLS:
     SYMBOL_CATEGORY_MAP[s] = "SECTOR_OVERWEIGHT"
-for s in OVERALL_SYMBOLS:
+    SYMBOL_COUNTRY_MAP[s] = "US"
+for s in US_OVERALL_SYMBOLS:
     SYMBOL_CATEGORY_MAP[s] = "OVERALL_LEADER"
-for s in GOLD_SYMBOLS:
+    SYMBOL_COUNTRY_MAP[s] = "US"
+for s in US_GOLD_SYMBOLS:
     SYMBOL_CATEGORY_MAP[s] = "GOLD_NUGGET"
+    SYMBOL_COUNTRY_MAP[s] = "US"
 
-from backend.data_sources.company_profiles import CompanyProfileEngine
+for s in CA_SECTOR_SYMBOLS:
+    SYMBOL_CATEGORY_MAP[s] = "SECTOR_OVERWEIGHT"
+    SYMBOL_COUNTRY_MAP[s] = "CA"
+for s in CA_OVERALL_SYMBOLS:
+    SYMBOL_CATEGORY_MAP[s] = "OVERALL_LEADER"
+    SYMBOL_COUNTRY_MAP[s] = "CA"
+for s in CA_GOLD_SYMBOLS:
+    SYMBOL_CATEGORY_MAP[s] = "GOLD_NUGGET"
+    SYMBOL_COUNTRY_MAP[s] = "CA"
 
-_SNAPSHOT_LAST_UPDATE = 0
+_SNAPSHOT_LAST_UPDATE: Dict[str, float] = {}
 _SNAPSHOT_TTL_SECONDS = 7200  # 2 hours
 _MEM_RECOMMENDATION_CACHE: Dict[str, Dict[str, Any]] = {}
 
+
 class RecommendationEngine:
-    """Macro-driven stock recommendation engine with 2-hour DB persistence & ultra-fast parallel execution."""
+    """Macro-driven stock recommendation engine with multi-jurisdiction US & CA separation."""
 
     @classmethod
     def get_stock_info(cls, symbol: str, lang: str = "en") -> Dict[str, Any]:
@@ -88,23 +133,48 @@ class RecommendationEngine:
             "growth_catalysts": profile["growth_catalysts"],
             "revenue_drivers": profile["revenue_drivers"],
             "sector": profile.get("sector") or ("Macro Overweight Sector" if category == "SECTOR_OVERWEIGHT" else ("Core Market Leaders" if category == "OVERALL_LEADER" else "Niche High Growth")),
-            "category": category
+            "category": category,
+            "country": SYMBOL_COUNTRY_MAP.get(symbol.upper(), "CA" if symbol.endswith(".TO") or symbol.endswith(".V") else "US")
         }
 
     @classmethod
-    def refresh_stock_universe_job(cls, force: bool = False, lang: str = "en") -> Dict[str, Any]:
+    def refresh_stock_universe_job(
+        cls,
+        force: bool = False,
+        lang: str = "en",
+        country: str = "US"
+    ) -> Dict[str, Any]:
         """
-        Scans all 128 universe stocks, scores them against macro alignment rules,
-        and saves 16 TOP candidates per category (48 total) into SQLite.
+        Scans stock universe for given country jurisdiction, scores candidates against
+        macroeconomic regime rules, and saves TOP candidates per category into SQLite:
+        - For US: 32 Sector Champions, 32 Market Leaders, 32 Gold Nuggets (96 total)
+        - For CA: 32 Sector Champions, 32 Market Leaders, 32 Gold Nuggets (96 total)
         """
-        global _SNAPSHOT_LAST_UPDATE
-        logger.info(f"Executing 128 stock universe recommendation refresh job for lang='{lang}'...")
-        
-        macro_summary = MacroEngine.analyze_macro_environment(lang=lang)
-        cycle_code = macro_summary["cycle_code"]
-        overweights = macro_summary["recommended_overweights"]
+        country = country.upper().strip()
+        if country not in ["US", "CA"]:
+            country = "US"
 
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        cache_key = f"{country}_{lang}"
+        logger.info(f"Executing {country} stock universe recommendation refresh job for lang='{lang}'...")
+        
+        # Analyze regional macroeconomic environment
+        macro_summary = MacroEngine.analyze_macro_environment(lang=lang, country=country)
+        cycle_code = macro_summary["cycle_code"]
+        overweights = macro_summary.get("recommended_overweights", [])
+
+        # Establish country-specific candidate universe and quota
+        if country == "CA":
+            target_sector = CA_SECTOR_SYMBOLS
+            target_overall = CA_OVERALL_SYMBOLS
+            target_gold = CA_GOLD_SYMBOLS
+            target_symbols = CA_STOCK_SYMBOLS
+            pool_quota = 32
+        else:
+            target_sector = US_SECTOR_SYMBOLS
+            target_overall = US_OVERALL_SYMBOLS
+            target_gold = US_GOLD_SYMBOLS
+            target_symbols = US_STOCK_SYMBOLS
+            pool_quota = 32
 
         def _eval_single_stock(symbol: str) -> Optional[Dict[str, Any]]:
             try:
@@ -116,7 +186,7 @@ class RecommendationEngine:
                 pricing = PricingEngine.evaluate_pricing_and_entry_zone(stock_raw, lang=lang)
                 info = cls.get_stock_info(symbol, lang=lang)
 
-                macro_score = cls._score_macro_alignment(symbol, cycle_code, overweights, info.get("sector", ""))
+                macro_score = cls._score_macro_alignment(symbol, cycle_code, overweights, info.get("sector", ""), country=country)
                 fundamental_score = (fundamental.get("score") or 75.0) / 100.0
                 pricing_score = (pricing.get("valuation_percentile") or 65.0) / 100.0
 
@@ -124,14 +194,14 @@ class RecommendationEngine:
                     (0.35 * macro_score) + (0.40 * fundamental_score) + (0.25 * pricing_score), 4
                 )
 
-                rationale = cls._generate_recommendation_rationale(symbol, cycle_code, fundamental, pricing, info, lang=lang)
+                rationale = cls._generate_recommendation_rationale(symbol, cycle_code, fundamental, pricing, info, lang=lang, country=country)
 
                 return {
                     "symbol": symbol,
                     "company_name": stock_raw.get("company_name", symbol),
                     "sector": info.get("sector", "General Equities"),
-                    "market": stock_raw.get("market", "US"),
-                    "currency": stock_raw.get("currency", "USD"),
+                    "market": stock_raw.get("market", country),
+                    "currency": stock_raw.get("currency", "CAD" if country == "CA" else "USD"),
                     "current_price": stock_raw.get("current_price", 0.0),
                     "total_recommendation_score": composite_score,
                     "macro_alignment_score": round(macro_score * 100, 1),
@@ -143,6 +213,7 @@ class RecommendationEngine:
                     "key_catalysts": info["key_catalysts"],
                     "growth_catalysts": info["growth_catalysts"],
                     "revenue_drivers": info["revenue_drivers"],
+                    "country": country,
                     "key_metrics": {
                         "free_cash_flow": fundamental.get("free_cash_flow_formatted") or FundamentalEngine.format_free_cash_flow(stock_raw.get("free_cash_flow"), stock_raw.get("currency", "USD")),
                         "pe_ratio": stock_raw.get("pe_ratio") or 22.5,
@@ -176,49 +247,53 @@ class RecommendationEngine:
 
         all_scored = []
         with ThreadPoolExecutor(max_workers=8) as executor:
-            futures = [executor.submit(_eval_single_stock, s) for s in ALL_STOCK_SYMBOLS]
+            futures = [executor.submit(_eval_single_stock, s) for s in target_symbols]
             for future in as_completed(futures):
                 res = future.result()
                 if res:
                     all_scored.append(res)
 
         # -------------------------------------------------------------
-        # SELECTION PIPELINE: 32 TOP STOCKS PER CATEGORY POOL (96 TOTAL)
+        # SELECTION PIPELINE: MUTUALLY EXCLUSIVE TOP POOLS
         # -------------------------------------------------------------
         seen_symbols: Set[str] = set()
 
-        # 1. Category 1: Sector Overweight Champions (Top 32)
-        sector_candidates = [s for s in all_scored if s["symbol"] in SECTOR_SYMBOLS]
+        # 1. Category 1: Sector Overweight Champions
+        sector_candidates = [s for s in all_scored if s["symbol"] in target_sector]
         sector_candidates.sort(key=lambda x: x["total_recommendation_score"], reverse=True)
-        sector_champions = sector_candidates[:32]
+        sector_champions = sector_candidates[:pool_quota]
         for s in sector_champions:
             s["category_badge"] = "SECTOR_OVERWEIGHT"
             seen_symbols.add(s["symbol"])
 
-        # 2. Category 2: Overall Market Leaders (Top 32 without overlap)
+        # 2. Category 2: Overall Market Leaders (No overlap with Sector)
         overall_candidates = [
             s for s in all_scored 
-            if s["symbol"] not in seen_symbols and (s["symbol"] in OVERALL_SYMBOLS or s["symbol"] in SECTOR_SYMBOLS)
+            if s["symbol"] not in seen_symbols and (s["symbol"] in target_overall or s["symbol"] in target_sector)
         ]
         overall_candidates.sort(key=lambda x: x["total_recommendation_score"], reverse=True)
-        overall_leaders = overall_candidates[:32]
+        overall_leaders = overall_candidates[:pool_quota]
         for s in overall_leaders:
             s["category_badge"] = "OVERALL_LEADER"
             seen_symbols.add(s["symbol"])
 
-        # 3. Category 3: Hidden Gold Nuggets (Top 32 without overlap)
+        # 3. Category 3: Hidden Gold Nuggets (No overlap with Sector or Leaders)
         gold_candidates = [s for s in all_scored if s["symbol"] not in seen_symbols]
         gold_candidates.sort(key=lambda x: x["total_recommendation_score"], reverse=True)
-        gold_nuggets = gold_candidates[:32]
+        gold_nuggets = gold_candidates[:pool_quota]
         for s in gold_nuggets:
             s["category_badge"] = "GOLD_NUGGET"
             seen_symbols.add(s["symbol"])
 
         payload = {
+            "country": country,
             "macro_context": {
                 "cycle_stage": macro_summary["cycle_stage"],
                 "cycle_code": macro_summary["cycle_code"],
-                "plain_explanation": macro_summary["plain_explanation"]
+                "plain_explanation": macro_summary["plain_explanation"],
+                "country": country,
+                "country_name": macro_summary.get("country_name", "United States" if country == "US" else "Canada"),
+                "country_flag": macro_summary.get("country_flag", "🇺🇸" if country == "US" else "🇨🇦")
             },
             "sector_overweight_stocks": sector_champions,
             "overall_recommended_stocks": overall_leaders,
@@ -226,57 +301,78 @@ class RecommendationEngine:
             "recommended_stocks": overall_leaders
         }
 
-        # Cache in memory for sub-millisecond fallback
-        _MEM_RECOMMENDATION_CACHE[lang] = payload
+        # Cache in memory
+        _MEM_RECOMMENDATION_CACHE[cache_key] = payload
+        if country == "US":
+            _MEM_RECOMMENDATION_CACHE[lang] = payload  # Legacy fallback
 
-        # Try persisting to SQLite Database
+        # Persist to SQLite Database
         try:
             with Session(engine) as session:
-                session.exec(delete(RecommendationSnapshotDB).where(RecommendationSnapshotDB.lang == lang))
+                session.exec(
+                    delete(RecommendationSnapshotDB).where(
+                        RecommendationSnapshotDB.lang == lang,
+                        RecommendationSnapshotDB.country == country
+                    )
+                )
                 
                 for item in sector_champions:
                     session.add(RecommendationSnapshotDB(
-                        category="SECTOR", symbol=item["symbol"], company_name=item["company_name"],
+                        country=country, category="SECTOR", symbol=item["symbol"], company_name=item["company_name"],
                         category_badge="SECTOR_OVERWEIGHT", total_recommendation_score=item["total_recommendation_score"],
                         financial_payload_json=json.dumps(item), lang=lang
                     ))
                 for item in overall_leaders:
                     session.add(RecommendationSnapshotDB(
-                        category="OVERALL", symbol=item["symbol"], company_name=item["company_name"],
+                        country=country, category="OVERALL", symbol=item["symbol"], company_name=item["company_name"],
                         category_badge="OVERALL_LEADER", total_recommendation_score=item["total_recommendation_score"],
                         financial_payload_json=json.dumps(item), lang=lang
                     ))
                 for item in gold_nuggets:
                     session.add(RecommendationSnapshotDB(
-                        category="GOLD", symbol=item["symbol"], company_name=item["company_name"],
+                        country=country, category="GOLD", symbol=item["symbol"], company_name=item["company_name"],
                         category_badge="GOLD_NUGGET", total_recommendation_score=item["total_recommendation_score"],
                         financial_payload_json=json.dumps(item), lang=lang
                     ))
                 session.commit()
         except Exception as e:
-            logger.warning(f"Database persist fallback triggered: {e}")
+            logger.warning(f"Database persist fallback triggered for {country}/{lang}: {e}")
 
-        _SNAPSHOT_LAST_UPDATE = time.time()
+        _SNAPSHOT_LAST_UPDATE[cache_key] = time.time()
         return payload
 
     @classmethod
-    def get_top_recommendations(cls, force_refresh: bool = False, lang: str = "en") -> Dict[str, Any]:
+    def get_top_recommendations(
+        cls,
+        force_refresh: bool = False,
+        lang: str = "en",
+        country: str = "US"
+    ) -> Dict[str, Any]:
         """
         Reads Top picks per pool directly from in-memory cache or SQLite (< 10ms response).
         Auto-triggers background refresh if database is empty or expired (> 2h).
         """
-        if not force_refresh and lang in _MEM_RECOMMENDATION_CACHE:
-            return _MEM_RECOMMENDATION_CACHE[lang]
+        country = country.upper().strip()
+        if country not in ["US", "CA"]:
+            country = "US"
 
-        macro_summary = MacroEngine.analyze_macro_environment(lang=lang)
+        cache_key = f"{country}_{lang}"
+
+        if not force_refresh and cache_key in _MEM_RECOMMENDATION_CACHE:
+            return _MEM_RECOMMENDATION_CACHE[cache_key]
+
+        macro_summary = MacroEngine.analyze_macro_environment(lang=lang, country=country)
 
         try:
             with Session(engine) as session:
-                stmt = select(RecommendationSnapshotDB).where(RecommendationSnapshotDB.lang == lang)
+                stmt = select(RecommendationSnapshotDB).where(
+                    RecommendationSnapshotDB.lang == lang,
+                    RecommendationSnapshotDB.country == country
+                )
                 rows = session.exec(stmt).all()
 
                 if force_refresh or not rows:
-                    return cls.refresh_stock_universe_job(force=True, lang=lang)
+                    return cls.refresh_stock_universe_job(force=True, lang=lang, country=country)
 
                 sector_stocks = []
                 overall_stocks = []
@@ -293,94 +389,140 @@ class RecommendationEngine:
 
                 if sector_stocks or overall_stocks:
                     res = {
+                        "country": country,
                         "macro_context": {
                             "cycle_stage": macro_summary["cycle_stage"],
                             "cycle_code": macro_summary["cycle_code"],
-                            "plain_explanation": macro_summary["plain_explanation"]
+                            "plain_explanation": macro_summary["plain_explanation"],
+                            "country": country,
+                            "country_name": macro_summary.get("country_name", "United States" if country == "US" else "Canada"),
+                            "country_flag": macro_summary.get("country_flag", "🇺🇸" if country == "US" else "🇨🇦")
                         },
                         "sector_overweight_stocks": sector_stocks,
                         "overall_recommended_stocks": overall_stocks,
                         "gold_nugget_stocks": gold_stocks,
                         "recommended_stocks": overall_stocks
                     }
-                    _MEM_RECOMMENDATION_CACHE[lang] = res
+                    _MEM_RECOMMENDATION_CACHE[cache_key] = res
+                    if country == "US":
+                        _MEM_RECOMMENDATION_CACHE[lang] = res
                     return res
         except Exception as e:
-            logger.warning(f"Error querying RecommendationSnapshotDB: {e}")
+            logger.warning(f"Error querying RecommendationSnapshotDB for {country}: {e}")
 
-        return cls.refresh_stock_universe_job(force=True, lang=lang)
+        return cls.refresh_stock_universe_job(force=True, lang=lang, country=country)
 
     @classmethod
     def get_refreshed_recommendations(
-        cls, category: Optional[str] = None, offset: int = 0, lang: str = "en"
+        cls,
+        category: Optional[str] = None,
+        offset: int = 0,
+        lang: str = "en",
+        country: str = "US"
     ) -> Dict[str, Any]:
         """
-        Rotates DB-backed 40 candidate pool by offset, providing brand-new stocks on every refresh call.
+        Rotates DB-backed candidate pool by offset, providing brand-new stocks on every refresh call.
         """
-        full = cls.get_top_recommendations(force_refresh=False, lang=lang)
+        country = country.upper().strip()
+        if country not in ["US", "CA"]:
+            country = "US"
+
+        full = cls.get_top_recommendations(force_refresh=False, lang=lang, country=country)
         category_clean = (category or "").upper().strip()
 
         if category_clean in ["SECTOR", "SECTOR_OVERWEIGHT"]:
             pool = full.get("sector_overweight_stocks", [])
-            shift = (offset * 4) % max(1, len(pool))
+            shift = (offset * 16) % max(1, len(pool))
             rotated = pool[shift:] + pool[:shift]
-            return {"category": "SECTOR", "stocks": rotated}
+            return {"category": "SECTOR", "country": country, "stocks": rotated}
         elif category_clean in ["OVERALL", "OVERALL_LEADER"]:
             pool = full.get("overall_recommended_stocks", [])
-            shift = (offset * 4) % max(1, len(pool))
+            shift = (offset * 16) % max(1, len(pool))
             rotated = pool[shift:] + pool[:shift]
-            return {"category": "OVERALL", "stocks": rotated}
+            return {"category": "OVERALL", "country": country, "stocks": rotated}
         elif category_clean in ["GOLD", "GOLD_NUGGET"]:
             pool = full.get("gold_nugget_stocks", [])
-            shift = (offset * 4) % max(1, len(pool))
+            shift = (offset * 16) % max(1, len(pool))
             rotated = pool[shift:] + pool[:shift]
-            return {"category": "GOLD", "stocks": rotated}
+            return {"category": "GOLD", "country": country, "stocks": rotated}
         else:
             s_pool = full.get("sector_overweight_stocks", [])
             o_pool = full.get("overall_recommended_stocks", [])
             g_pool = full.get("gold_nugget_stocks", [])
 
-            s_shift = (offset * 4) % max(1, len(s_pool))
-            o_shift = (offset * 4) % max(1, len(o_pool))
-            g_shift = (offset * 4) % max(1, len(g_pool))
+            s_shift = (offset * 16) % max(1, len(s_pool))
+            o_shift = (offset * 16) % max(1, len(o_pool))
+            g_shift = (offset * 16) % max(1, len(g_pool))
 
             full["sector_overweight_stocks"] = s_pool[s_shift:] + s_pool[:s_shift]
             full["overall_recommended_stocks"] = o_pool[o_shift:] + o_pool[:o_shift]
             full["gold_nugget_stocks"] = g_pool[g_shift:] + g_pool[:g_shift]
             full["recommended_stocks"] = full["overall_recommended_stocks"]
+            full["country"] = country
             return full
 
     @classmethod
-    def _score_macro_alignment(cls, symbol: str, cycle_code: str, overweights: List[str], sector: str) -> float:
-        """Scores stock alignment with current macroeconomic phase."""
+    def _score_macro_alignment(
+        cls,
+        symbol: str,
+        cycle_code: str,
+        overweights: List[str],
+        sector: str,
+        country: str = "US"
+    ) -> float:
+        """Scores stock alignment with current macroeconomic phase for specific country."""
         rank_idx = abs(hash(symbol)) % 15
+        
+        # Canadian macro adjustments (easing cycle & resource/banking strength)
+        if country == "CA":
+            if symbol in CA_SECTOR_SYMBOLS[:8]:
+                return round(0.95 + (rank_idx * 0.003), 4)
+            elif symbol in CA_OVERALL_SYMBOLS[:8]:
+                return round(0.88 + (rank_idx * 0.004), 4)
+            return round(0.78 + (rank_idx * 0.005), 4)
+
+        # US macro adjustments
         if cycle_code == "OVERHEAT":
-            if symbol in SECTOR_SYMBOLS[:20]:
+            if symbol in US_SECTOR_SYMBOLS[:16]:
                 return round(0.94 + (rank_idx * 0.003), 4)
-            elif symbol in OVERALL_SYMBOLS[:20]:
+            elif symbol in US_OVERALL_SYMBOLS[:16]:
                 return round(0.85 + (rank_idx * 0.004), 4)
             return round(0.72 + (rank_idx * 0.005), 4)
         elif cycle_code == "RECOVERY":
-            if symbol in OVERALL_SYMBOLS[:20] or symbol in GOLD_SYMBOLS[:20]:
+            if symbol in US_OVERALL_SYMBOLS[:16] or symbol in US_GOLD_SYMBOLS[:16]:
                 return round(0.93 + (rank_idx * 0.003), 4)
             return round(0.75 + (rank_idx * 0.005), 4)
         elif cycle_code == "STAGFLATION":
-            if symbol in SECTOR_SYMBOLS:
+            if symbol in US_SECTOR_SYMBOLS:
                 return round(0.92 + (rank_idx * 0.003), 4)
             return round(0.68 + (rank_idx * 0.005), 4)
-        else: # RECESSION
-            if symbol in ["TD.TO", "RY.TO", "AAPL", "JPM", "PG", "WMT", "COST", "JNJ"]:
+        else:  # RECESSION
+            if symbol in ["JPM", "PG", "WMT", "COST", "JNJ", "MSFT", "AAPL"]:
                 return round(0.95 + (rank_idx * 0.002), 4)
             return round(0.70 + (rank_idx * 0.005), 4)
 
     @classmethod
     def _generate_recommendation_rationale(
-        cls, symbol: str, cycle_code: str, fundamental: Dict[str, Any], pricing: Dict[str, Any], info: Dict[str, Any], lang: str = "en"
+        cls,
+        symbol: str,
+        cycle_code: str,
+        fundamental: Dict[str, Any],
+        pricing: Dict[str, Any],
+        info: Dict[str, Any],
+        lang: str = "en",
+        country: str = "US"
     ) -> str:
         """Generates clear 'Why Invest Now' rationale linking macro tailwinds to stock performance."""
+        mkt_label = "加拿大 TSX" if country == "CA" else "美股"
         if lang == "zh":
+            if country == "CA":
+                return f"{symbol} 作为加拿大核心资产，直接受益于加拿大央行降息周期与大宗商品/银行估值安全边际，契合 {cycle_code} 宏观阶段。"
             return f"{symbol} 具备强劲的财务品质与自由现金流转换率，100% 契合当前 {cycle_code} 宏观周期超配板块。"
         elif lang == "hybrid":
+            if country == "CA":
+                return f"{symbol} 作为 {mkt_label} 核心资产，受益于 BoC 降息宽松与 Positive ERP 安全边际，契合 {cycle_code} 宏观周期。"
             return f"{symbol} 具备强劲的 Financial Quality 与自由现金流 (FCF Conversion)，契合 {cycle_code} 宏观周期。"
         else:
+            if country == "CA":
+                return f"{symbol} is a top Canadian market compounder benefiting from Bank of Canada rate easing cycles, structural resource supercycles, and a positive Equity Risk Premium buffer."
             return f"{symbol} demonstrates resilient balance sheet strength, robust free cash flow conversion, and strong alignment with current {cycle_code} macroeconomic cycle overweights."

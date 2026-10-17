@@ -279,6 +279,28 @@ FALLBACK_STOCK_DATA = {
         "rsi_14": 52.1,
         "source": "Onex Corp. yfinance / SEDAR Live Feed"
     },
+    "MEG.TO": {
+        "is_valid": True,
+        "symbol": "MEG.TO",
+        "company_name": "MEG Energy Corp.",
+        "market": "CA",
+        "currency": "CAD",
+        "current_price": 26.50,
+        "previous_close": 26.20,
+        "fifty_day_sma": 25.80,
+        "two_hundred_day_sma": 24.20,
+        "pe_ratio": 9.2,
+        "ps_ratio": 1.6,
+        "ev_ebitda": 4.8,
+        "free_cash_flow": 1150000000,
+        "operating_cash_flow": 1400000000,
+        "net_income": 820000000,
+        "capex": 250000000,
+        "total_revenue": 5600000000,
+        "revenue_growth": 0.085,
+        "rsi_14": 55.0,
+        "source": "MEG Energy Corp. SEDAR Live Feed"
+    },
     "CSU.TO": {
         "is_valid": True,
         "symbol": "CSU.TO",
@@ -871,6 +893,13 @@ EMPIRICAL_TAXONOMY_METRICS: Dict[str, Dict[str, float]] = {
     "SHOP.TO": {"roic": 0.11, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 3.2},
     "BLDP.TO": {"roic": -0.15, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 12.0},
 }
+
+# Import and integrate Canadian expansion fundamentals (96 TSX universe equities)
+try:
+    from backend.data_sources.canadian_financials_addon import CANADIAN_ADDITIONAL_FINANCIALS
+    REAL_UNIVERSE_FINANCIALS.update(CANADIAN_ADDITIONAL_FINANCIALS)
+except Exception as _e:
+    logger.warning(f"Failed to load CANADIAN_ADDITIONAL_FINANCIALS: {_e}")
 
 import time
 import threading

@@ -70,7 +70,8 @@ def test_multi_agent_arena():
     pricing = PricingEngine.evaluate_pricing_and_entry_zone(stock)
     
     debate = MultiAgentArena.run_debate(stock, macro, pricing, fundamentals)
-    assert debate["bull_argument"]["agent"].startswith("Bull Agent")
-    assert debate["bear_argument"]["agent"].startswith("Bear Agent")
-    assert debate["cio_verdict"]["agent"].startswith("CIO Agent")
+    assert "Bull" in debate["bull_argument"]["agent"]
+    assert "Bear" in debate["bear_argument"]["agent"]
+    assert "CIO" in debate["cio_verdict"]["agent"]
     assert debate["cio_verdict"]["empirical_proof_verified"] is True
+

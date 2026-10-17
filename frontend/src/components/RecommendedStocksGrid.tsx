@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StockRecommendation, CategorizedRecommendationsPayload } from '../types';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
-import { Sparkles, Award, Coins, Compass, Star, ChevronRight, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Sparkles, Award, Coins, Compass, Star, ChevronLeft, ChevronRight, RefreshCw, ArrowLeft } from 'lucide-react';
 
 interface RecommendedStocksGridProps {
   recommendations: CategorizedRecommendationsPayload | StockRecommendation[];
@@ -12,6 +12,8 @@ interface RecommendedStocksGridProps {
   onRefreshRecommendations?: (category: 'SECTOR' | 'OVERALL' | 'GOLD', offset: number) => Promise<void> | void;
   cycleStage?: string;
   onBackToMacro?: () => void;
+  selectedCountry?: 'US' | 'CA';
+  onSelectCountry?: (country: 'US' | 'CA') => void;
 }
 
 export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
@@ -22,15 +24,17 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
   onRefreshRecommendations,
   cycleStage,
   onBackToMacro,
+  selectedCountry,
+  onSelectCountry,
 }) => {
   const { t, language } = useLanguage();
   const [activeCategory, setActiveCategory] = useState<'SECTOR' | 'OVERALL' | 'GOLD'>('SECTOR');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [sampleOffset, setSampleOffset] = useState<{ SECTOR: number; OVERALL: number; GOLD: number }>({
-    SECTOR: 0,
-    OVERALL: 0,
-    GOLD: 0,
-  });
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const activeCountry: 'US' | 'CA' = selectedCountry || (
+    recommendations && !Array.isArray(recommendations) && recommendations.country === 'CA' ? 'CA' : 'US'
+  );
 
   // Extract categorization pools with fallbacks
   let sectorStocks: StockRecommendation[] = [];
@@ -55,34 +59,23 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
   const activePool = getActivePool();
 
+  // Reset to page 1 when switching market or category
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCountry, activeCategory]);
+
   // Page size is 16 stocks (2x8 grid layout)
   const PAGE_SIZE = 16;
-
-  // Sample up to 16 non-overlapping stocks from the 32-candidate pool
-  const getDisplayedSample = (): StockRecommendation[] => {
-    if (activePool.length <= PAGE_SIZE) return activePool;
-    const offset = sampleOffset[activeCategory];
-    const startIndex = (offset * PAGE_SIZE) % activePool.length;
-    let sample = activePool.slice(startIndex, startIndex + PAGE_SIZE);
-    if (sample.length < PAGE_SIZE) {
-      sample = [...sample, ...activePool.slice(0, PAGE_SIZE - sample.length)];
-    }
-    return sample;
-  };
-
-  const currentDisplayPool = getDisplayedSample();
-  const totalBatches = Math.max(1, Math.ceil(activePool.length / PAGE_SIZE));
-  const currentBatch = (sampleOffset[activeCategory] % totalBatches) + 1;
+  const totalPages = Math.max(1, Math.ceil(activePool.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safePage - 1) * PAGE_SIZE;
+  const currentDisplayPool = activePool.slice(startIndex, startIndex + PAGE_SIZE);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    setSampleOffset(prev => ({
-      ...prev,
-      [activeCategory]: prev[activeCategory] + 1
-    }));
     try {
       if (onRefreshRecommendations) {
-        await onRefreshRecommendations(activeCategory, (sampleOffset[activeCategory] + 1) * PAGE_SIZE);
+        await onRefreshRecommendations(activeCategory, startIndex);
       }
     } catch (e) {
       console.warn("Failed to refresh recommendations:", e);
@@ -115,7 +108,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
     <div className="space-y-6 mb-8">
       {/* Section Header */}
       <div className="space-y-4 border-b border-border-subtle pb-4">
-        {/* Row 1: Back Navigation, Title, Subtitle, & Batch Indicator */}
+        {/* Row 1: Back Navigation, Title, Subtitle, Segmented Market Switcher & Page Status */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-wrap">
             {onBackToMacro && (
@@ -148,11 +141,54 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start md:self-auto">
-            <span className="text-xs text-content-muted font-bold bg-surface-subtle px-3 py-1.5 rounded-xl border border-border-subtle shadow-sm">
-              {language === 'zh'
-                ? `本页展示 ${currentDisplayPool.length} / ${activePool.length} 标的 (第 ${currentBatch} / ${totalBatches} 批)`
-                : `Showing ${currentDisplayPool.length} of ${activePool.length} (Batch ${currentBatch} of ${totalBatches})`}
+          {/* Right side: Segmented Market Switcher & Pool Count */}
+          <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+            {/* Segmented Market Switcher: US Market (32 Pool) vs CA Market (16 Pool) */}
+            <div 
+              className="flex items-center p-1 bg-surface-subtle border border-border-subtle rounded-xl shadow-2xs"
+              role="group"
+              aria-label="Market Jurisdiction Selector"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSelectCountry) onSelectCountry('US');
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeCountry === 'US'
+                    ? 'bg-brand text-white shadow-sm'
+                    : 'text-content-secondary hover:text-content-primary hover:bg-surface'
+                }`}
+              >
+                <span>🇺🇸</span>
+                <span>{language === 'zh' ? '美股市场 (32只池)' : 'US Market (32 Pool)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSelectCountry) onSelectCountry('CA');
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeCountry === 'CA'
+                    ? 'bg-brand text-white shadow-sm'
+                    : 'text-content-secondary hover:text-content-primary hover:bg-surface'
+                }`}
+              >
+                <span>🇨🇦</span>
+                <span>{language === 'zh' ? '加股市场 (32只池)' : 'CA Market (32 Pool)'}</span>
+              </button>
+            </div>
+
+            <span className="text-xs text-content-muted font-bold bg-surface-subtle px-3 py-1.5 rounded-xl border border-border-subtle shadow-sm whitespace-nowrap">
+              {totalPages > 1
+                ? (language === 'zh'
+                    ? `第 ${safePage} / ${totalPages} 页 (共 ${activePool.length} 标的)`
+                    : `Page ${safePage} of ${totalPages} (${activePool.length} Pool)`)
+                : (language === 'zh'
+                    ? `全部 ${activePool.length} 标的 (单页全览)`
+                    : `All ${activePool.length} Pool (Single Page)`)}
             </span>
           </div>
         </div>
@@ -231,7 +267,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
         </div>
       </div>
 
-      {/* Category Strategy Description & Batch Switcher Bar */}
+      {/* Category Strategy Description & Pagination/Refresh Bar */}
       <div className="prism-surface-subtle p-3.5 rounded-2xl text-xs text-content-secondary flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm border border-border-subtle">
         <div className="flex items-center gap-2 flex-wrap">
           {activeCategory === 'SECTOR' && (
@@ -254,7 +290,44 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
           )}
         </div>
         
-        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end flex-wrap">
+          {/* 2-page pagination controls for US (hidden when totalPages <= 1, e.g. CA) */}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1.5 mr-1" role="navigation" aria-label="Pagination">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="h-8 px-2.5 bg-surface border border-border-subtle hover:border-brand rounded-xl text-xs font-bold text-content-secondary hover:text-brand transition-all inline-flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                aria-label="Previous Page"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{language === 'zh' ? '上一页' : 'Prev'}</span>
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`h-8 min-w-[32px] px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm ${
+                    safePage === pageNum
+                      ? 'bg-brand text-white shadow-sm ring-2 ring-brand/30'
+                      : 'bg-surface border border-border-subtle text-content-secondary hover:border-brand hover:text-brand'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className="h-8 px-2.5 bg-surface border border-border-subtle hover:border-brand rounded-xl text-xs font-bold text-content-secondary hover:text-brand transition-all inline-flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                aria-label="Next Page"
+              >
+                <span className="hidden sm:inline">{language === 'zh' ? '下一页' : 'Next'}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -266,9 +339,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             <span>
               {isRefreshing
                 ? t.refreshingPicks
-                : (language === 'zh'
-                    ? `换一批精选 (${currentBatch}/${totalBatches} 批)`
-                    : `Next Batch (${currentBatch}/${totalBatches})`)}
+                : (language === 'zh' ? '刷新推荐排序' : 'Refresh Ranking')}
             </span>
           </button>
         </div>
@@ -466,6 +537,43 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
           );
         })}
       </div>
+
+      {/* Bottom Pagination Bar for US (hidden when totalPages <= 1, e.g. CA) */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border-subtle">
+          <span className="text-xs text-content-muted font-medium">
+            {language === 'zh'
+              ? `第 ${safePage} / ${totalPages} 页 · 显示第 ${startIndex + 1}-${Math.min(startIndex + PAGE_SIZE, activePool.length)} 支标的 (共 ${activePool.length} 支)`
+              : `Page ${safePage} of ${totalPages} · Showing ${startIndex + 1}-${Math.min(startIndex + PAGE_SIZE, activePool.length)} of ${activePool.length} Tickers`}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setCurrentPage(p => Math.max(1, p - 1));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              disabled={safePage <= 1}
+              className="h-8 px-3 bg-surface border border-border-subtle hover:border-brand rounded-xl text-xs font-bold text-content-secondary hover:text-brand transition-all inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+              aria-label="Previous Page"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>{language === 'zh' ? '上一页 (1-16)' : 'Previous (1-16)'}</span>
+            </button>
+            <button
+              onClick={() => {
+                setCurrentPage(p => Math.min(totalPages, p + 1));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              disabled={safePage >= totalPages}
+              className="h-8 px-3 bg-surface border border-border-subtle hover:border-brand rounded-xl text-xs font-bold text-content-secondary hover:text-brand transition-all inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+              aria-label="Next Page"
+            >
+              <span>{language === 'zh' ? '下一页 (17-32)' : 'Next (17-32)'}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

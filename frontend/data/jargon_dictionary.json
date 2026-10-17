@@ -306,5 +306,104 @@
     "favor_direction": "audited_clean",
     "favor_explanation_en": "Direct filings with regulatory timestamps and official management signatures are favorable, ensuring 100% data authenticity.",
     "favor_explanation_zh": "官方备案记录详尽、无监管整改通报最有利，保障底层财务与管理层讨论数据的绝对真实可靠。"
+  },
+  "Implied10YCeiling": {
+    "term_en": "Implied 10-Year Profit Ceiling (Reverse-DCF)",
+    "term_zh": "逆向10年利润天花板 (估值穿透)",
+    "definition_en": "Reverse-DCF metric calculating the implied net income multiple a company must achieve in 10 years to justify its current market valuation. Exceeding realistic industry TAM signals severe multiple derating danger.",
+    "definition_zh": "通过逆向现金流折现（Reverse-DCF）倒推：如果要支撑当前股价，公司在10年后必须达到多少倍利润。若倒推倍数超越行业总规模或历史常识极限，预示预期透支与杀估值风险。",
+    "analogy_en": "Like paying for a baby puppy today based on the assumption that it will definitely grow into an 800-pound world-champion sled dog 10 years from now. If it turns out to be a normal healthy dog, your inflated expectations collapse.",
+    "analogy_zh": "就像买一只刚满月的小奶狗，你按它10年后肯定能长成800斤的‘世界雪橇冠军神犬’来出价。一旦它只是只普通的健康金毛，你的预期就彻底落空了。",
+    "favor_direction": "reasonable_multiple",
+    "favor_explanation_en": "Lower or moderate multiples (< 3x-4x 10Y growth) leave generous room for upside surprises. Multiples > 10x-15x create extreme multiple compression vulnerability.",
+    "favor_explanation_zh": "倒推倍数适中或偏低最有利（10年后利润无需夸张翻倍即可回本，安全边际高）；若倒推倍数高达 10x-15x 以上，极易在业绩增速稍有放缓时遭受杀估值重创。"
+  },
+  "ProsperityTrap": {
+    "term_en": "Prosperity Trap (Terminal Saturation)",
+    "term_zh": "景气度陷阱 (盛极而衰预警)",
+    "definition_en": "A dangerous cyclical valuation illusion where record peak earnings produce optically low P/E ratios, right before supply glut or peak demand causes multiple compression and earnings collapse.",
+    "definition_zh": "周期股或高景气行业在顶峰期的致命诱惑：财报业绩看似爆表、静态市盈率看似极低，但供需格局已达顶峰，随后即将迎来产能过剩、价格战与盈利腰斩。",
+    "analogy_en": "Buying an expensive snow blower at double price during the biggest blizzard of the century, right before spring weather arrives and makes it sit in the garage unused.",
+    "analogy_zh": "就像在百年一遇的暴风雪当天，加价一倍去抢购一台除雪机。暴雪一停春天就到了，机器只能在车库吃灰，二手甩卖打三折都没人要。",
+    "favor_direction": "low_risk",
+    "favor_explanation_en": "Avoiding stocks trapped at peak prosperity protects capital against devastating 50%-80% drawdowns. Buy cyclicals when P/E is optically high (troughs) and harvest when P/E is optically low (peaks).",
+    "favor_explanation_zh": "警惕并避开景气度顶峰标的最有利：在周期股‘高P/E（周期底部）买入、低P/E（周期繁荣顶）卖出’，避免在静态利润最辉煌时刻充当接盘侠。"
+  },
+  "CoreSAA": {
+    "term_en": "Core Strategic Asset Allocation (80/20 Barbell)",
+    "term_zh": "80/20 核心资产配置 (Core SAA)",
+    "definition_en": "Allocating 80% of total capital into secular compounders (Trees) and cyclical cash machines (Grain), while strictly capping speculative trend momentum plays (Vegetables) to a 20% tactical satellite sleeve.",
+    "definition_zh": "哑铃型资产配置核心支柱：将 80% 资金重兵配置在具有坚固护城河、充沛自由现金流的长青资产（种树/种粮），仅留最多 20% 卫星轻仓参与短期趋势博弈（种菜）。",
+    "analogy_en": "80% of your diet being nutritious organic whole foods that keep your body strong for decades, while junk food snacks are limited to 20% on cheat days.",
+    "analogy_zh": "就像健康饮食的‘80/20原则’：80%必须是保证长久活力的优质牛排、鸡蛋和杂粮主食（底仓），薯片炸鸡甜点最多占20%解解馋（卫星），绝不能颠倒。",
+    "favor_direction": "disciplined_barbell",
+    "favor_explanation_en": "Anchor your portfolio in 80% durable cash flow generators to survive bear markets and let compound interest do the heavy lifting.",
+    "favor_explanation_zh": "坚守 80% 优质生息资产底仓最有利：穿越牛熊周期全靠核心资产源源不断的股息与自由现金流复利，不被市场短期噪音甩下车。"
+  },
+  "TrendTemperature": {
+    "term_en": "Trend Temperature (Batting Zone)",
+    "term_zh": "量价温度与击球区 (Trend Temperature)",
+    "definition_en": "Quantitative regime classifier (FREEZE, FLAT, WARM, HOT) derived from 20-day volatility-normalized Z-scores and moving average alignments, distinguishing high-win-rate right-side batting zones from dangerous left-side falling knives.",
+    "definition_zh": "结合20日波动率归一化 Z-Score 与均线系统的量价温度体系（极冻 FREEZE、平稳 FLAT、温和 WARM、过热 HOT），用以识别股票处于胜率极高的‘右侧击球区’还是高风险的‘左侧接飞刀’。",
+    "analogy_en": "Like checking ocean surf conditions before diving in: waiting for a smooth rolling wave (Warm right-side) instead of jumping into a freezing stormy riptide (Freeze left-side).",
+    "analogy_zh": "就像打棒球时只在好球带（右侧击球区）挥棒，而不是在坏球飞来时乱挥；或者冲浪前观察海浪温度，绝不跳进暗流涌动的冰冻冰水区接下坠的飞刀。",
+    "favor_direction": "warm_right_side",
+    "favor_explanation_en": "Entering during WARM right-side regime maximizes trend follow-through while minimizing left-side dead money capital lockup.",
+    "favor_explanation_zh": "在‘温转热右侧击球区’建仓最有利：右侧交易让趋势成为朋友，极大缩短资金沉淀等待期，同时设立硬止损控制下行回撤。"
+  },
+  "BattingZone": {
+    "term_en": "Batting Zone (Right-Side vs Left-Side)",
+    "term_zh": "击球区 (右侧确认 vs 左侧观察)",
+    "definition_en": "Right-side batting zone waits for price stabilization and moving average turnarounds before entering, avoiding the fatal mistake of catching falling knives on the left side.",
+    "definition_zh": "右侧击球区等待股价止跌企稳并获得均线支撑确认后再介入；左侧观察则仅做跟踪观察，绝不盲目猜底接下坠飞刀。",
+    "analogy_en": "Waiting for a falling kitchen knife to hit the floor and stop vibrating before picking it up safely by the handle.",
+    "analogy_zh": "等掉落的菜刀插在地板上停止震颤后，再安全地捡起刀柄；而不是伸手去半空中抓下坠的刀刃。",
+    "favor_direction": "right_side_confirmed",
+    "favor_explanation_en": "Right-side entry provides empirical price confirmation and dramatically lowers portfolio drawdowns.",
+    "favor_explanation_zh": "右侧击球区入场最有利：顺应资金共识与技术面修复，避免在深不见底的阴跌左侧耗尽本金与心态。"
+  },
+  "BayesianPrior": {
+    "term_en": "Bayesian Prior Confidence",
+    "term_zh": "贝叶斯先验置信度 (Prior Confidence)",
+    "definition_en": "An explicit probability assigned to an investment thesis before execution, strictly capped at <= 95%. It forces investors to admit unknown unknowns and dynamically update odds as new evidence arrives.",
+    "definition_zh": "在建仓前对投资逻辑预设的初始概率置信度，绝对上限封顶在 95% 以下。它强制投资者承认未知与盲区的存在，并在新财报与新证据出现时动态更新观点。",
+    "analogy_en": "The world's best weather forecaster never promises 100% sunny skies; they state 90% and carry an umbrella in the car just in case.",
+    "analogy_zh": "即使最顶尖的气象学家也从不说‘明天100%绝不下雨’；他们给出 90% 概率并随身带伞，随时根据雷达云图变化调整出门计划。",
+    "favor_direction": "capped_realistic",
+    "favor_explanation_en": "Capping prior confidence at <= 95% prevents intellectual arrogance and catastrophic overleveraging.",
+    "favor_explanation_zh": "严禁 100% 盲目自信最有利（最高封顶 <= 95%）：敬畏市场不可知性，为潜在意外留足缓冲，杜绝杠杆孤注一掷导致破产。"
+  },
+  "NarrativePenetration": {
+    "term_en": "Narrative Penetration (10Y Ceiling)",
+    "term_zh": "穿透叙事 (10年天花板审计)",
+    "definition_en": "Peeling back promotional marketing hype and management promises to audit the mathematical profit ceiling of the business engine over a 10-year horizon.",
+    "definition_zh": "剥离市场热炒的宏大叙事与管理层画饼，用逆向数学模型严谨测算该商业模式在未来10年能达到的真实利润天花板与常识底线。",
+    "analogy_en": "Using an X-ray scanner at airport security to look through a flashy designer suitcase and inspect what is actually packed inside.",
+    "analogy_zh": "就像在机场安检时用 X 光透视机，穿透花哨名牌行李箱的华丽外壳，看清楚里面到底装的是真金白银还是易碎塑料。",
+    "favor_direction": "evidence_based",
+    "favor_explanation_en": "Auditing mathematical reality against narrative hype prevents buying into bubble tops and terminal secular stagnation.",
+    "favor_explanation_zh": "穿透宏大叙事、回归第一性原理最有利：用自由现金流和商业天花板常识戳破概念泡沫，保护真金白银。"
+  },
+  "FalsificationTrigger": {
+    "term_en": "Mandatory Falsification Trigger",
+    "term_zh": "离场铁律与证伪底线 (Falsification Trigger)",
+    "definition_en": "A pre-set, unalterable bottom exit threshold (e.g., quantified 3% break below 200D MA or FCF turning negative) established before trade entry. If breached, the position must be closed without hesitation.",
+    "definition_zh": "在按下买入键前必须书面立下的‘破位认错离场底线’（如价格有效跌破200日均线-3%阈值、或季度自由现金流质量转负）。一旦触发，必须机械执行平仓离场，严禁逆势补仓。",
+    "analogy_en": "A submarine's emergency hatch release that automatically seals and surfaces if water pressure exceeds safety limits, regardless of what the captain wishes.",
+    "analogy_zh": "就像潜艇的紧急逃生舱门，一旦外部水压超过安全警戒红线，无论舰长心情如何，机械程序立刻启动排水浮出水面保命。",
+    "favor_direction": "strictly_enforced",
+    "favor_explanation_en": "Strict enforcement eliminates the deadly behavioral trap of 'averaging down on losing losers', preserving capital for the next winning trade.",
+    "favor_explanation_zh": "绝对严格执行离场铁律最有利：破位果断斩仓，杜绝‘越跌越买、深套变股东’的人性弱点，留存本金才能长久留在牌桌上。"
+  },
+  "AssetDiagnosis": {
+    "term_en": "Asset Qualitative Diagnosis (Tree / Grain / Vegetable)",
+    "term_zh": "标的定性归因 (树/粮/菜三元股权)",
+    "definition_en": "Qualifying equity assets into three distinct business engines: Trees (secular FCF compounders), Grain (cyclical value & dividends to harvest), or Vegetables (speculative trend momentum with hard stops).",
+    "definition_zh": "将股票资产精确分类为三种商业引擎：种树股（长青复利、源源不断产出现金流）、种粮股（周期春播秋收、高股息分红）、种菜股（无基本面护城河，仅限右侧顺势博弈）。",
+    "analogy_en": "Treating an apple orchard tree (harvest fruit every year for decades) completely differently from a head of lettuce (must be harvested and sold in days before it rots).",
+    "analogy_zh": "种苹果树（跨越十年每年结果吃利润）与种大白菜（几天不收就会烂在田里，必须快进快出）的根本区别。",
+    "favor_direction": "clear_classification",
+    "favor_explanation_en": "Accurately diagnosing the asset engine prevents the catastrophic error of treating a cyclical or speculative stock as a forever compounder.",
+    "favor_explanation_zh": "精准定性资产最有利：绝不把周期股误当成长股死扛，也绝不把纯投机题材当成百年老店重仓，因材施策才能稳健盈利。"
   }
 }

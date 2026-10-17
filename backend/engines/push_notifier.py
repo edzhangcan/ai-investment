@@ -22,6 +22,8 @@ class DiscordNotifier:
     DISCORD_COLOR_MACRO_DIGEST = 0x38BDF8   # Sky Brand Blue
     DISCORD_COLOR_BUY_ZONE = 0x10B981       # Positive Emerald
     DISCORD_COLOR_DANGER_ZONE = 0xF43F5E    # Danger Rose
+    DISCORD_COLOR_SELL_DANGER = 0xF43F5E    # Danger Rose Alias
+    DISCORD_COLOR_FALSIFICATION = 0xEF4444  # High Alert Red
     DISCORD_COLOR_GOLD_NUGGET = 0xF59E0B    # Gold Amber
     DISCORD_COLOR_TEST = 0x6366F1           # Indigo
 

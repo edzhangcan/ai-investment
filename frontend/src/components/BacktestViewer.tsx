@@ -14,6 +14,7 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   Tooltip as RechartsTooltip,
@@ -70,9 +71,15 @@ interface BacktestResponsePayload {
 
 export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
   const { language, t } = useLanguage();
-  const [benchmark, setBenchmark] = useState<'SPY' | 'XIU.TO'>(symbol.endsWith('.TO') ? 'XIU.TO' : 'SPY');
+  const [benchmark, setBenchmark] = useState<'SPY' | 'XIU.TO'>(symbol.endsWith('.TO') || symbol.endsWith('.V') ? 'XIU.TO' : 'SPY');
+  const [chartView, setChartView] = useState<'equity' | 'drawdown'>('equity');
   const [data, setData] = useState<BacktestResponsePayload | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Automatically sync benchmark to TSX 60 for Canadian assets and S&P 500 for US assets
+  useEffect(() => {
+    setBenchmark(symbol.endsWith('.TO') || symbol.endsWith('.V') ? 'XIU.TO' : 'SPY');
+  }, [symbol]);
 
   useEffect(() => {
     const fetchBacktest = async () => {
@@ -233,21 +240,110 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
         </div>
       </div>
 
-      {/* Underwater Drawdown Area Curve */}
-      {data.underwater_curve && data.underwater_curve.length > 0 && (
-        <div className="prism-surface-subtle p-4 rounded-2xl border border-border-subtle shadow-sm mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-bold text-content-primary flex items-center gap-1.5">
+      {/* Interactive Chart Container: Equity Growth ($10k) vs Underwater Drawdown (%) */}
+      <div className="prism-surface-subtle p-4 rounded-2xl border border-border-subtle shadow-sm mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            {chartView === 'equity' ? (
+              <TrendingUp className="w-4 h-4 text-positive" />
+            ) : (
               <ArrowDownRight className="w-4 h-4 text-negative" />
-              <span>{t.underwaterDrawdownTitle}</span>
+            )}
+            <h4 className="text-xs font-bold text-content-primary">
+              {chartView === 'equity'
+                ? (language === 'zh' ? '5 年净值增长轨迹 ($10,000 初始本金)' : '5-Year Equity Growth Trajectory ($10,000 Initial)')
+                : (language === 'zh' ? '历史水下回撤曲线 (Underwater Curve)' : t.underwaterDrawdownTitle)}
             </h4>
-            <span className="text-[10px] text-content-muted">
-              {language === 'zh' ? '峰值至谷底最大跌幅监控' : 'Peak-to-Trough Decline Depth'}
-            </span>
           </div>
-          <div className="h-44 w-full">
+
+          {/* Chart Mode Switcher */}
+          <div className="flex items-center gap-1.5 bg-surface p-1 rounded-xl border border-border-subtle text-[11px]">
+            <button
+              onClick={() => setChartView('equity')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                chartView === 'equity'
+                  ? 'bg-brand text-white shadow-sm'
+                  : 'text-content-secondary hover:text-content-primary hover:bg-surface-subtle'
+              }`}
+            >
+              {language === 'zh' ? '本金增值曲线' : 'Equity Growth'}
+            </button>
+            <button
+              onClick={() => setChartView('drawdown')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                chartView === 'drawdown'
+                  ? 'bg-negative text-white shadow-sm'
+                  : 'text-content-secondary hover:text-content-primary hover:bg-surface-subtle'
+              }`}
+            >
+              {language === 'zh' ? '回撤深度曲线' : 'Underwater DD'}
+            </button>
+          </div>
+        </div>
+
+        {chartView === 'equity' ? (
+          <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.underwater_curve} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
+              <AreaChart data={data.equity_curve} margin={{ top: 10, right: 15, bottom: 5, left: 5 }}>
+                <defs>
+                  <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="year" tick={{ fontSize: 10 }} />
+                <YAxis
+                  tick={{ fontSize: 10 }}
+                  domain={['dataMin - 1000', 'dataMax + 1000']}
+                  tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                />
+                <RechartsTooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const pt = payload[0].payload as EquityPoint;
+                      return (
+                        <div className="bg-slate-900 text-white p-3 rounded-xl text-[11px] border border-slate-700 shadow-xl space-y-1">
+                          <div className="font-bold text-content-primary border-b border-slate-700 pb-1 mb-1">{pt.year} Benchmark Comparison</div>
+                          <div className="text-brand font-bold flex justify-between gap-4">
+                            <span>{symbol}:</span>
+                            <span>${pt.value?.toLocaleString()} {pt.portfolio_return_pct !== undefined ? `(${pt.portfolio_return_pct >= 0 ? '+' : ''}${pt.portfolio_return_pct}%)` : ''}</span>
+                          </div>
+                          <div className="text-amber-400 font-bold flex justify-between gap-4">
+                            <span>{data.benchmark}:</span>
+                            <span>${pt.benchmark_value?.toLocaleString()} {pt.benchmark_return_pct !== undefined ? `(${pt.benchmark_return_pct >= 0 ? '+' : ''}${pt.benchmark_return_pct}%)` : ''}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  name={symbol}
+                  stroke="#0284c7"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#equityGradient)"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="benchmark_value"
+                  name={data.benchmark}
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  dot={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.underwater_curve} margin={{ top: 10, right: 15, bottom: 5, left: -5 }}>
                 <defs>
                   <linearGradient id="drawdownGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
@@ -284,8 +380,8 @@ export const BacktestViewer: React.FC<BacktestViewerProps> = ({ symbol }) => {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Rebalancing Simulation & Drawdown Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

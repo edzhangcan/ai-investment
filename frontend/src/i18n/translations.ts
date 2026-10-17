@@ -132,6 +132,24 @@ export interface Translations {
   shareVerdictHeaderBear: string;
   shareVerdictHeaderCIO: string;
 
+  // Soul Check, Regime & Falsification
+  trendTemperatureTitle: string;
+  rightSideBattingZone: string;
+  leftSideObservation: string;
+  bayesianPriorTitle: string;
+  narrativePenetrationTitle: string;
+  falsificationTriggerTitle: string;
+  falsificationBreachedWarning: string;
+  falsificationBreachedDesc: string;
+  notifyFalsificationBtn: string;
+  falsificationNotified: string;
+  assetDiagnosisTitle: string;
+  implied10YCeilingLabel: string;
+  prosperityTrapLabel: string;
+  coreSaaLabel: string;
+  trapTriggered: string;
+  trapSafe: string;
+
   // Pricing Chart & Timing
   chartTitle: string;
   pricingOverlay: string;
@@ -467,6 +485,24 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     shareVerdictHeaderBear: "Bear Case Prosecutor",
     shareVerdictHeaderCIO: "Chief Investment Officer (CIO) Verdict",
 
+    // Soul Check, Regime & Falsification
+    trendTemperatureTitle: "Trend Temperature / Batting Zone",
+    rightSideBattingZone: "Right-Side Batting Zone",
+    leftSideObservation: "Left-Side Observation",
+    bayesianPriorTitle: "Bayesian Prior Confidence",
+    narrativePenetrationTitle: "Narrative Penetration (10Y Ceiling)",
+    falsificationTriggerTitle: "Mandatory Falsification Trigger",
+    falsificationBreachedWarning: "FALSIFICATION THRESHOLD BREACHED",
+    falsificationBreachedDesc: "Current market price has fallen below the quantified bottom exit threshold. Counter-trend averaging down is strictly prohibited by the Investment Constitution!",
+    notifyFalsificationBtn: "Dispatch Falsification Alert",
+    falsificationNotified: "Falsification Alert Sent!",
+    assetDiagnosisTitle: "Asset Qualitative Diagnosis",
+    implied10YCeilingLabel: "Implied 10Y Profit Ceiling",
+    prosperityTrapLabel: "Prosperity Trap",
+    coreSaaLabel: "80/20 Core SAA Allocation",
+    trapTriggered: "TRIGGERED",
+    trapSafe: "SAFE",
+
     chartTitle: "Valuation & Dynamic Price Channel Chart",
     pricingOverlay: "Pricing & Technical Overlay",
     valuationStatus: "Valuation Status",
@@ -793,6 +829,24 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     shareVerdictHeaderBear: "空头公诉人论据",
     shareVerdictHeaderCIO: "首席投资官 (CIO) 最终裁决",
 
+    // Soul Check, Regime & Falsification
+    trendTemperatureTitle: "量价温度 / 击球区",
+    rightSideBattingZone: "右侧击球区",
+    leftSideObservation: "左侧观察",
+    bayesianPriorTitle: "贝叶斯先验置信度",
+    narrativePenetrationTitle: "穿透叙事 (10年天花板)",
+    falsificationTriggerTitle: "离场铁律与证伪底线",
+    falsificationBreachedWarning: "证伪底线已击穿",
+    falsificationBreachedDesc: "当前股价已跌破量化止损底线。恪守反破产投资宪法：破位机械离场，严禁左侧逆势加仓补仓！",
+    notifyFalsificationBtn: "推送告警通知 (Discord/应用内)",
+    falsificationNotified: "证伪告警已推送！",
+    assetDiagnosisTitle: "标的定性归因",
+    implied10YCeilingLabel: "逆向10年利润天花板",
+    prosperityTrapLabel: "景气度陷阱",
+    coreSaaLabel: "80/20 核心资产配置",
+    trapTriggered: "已触发",
+    trapSafe: "安全",
+
     chartTitle: "估值与动态价格通道",
     pricingOverlay: "估值与技术面走势",
     valuationStatus: "估值状态",
@@ -1118,6 +1172,24 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     shareVerdictHeaderBull: "多头论据 (Bull Case Advocate)",
     shareVerdictHeaderBear: "空头论据 (Bear Case Prosecutor)",
     shareVerdictHeaderCIO: "CIO 最终裁决 (CIO Final Verdict)",
+
+    // Soul Check, Regime & Falsification
+    trendTemperatureTitle: "量价温度 / 击球区 (Trend Temp & Batting Zone)",
+    rightSideBattingZone: "右侧击球区 (Right-Side)",
+    leftSideObservation: "左侧观察 (Left-Side)",
+    bayesianPriorTitle: "贝叶斯先验置信度 (Prior Confidence)",
+    narrativePenetrationTitle: "穿透叙事 (10年天花板) (Narrative Penetration)",
+    falsificationTriggerTitle: "离场铁律与证伪底线 (Falsification Trigger)",
+    falsificationBreachedWarning: "证伪底线已击穿 (FALSIFICATION BREACHED)",
+    falsificationBreachedDesc: "当前股价已跌破量化止损底线。恪守反破产投资宪法：破位机械离场，严禁逆势加仓！",
+    notifyFalsificationBtn: "推送告警通知 (Notify Alert)",
+    falsificationNotified: "证伪告警已推送！ (Alert Dispatched)",
+    assetDiagnosisTitle: "标的定性归因 (Asset Diagnosis)",
+    implied10YCeilingLabel: "逆向10年利润天花板 (Implied 10Y Ceiling)",
+    prosperityTrapLabel: "景气度陷阱 (Prosperity Trap)",
+    coreSaaLabel: "80/20 核心资产配置 (Core SAA)",
+    trapTriggered: "已触发 (TRIGGERED)",
+    trapSafe: "安全 (SAFE)",
 
     chartTitle: "估值与动态价格通道 (Valuation & Price Channel)",
     pricingOverlay: "估值与技术面走势 (Pricing & Technical Overlay)",

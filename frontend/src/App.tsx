@@ -382,9 +382,13 @@ export const App: React.FC = () => {
                 onToggleWatchlist={toggleWatchlist}
                 cycleStage={dashboardData.macro_assessment.cycle_stage}
                 onBackToMacro={() => setActiveTab('macro')}
+                selectedCountry={macroCountry}
+                onSelectCountry={(c) => {
+                  setMacroCountry(c);
+                }}
                 onRefreshRecommendations={async (category, offset) => {
                   try {
-                    const res = await refreshRecommendationsApi(category, offset, language);
+                    const res = await refreshRecommendationsApi(category, offset, language, macroCountry);
                     if (dashboardData && dashboardData.recommendations) {
                       const updatedRecs = { ...dashboardData.recommendations };
                       if (category === 'SECTOR') {

@@ -27,17 +27,22 @@ class NotificationDispatcher:
     ) -> Dict[str, Any]:
         """
         Dispatches a price alert notification to configured channels (In-App, Discord Webhook).
-        Supports both BUY and SELL alert types.
+        Supports BUY, SELL, and FALSIFICATION alert types.
         """
-        is_sell = alert_type.upper() == "SELL"
-        diff_pct = round(abs((target_buy_price - current_price) / target_buy_price) * 100, 2)
+        upper_type = alert_type.upper()
+        is_sell = upper_type == "SELL"
+        is_falsification = upper_type == "FALSIFICATION"
+        diff_pct = round(abs((target_buy_price - current_price) / max(0.01, target_buy_price)) * 100, 2)
         
-        event = "PRICE_SELL_ZONE_TRIGGERED" if is_sell else "PRICE_BUY_ZONE_TRIGGERED"
-        msg = (
-            f"⚠️ ${symbol} ({company_name}) has reached your Profit-Taking Target! Current: ${current_price} >= Target: ${target_buy_price}"
-            if is_sell else
-            f"🔥 ${symbol} ({company_name}) has entered your Target Buy Zone! Current: ${current_price} <= Target: ${target_buy_price}"
-        )
+        if is_falsification:
+            event = "FALSIFICATION_THRESHOLD_BREACHED"
+            msg = f"🚨 FALSIFICATION ALERT: ${symbol} ({company_name}) has breached its bottom threshold! Current: ${current_price} < Floor: ${target_buy_price}. Mandatory exit rule active."
+        elif is_sell:
+            event = "PRICE_SELL_ZONE_TRIGGERED"
+            msg = f"⚠️ ${symbol} ({company_name}) has reached your Profit-Taking Target! Current: ${current_price} >= Target: ${target_buy_price}"
+        else:
+            event = "PRICE_BUY_ZONE_TRIGGERED"
+            msg = f"🔥 ${symbol} ({company_name}) has entered your Target Buy Zone! Current: ${current_price} <= Target: ${target_buy_price}"
 
         payload = {
             "event": event,
@@ -46,7 +51,7 @@ class NotificationDispatcher:
             "current_price": current_price,
             "target_price": target_buy_price,
             "difference_pct": diff_pct,
-            "alert_type": alert_type.upper(),
+            "alert_type": upper_type,
             "message": msg
         }
 
@@ -58,7 +63,18 @@ class NotificationDispatcher:
             try:
                 config = session.exec(select(PushAlertConfigDB)).first()
                 if config and config.is_discord_enabled and config.discord_webhook_url:
-                    if is_sell:
+                    if is_falsification:
+                        title = f"🚨 FALSIFICATION ALERT: ${symbol} Breached Floor"
+                        description = (
+                            f"⚠️ **{company_name}** (`${symbol}`) has fallen below its **quantified 200D MA exit floor**!\n\n"
+                            f"• **Current Price**: `${current_price}`\n"
+                            f"• **Bottom Exit Floor**: `${target_buy_price}` (-3.0% buffer under 200D MA)\n"
+                            f"• **Breakdown Margin**: `-{diff_pct}%` below floor\n\n"
+                            f"**Investment Constitution Mandate**: Pre-trade falsification condition is met. Strictly prohibit averaging down. Execute stop-loss discipline."
+                        )
+                        color = PushNotifier.DISCORD_COLOR_FALSIFICATION
+                        footer = "Prism Loop • Pre-Trade Constitution Falsification Alert"
+                    elif is_sell:
                         title = f"🔴 PROFIT-TAKING ALERT: ${symbol}"
                         description = (
                             f"**{company_name}** (`${symbol}`) has reached your **Profit-Taking / Sell Target**!\n\n"

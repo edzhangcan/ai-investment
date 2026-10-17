@@ -161,6 +161,52 @@ class PriceAlertEngine:
                             "alert_type": "SELL",
                             "dispatch": dispatch_res
                         })
+
+                # Evaluate Falsification Bottom Threshold Trigger (decisive break below 200D MA)
+                two_hundred_sma = float(pricing_eval.get("two_hundred_day_sma") or 0.0)
+                if two_hundred_sma > 0:
+                    bottom_threshold = round(two_hundred_sma * 0.97, 2)
+                    if current_price < bottom_threshold:
+                        recent_falsification = session.exec(
+                            select(PriceAlertLogDB)
+                            .where(PriceAlertLogDB.symbol == item.symbol)
+                            .where(PriceAlertLogDB.status == "FALSIFICATION_TRIGGERED")
+                            .where(PriceAlertLogDB.triggered_at >= cutoff)
+                        ).first()
+
+                        if not recent_falsification:
+                            log_entry = PriceAlertLogDB(
+                                symbol=item.symbol,
+                                company_name=item.company_name,
+                                current_price=current_price,
+                                target_buy_price=bottom_threshold,
+                                notification_channel="IN_APP",
+                                status="FALSIFICATION_TRIGGERED",
+                                message=f"🚨 Falsification Triggered: ${item.symbol} breached 200D MA floor (${current_price} < ${bottom_threshold})",
+                                triggered_at=get_utc_now()
+                            )
+                            session.add(log_entry)
+                            session.commit()
+                            session.refresh(log_entry)
+
+                            dispatch_res = await dispatcher.dispatch_price_alert(
+                                symbol=item.symbol,
+                                company_name=item.company_name,
+                                current_price=current_price,
+                                target_buy_price=bottom_threshold,
+                                session=session,
+                                alert_type="FALSIFICATION"
+                            )
+
+                            triggered_results.append({
+                                "log_id": log_entry.id,
+                                "symbol": item.symbol,
+                                "company_name": item.company_name,
+                                "current_price": current_price,
+                                "target_price": bottom_threshold,
+                                "alert_type": "FALSIFICATION",
+                                "dispatch": dispatch_res
+                            })
             except Exception as e:
                 logger.error(f"Error checking price alert for {item.symbol}: {e}")
 

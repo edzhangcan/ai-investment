@@ -157,4 +157,26 @@ def test_watchlist_sync_targets_endpoint(client: TestClient, session: Session):
     assert synced[0]["target_buy_price"] is not None
     assert synced[0]["target_buy_price"] > 0
 
+def test_notify_falsification_endpoint(client: TestClient, session: Session):
+    """Verifies that /api/alerts/notify-falsification logs and dispatches falsification alerts."""
+    payload = {
+        "symbol": "TEST",
+        "company_name": "Test Corp",
+        "current_price": 95.0,
+        "bottom_threshold": 100.0,
+        "lang": "en"
+    }
+    res = client.post("/api/alerts/notify-falsification", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert data["symbol"] == "TEST"
+    assert data["bottom_threshold"] == 100.0
+
+    # Verify log entry in DB
+    logs = session.exec(select(PriceAlertLogDB).where(PriceAlertLogDB.symbol == "TEST")).all()
+    assert len(logs) == 1
+    assert logs[0].status == "FALSIFICATION_TRIGGERED"
+    assert "Falsification Triggered" in logs[0].message
+
 

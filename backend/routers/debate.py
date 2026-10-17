@@ -20,10 +20,18 @@ async def stream_debate(websocket: WebSocket, ticker: str):
     await websocket.accept()
     try:
         stock_data = DataProviderManager.get_stock_data(ticker)
-        macro_data = MacroEngine.analyze_macro_environment()
+        symbol = ticker.strip().upper()
+        is_ca = (
+            stock_data.get("market") == "CA"
+            or stock_data.get("currency") == "CAD"
+            or symbol.endswith(".TO")
+            or symbol.endswith(".V")
+        )
+        country = "CA" if is_ca else "US"
+        macro_data = MacroEngine.analyze_macro_environment(country=country)
         fundamental_data = FundamentalEngine.evaluate_fundamentals(stock_data)
         pricing_data = PricingEngine.evaluate_pricing_and_entry_zone(stock_data)
-        debate = MultiAgentArena.run_debate(stock_data, macro_data, pricing_data, fundamental_data)
+        debate = MultiAgentArena.run_debate(stock_data, macro_data, pricing_data, fundamental_data, country=country)
 
         # 1. Stream Bull Agent
         await asyncio.sleep(0.4)
