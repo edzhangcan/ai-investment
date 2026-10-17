@@ -214,3 +214,80 @@ def test_dynamic_wacc_bounds():
         market_cap=60_000_000_000.0
     )
     assert 0.06 <= wacc_with_debt <= 0.14
+
+def test_financial_institution_ev_bridge_bypasses_deposits():
+    """
+    Verify that financial institutions (banks, insurers) bypass deposit liabilities and cash reserves
+    in the EV-to-Equity bridge, setting effective cash and debt to 0, with WACC matching Cost of Equity.
+    """
+    bank_stock = {
+        "symbol": "JPM",
+        "sector": "Financial Services",
+        "current_price": 200.0,
+        "free_cash_flow": 25_000_000_000.0,
+        "shares_outstanding": 2_800_000_000.0,
+        "market_cap": 560_000_000_000.0,
+        "total_debt": 800_000_000_000.0,  # Customer deposit liabilities
+        "total_cash": 1_200_000_000_000.0,  # Central bank reserves
+        "beta": 1.1,
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(bank_stock)
+    bridge = res["bridge"]
+    assert bridge is not None
+    assert bridge["plus_cash"] == 0.0
+    assert bridge["less_total_debt"] == 0.0
+    assert bridge["equity_value"] == bridge["enterprise_value"]
+    # WACC should reflect pure ke = 0.042 + 1.1 * 0.045 = 0.0915
+    assert bridge["dynamic_wacc_used"] == 0.0915
+
+def test_debt_heavy_going_concern_guardrail():
+    """
+    Verify that for going concerns where debt exceeds enterprise value (e.g. capitalized operating leases),
+    net debt deduction is clamped so equity value does not collapse to $0.01 (-100%).
+    """
+    leveraged_retailer = {
+        "symbol": "LEVERAGED_CORP",
+        "sector": "Consumer Cyclical",
+        "current_price": 100.0,
+        "free_cash_flow": 500_000_000.0,
+        "shares_outstanding": 100_000_000.0,
+        "market_cap": 10_000_000_000.0,
+        "total_debt": 25_000_000_000.0,  # Heavy operating leases exceeding EV
+        "total_cash": 1_000_000_000.0,
+        "revenue_growth": 0.05,
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(leveraged_retailer)
+    assert res["dcf_fair_value"] > 10.0  # Must not collapse to $0.01
+    assert res["bridge"]["equity_value"] > 0
+    # Clamped net debt must not exceed 70% of enterprise value
+    ev = res["bridge"]["enterprise_value"]
+    assert res["bridge"]["equity_value"] >= round(ev * 0.30, 2) - 0.10
+
+def test_cyclical_peak_fcf_normalization():
+    """
+    Verify that an equity with an extreme peak cyclical FCF yield (> 12% of market cap)
+    is normalized to mid-cycle cash flow, preventing absurd 1000%+ DCF fair value targets.
+    """
+    cyclical_miner = {
+        "symbol": "PEAK_COMMODITY",
+        "sector": "Basic Materials",
+        "taxonomy": {"taxonomy": "GRAIN"},
+        "current_price": 50.0,
+        "free_cash_flow": 2_000_000_000.0,  # $2B FCF on $5B market cap = 40% FCF yield!
+        "shares_outstanding": 100_000_000.0,
+        "market_cap": 5_000_000_000.0,
+        "total_debt": 500_000_000.0,
+        "total_cash": 200_000_000.0,
+        "revenue_growth": 0.50,  # 50% revenue spike in commodity boom
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(cyclical_miner)
+    # Fair value should reflect sustainable normalized earnings (< 3x price), not 10x price ($500+)
+    assert res["dcf_fair_value"] < 150.0  # < 3x current price of $50
+    assert (res["dcf_fair_value"] - 50.0) / 50.0 < 2.0  # Margin < 200%
+
