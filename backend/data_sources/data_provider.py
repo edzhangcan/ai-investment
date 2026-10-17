@@ -807,18 +807,18 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "NA.TO": {"fcf": 3200000000, "pe": 12.4, "name": "National Bank of Canada"},
     "CWW.TO": {"fcf": 850000000, "pe": 14.8, "name": "iShares Global Water ETF"},
     "EQB.TO": {"fcf": 620000000, "pe": 9.5, "name": "EQB Inc."},
-    "ABX.TO": {"fcf": 1850000000, "pe": 18.2, "name": "Barrick Gold Corp."},
+    "ABX.TO": {"fcf": 1850000000, "pe": 18.2, "name": "Barrick Gold Corp.", "financial_currency": "USD"},
     "TECK-B.TO": {"fcf": 2100000000, "pe": 14.6, "name": "Teck Resources Ltd."},
     "TECK.B.TO": {"fcf": 2100000000, "pe": 14.6, "name": "Teck Resources Ltd."},
-    "NTR.TO": {"fcf": 2600000000, "pe": 13.5, "name": "Nutrien Ltd."},
-    "SHOP.TO": {"fcf": 1250000000, "pe": 75.4, "name": "Shopify Inc."},
+    "NTR.TO": {"fcf": 2600000000, "pe": 13.5, "name": "Nutrien Ltd.", "financial_currency": "USD"},
+    "SHOP.TO": {"fcf": 1250000000, "pe": 75.4, "name": "Shopify Inc.", "financial_currency": "USD"},
     "CNR.TO": {"fcf": 4500000000, "pe": 21.2, "name": "Canadian National Railway"},
     "CP.TO": {"fcf": 3200000000, "pe": 24.8, "name": "Canadian Pacific Kansas City"},
     "ATD.TO": {"fcf": 2800000000, "pe": 18.5, "name": "Alimentation Couche-Tard"},
     "BCE.TO": {"fcf": 2900000000, "pe": 15.2, "name": "BCE Inc."},
     "T.TO": {"fcf": 1800000000, "pe": 22.4, "name": "TELUS Corporation"},
-    "BAM.TO": {"fcf": 2400000000, "pe": 32.5, "name": "Brookfield Asset Management"},
-    "BN.TO": {"fcf": 4200000000, "pe": 18.6, "name": "Brookfield Corporation"},
+    "BAM.TO": {"fcf": 2400000000, "pe": 32.5, "name": "Brookfield Asset Management", "financial_currency": "USD"},
+    "BN.TO": {"fcf": 4200000000, "pe": 18.6, "name": "Brookfield Corporation", "financial_currency": "USD"},
     "DOL.TO": {"fcf": 1100000000, "pe": 31.2, "name": "Dollarama Inc."},
     "MFC.TO": {"fcf": 4500000000, "pe": 10.4, "name": "Manulife Financial Corp."},
     "SLF.TO": {"fcf": 3100000000, "pe": 12.8, "name": "Sun Life Financial Inc."},
@@ -1052,6 +1052,7 @@ class DataProviderManager:
                     fin_info = REAL_UNIVERSE_FINANCIALS.get(normalized_symbol, {})
                     company_name = fin_info.get("name") or COMPANY_PROFILES_REGISTRY.get(normalized_symbol, {}).get("company_name") or cand
                     resolved_currency = currency or ("CAD" if market == "CA" else "USD")
+                    financial_currency = fin_info.get("financial_currency")
 
                     # Extract fundamental ratios from SEC/SEDAR filings or ticker.info
                     pe_ratio = fin_info.get("pe")
@@ -1143,6 +1144,8 @@ class DataProviderManager:
                                 pass
                         if info.get("beta"):
                             beta_val = float(info.get("beta"))
+                        if info.get("financialCurrency"):
+                            financial_currency = info.get("financialCurrency")
 
                     if not market_cap and shares_outstanding and current_p > 0:
                         market_cap = float(shares_outstanding) * current_p
@@ -1173,6 +1176,7 @@ class DataProviderManager:
                         "company_name": company_name,
                         "market": market,
                         "currency": resolved_currency,
+                        "financial_currency": financial_currency or ("USD" if market == "US" else resolved_currency),
                         "current_price": current_p,
                         "previous_close": p_close,
                         "fifty_day_sma": sma_50,
@@ -1234,6 +1238,7 @@ class DataProviderManager:
                     "company_name": company_name,
                     "market": "CA" if is_ca else "US",
                     "currency": "CAD" if is_ca else "USD",
+                    "financial_currency": fin_info.get("financial_currency") or ("USD" if not is_ca else "CAD"),
                     "current_price": fallback_price,
                     "previous_close": fallback_price,
                     "fifty_day_sma": round(fallback_price * 0.98, 2),

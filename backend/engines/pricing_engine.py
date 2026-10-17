@@ -55,21 +55,42 @@ class PricingEngine:
             }
 
         price = float(stock_data["current_price"])
-        currency = stock_data.get("currency", "USD")
+        currency = str(stock_data.get("currency") or "USD").upper().strip()
+        fin_currency = str(stock_data.get("financial_currency") or stock_data.get("financialCurrency") or currency).upper().strip()
+
+        # Dynamic FX conversion multiplier to align financial statement currency with stock trading currency
+        fx_multiplier = 1.0
+        currency_conversion_note = None
+        if fin_currency == "USD" and currency == "CAD":
+            try:
+                from backend.data_sources.fred_client import MacroDataClient
+                fx_multiplier = float(MacroDataClient.get_latest_macro_data().get("ca_macro", {}).get("usdcad_exchange_rate") or 1.368)
+            except Exception:
+                fx_multiplier = 1.368
+            currency_conversion_note = f"Converted USD financials to CAD at 1 USD = {fx_multiplier:.3f} CAD"
+        elif fin_currency == "CAD" and currency == "USD":
+            try:
+                from backend.data_sources.fred_client import MacroDataClient
+                rate = float(MacroDataClient.get_latest_macro_data().get("ca_macro", {}).get("usdcad_exchange_rate") or 1.368)
+                fx_multiplier = 1.0 / max(0.01, rate)
+            except Exception:
+                fx_multiplier = 1.0 / 1.368
+            currency_conversion_note = f"Converted CAD financials to USD at 1 CAD = {fx_multiplier:.3f} USD"
+
         fifty_sma = float(stock_data.get("fifty_day_sma") or price * 0.98)
         two_hundred_sma = float(stock_data.get("two_hundred_day_sma") or price * 0.90)
         pe = stock_data.get("pe_ratio")
         fcf = stock_data.get("free_cash_flow")
 
         # 1. Institutional 2-Stage DCF with EV-to-Equity Net Debt Bridge & Dynamic CAPM WACC
-        total_debt = float(stock_data.get("total_debt") or 0.0)
-        total_cash = float(stock_data.get("total_cash") or 0.0)
-        sbc = float(stock_data.get("stock_based_compensation") or 0.0)
-        total_assets = float(stock_data.get("total_assets") or 0.0)
-        beta = float(stock_data.get("beta") if stock_data.get("beta") is not None else 1.0)
-        raw_fcf = float(fcf) if fcf is not None else 0.0
-        operating_cf = float(stock_data.get("operating_cash_flow") or (raw_fcf * 1.15 if raw_fcf else 0.0))
-        net_inc = float(stock_data.get("net_income") or (raw_fcf * 0.90 if raw_fcf else 0.0))
+        total_debt = float(stock_data.get("total_debt") or 0.0) * fx_multiplier
+        total_cash = float(stock_data.get("total_cash") or 0.0) * fx_multiplier
+        sbc = float(stock_data.get("stock_based_compensation") or 0.0) * fx_multiplier
+        total_assets = float(stock_data.get("total_assets") or 0.0) * fx_multiplier
+        raw_beta = float(stock_data.get("beta") if stock_data.get("beta") is not None else 1.0)
+        raw_fcf = (float(fcf) if fcf is not None else 0.0) * fx_multiplier
+        operating_cf = (float(stock_data.get("operating_cash_flow") or (raw_fcf * 1.15 if raw_fcf else 0.0))) * fx_multiplier
+        net_inc = (float(stock_data.get("net_income") or (raw_fcf * 0.90 if raw_fcf else 0.0))) * fx_multiplier
 
         # Earnings quality analysis
         earnings_quality = cls.compute_earnings_quality(
@@ -107,6 +128,13 @@ class PricingEngine:
             any(ind in industry for ind in ["midstream", "regulated", "electric utilities", "gas utilities", "multi-utilities", "reit"]) or
             symbol_upper in INFRASTRUCTURE_SYMBOLS
         )
+
+        # Institutional Blume beta adjustment: smooths extreme rolling betas toward market 1.0
+        # for volatile cyclical and crisis-distorted equities (e.g. materials, mining, or beta > 1.8)
+        if "material" in sector or "mining" in industry or "energy" in sector or "copper" in industry or raw_beta > 1.8:
+            beta = round(0.67 * raw_beta + 0.33 * 1.0, 3)
+        else:
+            beta = raw_beta
 
         # Determine market_cap & implied_shares
         market_cap = stock_data.get("market_cap")
@@ -183,9 +211,18 @@ class PricingEngine:
             rev_growth = min(max(raw_rev_growth, 0.03), 0.12)
 
         # Pillar 1: Warren Buffett Owner's Cash Flow (Growth vs Maintenance CapEx separation)
-        total_capex = float(stock_data.get("capex") or (max(0.0, operating_cf - raw_fcf) if operating_cf > raw_fcf else 0.0))
-        if total_capex > 0 and (is_wide_moat or roic >= 0.15 or "TREE" in tax_str) and rev_growth >= 0.08:
-            growth_capex_ratio = min(0.40, max(0.0, (rev_growth - 0.03) * 1.5))
+        if stock_data.get("capex"):
+            total_capex = float(stock_data["capex"]) * fx_multiplier
+        else:
+            total_capex = max(0.0, operating_cf - raw_fcf) if operating_cf > raw_fcf else 0.0
+
+        is_resource_expansion = (
+            ("material" in sector or "mining" in industry or "energy" in sector or "copper" in industry)
+            and (roic >= 0.10 or rev_growth >= 0.06 or raw_rev_growth >= 0.10)
+        )
+        if total_capex > 0 and (is_wide_moat or roic >= 0.15 or "TREE" in tax_str or is_resource_expansion) and rev_growth >= 0.06:
+            eff_rev_for_capex = max(rev_growth, min(0.20, raw_rev_growth))
+            growth_capex_ratio = min(0.40, max(0.20 if is_resource_expansion else 0.0, (eff_rev_for_capex - 0.03) * 1.5))
             growth_capex_credit = total_capex * growth_capex_ratio
         else:
             growth_capex_credit = 0.0
@@ -284,7 +321,8 @@ class PricingEngine:
                 "net_buyback_yield_used": round(net_buyback_yield, 2),
                 "fair_value_per_share": fair_value_per_share,
                 "dynamic_wacc_used": wacc,
-                "valuation_outlier_warning": outlier_warning
+                "valuation_outlier_warning": outlier_warning,
+                "currency_conversion_note": currency_conversion_note
             }
         else:
             # ETF / Index or missing FCF default DCF target relative to 200D SMA
@@ -304,7 +342,8 @@ class PricingEngine:
                 "net_buyback_yield_used": round(net_buyback_yield, 2),
                 "fair_value_per_share": dcf_fair_value,
                 "dynamic_wacc_used": wacc,
-                "valuation_outlier_warning": False
+                "valuation_outlier_warning": False,
+                "currency_conversion_note": currency_conversion_note
             }
 
         # 5x5 WACC vs Terminal Growth Sensitivity Matrix

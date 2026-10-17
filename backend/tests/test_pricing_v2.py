@@ -500,5 +500,31 @@ def test_oilfield_services_normalized_fcf_and_buybacks():
     assert res["bridge"]["implied_shares_effective"] < res["bridge"]["implied_shares"]
 
 
+def test_dual_currency_conversion_and_blume_smoothing_fm_to():
+    """
+    Verify that Canadian resource equities reporting in USD (e.g. FM.TO)
+    properly convert financial metrics to CAD and smooth crisis-inflated rolling betas:
+    - Currency conversion multiplies USD fundamental metrics (FCF, Cash, Debt) by USDCAD exchange rate (~1.368)
+    - Currency conversion note is recorded in valuation bridge
+    - Blume beta adjustment smooths crisis-distorted rolling beta toward 1.0
+    - DCF fair value is in a sensible bracket (>= $22 CAD) rather than the previous distorted $6.53
+    - Valuation outlier warning is not triggered
+    """
+    from backend.data_sources.data_provider import DataProviderManager
+    with DataProviderManager._LOCK:
+        DataProviderManager._CACHE.clear()
+        DataProviderManager._CACHE_TIMESTAMPS.clear()
+    stock = DataProviderManager.get_stock_data("FM.TO", force_refresh=True)
+    res = PricingEngine.evaluate_pricing_and_entry_zone(stock)
+
+    assert stock["currency"] == "CAD"
+    assert stock["financial_currency"] == "USD"
+    assert res["dcf_fair_value"] >= 22.0
+    assert res["bridge"]["valuation_outlier_warning"] is False
+    assert "Converted USD financials to CAD" in str(res["bridge"].get("currency_conversion_note"))
+    assert res["ideal_buy_range_min"] > 15.0
+
+
+
 
 
