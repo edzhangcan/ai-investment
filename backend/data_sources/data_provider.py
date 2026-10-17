@@ -1056,18 +1056,32 @@ class DataProviderManager:
                     revenue_growth = 0.12
                     ev_ebitda = 14.5
 
-                    # Attempt live ticker.info enhancement if available
+                    shares_outstanding = None
+                    market_cap = None
+                    sector_val = None
+                    industry_val = None
+
+                    # Always initialize ticker to extract accurate balance sheet, shares and sector
                     if ticker is None:
                         try:
                             ticker = yf.Ticker(cand)
+                        except Exception:
+                            ticker = None
+
+                    if ticker is not None:
+                        try:
+                            fi = getattr(ticker, "fast_info", None)
+                            if fi:
+                                shares_outstanding = fi.get("shares")
+                                market_cap = fi.get("marketCap")
+                        except Exception:
+                            pass
+                        try:
                             info = ticker.info or {}
                         except Exception:
                             info = {}
                     else:
-                        try:
-                            info = ticker.info or {}
-                        except Exception:
-                            info = {}
+                        info = {}
 
                     total_debt = None
                     total_cash = None
@@ -1076,6 +1090,12 @@ class DataProviderManager:
                     beta_val = 1.05
 
                     if info:
+                        if not shares_outstanding:
+                            shares_outstanding = info.get("sharesOutstanding") or info.get("impliedSharesOutstanding")
+                        if not market_cap:
+                            market_cap = info.get("marketCap")
+                        sector_val = info.get("sector")
+                        industry_val = info.get("industry")
                         if info.get("longName") or info.get("shortName"):
                             company_name = info.get("longName") or info.get("shortName") or company_name
                         live_pe = info.get("trailingPE") or info.get("forwardPE")
@@ -1086,7 +1106,14 @@ class DataProviderManager:
                             ps_ratio = round(float(live_ps), 1)
                         live_fcf = info.get("freeCashflow")
                         if live_fcf and float(live_fcf) != 0:
-                            free_cash_flow = float(live_fcf)
+                            live_fcf_f = float(live_fcf)
+                            if free_cash_flow and free_cash_flow > 0:
+                                # Guard against noisy single-quarter spikes or quarterly data overriding annual 10-K/SEDAR baseline
+                                ratio = live_fcf_f / free_cash_flow
+                                if 0.35 <= ratio <= 2.8:
+                                    free_cash_flow = live_fcf_f
+                            else:
+                                free_cash_flow = live_fcf_f
                         if info.get("totalRevenue"):
                             total_revenue = float(info.get("totalRevenue"))
                         if info.get("revenueGrowth"):
@@ -1097,6 +1124,18 @@ class DataProviderManager:
                             total_cash = float(info.get("totalCash"))
                         if info.get("beta"):
                             beta_val = float(info.get("beta"))
+
+                    if not market_cap and shares_outstanding and current_p > 0:
+                        market_cap = float(shares_outstanding) * current_p
+                    elif not shares_outstanding and market_cap and current_p > 0:
+                        shares_outstanding = float(market_cap) / current_p
+
+                    # Synchronize net_income and operating_cash_flow with free_cash_flow
+                    if free_cash_flow:
+                        if not net_income or net_income <= 0:
+                            net_income = free_cash_flow * 0.90
+                        if not op_cash_flow or op_cash_flow <= 0:
+                            op_cash_flow = free_cash_flow * 1.15
 
                     logger.info(f"Successfully fetched live real-time market data for '{normalized_symbol}' ({cand}): Price=${current_p} {resolved_currency}")
 
@@ -1120,6 +1159,10 @@ class DataProviderManager:
                         "revenue_growth": revenue_growth,
                         "total_debt": total_debt,
                         "total_cash": total_cash,
+                        "shares_outstanding": float(shares_outstanding) if shares_outstanding and float(shares_outstanding) > 0 else None,
+                        "market_cap": float(market_cap) if market_cap and float(market_cap) > 0 else None,
+                        "sector": sector_val or COMPANY_PROFILES_REGISTRY.get(normalized_symbol, {}).get("sector"),
+                        "industry": industry_val or COMPANY_PROFILES_REGISTRY.get(normalized_symbol, {}).get("industry"),
                         "stock_based_compensation": sbc,
                         "total_assets": total_assets,
                         "beta": beta_val,
@@ -1264,6 +1307,33 @@ class DataProviderManager:
             stock["total_assets"] = round(rev * 2.0, 2)
         if stock.get("beta") is None:
             stock["beta"] = 1.05
+
+        # Guaranteed Shares Outstanding & Market Cap Resolution
+        p = float(stock.get("current_price") or 100.0)
+        s_out = stock.get("shares_outstanding")
+        m_cap = stock.get("market_cap")
+        if not s_out or float(s_out) <= 0:
+            if m_cap and float(m_cap) > 0:
+                stock["shares_outstanding"] = round(float(m_cap) / max(0.01, p), 2)
+            elif stock.get("pe_ratio") and stock.get("net_income") and float(stock.get("net_income")) > 0:
+                est_mcap = float(stock["pe_ratio"]) * float(stock["net_income"])
+                stock["market_cap"] = round(est_mcap, 2)
+                stock["shares_outstanding"] = round(est_mcap / max(0.01, p), 2)
+            elif fcf > 0:
+                # 5% FCF yield assumption: Market Cap = FCF / 0.05
+                est_mcap = fcf / 0.05
+                stock["market_cap"] = round(est_mcap, 2)
+                stock["shares_outstanding"] = round(est_mcap / max(0.01, p), 2)
+            else:
+                stock["shares_outstanding"] = 10_000_000.0
+                stock["market_cap"] = round(p * 10_000_000.0, 2)
+        elif not m_cap or float(m_cap) <= 0:
+            stock["market_cap"] = round(p * float(stock["shares_outstanding"]), 2)
+
+        if not stock.get("sector"):
+            stock["sector"] = COMPANY_PROFILES_REGISTRY.get(sym, {}).get("sector")
+        if not stock.get("industry"):
+            stock["industry"] = COMPANY_PROFILES_REGISTRY.get(sym, {}).get("industry")
 
         # Data Provenance fields
         if not stock.get("source_mode"):

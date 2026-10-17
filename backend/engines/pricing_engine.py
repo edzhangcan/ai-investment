@@ -80,46 +80,78 @@ class PricingEngine:
             sbc=sbc
         )
 
+        # Determine sector and financial institution classification
+        sector = (stock_data.get("sector") or "").strip().lower()
+        symbol_upper = symbol.upper().strip()
+        FINANCIAL_SYMBOLS = {
+            "JPM", "BAC", "C", "GS", "MS", "WFC", "BLK", "SCHW", "AXP", "USB", "PNC", "TFC", "COF",
+            "RY.TO", "TD.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "LB.TO", "CWB.TO",
+            "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BAM.TO", "BN.TO", "X.TO", "EFN.TO"
+        }
+        is_financial = (
+            "financial" in sector or 
+            "bank" in sector or 
+            "insurance" in sector or 
+            symbol_upper in FINANCIAL_SYMBOLS
+        )
+
         # Determine market_cap & implied_shares
         market_cap = stock_data.get("market_cap")
-        if market_cap is None or float(market_cap) <= 0:
+        shares_outstanding = stock_data.get("shares_outstanding") or stock_data.get("implied_shares")
+
+        if shares_outstanding and float(shares_outstanding) > 0:
+            implied_shares = float(shares_outstanding)
+            if not market_cap or float(market_cap) <= 0:
+                market_cap = price * implied_shares
+            else:
+                market_cap = float(market_cap)
+        elif market_cap and float(market_cap) > 0:
+            market_cap = float(market_cap)
+            implied_shares = max(1.0, market_cap / max(0.01, price))
+        else:
             if pe is not None and net_inc > 0 and float(pe) > 0:
                 market_cap = float(pe) * net_inc
-            elif stock_data.get("shares_outstanding"):
-                market_cap = price * float(stock_data["shares_outstanding"])
+                implied_shares = max(1.0, market_cap / max(0.01, price))
             elif raw_fcf > 1000:
-                market_cap = max(price * 10_000_000.0, raw_fcf * 15.0)
+                market_cap = raw_fcf / 0.05
+                implied_shares = max(1.0, market_cap / max(0.01, price))
             else:
                 market_cap = price * 10_000_000.0
-        else:
-            market_cap = float(market_cap)
+                implied_shares = 10_000_000.0
 
-        implied_shares = stock_data.get("shares_outstanding") or stock_data.get("implied_shares")
-        if not implied_shares or float(implied_shares) <= 0:
-            if raw_fcf <= 1000 and raw_fcf > 0:
-                implied_shares = 1.0
-            else:
-                implied_shares = max(1.0, market_cap / max(0.01, price))
-        else:
-            implied_shares = float(implied_shares)
-
-        # Dynamic CAPM WACC
+        # Dynamic CAPM WACC with financial firm & debt prudential bounds
         wacc = cls.compute_dynamic_wacc(
             beta=beta,
             risk_free_rate=0.042,
             equity_risk_premium=0.045,
             total_debt=total_debt,
-            market_cap=market_cap
+            market_cap=market_cap,
+            is_financial=is_financial
         )
         terminal_growth = 0.03
-        rev_growth = min(max(stock_data.get("revenue_growth") or 0.08, 0.03), 0.25)
+
+        # Revenue growth constraints based on taxonomy and sector
+        raw_rev_growth = stock_data.get("revenue_growth") or 0.08
+        tax_str = str(stock_data.get("taxonomy") or "")
+        if "TREE" in tax_str:
+            rev_growth = min(max(raw_rev_growth, 0.03), 0.15)
+        elif "GRAIN" in tax_str or "energy" in sector or "material" in sector:
+            rev_growth = min(max(raw_rev_growth, 0.02), 0.08)
+        else:
+            rev_growth = min(max(raw_rev_growth, 0.03), 0.12)
 
         # Deduct SBC from FCF: owner_fcf = max(0.0, raw_fcf - sbc)
         deduct_sbc = True
         if deduct_sbc and (raw_fcf - sbc) > 0:
-            owner_fcf = raw_fcf - sbc
+            base_fcf = raw_fcf - sbc
         else:
-            owner_fcf = raw_fcf
+            base_fcf = raw_fcf
+
+        # Cyclical peak FCF normalization: if starting FCF yield > 12% of market cap, normalize
+        if market_cap > 0 and (base_fcf / market_cap > 0.12):
+            owner_fcf = market_cap * 0.09
+        else:
+            owner_fcf = base_fcf
 
         if raw_fcf > 0:
             curr_fcf = owner_fcf
@@ -128,10 +160,25 @@ class PricingEngine:
                 growth_rate = rev_growth if year <= 5 else (rev_growth + terminal_growth) / 2
                 curr_fcf *= (1 + growth_rate)
                 pv_10y_fcf += curr_fcf / ((1 + wacc) ** year)
-            term_val = (curr_fcf * (1 + terminal_growth)) / (wacc - terminal_growth)
+            effective_g = min(terminal_growth, max(0.01, wacc - 0.038))
+            effective_spread = max(0.038, wacc - effective_g)
+            term_val = (curr_fcf * (1 + effective_g)) / effective_spread
             pv_terminal_value = term_val / ((1 + wacc) ** 10)
             enterprise_value = pv_10y_fcf + pv_terminal_value
-            equity_value = enterprise_value + total_cash - total_debt
+
+            if is_financial:
+                # Financial institutions: customer deposits are operational liabilities, not corporate leverage
+                equity_value = enterprise_value
+                effective_cash = 0.0
+                effective_debt = 0.0
+            else:
+                effective_cash = total_cash
+                effective_debt = total_debt
+                net_debt = total_debt - total_cash
+                # Guardrail: Net debt deduction for going concerns cannot wipe out > 70% of operating EV
+                net_debt_clamp = min(net_debt, enterprise_value * 0.70) if net_debt > 0 else net_debt
+                equity_value = enterprise_value - net_debt_clamp
+
             fair_value_per_share = round(max(0.01, equity_value / implied_shares), 2)
             dcf_fair_value = fair_value_per_share
             outlier_warning = (fair_value_per_share / max(0.01, price) < 0.25) or (fair_value_per_share / max(0.01, price) > 3.0)
@@ -139,8 +186,8 @@ class PricingEngine:
                 "pv_10y_fcf": round(pv_10y_fcf, 2),
                 "pv_terminal_value": round(pv_terminal_value, 2),
                 "enterprise_value": round(enterprise_value, 2),
-                "plus_cash": round(total_cash, 2),
-                "less_total_debt": round(total_debt, 2),
+                "plus_cash": round(effective_cash, 2),
+                "less_total_debt": round(effective_debt, 2),
                 "less_sbc_annual": round(sbc, 2),
                 "equity_value": round(equity_value, 2),
                 "implied_shares": round(implied_shares, 2),
@@ -155,8 +202,8 @@ class PricingEngine:
                 "pv_10y_fcf": 0.0,
                 "pv_terminal_value": 0.0,
                 "enterprise_value": 0.0,
-                "plus_cash": round(total_cash, 2),
-                "less_total_debt": round(total_debt, 2),
+                "plus_cash": round(total_cash if not is_financial else 0.0, 2),
+                "less_total_debt": round(total_debt if not is_financial else 0.0, 2),
                 "less_sbc_annual": round(sbc, 2),
                 "equity_value": round(dcf_fair_value * implied_shares, 2),
                 "implied_shares": round(implied_shares, 2),
@@ -174,7 +221,8 @@ class PricingEngine:
             total_cash=total_cash,
             total_debt=total_debt,
             implied_shares=implied_shares,
-            price=price
+            price=price,
+            is_financial=is_financial
         )
 
         # 2. Continuous Dynamic Valuation Percentile & Timing Score
@@ -430,25 +478,32 @@ class PricingEngine:
         risk_free_rate: float = 0.042,
         equity_risk_premium: float = 0.045,
         total_debt: float = 0.0,
-        market_cap: float = 0.0
+        market_cap: float = 0.0,
+        is_financial: bool = False
     ) -> float:
         """
         Computes dynamic CAPM Weighted Average Cost of Capital (WACC).
-        Clamps beta to [0.5, 2.2], computes ke = rf + beta * erp,
-        blends with after-tax cost of debt kd_after_tax = (rf + 0.015) * 0.79,
-        and clamps resulting WACC to [0.06, 0.14].
+        Clamps beta to [0.5, 2.2], computes ke = rf + beta * erp.
+        For financial institutions, uses Cost of Equity directly (deposits are operating liabilities, not corporate leverage).
+        For corporate equities, blends ke with after-tax cost of debt kd_after_tax = (rf + 0.015) * 0.79,
+        capping debt weight at 50% to prevent excessive debt-driven WACC distortion.
+        Clamps resulting WACC to [0.06, 0.14].
         """
         clamped_beta = min(max(float(beta if beta is not None else 1.0), 0.5), 2.2)
         ke = risk_free_rate + (clamped_beta * equity_risk_premium)
         kd_after_tax = (risk_free_rate + 0.015) * 0.79
+
+        if is_financial:
+            return round(min(max(ke, 0.06), 0.14), 4)
 
         debt = float(total_debt or 0.0)
         mcap = float(market_cap or 0.0)
         total_cap = mcap + debt
 
         if total_cap > 0 and debt > 0:
-            we = mcap / total_cap
-            wd = debt / total_cap
+            wd_raw = debt / total_cap
+            wd = min(wd_raw, 0.50)
+            we = 1.0 - wd
             wacc = (we * ke) + (wd * kd_after_tax)
         else:
             wacc = ke
@@ -514,7 +569,8 @@ class PricingEngine:
         total_cash: float,
         total_debt: float,
         implied_shares: float,
-        price: float
+        price: float,
+        is_financial: bool = False
     ) -> List[List[Dict[str, Any]]]:
         """
         Builds a 5x5 DCF sensitivity matrix across Terminal Growth (rows) and WACC (columns).
@@ -554,7 +610,12 @@ class PricingEngine:
                     tv = (curr_fcf * (1 + eff_g)) / (eff_w - eff_g)
                     pv_tv = tv / ((1 + eff_w) ** 10)
                     ev = pv_10y + pv_tv
-                    equity = ev + total_cash - total_debt
+                    if is_financial:
+                        equity = ev
+                    else:
+                        net_d = total_debt - total_cash
+                        net_d_clamp = min(net_d, ev * 0.70) if net_d > 0 else net_d
+                        equity = ev - net_d_clamp
                     fv = round(max(0.01, equity / implied_shares), 2)
                 else:
                     fv = round(max(0.01, price * 1.05 * (1 + (eff_g - base_g)*2 - (eff_w - base_wacc)*3)), 2)
