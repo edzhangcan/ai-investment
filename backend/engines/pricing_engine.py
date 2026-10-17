@@ -80,8 +80,9 @@ class PricingEngine:
             sbc=sbc
         )
 
-        # Determine sector and financial institution classification
+        # Determine sector and financial / regulated infrastructure classification
         sector = (stock_data.get("sector") or "").strip().lower()
+        industry = (stock_data.get("industry") or "").strip().lower()
         symbol_upper = symbol.upper().strip()
         FINANCIAL_SYMBOLS = {
             "JPM", "BAC", "C", "GS", "MS", "WFC", "BLK", "SCHW", "AXP", "USB", "PNC", "TFC", "COF",
@@ -93,6 +94,18 @@ class PricingEngine:
             "bank" in sector or 
             "insurance" in sector or 
             symbol_upper in FINANCIAL_SYMBOLS
+        )
+
+        INFRASTRUCTURE_SYMBOLS = {
+            "TRP.TO", "ENB.TO", "PPL.TO", "KEY.TO", "GEI.TO", "ALA.TO",
+            "FTS.TO", "EMA.TO", "AQN.TO", "CU.TO", "BIP-UN.TO", "BEP-UN.TO",
+            "KMI", "WMB", "OKE", "ET", "EPD", "NEE", "SO", "DUK", "AEP", "SRE",
+            "AMT", "CCI", "PLD", "EQIX"
+        }
+        is_regulated_infrastructure = (
+            any(s in sector for s in ["utilities", "utility", "real estate"]) or
+            any(ind in industry for ind in ["midstream", "regulated", "electric utilities", "gas utilities", "multi-utilities", "reit"]) or
+            symbol_upper in INFRASTRUCTURE_SYMBOLS
         )
 
         # Determine market_cap & implied_shares
@@ -231,6 +244,13 @@ class PricingEngine:
                 equity_value = enterprise_value
                 effective_cash = 0.0
                 effective_debt = 0.0
+            elif is_regulated_infrastructure:
+                # Regulated utilities & midstream infrastructure: rate-base debt is self-servicing
+                # under regulated tariffs or long-term toll contracts. Reported FCF is Free Cash Flow to Equity (FCFE).
+                # Deducting rate-base debt principal from discounted FCFE would double-count debt.
+                equity_value = enterprise_value
+                effective_cash = total_cash
+                effective_debt = 0.0
             else:
                 effective_cash = total_cash
                 effective_debt = total_debt
@@ -275,7 +295,7 @@ class PricingEngine:
                 "pv_terminal_value": 0.0,
                 "enterprise_value": 0.0,
                 "plus_cash": round(total_cash if not is_financial else 0.0, 2),
-                "less_total_debt": round(total_debt if not is_financial else 0.0, 2),
+                "less_total_debt": round(total_debt if (not is_financial and not is_regulated_infrastructure) else 0.0, 2),
                 "less_sbc_annual": round(sbc, 2),
                 "equity_value": round(dcf_fair_value * implied_shares, 2),
                 "implied_shares": round(implied_shares, 2),
@@ -299,7 +319,8 @@ class PricingEngine:
             price=price,
             is_financial=is_financial,
             exit_multiple=exit_multiple,
-            implied_shares_effective=implied_shares_effective
+            implied_shares_effective=implied_shares_effective,
+            is_regulated_infrastructure=is_regulated_infrastructure
         )
 
         # 2. Continuous Dynamic Valuation Percentile & Timing Score
@@ -649,7 +670,8 @@ class PricingEngine:
         price: float,
         is_financial: bool = False,
         exit_multiple: float = 20.0,
-        implied_shares_effective: Optional[float] = None
+        implied_shares_effective: Optional[float] = None,
+        is_regulated_infrastructure: bool = False
     ) -> List[List[Dict[str, Any]]]:
         """
         Builds a 5x5 DCF sensitivity matrix across Terminal Growth (rows) and WACC (columns).
@@ -696,7 +718,7 @@ class PricingEngine:
                     tv_blended = 0.50 * tv_gordon + 0.50 * tv_exit
                     pv_tv = tv_blended / ((1 + eff_w) ** 10)
                     ev = pv_10y + pv_tv
-                    if is_financial:
+                    if is_financial or is_regulated_infrastructure:
                         equity = ev
                     else:
                         net_d = total_debt - total_cash

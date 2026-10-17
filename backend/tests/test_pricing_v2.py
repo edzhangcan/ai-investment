@@ -448,4 +448,34 @@ def test_sensitivity_matrix_aligns_with_blended_valuation():
     # Fair value should match within 1% of bridge fair value
     assert abs(center_cell["fair_value"] - fv_bridge) / fv_bridge < 0.02
 
+def test_regulated_infrastructure_rate_base_debt_bypass():
+    """
+    Verify that regulated midstream pipelines, utilities, and infrastructure equities (e.g. TRP.TO, ENB.TO)
+    do not have rate-base / project debt double-counted in the EV-to-Equity net debt bridge,
+    since reported FCF is Free Cash Flow to Equity (already deducting debt interest expense).
+    """
+    pipeline_stock = {
+        "symbol": "TRP.TO",
+        "company_name": "TC Energy Corporation",
+        "sector": "Energy",
+        "industry": "Oil & Gas Midstream",
+        "current_price": 87.13,
+        "two_hundred_day_sma": 88.22,
+        "free_cash_flow": 3_600_000_000.0,
+        "shares_outstanding": 1_041_766_896.0,
+        "total_debt": 63_845_998_592.0,
+        "total_cash": 2_476_999_936.0,
+        "revenue_growth": 0.057,
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(pipeline_stock)
+    # Without rate-base bypass, debt would wipe out 70% of value, collapsing DCF to $27.97.
+    # With FCFE equity valuation, fair value should be close to intrinsic cash flow value ($80 - $95).
+    assert res["dcf_fair_value"] > 75.0
+    assert abs(res["dcf_fair_value"] - pipeline_stock["current_price"]) / pipeline_stock["current_price"] < 0.15
+    assert res["bridge"]["less_total_debt"] == 0.0
+    assert res["bridge"]["equity_value"] == res["bridge"]["enterprise_value"]
+
+
 
