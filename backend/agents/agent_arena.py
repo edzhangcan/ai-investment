@@ -1,7 +1,8 @@
+from __future__ import annotations
 import os
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from google import genai
 from google.genai import types
 from backend.config import settings
