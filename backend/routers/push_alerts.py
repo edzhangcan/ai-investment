@@ -7,12 +7,54 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
+import ipaddress
+import urllib.parse
 
+from backend.config import settings
 from backend.database import get_session
 from backend.models.db_models import PushAlertConfigDB, get_utc_now
 from backend.engines.push_notifier import PushNotifier
 
 router = APIRouter(prefix="/api/push-alerts", tags=["Push Alert Config & Webhooks"])
+
+def validate_webhook_url(url: str) -> str:
+    """
+    Validates outbound webhook URLs against SSRF (Server-Side Request Forgery).
+    Rejects private, loopback, link-local, and cloud metadata IP addresses.
+    """
+    if not url or not isinstance(url, str):
+        raise HTTPException(status_code=400, detail="Invalid webhook URL")
+
+    cleaned_url = url.strip()
+    parsed = urllib.parse.urlparse(cleaned_url)
+    if parsed.scheme not in ("https", "http"):
+        raise HTTPException(status_code=400, detail="Webhook URL must use HTTP or HTTPS scheme.")
+
+    # In production/default, require HTTPS unless DEBUG is explicitly True
+    if parsed.scheme != "https" and not settings.DEBUG:
+        raise HTTPException(status_code=400, detail="Webhook URL must use HTTPS.")
+
+    hostname = (parsed.hostname or "").strip().lower()
+    if not hostname:
+        raise HTTPException(status_code=400, detail="Webhook URL missing valid hostname.")
+
+    # Block loopback hostnames
+    if hostname in ("localhost", "0.0.0.0", "::1", "127.0.0.1"):
+        raise HTTPException(status_code=400, detail="Invalid webhook URL: Loopback addresses are not permitted.")
+
+    # Block cloud metadata addresses (169.254.x.x)
+    if hostname.startswith("169.254."):
+        raise HTTPException(status_code=400, detail="Invalid webhook URL: Cloud metadata IP addresses are not permitted.")
+
+    # Check if hostname is an IP address and verify if private/loopback/link_local
+    try:
+        ip = ipaddress.ip_address(hostname)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved:
+            raise HTTPException(status_code=400, detail="Invalid webhook URL: Private or reserved IP addresses are not permitted.")
+    except ValueError:
+        pass
+
+    return cleaned_url
 
 class PushAlertConfigRequest(BaseModel):
     discord_webhook_url: Optional[str] = None
@@ -51,7 +93,11 @@ def save_push_alert_config(req: PushAlertConfigRequest, session: Session = Depen
         config = PushAlertConfigDB()
         session.add(config)
 
-    config.discord_webhook_url = req.discord_webhook_url.strip() if req.discord_webhook_url else None
+    webhook_url = req.discord_webhook_url.strip() if req.discord_webhook_url else None
+    if webhook_url:
+        webhook_url = validate_webhook_url(webhook_url)
+
+    config.discord_webhook_url = webhook_url
     config.is_discord_enabled = req.is_discord_enabled
     config.updated_at = get_utc_now()
 
@@ -70,9 +116,7 @@ def save_push_alert_config(req: PushAlertConfigRequest, session: Session = Depen
 @router.post("/test")
 def test_push_alert_channel(req: PushAlertTestRequest):
     """Dispatches an instant connection test embed to verify Discord Webhook URL."""
-    url = req.discord_webhook_url.strip()
-    if not url or not url.startswith("http"):
-        raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
+    url = validate_webhook_url(req.discord_webhook_url)
 
     res = PushNotifier.test_discord_connection(url, lang=req.lang)
     if not res.get("success"):
@@ -88,9 +132,7 @@ def test_push_alert_channel(req: PushAlertTestRequest):
 @router.post("/test/macro-digest")
 def test_macro_digest_alert(req: PushAlertTestRequest):
     """1. Tests Daily 8:00 AM EST Macro & Policy Newsletter Digest."""
-    url = req.discord_webhook_url.strip()
-    if not url or not url.startswith("http"):
-        raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
+    url = validate_webhook_url(req.discord_webhook_url)
 
     res = PushNotifier.send_macro_digest_alert(url, lang=req.lang)
     if not res.get("success"):
@@ -101,9 +143,7 @@ def test_macro_digest_alert(req: PushAlertTestRequest):
 @router.post("/test/bundled-buy")
 def test_bundled_buy_alert(req: PushAlertTestRequest):
     """2. Tests Bundled Watchlist Buy-In Notification (Single Combined Embed)."""
-    url = req.discord_webhook_url.strip()
-    if not url or not url.startswith("http"):
-        raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
+    url = validate_webhook_url(req.discord_webhook_url)
 
     res = PushNotifier.send_bundled_buy_alert(url, lang=req.lang)
     if not res.get("success"):
@@ -114,9 +154,7 @@ def test_bundled_buy_alert(req: PushAlertTestRequest):
 @router.post("/test/sell-danger")
 def test_sell_danger_alert(req: PushAlertTestRequest):
     """3. Tests Watchlist Sell & Danger Zone Risk Alert."""
-    url = req.discord_webhook_url.strip()
-    if not url or not url.startswith("http"):
-        raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
+    url = validate_webhook_url(req.discord_webhook_url)
 
     res = PushNotifier.send_sell_danger_alert(url, lang=req.lang)
     if not res.get("success"):
@@ -127,9 +165,7 @@ def test_sell_danger_alert(req: PushAlertTestRequest):
 @router.post("/test/gold-nuggets")
 def test_gold_nuggets_alert(req: PushAlertTestRequest):
     """4. Tests Gold Nuggets Discovery Alerts (8:00 AM & 12:00 PM EST)."""
-    url = req.discord_webhook_url.strip()
-    if not url or not url.startswith("http"):
-        raise HTTPException(status_code=400, detail="Invalid Discord Webhook URL")
+    url = validate_webhook_url(req.discord_webhook_url)
 
     res = PushNotifier.send_gold_nuggets_alert(url, lang=req.lang)
     if not res.get("success"):
@@ -148,8 +184,10 @@ def dispatch_push_alert(req: PushAlertDispatchRequest, session: Session = Depend
         if config and config.discord_webhook_url:
             url = config.discord_webhook_url.strip()
 
-    if not url or not url.startswith("http"):
+    if not url:
         raise HTTPException(status_code=400, detail="Invalid or missing Discord Webhook URL")
+
+    url = validate_webhook_url(url)
 
     alert_type = req.alert_type.strip().lower()
     

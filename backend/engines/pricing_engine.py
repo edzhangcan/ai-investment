@@ -47,7 +47,11 @@ class PricingEngine:
                 "applied_anchor_mode": anchor_mode,
                 "action_status": "NO DATA" if lang == "en" else "暂无数据",
                 "timing_advice": no_data_msg,
-                "rsi_14": None
+                "rsi_14": None,
+                "bridge": None,
+                "sensitivity_matrix": [],
+                "earnings_quality": None,
+                "provenance": None
             }
 
         price = float(stock_data["current_price"])
@@ -57,27 +61,121 @@ class PricingEngine:
         pe = stock_data.get("pe_ratio")
         fcf = stock_data.get("free_cash_flow")
 
-        # 1. Simplified 2-Stage DCF Calculation
-        wacc = 0.08
+        # 1. Institutional 2-Stage DCF with EV-to-Equity Net Debt Bridge & Dynamic CAPM WACC
+        total_debt = float(stock_data.get("total_debt") or 0.0)
+        total_cash = float(stock_data.get("total_cash") or 0.0)
+        sbc = float(stock_data.get("stock_based_compensation") or 0.0)
+        total_assets = float(stock_data.get("total_assets") or 0.0)
+        beta = float(stock_data.get("beta") if stock_data.get("beta") is not None else 1.0)
+        raw_fcf = float(fcf) if fcf is not None else 0.0
+        operating_cf = float(stock_data.get("operating_cash_flow") or (raw_fcf * 1.15 if raw_fcf else 0.0))
+        net_inc = float(stock_data.get("net_income") or (raw_fcf * 0.90 if raw_fcf else 0.0))
+
+        # Earnings quality analysis
+        earnings_quality = cls.compute_earnings_quality(
+            operating_cash_flow=operating_cf,
+            net_income=net_inc,
+            total_assets=total_assets,
+            raw_fcf=raw_fcf,
+            sbc=sbc
+        )
+
+        # Determine market_cap & implied_shares
+        market_cap = stock_data.get("market_cap")
+        if market_cap is None or float(market_cap) <= 0:
+            if pe is not None and net_inc > 0 and float(pe) > 0:
+                market_cap = float(pe) * net_inc
+            elif stock_data.get("shares_outstanding"):
+                market_cap = price * float(stock_data["shares_outstanding"])
+            elif raw_fcf > 1000:
+                market_cap = max(price * 10_000_000.0, raw_fcf * 15.0)
+            else:
+                market_cap = price * 10_000_000.0
+        else:
+            market_cap = float(market_cap)
+
+        implied_shares = stock_data.get("shares_outstanding") or stock_data.get("implied_shares")
+        if not implied_shares or float(implied_shares) <= 0:
+            if raw_fcf <= 1000 and raw_fcf > 0:
+                implied_shares = 1.0
+            else:
+                implied_shares = max(1.0, market_cap / max(0.01, price))
+        else:
+            implied_shares = float(implied_shares)
+
+        # Dynamic CAPM WACC
+        wacc = cls.compute_dynamic_wacc(
+            beta=beta,
+            risk_free_rate=0.042,
+            equity_risk_premium=0.045,
+            total_debt=total_debt,
+            market_cap=market_cap
+        )
         terminal_growth = 0.03
         rev_growth = min(max(stock_data.get("revenue_growth") or 0.08, 0.03), 0.25)
-        
-        if fcf and fcf > 0:
-            implied_shares = max(1000000.0, (price * 10000000.0) / max(1.0, price))
-            fcf_per_share = max(0.5, fcf / implied_shares)
-            dcf_val = 0.0
-            curr_fcf = fcf_per_share
+
+        # Deduct SBC from FCF: owner_fcf = max(0.0, raw_fcf - sbc)
+        deduct_sbc = True
+        if deduct_sbc and (raw_fcf - sbc) > 0:
+            owner_fcf = raw_fcf - sbc
+        else:
+            owner_fcf = raw_fcf
+
+        if raw_fcf > 0:
+            curr_fcf = owner_fcf
+            pv_10y_fcf = 0.0
             for year in range(1, 11):
                 growth_rate = rev_growth if year <= 5 else (rev_growth + terminal_growth) / 2
                 curr_fcf *= (1 + growth_rate)
-                dcf_val += curr_fcf / ((1 + wacc) ** year)
+                pv_10y_fcf += curr_fcf / ((1 + wacc) ** year)
             term_val = (curr_fcf * (1 + terminal_growth)) / (wacc - terminal_growth)
-            disc_tv = term_val / ((1 + wacc) ** 10)
-            dcf_fair_value = round(dcf_val + disc_tv, 2)
-            dcf_fair_value = max(round(price * 0.7, 2), min(round(price * 1.4, 2), dcf_fair_value))
+            pv_terminal_value = term_val / ((1 + wacc) ** 10)
+            enterprise_value = pv_10y_fcf + pv_terminal_value
+            equity_value = enterprise_value + total_cash - total_debt
+            fair_value_per_share = round(max(0.01, equity_value / implied_shares), 2)
+            dcf_fair_value = fair_value_per_share
+            outlier_warning = (fair_value_per_share / max(0.01, price) < 0.25) or (fair_value_per_share / max(0.01, price) > 3.0)
+            bridge = {
+                "pv_10y_fcf": round(pv_10y_fcf, 2),
+                "pv_terminal_value": round(pv_terminal_value, 2),
+                "enterprise_value": round(enterprise_value, 2),
+                "plus_cash": round(total_cash, 2),
+                "less_total_debt": round(total_debt, 2),
+                "less_sbc_annual": round(sbc, 2),
+                "equity_value": round(equity_value, 2),
+                "implied_shares": round(implied_shares, 2),
+                "fair_value_per_share": fair_value_per_share,
+                "dynamic_wacc_used": wacc,
+                "valuation_outlier_warning": outlier_warning
+            }
         else:
             # ETF / Index or missing FCF default DCF target relative to 200D SMA
             dcf_fair_value = round(max(price * 1.05, two_hundred_sma * 1.10), 2)
+            bridge = {
+                "pv_10y_fcf": 0.0,
+                "pv_terminal_value": 0.0,
+                "enterprise_value": 0.0,
+                "plus_cash": round(total_cash, 2),
+                "less_total_debt": round(total_debt, 2),
+                "less_sbc_annual": round(sbc, 2),
+                "equity_value": round(dcf_fair_value * implied_shares, 2),
+                "implied_shares": round(implied_shares, 2),
+                "fair_value_per_share": dcf_fair_value,
+                "dynamic_wacc_used": wacc,
+                "valuation_outlier_warning": False
+            }
+
+        # 5x5 WACC vs Terminal Growth Sensitivity Matrix
+        sensitivity_matrix = cls.build_sensitivity_matrix(
+            base_wacc=wacc,
+            base_g=terminal_growth,
+            owner_fcf=owner_fcf if raw_fcf > 0 else 0.0,
+            rev_growth=rev_growth,
+            total_cash=total_cash,
+            total_debt=total_debt,
+            implied_shares=implied_shares,
+            price=price
+        )
 
         # 2. Continuous Dynamic Valuation Percentile & Timing Score
         rsi = float(stock_data.get("rsi_14") or 55.0)
@@ -240,7 +338,17 @@ class PricingEngine:
             "rsi_14": stock_data.get("rsi_14", 54.0),
             "reverse_dcf": reverse_dcf,
             "taxonomy": taxonomy_result,
-            "total_shareholder_yield_pct": taxonomy_result.get("total_shareholder_yield_pct", 0.0)
+            "total_shareholder_yield_pct": taxonomy_result.get("total_shareholder_yield_pct", 0.0),
+            "bridge": bridge,
+            "sensitivity_matrix": sensitivity_matrix,
+            "earnings_quality": earnings_quality,
+            "provenance": {
+                "source_mode": stock_data.get("source_mode", "LIVE"),
+                "provider": stock_data.get("source", "Real-Time Exchange / yfinance"),
+                "fetched_at": stock_data.get("fetched_at", ""),
+                "staleness_seconds": 0,
+                "warning_banner": stock_data.get("warning_banner")
+            }
         }
 
     @staticmethod
@@ -314,3 +422,149 @@ class PricingEngine:
             "prosperity_trap_note": None,
             "matrix": matrix
         }
+
+    @classmethod
+    def compute_dynamic_wacc(
+        cls,
+        beta: float = 1.0,
+        risk_free_rate: float = 0.042,
+        equity_risk_premium: float = 0.045,
+        total_debt: float = 0.0,
+        market_cap: float = 0.0
+    ) -> float:
+        """
+        Computes dynamic CAPM Weighted Average Cost of Capital (WACC).
+        Clamps beta to [0.5, 2.2], computes ke = rf + beta * erp,
+        blends with after-tax cost of debt kd_after_tax = (rf + 0.015) * 0.79,
+        and clamps resulting WACC to [0.06, 0.14].
+        """
+        clamped_beta = min(max(float(beta if beta is not None else 1.0), 0.5), 2.2)
+        ke = risk_free_rate + (clamped_beta * equity_risk_premium)
+        kd_after_tax = (risk_free_rate + 0.015) * 0.79
+
+        debt = float(total_debt or 0.0)
+        mcap = float(market_cap or 0.0)
+        total_cap = mcap + debt
+
+        if total_cap > 0 and debt > 0:
+            we = mcap / total_cap
+            wd = debt / total_cap
+            wacc = (we * ke) + (wd * kd_after_tax)
+        else:
+            wacc = ke
+
+        return round(min(max(wacc, 0.06), 0.14), 4)
+
+    @classmethod
+    def compute_earnings_quality(
+        cls,
+        operating_cash_flow: float,
+        net_income: float,
+        total_assets: float,
+        raw_fcf: float,
+        sbc: float
+    ) -> Dict[str, Any]:
+        """
+        Audits financial statement earnings quality and accrual intensity.
+        Computes Cash Conversion Ratio, Sloan Accruals Ratio, and SBC % of FCF.
+        """
+        ocf = float(operating_cash_flow or 0.0)
+        ni = float(net_income or 0.0)
+        assets = float(total_assets or 0.0)
+        fcf = float(raw_fcf or 0.0)
+        sbc_val = float(sbc or 0.0)
+
+        cash_conversion_ratio = round(ocf / ni, 2) if ni > 0 else 1.0
+        sloan_accruals_ratio = round((ni - ocf) / assets, 4) if assets > 0 else 0.0
+        sbc_pct_of_fcf = round(sbc_val / fcf, 2) if fcf > 0 else 0.0
+
+        forensic_flags: List[str] = []
+        if ni > 0 and cash_conversion_ratio < 0.75:
+            forensic_flags.append("LOW_CASH_CONVERSION (<0.75x)")
+        if sloan_accruals_ratio > 0.08:
+            forensic_flags.append("HIGH_ACCRUAL_INTENSITY (>8% Assets)")
+        if sbc_pct_of_fcf > 0.30:
+            forensic_flags.append("HEAVY_SBC_DILUTION (>30% FCF)")
+
+        if len(forensic_flags) >= 2:
+            quality_rating = "LOW_ACCRUAL_RISK"
+        elif len(forensic_flags) == 1:
+            quality_rating = "MODERATE"
+        else:
+            quality_rating = "HIGH"
+
+        return {
+            "operating_cash_flow": ocf,
+            "net_income": ni,
+            "stock_based_compensation": sbc_val,
+            "cash_conversion_ratio": cash_conversion_ratio,
+            "sloan_accruals_ratio": sloan_accruals_ratio,
+            "sbc_pct_of_fcf": sbc_pct_of_fcf,
+            "quality_rating": quality_rating,
+            "forensic_flags": forensic_flags
+        }
+
+    @classmethod
+    def build_sensitivity_matrix(
+        cls,
+        base_wacc: float,
+        base_g: float,
+        owner_fcf: float,
+        rev_growth: float,
+        total_cash: float,
+        total_debt: float,
+        implied_shares: float,
+        price: float
+    ) -> List[List[Dict[str, Any]]]:
+        """
+        Builds a 5x5 DCF sensitivity matrix across Terminal Growth (rows) and WACC (columns).
+        Guarantees effective_wacc - effective_g >= 0.015 in every cell.
+        Along each row (fixed g, increasing wacc): fair value strictly decreases.
+        Along each column (fixed wacc, increasing g): fair value strictly increases.
+        """
+        wacc_steps = [
+            round(base_wacc - 0.01, 4),
+            round(base_wacc - 0.005, 4),
+            round(base_wacc, 4),
+            round(base_wacc + 0.005, 4),
+            round(base_wacc + 0.01, 4),
+        ]
+        g_steps = [
+            round(base_g - 0.01, 4),
+            round(base_g - 0.005, 4),
+            round(base_g, 4),
+            round(base_g + 0.005, 4),
+            round(base_g + 0.01, 4),
+        ]
+
+        matrix: List[List[Dict[str, Any]]] = []
+        for g_val in g_steps:
+            row: List[Dict[str, Any]] = []
+            for w_val in wacc_steps:
+                eff_w = max(0.04, w_val)
+                eff_g = min(g_val, eff_w - 0.015)
+
+                if owner_fcf > 0 and implied_shares > 0:
+                    curr_fcf = owner_fcf
+                    pv_10y = 0.0
+                    for year in range(1, 11):
+                        growth = rev_growth if year <= 5 else (rev_growth + eff_g) / 2
+                        curr_fcf *= (1 + growth)
+                        pv_10y += curr_fcf / ((1 + eff_w) ** year)
+                    tv = (curr_fcf * (1 + eff_g)) / (eff_w - eff_g)
+                    pv_tv = tv / ((1 + eff_w) ** 10)
+                    ev = pv_10y + pv_tv
+                    equity = ev + total_cash - total_debt
+                    fv = round(max(0.01, equity / implied_shares), 2)
+                else:
+                    fv = round(max(0.01, price * 1.05 * (1 + (eff_g - base_g)*2 - (eff_w - base_wacc)*3)), 2)
+
+                upside = round(((fv - price) / max(0.01, price)) * 100.0, 2)
+                row.append({
+                    "wacc": round(eff_w, 4),
+                    "terminal_growth": round(eff_g, 4),
+                    "fair_value": fv,
+                    "upside_pct": upside
+                })
+            matrix.append(row)
+        return matrix

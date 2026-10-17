@@ -1,0 +1,216 @@
+"""
+Unit Test Suite for Institutional Valuation 2.0 & Accounting Forensics (US-06)
+Deterministic mathematical verification for:
+1. EV-to-Equity Net Debt Bridge
+2. SBC deduction lowering owner FCF
+3. Unclamped DCF fair value with outlier warnings
+4. 5x5 WACC vs Terminal Growth sensitivity matrix monotonicity
+5. Earnings quality accrual and cash conversion forensic flags
+6. Dynamic CAPM WACC bounds [0.06, 0.14]
+"""
+
+import pytest
+from backend.engines.pricing_engine import PricingEngine
+from backend.models.schemas import ValuationBridgeSchema, EarningsQualitySchema, SensitivityCellSchema
+
+def test_ev_to_equity_net_debt_bridge():
+    """
+    Verify that a company with $50B cash and $0 debt has a strictly higher
+    DCF fair value per share than an identical company with $0 cash and $50B debt.
+    """
+    base_stock = {
+        "symbol": "CORP_TEST",
+        "current_price": 100.0,
+        "fifty_day_sma": 98.0,
+        "two_hundred_day_sma": 90.0,
+        "free_cash_flow": 10_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "revenue_growth": 0.08,
+        "is_valid": True
+    }
+
+    # Company with $50B cash, $0 debt
+    cash_rich = {**base_stock, "total_cash": 50_000_000_000.0, "total_debt": 0.0}
+    # Company with $0 cash, $50B debt
+    debt_laden = {**base_stock, "total_cash": 0.0, "total_debt": 50_000_000_000.0}
+
+    res_cash = PricingEngine.evaluate_pricing_and_entry_zone(cash_rich)
+    res_debt = PricingEngine.evaluate_pricing_and_entry_zone(debt_laden)
+
+    assert res_cash["dcf_fair_value"] > res_debt["dcf_fair_value"]
+    assert res_cash["bridge"] is not None
+    assert res_debt["bridge"] is not None
+    assert res_cash["bridge"]["plus_cash"] == 50_000_000_000.0
+    assert res_debt["bridge"]["less_total_debt"] == 50_000_000_000.0
+    
+    # Under identical operating enterprise value, net debt bridge delta is exactly ($50B - (-$50B)) / 1B = $100 / share
+    ev = res_cash["bridge"]["enterprise_value"]
+    eq_cash = ev + res_cash["bridge"]["plus_cash"] - res_cash["bridge"]["less_total_debt"]
+    eq_debt = ev + res_debt["bridge"]["plus_cash"] - res_debt["bridge"]["less_total_debt"]
+    assert round((eq_cash - eq_debt) / 1_000_000_000.0, 2) == 100.0
+
+def test_sbc_deduction_lowers_owner_fcf():
+    """
+    Verify that higher stock_based_compensation reduces owner_fcf and fair_value_per_share.
+    """
+    stock_no_sbc = {
+        "symbol": "CLEAN_FCF",
+        "current_price": 100.0,
+        "fifty_day_sma": 98.0,
+        "two_hundred_day_sma": 90.0,
+        "free_cash_flow": 10_000_000_000.0,
+        "stock_based_compensation": 0.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "is_valid": True
+    }
+
+    stock_heavy_sbc = {
+        "symbol": "DILUTIVE_FCF",
+        "current_price": 100.0,
+        "fifty_day_sma": 98.0,
+        "two_hundred_day_sma": 90.0,
+        "free_cash_flow": 10_000_000_000.0,
+        "stock_based_compensation": 3_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "is_valid": True
+    }
+
+    res_clean = PricingEngine.evaluate_pricing_and_entry_zone(stock_no_sbc)
+    res_sbc = PricingEngine.evaluate_pricing_and_entry_zone(stock_heavy_sbc)
+
+    assert res_clean["dcf_fair_value"] > res_sbc["dcf_fair_value"]
+    assert res_sbc["bridge"]["less_sbc_annual"] == 3_000_000_000.0
+    assert res_clean["bridge"]["less_sbc_annual"] == 0.0
+
+def test_unclamped_dcf_outlier_warning():
+    """
+    Verify that a deeply overvalued stock is NOT artificially clamped to 0.70 * current_price
+    and sets bridge.valuation_outlier_warning == True.
+    """
+    deeply_overvalued = {
+        "symbol": "HYPER_BUBBLE",
+        "current_price": 1000.0,
+        "fifty_day_sma": 950.0,
+        "two_hundred_day_sma": 800.0,
+        "free_cash_flow": 10_000_000.0,  # $10M FCF on 1B shares -> $0.01 FCF/share
+        "shares_outstanding": 1_000_000_000.0,
+        "pe_ratio": 200.0,
+        "revenue_growth": 0.05,
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(deeply_overvalued)
+
+    # In the old engine, dcf_fair_value would have been artificially clamped to 1000 * 0.7 = 700.0
+    # In Valuation 2.0, fair value reflects true economic DCF (< $1.00)
+    assert res["dcf_fair_value"] < 10.0
+    assert res["dcf_fair_value"] < 0.70 * deeply_overvalued["current_price"]
+    assert res["bridge"]["valuation_outlier_warning"] is True
+
+def test_5x5_sensitivity_matrix_monotonicity():
+    """
+    Verify sensitivity_matrix has shape 5x5, and fair value strictly decreases
+    as wacc increases along each row and strictly increases as terminal_growth
+    increases along each column.
+    """
+    matrix = PricingEngine.build_sensitivity_matrix(
+        base_wacc=0.08,
+        base_g=0.03,
+        owner_fcf=5_000_000_000.0,
+        rev_growth=0.08,
+        total_cash=10_000_000_000.0,
+        total_debt=5_000_000_000.0,
+        implied_shares=1_000_000_000.0,
+        price=100.0
+    )
+
+    # Verify 5x5 dimensions
+    assert len(matrix) == 5
+    for row in matrix:
+        assert len(row) == 5
+
+    # Along each row: terminal_growth is fixed; as column index increases, WACC increases -> fair value strictly decreases
+    for row in matrix:
+        for c in range(len(row) - 1):
+            assert row[c]["fair_value"] > row[c + 1]["fair_value"], (
+                f"Row monotonicity breach: {row[c]['fair_value']} not > {row[c+1]['fair_value']}"
+            )
+            assert row[c]["wacc"] < row[c + 1]["wacc"]
+
+    # Along each column: WACC is fixed; as row index increases, terminal_growth increases -> fair value strictly increases
+    for c in range(5):
+        for r in range(len(matrix) - 1):
+            assert matrix[r + 1][c]["fair_value"] > matrix[r][c]["fair_value"], (
+                f"Column monotonicity breach: {matrix[r+1][c]['fair_value']} not > {matrix[r][c]['fair_value']}"
+            )
+            assert matrix[r + 1][c]["terminal_growth"] > matrix[r][c]["terminal_growth"]
+
+def test_earnings_quality_forensic_flags():
+    """
+    Verify compute_earnings_quality triggers:
+    - LOW_CASH_CONVERSION (<0.75x)
+    - HIGH_ACCRUAL_INTENSITY (>8% Assets)
+    - HEAVY_SBC_DILUTION (>30% FCF)
+    when thresholds are breached, and assigns LOW_ACCRUAL_RISK when 2+ flags are active.
+    """
+    forensics = PricingEngine.compute_earnings_quality(
+        operating_cash_flow=50.0,
+        net_income=100.0,
+        total_assets=500.0,
+        raw_fcf=100.0,
+        sbc=45.0
+    )
+
+    # 1. cash conversion = 50 / 100 = 0.50 (< 0.75)
+    assert forensics["cash_conversion_ratio"] == 0.50
+    assert "LOW_CASH_CONVERSION (<0.75x)" in forensics["forensic_flags"]
+
+    # 2. Sloan accruals = (100 - 50) / 500 = 0.10 (> 0.08)
+    assert forensics["sloan_accruals_ratio"] == 0.10
+    assert "HIGH_ACCRUAL_INTENSITY (>8% Assets)" in forensics["forensic_flags"]
+
+    # 3. SBC % of FCF = 45 / 100 = 0.45 (> 0.30)
+    assert forensics["sbc_pct_of_fcf"] == 0.45
+    assert "HEAVY_SBC_DILUTION (>30% FCF)" in forensics["forensic_flags"]
+
+    # Rating should flag accrual risk
+    assert forensics["quality_rating"] == "LOW_ACCRUAL_RISK"
+    assert len(forensics["forensic_flags"]) == 3
+
+    # High quality case: no flags
+    clean_forensics = PricingEngine.compute_earnings_quality(
+        operating_cash_flow=120.0,
+        net_income=100.0,
+        total_assets=1000.0,
+        raw_fcf=110.0,
+        sbc=10.0
+    )
+    assert clean_forensics["quality_rating"] == "HIGH"
+    assert len(clean_forensics["forensic_flags"]) == 0
+
+def test_dynamic_wacc_bounds():
+    """
+    Verify compute_dynamic_wacc always clamps the resulting WACC to [0.06, 0.14].
+    """
+    # Extremely negative / low beta
+    wacc_low = PricingEngine.compute_dynamic_wacc(beta=-5.0)
+    assert 0.06 <= wacc_low <= 0.14
+    assert wacc_low == 0.0645  # rf (0.042) + clamped_beta (0.5) * erp (0.045) = 0.0645
+
+    # Extremely high beta
+    wacc_high = PricingEngine.compute_dynamic_wacc(beta=10.0)
+    assert 0.06 <= wacc_high <= 0.14
+    assert wacc_high == 0.14  # rf + 2.2 * 0.045 = 0.141 -> clamped to 0.14
+
+    # Standard market beta = 1.0
+    wacc_market = PricingEngine.compute_dynamic_wacc(beta=1.0)
+    assert round(wacc_market, 3) == 0.087
+    assert 0.06 <= wacc_market <= 0.14
+
+    # Capital structure weighting with debt
+    wacc_with_debt = PricingEngine.compute_dynamic_wacc(
+        beta=1.2,
+        total_debt=40_000_000_000.0,
+        market_cap=60_000_000_000.0
+    )
+    assert 0.06 <= wacc_with_debt <= 0.14

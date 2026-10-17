@@ -226,6 +226,8 @@ class SECEdgarParser:
             metrics = {
                 "symbol": symbol,
                 "sec_source": "SEC EDGAR Official 10-K Filing",
+                "source_mode": "LIVE",
+                "warning_banner": None,
                 "operating_cash_flow": recent_ocf if recent_ocf > 0 else None,
                 "capex": recent_capex if recent_capex > 0 else None,
                 "free_cash_flow": fcf if fcf != 0 else None,
@@ -261,6 +263,8 @@ class SECEdgarParser:
         return {
             "symbol": symbol,
             "sec_source": "SEC EDGAR 10-K Ingestion Feed",
+            "source_mode": "SIMULATED_FALLBACK",
+            "warning_banner": "Fallback regulatory metrics: live SEC EDGAR XBRL unavailable.",
             "operating_cash_flow": ocf,
             "capex": capex,
             "free_cash_flow": fcf,
