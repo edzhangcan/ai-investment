@@ -34,6 +34,32 @@ engine = create_engine(
     connect_args={"check_same_thread": False, "timeout": 30}
 )
 
+def ensure_schema_migrations() -> None:
+    """
+    Idempotent SQLite schema migration runner.
+    Uses PRAGMA table_info to inspect existing columns and safely appends
+    new columns via ALTER TABLE without destroying data or throwing errors.
+    """
+    migrations = [
+        ("user_watchlists", "target_sell_price", "REAL"),
+        ("recommendation_snapshots", "country", "TEXT DEFAULT 'US'"),
+        ("debate_transcripts", "bull_rebuttal", "TEXT"),
+        ("debate_transcripts", "bear_rebuttal", "TEXT"),
+        ("debate_transcripts", "falsification_price_level", "REAL"),
+        ("debate_transcripts", "falsification_trigger_condition", "TEXT"),
+        ("debate_transcripts", "source_mode", "TEXT DEFAULT 'LIVE'"),
+        ("guidance_shifts", "source_mode", "TEXT DEFAULT 'LIVE'"),
+    ]
+    with engine.begin() as conn:
+        for table_name, col_name, col_type in migrations:
+            try:
+                res = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+                existing_cols = {row[1] for row in res}
+                if existing_cols and col_name not in existing_cols:
+                    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"))
+            except Exception:
+                pass
+
 def init_db():
     """
     Creates database schema and tables if they do not exist.
@@ -41,19 +67,7 @@ def init_db():
     """
     from backend.models import db_models  # Import registers SQLModel metadata
     SQLModel.metadata.create_all(engine)
-
-    # Ensure backward-compatible column addition for SQLite
-    with engine.connect() as conn:
-        try:
-            conn.execute(text("ALTER TABLE user_watchlists ADD COLUMN target_sell_price REAL"))
-            conn.commit()
-        except Exception:
-            pass  # Column already exists or table freshly created
-        try:
-            conn.execute(text("ALTER TABLE recommendation_snapshots ADD COLUMN country TEXT DEFAULT 'US'"))
-            conn.commit()
-        except Exception:
-            pass
+    ensure_schema_migrations()
 
 def get_session():
     """

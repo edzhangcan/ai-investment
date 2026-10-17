@@ -26,5 +26,13 @@ class Settings(BaseSettings):
     DEFAULT_WACC: float = 0.08  # 8% Discount rate for DCF
     DEFAULT_TERMINAL_GROWTH: float = 0.03  # 3% Terminal growth
 
+    # Security & CORS Whitelist
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
 settings = Settings()
 

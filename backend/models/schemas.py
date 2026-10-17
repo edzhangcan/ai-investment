@@ -3,7 +3,43 @@ Pydantic Data Schemas & Strongly-Typed Domain Models
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Literal
+
+class DataProvenanceSchema(BaseModel):
+    source_mode: Literal["LIVE", "CACHED", "SIMULATED_FALLBACK"] = "LIVE"
+    provider: str = "yfinance"
+    fetched_at: str = ""
+    staleness_seconds: int = 0
+    warning_banner: Optional[str] = None
+
+class EarningsQualitySchema(BaseModel):
+    operating_cash_flow: float = 0.0
+    net_income: float = 0.0
+    stock_based_compensation: float = 0.0
+    cash_conversion_ratio: float = 1.0
+    sloan_accruals_ratio: float = 0.0
+    sbc_pct_of_fcf: float = 0.0
+    quality_rating: Literal["HIGH", "MODERATE", "LOW_ACCRUAL_RISK"] = "HIGH"
+    forensic_flags: List[str] = Field(default_factory=list)
+
+class SensitivityCellSchema(BaseModel):
+    wacc: float
+    terminal_growth: float
+    fair_value: float
+    upside_pct: float
+
+class ValuationBridgeSchema(BaseModel):
+    pv_10y_fcf: float = 0.0
+    pv_terminal_value: float = 0.0
+    enterprise_value: float = 0.0
+    plus_cash: float = 0.0
+    less_total_debt: float = 0.0
+    less_sbc_annual: float = 0.0
+    equity_value: float = 0.0
+    implied_shares: float = 1.0
+    fair_value_per_share: float = 0.0
+    dynamic_wacc_used: float = 0.08
+    valuation_outlier_warning: bool = False
 
 class StockDataSchema(BaseModel):
     symbol: str
@@ -53,6 +89,7 @@ class GuidanceDeltaSchema(BaseModel):
     severity: str
     key_hedging_phrases: List[str] = Field(default_factory=list)
     sentiment_delta_score: float = 0.0
+    source_mode: Optional[Literal["LIVE", "CACHED", "SIMULATED_FALLBACK"]] = "LIVE"
 
 class MoatFactorScoreSchema(BaseModel):
     factor_name: str
@@ -125,6 +162,12 @@ class PricingAnalysisSchema(BaseModel):
     reverse_dcf: Optional[ReverseDcfResult] = None
     taxonomy: Optional[TaxonomyResult] = None
     total_shareholder_yield_pct: Optional[float] = None
+    bridge: Optional[ValuationBridgeSchema] = None
+    sensitivity_matrix: List[List[SensitivityCellSchema]] = Field(default_factory=list)
+    earnings_quality: Optional[EarningsQualitySchema] = None
+    provenance: Optional[DataProvenanceSchema] = None
+
+ValuationResultSchema = PricingAnalysisSchema
 
 class BullArgumentSchema(BaseModel):
     agent: str
@@ -151,6 +194,35 @@ class DebateSchema(BaseModel):
     bull_argument: BullArgumentSchema
     bear_argument: BearArgumentSchema
     cio_verdict: CIOVerdictSchema
+    bull_rebuttal: Optional[str] = None
+    bear_rebuttal: Optional[str] = None
+    falsification_price_level: Optional[float] = None
+    falsification_trigger_condition: Optional[str] = None
+    provenance: Optional[DataProvenanceSchema] = None
+
+DebateTranscriptSchema = DebateSchema
+
+class PortfolioAllocationSchema(BaseModel):
+    symbol: Optional[str] = None
+    base_currency: Literal["USD", "CAD"] = "USD"
+    active_macro_regime: str = "NEUTRAL"
+    calibrated_win_prob: Optional[float] = None
+    correlation_penalty_factor: float = 1.0
+    recommended_weight_pct: float = 0.0
+    full_kelly_pct: float = 0.0
+    quarter_kelly_pct: float = 0.0
+    core_holdings: List[Dict[str, Any]] = Field(default_factory=list)
+
+class BacktestResultSchema(BaseModel):
+    cagr_pct: float = 0.0
+    sharpe_ratio: float = 0.0
+    sortino_ratio: Optional[float] = None
+    max_drawdown_pct: float = 0.0
+    benchmark_alpha: Optional[float] = None
+    benchmark_beta: Optional[float] = None
+    slippage_bps_applied: float = 10.0
+    survivorship_bias_notice: str = "Evaluated on current surviving constituent universe; historical delistings excluded."
+    yearly_returns: Dict[str, float] = Field(default_factory=dict)
 
 class StockRecommendationSchema(BaseModel):
     symbol: str

@@ -37,6 +37,7 @@ class GuidanceShiftDB(SQLModel, table=True):
     year_pair: str
     disclaimer: str
     severity: str
+    source_mode: Optional[str] = Field(default="LIVE")
     created_at: datetime = Field(default_factory=get_utc_now)
 
 class UserWatchlistDB(SQLModel, table=True):
@@ -58,6 +59,11 @@ class DebateTranscriptDB(SQLModel, table=True):
     cio_verdict: str
     risk_reward_ratio: float
     judge_summary: str
+    bull_rebuttal: Optional[str] = Field(default=None)
+    bear_rebuttal: Optional[str] = Field(default=None)
+    falsification_price_level: Optional[float] = Field(default=None)
+    falsification_trigger_condition: Optional[str] = Field(default=None)
+    source_mode: Optional[str] = Field(default="LIVE")
     created_at: datetime = Field(default_factory=get_utc_now)
 
 class PriceAlertLogDB(SQLModel, table=True):

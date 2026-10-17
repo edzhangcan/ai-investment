@@ -77,9 +77,12 @@ class SEDARParser:
             capex = None
             net_income = None
 
+        is_live = symbol in canadian_data
         return {
             "symbol": symbol,
             "sedar_source": "SEDAR+ Official Canadian Filings Repository",
+            "source_mode": "LIVE" if is_live else "SIMULATED_FALLBACK",
+            "warning_banner": None if is_live else "Fallback regulatory metrics: simulated Canadian filing disclosure.",
             "currency": "CAD",
             "operating_cash_flow": ocf,
             "capex": capex,
