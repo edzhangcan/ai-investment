@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { BilingualHoverCard } from './BilingualHoverCard';
-import { FileText, TrendingUp, AlertTriangle, ShieldCheck, Database, FileDiff } from 'lucide-react';
+import { FileText, TrendingUp, AlertTriangle, ShieldCheck, Database, FileDiff, ShieldAlert, Activity, CheckCircle2 } from 'lucide-react';
+import { ProvenanceBadge } from './ProvenanceBadge';
+import { EarningsQuality, DataProvenance } from '../types';
 
 interface SecTextMiningViewerProps {
   symbol: string;
+  earningsQuality?: EarningsQuality | null;
+  provenance?: DataProvenance | null;
 }
 
 interface MiningTimelineEntry {
@@ -22,9 +26,16 @@ interface MiningDataPayload {
   historical_years_parsed: number;
   summary_note: string;
   text_mining_timeline: MiningTimelineEntry[];
+  source_mode?: string;
+  provenance?: DataProvenance;
+  earnings_quality?: EarningsQuality;
 }
 
-export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol }) => {
+export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({
+  symbol,
+  earningsQuality,
+  provenance
+}) => {
   const { language, t } = useLanguage();
   const [data, setData] = useState<MiningDataPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,13 +73,16 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
   if (!data || data.text_mining_timeline.length === 0) return null;
 
   const currentEntry = data.text_mining_timeline[activeYearIndex] || data.text_mining_timeline[0];
+  const effectiveProvenance = provenance || data.provenance;
+  const effectiveEarningsQuality = earningsQuality || data.earnings_quality;
+  const isFallback = effectiveProvenance?.source_mode === 'SIMULATED_FALLBACK';
 
   return (
     <div className="prism-card p-6 md:p-8 mb-8">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-border-subtle">
         <div>
-          <div className="flex items-center gap-2.5 mb-1">
+          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
             <span className="p-2 prism-badge-brand rounded-xl">
               <FileDiff className="w-5 h-5" />
             </span>
@@ -77,6 +91,7 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
                 {t.secTitle}
               </BilingualHoverCard>
             </h3>
+            <ProvenanceBadge provenance={effectiveProvenance} />
           </div>
           <p className="text-xs text-content-muted">
             {t.secSubtitle}
@@ -92,6 +107,127 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({ symbol
           </span>
         </div>
       </div>
+
+      {/* Fallback Warning Callout Banner */}
+      {isFallback && (
+        <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 flex items-start gap-3 text-xs text-rose-900 dark:text-rose-200 shadow-sm">
+          <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="font-extrabold flex items-center gap-2">
+              <span>{language === 'zh' ? '⚠️ 模拟降级模式警示 (Simulated Fallback)' : '⚠️ Simulated Fallback Warning'}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-200 dark:bg-rose-900/60 font-mono">UNLISTED / MOCK</span>
+            </div>
+            <p className="leading-relaxed opacity-90">
+              {effectiveProvenance?.warning_banner || (language === 'zh'
+                ? '此标的缺少真实的 SEC EDGAR 10-K 或 SEDAR+ 年度 MD&A 归档文本，当前展示基于同业基准与动量特征生成的模拟 MD&A 风险警示，请勿作为单一审计依据。'
+                : 'Live regulatory filings are unavailable for this ticker. Displaying dynamically calibrated heuristic MD&A risk shifts. Verify with audited statutory filings.')}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Accounting Forensics & Earnings Quality Summary Bar */}
+      {effectiveEarningsQuality && (
+        <div className="mb-6 p-4 rounded-xl bg-surface-subtle border border-border-subtle shadow-sm space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border-subtle">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-brand" />
+              <span className="text-xs font-bold text-content-primary">
+                {language === 'zh' ? '会计法证与财报质量审计 (Earnings Quality Forensics)' : 'Accounting Forensics & Earnings Quality Audit'}
+              </span>
+            </div>
+            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${
+              effectiveEarningsQuality.quality_rating === 'HIGH'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
+                : effectiveEarningsQuality.quality_rating === 'MODERATE'
+                ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
+                : 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800'
+            }`}>
+              Rating: {effectiveEarningsQuality.quality_rating}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            {/* Cash Conversion */}
+            <div className="p-3 rounded-xl bg-surface border border-border-subtle">
+              <span className="text-[10px] text-content-muted block mb-1">
+                {language === 'zh' ? '现金转换率 (OCF / 净利润)' : 'Cash Conversion (OCF / NI)'}
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-base font-extrabold font-mono ${
+                  effectiveEarningsQuality.cash_conversion_ratio >= 1.0
+                    ? 'text-positive'
+                    : effectiveEarningsQuality.cash_conversion_ratio >= 0.7
+                    ? 'text-warning'
+                    : 'text-negative'
+                }`}>
+                  {effectiveEarningsQuality.cash_conversion_ratio.toFixed(2)}x
+                </span>
+                <span className="text-[10px] text-content-muted">
+                  {effectiveEarningsQuality.cash_conversion_ratio >= 1.0 ? '✓ High Quality Cash' : '⚠ Accrual Drag'}
+                </span>
+              </div>
+            </div>
+
+            {/* Sloan Accruals Ratio */}
+            <div className="p-3 rounded-xl bg-surface border border-border-subtle">
+              <span className="text-[10px] text-content-muted block mb-1">
+                {language === 'zh' ? '斯隆应计比率 (Sloan Accruals)' : 'Sloan Accruals Ratio'}
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-base font-extrabold font-mono ${
+                  Math.abs(effectiveEarningsQuality.sloan_accruals_ratio) <= 0.10
+                    ? 'text-positive'
+                    : Math.abs(effectiveEarningsQuality.sloan_accruals_ratio) <= 0.15
+                    ? 'text-warning'
+                    : 'text-negative'
+                }`}>
+                  {(effectiveEarningsQuality.sloan_accruals_ratio * 100).toFixed(1)}%
+                </span>
+                <span className="text-[10px] text-content-muted">
+                  {Math.abs(effectiveEarningsQuality.sloan_accruals_ratio) <= 0.10 ? '✓ Low Accrual Risk' : '⚠ Manipulative Risk'}
+                </span>
+              </div>
+            </div>
+
+            {/* SBC % of FCF */}
+            <div className="p-3 rounded-xl bg-surface border border-border-subtle">
+              <span className="text-[10px] text-content-muted block mb-1">
+                {language === 'zh' ? '股权激励占 FCF 比重 (SBC / FCF)' : 'SBC % of Free Cash Flow'}
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-base font-extrabold font-mono ${
+                  effectiveEarningsQuality.sbc_pct_of_fcf <= 0.20
+                    ? 'text-positive'
+                    : effectiveEarningsQuality.sbc_pct_of_fcf <= 0.40
+                    ? 'text-warning'
+                    : 'text-negative'
+                }`}>
+                  {(effectiveEarningsQuality.sbc_pct_of_fcf * 100).toFixed(1)}%
+                </span>
+                <span className="text-[10px] text-content-muted">
+                  {effectiveEarningsQuality.sbc_pct_of_fcf > 0.35 ? '⚠ Heavy Dilution' : '✓ Manageable'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Forensic Warning Badges */}
+          {effectiveEarningsQuality.forensic_flags && effectiveEarningsQuality.forensic_flags.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {effectiveEarningsQuality.forensic_flags.map((flag, idx) => (
+                <span
+                  key={idx}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 flex items-center gap-1"
+                >
+                  <ShieldAlert className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                  <span>{flag.replace(/_/g, ' ').toUpperCase()}</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Summary Note Banner */}
       <div className="prism-surface-subtle p-4 mb-6 text-xs text-content-secondary font-medium leading-relaxed flex items-start gap-2.5 shadow-sm">

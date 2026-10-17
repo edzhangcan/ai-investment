@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
-import { ShieldAlert, Award, ArrowUpRight, Scale, Share2, AlertTriangle, BellRing, CheckCircle2 } from 'lucide-react';
+import { ShieldAlert, Award, ArrowUpRight, Scale, Share2, AlertTriangle, BellRing, CheckCircle2, BookmarkPlus, BookmarkCheck, RefreshCw } from 'lucide-react';
 import { ShareVerdictModal } from './ShareVerdictModal';
 import { StockData, PricingData, DebateData } from '../types';
+import { ProvenanceBadge } from './ProvenanceBadge';
+import { addWatchlistApi } from '../api/client';
 
 interface DebateArenaProps {
   debateData: DebateData | any;
@@ -12,16 +14,41 @@ interface DebateArenaProps {
 }
 
 export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pricing }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isNotifyingFalsification, setIsNotifyingFalsification] = useState(false);
   const [falsificationSent, setFalsificationSent] = useState(false);
+  const [isSyncingWatchlist, setIsSyncingWatchlist] = useState(false);
+  const [watchlistSynced, setWatchlistSynced] = useState(false);
 
   if (!debateData) return null;
 
   const bull = debateData.bull_argument || {};
   const bear = debateData.bear_argument || {};
   const cio = debateData.cio_verdict || {};
+
+  const handleSyncTargetsToWatchlist = async () => {
+    const sym = stock?.symbol || debateData?.symbol;
+    if (!sym) return;
+    setIsSyncingWatchlist(true);
+    try {
+      const buyPrice = pricing?.ideal_buy_range_max || pricing?.ideal_buy_range_min || null;
+      const sellPrice = pricing?.ideal_sell_range_min || pricing?.ideal_sell_range_max || null;
+      await addWatchlistApi({
+        symbol: sym,
+        company_name: stock?.company_name || sym,
+        target_buy_price: buyPrice,
+        target_sell_price: sellPrice,
+        portfolio_allocation_pct: 3.5
+      });
+      setWatchlistSynced(true);
+      setTimeout(() => setWatchlistSynced(false), 3000);
+    } catch (err) {
+      console.error('Failed to sync targets to watchlist:', err);
+    } finally {
+      setIsSyncingWatchlist(false);
+    }
+  };
 
   const handleNotifyFalsification = async (bottomThreshold: number, currPrice: number) => {
     const sym = stock?.symbol || debateData?.symbol;
@@ -51,13 +78,14 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
   return (
     <div className="prism-card p-5 mb-6 transition-all">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border-subtle pb-3 mb-5">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="p-2.5 prism-badge-warning rounded-xl">
             <Scale className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-content-primary flex items-center gap-2">
+            <h3 className="text-base font-bold text-content-primary flex items-center gap-2 flex-wrap">
               <span>{t.debateTitle}</span>
+              <ProvenanceBadge provenance={debateData?.provenance} />
             </h3>
             <p className="text-xs text-content-muted">
               {t.debateSubtitle}
@@ -65,15 +93,41 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
           </div>
         </div>
 
-        {/* Share Debate Verdict & Preview Modal Trigger */}
-        <button
-          onClick={() => setIsShareModalOpen(true)}
-          className="h-8 px-3.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-brand text-content-primary rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-sm cursor-pointer box-border"
-          title={t.shareVerdictTooltip}
-        >
-          <Share2 className="w-3.5 h-3.5 text-brand" />
-          <span>{t.shareVerdictBtn}</span>
-        </button>
+        {/* Action Controls: 1-Click Sync Targets to Watchlist & Share Verdict */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleSyncTargetsToWatchlist}
+            disabled={isSyncingWatchlist}
+            className={`h-8 px-3.5 border rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-sm cursor-pointer box-border ${
+              watchlistSynced
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
+                : 'bg-surface hover:bg-surface-subtle border-border-subtle hover:border-emerald-500 text-content-primary hover:text-emerald-600'
+            }`}
+            title="Sync CIO Target Buy & Sell Prices directly to Watchlist & Price Alerts"
+          >
+            {isSyncingWatchlist ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+            ) : watchlistSynced ? (
+              <BookmarkCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <BookmarkPlus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            )}
+            <span>
+              {watchlistSynced
+                ? (language === 'zh' ? '已同步至自选' : 'Targets Synced ✓')
+                : (language === 'zh' ? '同步目标价至自选' : 'Sync Targets to Watchlist')}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            className="h-8 px-3.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-brand text-content-primary rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-sm cursor-pointer box-border"
+            title={t.shareVerdictTooltip}
+          >
+            <Share2 className="w-3.5 h-3.5 text-brand" />
+            <span>{t.shareVerdictBtn}</span>
+          </button>
+        </div>
       </div>
 
       {/* Arena Debate Grid */}
@@ -204,6 +258,29 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
         <p className="text-xs text-content-primary leading-relaxed font-medium mb-3">
           {cio.judge_summary || "Ground-truth audit confirms solid FCF conversion and wide economic moat, supporting disciplined DCA allocation."}
         </p>
+
+        {/* Dedicated Thesis Falsification Kill-Switch Callout Box */}
+        {(debateData.falsification_price_level || debateData.falsification_trigger_condition) && (
+          <div className="mb-3.5 p-3.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50/80 dark:bg-rose-950/40 text-xs shadow-sm">
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
+              <span className="font-extrabold text-rose-700 dark:text-rose-400 flex items-center gap-1.5 text-xs">
+                <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                <span>{language === 'zh' ? '⚡ 投资假说证伪熔断线 (Thesis Falsification Kill-Switch)' : '⚡ Thesis Falsification Kill-Switch'}</span>
+              </span>
+              {debateData.falsification_price_level && (
+                <span className="px-2.5 py-0.5 rounded-md font-mono font-black text-[11px] bg-rose-600 text-white shadow-sm">
+                  Floor: ${debateData.falsification_price_level.toFixed(2)} {stock?.currency || 'USD'}
+                </span>
+              )}
+            </div>
+            {debateData.falsification_trigger_condition && (
+              <p className="text-content-primary font-medium leading-relaxed">
+                <span className="font-bold text-rose-600 dark:text-rose-400">Trigger Condition: </span>
+                {debateData.falsification_trigger_condition}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Pre-Trade Soul Check & Prior Audit Framework */}
         {cio.mianji_framework && (

@@ -359,6 +359,14 @@ export interface Translations {
   tabLiabilityStress: string;
   underwaterDrawdownTitle: string;
   rebalanceBonusLabel: string;
+  falsificationKillSwitchTitle: string;
+  syncTargetsToWatchlist: string;
+  targetsSynced: string;
+  institutionalBridgeTitle: string;
+  dcfSensitivityHeatmap: string;
+  accountingForensicsTitle: string;
+  bayesianWinProb: string;
+  correlationPenaltyFactor: string;
 }
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
@@ -707,6 +715,14 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     tabLiabilityStress: "Liability Stress Test",
     underwaterDrawdownTitle: "Underwater Drawdown Curve",
     rebalanceBonusLabel: "Rebalancing Bonus",
+    falsificationKillSwitchTitle: "Thesis Falsification Kill-Switch",
+    syncTargetsToWatchlist: "Sync Targets to Watchlist",
+    targetsSynced: "Targets Synced ✓",
+    institutionalBridgeTitle: "Institutional DCF Bridge & 5x5 Sensitivity Matrix",
+    dcfSensitivityHeatmap: "5x5 DCF Sensitivity Heatmap",
+    accountingForensicsTitle: "Accounting Forensics & Earnings Quality Audit",
+    bayesianWinProb: "Bayesian-Shrunk Win Probability",
+    correlationPenaltyFactor: "Correlation Penalty Factor",
   },
 
   zh: {
@@ -1054,6 +1070,14 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     tabLiabilityStress: "负债端四笔钱压力测试",
     underwaterDrawdownTitle: "自高点回撤面积图 (Underwater)",
     rebalanceBonusLabel: "再平衡波动率收割收益",
+    falsificationKillSwitchTitle: "投资假说证伪熔断线",
+    syncTargetsToWatchlist: "同步目标价至自选",
+    targetsSynced: "已同步至自选 ✓",
+    institutionalBridgeTitle: "机构级估值桥 (EV-to-Equity) & 5x5 敏感度矩阵",
+    dcfSensitivityHeatmap: "5x5 DCF 估值敏感度热力矩阵",
+    accountingForensicsTitle: "会计法证与财报质量审计",
+    bayesianWinProb: "贝叶斯收缩后胜率",
+    correlationPenaltyFactor: "行业相关性折减因子",
   },
 
   hybrid: {
@@ -1401,6 +1425,14 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     tabLiabilityStress: "负债端压力测试 (Liability Stress)",
     underwaterDrawdownTitle: "高点回撤图 (Underwater Curve)",
     rebalanceBonusLabel: "再平衡收益 (Rebalancing Bonus)",
+    falsificationKillSwitchTitle: "证伪熔断线 (Thesis Falsification Kill-Switch)",
+    syncTargetsToWatchlist: "同步目标价 (Sync Targets to Watchlist)",
+    targetsSynced: "目标价已同步 ✓ (Synced)",
+    institutionalBridgeTitle: "机构估值桥与敏感度矩阵 (DCF Bridge & Matrix)",
+    dcfSensitivityHeatmap: "5x5 DCF 敏感度热力图 (5x5 Sensitivity Heatmap)",
+    accountingForensicsTitle: "会计法证审计 (Accounting Forensics)",
+    bayesianWinProb: "贝叶斯收缩胜率 (Bayesian Win Prob)",
+    correlationPenaltyFactor: "行业折减因子 (Correlation Penalty)",
   }
 };
 

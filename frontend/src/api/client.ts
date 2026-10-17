@@ -8,67 +8,109 @@ export const getApiBaseUrl = () => {
   return 'http://127.0.0.1:8000';
 };
 
-export async function fetchMacroAnalysis(lang: string = "en", country: string = "US"): Promise<MacroData> {
+export async function fetchMacroAnalysis(lang: string = "en", country: string = "US", signal?: AbortSignal): Promise<MacroData> {
   const url = `${getApiBaseUrl()}/api/macro?lang=${lang}&country=${country.toUpperCase()}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Macro API failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function fetchMacroDashboard(lang: string = "en", forceRefresh: boolean = false, country: string = "US"): Promise<any> {
+export async function fetchMacroDashboard(lang: string = "en", forceRefresh: boolean = false, country: string = "US", signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/macro/dashboard?lang=${lang}&force_refresh=${forceRefresh}&country=${country.toUpperCase()}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Macro Dashboard API failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function refreshRecommendationsApi(category?: string, offset: number = 0, lang: string = "en", country: string = "US"): Promise<any> {
+export async function refreshRecommendationsApi(category?: string, offset: number = 0, lang: string = "en", country: string = "US", signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/macro/recommendations/refresh`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ category, offset, lang, country: country.toUpperCase() })
+    body: JSON.stringify({ category, offset, lang, country: country.toUpperCase() }),
+    signal
   });
   if (!res.ok) throw new Error(`Refresh recommendations API failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function fetchStockAnalysis(symbol: string, lang: string = "en"): Promise<StockAnalysisResponse> {
+export async function fetchStockAnalysis(symbol: string, lang: string = "en", signal?: AbortSignal): Promise<StockAnalysisResponse> {
   const normalizedSymbol = symbol.trim().toUpperCase();
   const url = `${getApiBaseUrl()}/api/stock/${normalizedSymbol}?lang=${lang}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Stock API failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function fetchWatchlistApi(): Promise<any[]> {
+export async function fetchSecTextMining(symbol: string, lang: string = "en", signal?: AbortSignal): Promise<any> {
+  const normalizedSymbol = symbol.trim().toUpperCase();
+  const url = `${getApiBaseUrl()}/api/stock/${normalizedSymbol}/filings/mining?lang=${lang}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`SEC Text Mining API failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function runDebateApi(symbol: string, lang: string = "en", signal?: AbortSignal): Promise<any> {
+  const normalizedSymbol = symbol.trim().toUpperCase();
+  const url = `${getApiBaseUrl()}/api/debate/${normalizedSymbol}?lang=${lang}`;
+  const res = await fetch(url, { method: 'POST', signal });
+  if (!res.ok) throw new Error(`Debate API failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function calculatePortfolioAllocation(payload: any, signal?: AbortSignal): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/portfolio/calculate`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal
+  });
+  if (!res.ok) throw new Error(`Portfolio calculate failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function calculateKellySizeApi(payload: any, signal?: AbortSignal): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/portfolio/kelly-size`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal
+  });
+  if (!res.ok) throw new Error(`Kelly sizing failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchWatchlistApi(signal?: AbortSignal): Promise<any[]> {
   const url = `${getApiBaseUrl()}/api/watchlist`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Watchlist API failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function addWatchlistApi(payload: any): Promise<any> {
+export async function addWatchlistApi(payload: any, signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/watchlist`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    signal
   });
   if (!res.ok) throw new Error(`Add watchlist failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function deleteWatchlistApi(symbol: string): Promise<any> {
+export async function deleteWatchlistApi(symbol: string, signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/watchlist/${symbol.toUpperCase()}`;
-  const res = await fetch(url, { method: 'DELETE' });
+  const res = await fetch(url, { method: 'DELETE', signal });
   if (!res.ok) throw new Error(`Delete watchlist failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function syncWatchlistTargetsApi(): Promise<any> {
+export async function syncWatchlistTargetsApi(signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/watchlist/sync-targets`;
-  const res = await fetch(url, { method: 'POST' });
+  const res = await fetch(url, { method: 'POST', signal });
   if (!res.ok) throw new Error(`Sync watchlist targets failed: ${res.statusText}`);
   return res.json();
 }
