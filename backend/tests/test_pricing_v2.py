@@ -478,4 +478,27 @@ def test_regulated_infrastructure_rate_base_debt_bypass():
     assert res["bridge"]["equity_value"] == res["bridge"]["enterprise_value"]
 
 
+def test_oilfield_services_normalized_fcf_and_buybacks():
+    """
+    Verify that oilfield services leaders (e.g. SLB) with normalized 10-K FCF and net share buyback yield
+    are properly calibrated:
+    - 10-K audited FCF baseline ($4.1B) yields intrinsic fair value in the $60-$75 range
+    - Effective share count reflects net share retirements (net_buyback_yield_pct = 2.0%)
+    - Ideal buy zone ($45-$52) accurately brackets current price ($49.50) and 200D SMA ($51.86)
+    - Action status correctly triggers IN_BUY_ZONE when price is within the buy bracket
+    """
+    from backend.data_sources.data_provider import DataProviderManager
+    stock = DataProviderManager.get_stock_data("SLB", force_refresh=True)
+    res = PricingEngine.evaluate_pricing_and_entry_zone(stock)
+
+    assert stock["free_cash_flow"] >= 4_000_000_000.0
+    assert stock["net_buyback_yield_pct"] == 2.0
+    assert 60.0 <= res["dcf_fair_value"] <= 75.0
+    assert res["ideal_buy_range_min"] <= 49.50 <= res["ideal_buy_range_max"]
+    assert res["action_status"] == "IN_BUY_ZONE"
+    assert res["bridge"]["net_buyback_yield_used"] == 2.0
+    assert res["bridge"]["implied_shares_effective"] < res["bridge"]["implied_shares"]
+
+
+
 

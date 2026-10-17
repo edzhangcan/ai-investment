@@ -891,8 +891,13 @@ EMPIRICAL_TAXONOMY_METRICS: Dict[str, Dict[str, float]] = {
     "BMO.TO": {"roic": 0.11, "dividend_yield_pct": 4.6, "net_buyback_yield_pct": 0.4, "dilution_3y_pct": 0.7},
     "BNS.TO": {"roic": 0.10, "dividend_yield_pct": 5.8, "net_buyback_yield_pct": 0.2, "dilution_3y_pct": 0.9},
     "ENB.TO": {"roic": 0.09, "dividend_yield_pct": 6.5, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.8},
+    "TRP.TO": {"roic": 0.08, "dividend_yield_pct": 4.8, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.2},
     "SU.TO": {"roic": 0.18, "dividend_yield_pct": 4.2, "net_buyback_yield_pct": 3.5, "dilution_3y_pct": -2.0},
+    "CNQ.TO": {"roic": 0.19, "dividend_yield_pct": 4.5, "net_buyback_yield_pct": 3.0, "dilution_3y_pct": -2.0},
+    "CVE.TO": {"roic": 0.16, "dividend_yield_pct": 3.2, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": -1.5},
     "XOM": {"roic": 0.16, "dividend_yield_pct": 3.4, "net_buyback_yield_pct": 2.8, "dilution_3y_pct": -1.5},
+    "COP": {"roic": 0.17, "dividend_yield_pct": 3.0, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": -1.5},
+    "SLB": {"roic": 0.18, "dividend_yield_pct": 2.2, "net_buyback_yield_pct": 2.0, "dilution_3y_pct": -1.5},
     "JPM": {"roic": 0.17, "dividend_yield_pct": 2.3, "net_buyback_yield_pct": 1.8, "dilution_3y_pct": -0.8},
     "ONT.TO": {"roic": 0.13, "dividend_yield_pct": 0.5, "net_buyback_yield_pct": 3.0, "dilution_3y_pct": -1.0},
     # Vegetables (Negative FCF, high multiple, or dilution)
@@ -1112,8 +1117,13 @@ class DataProviderManager:
                             if free_cash_flow and free_cash_flow > 0:
                                 # Guard against noisy single-quarter spikes or quarterly data overriding annual 10-K/SEDAR baseline
                                 ratio = live_fcf_f / free_cash_flow
-                                if 0.35 <= ratio <= 2.8:
+                                if 0.85 <= ratio <= 1.50:
                                     free_cash_flow = live_fcf_f
+                                else:
+                                    logger.info(
+                                        f"Preserving audited 10-K/SEDAR annual FCF baseline ${free_cash_flow/1e9:.2f}B "
+                                        f"for '{normalized_symbol}' (live yfinance FCF ${live_fcf_f/1e9:.2f}B discarded due to ratio={ratio:.2f})"
+                                    )
                             else:
                                 free_cash_flow = live_fcf_f
                         if info.get("totalRevenue"):
