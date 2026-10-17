@@ -239,6 +239,16 @@ export interface DebateData {
   bull_argument: BullArgument;
   bear_argument: BearArgument;
   cio_verdict: CIOVerdict;
+  bull_rebuttal?: string;
+  bear_rebuttal?: string;
+  falsification_price_level?: number;
+  falsification_trigger_condition?: string;
+  provenance?: {
+    source_mode?: string;
+    as_of?: string;
+    data_source?: string;
+    is_stale?: boolean;
+  };
 }
 
 export interface PolicyNewsItem {
@@ -335,6 +345,9 @@ export interface StockAnalysisResponse {
 // Phase 2: Kelly, Frontier & Liability
 export interface KellyResult {
   win_prob: number;
+  calibrated_win_prob?: number;
+  correlation_penalty_factor?: number;
+  same_sector_count?: number;
   upside_pct: number;
   stop_loss_pct: number;
   payoff_ratio_b: number;
@@ -410,4 +423,41 @@ export interface RebalanceComparison {
   rebalancing_bonus_bps: number;
   explanation_en: string;
   explanation_zh: string;
+}
+
+export interface BacktestResultData {
+  cagr_pct: number;
+  benchmark_cagr_pct: number;
+  alpha_cagr_pct: number;
+  sharpe_ratio: number;
+  sortino_ratio?: number;
+  benchmark_alpha?: number;
+  benchmark_beta?: number;
+  calmar_ratio: number;
+  robust_3y_calmar_ratio: number;
+  max_drawdown_pct: number;
+  win_rate_pct: number;
+  slippage_bps_applied?: number;
+  survivorship_bias_notice?: string;
+  total_return_pct: number;
+  benchmark_total_return_pct: number;
+  summary_note: string;
+  equity_curve: Array<{
+    year: string;
+    value: number;
+    benchmark_value: number;
+    portfolio_return_pct?: number;
+    benchmark_return_pct?: number;
+  }>;
+  annual_breakdown: Array<{
+    year: string;
+    portfolio_return_pct: number;
+    benchmark_return_pct: number;
+    alpha_pct: number;
+  }>;
+  underwater_curve: UnderwaterPoint[];
+  drawdown_events: DrawdownEvent[];
+  rebalancing_simulation: RebalanceComparison;
+  yearly_returns?: Record<string, number>;
+  yearly_risk_free_rates?: Record<string, number>;
 }

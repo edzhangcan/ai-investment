@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 import json
 import logging
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from google import genai
 from google.genai import types
@@ -42,6 +43,10 @@ class MultiAgentArena:
                     "key_points": [f"Unable to verify exchange pricing or financial filings for '{symbol}'."],
                     "downside_risk": "N/A (Unlisted / Invalid Ticker)"
                 },
+                "bull_rebuttal": None,
+                "bear_rebuttal": None,
+                "falsification_price_level": None,
+                "falsification_trigger_condition": None,
                 "cio_verdict": {
                     "agent": "CIO Agent 👨‍⚖️" if lang == "en" else ("投委会主席 👨‍⚖️" if lang == "zh" else "投委会主席 (CIO Agent 👨‍⚖️)"),
                     "verdict": "NO DATA / UNVERIFIED",
@@ -50,6 +55,12 @@ class MultiAgentArena:
                     "risk_reward_ratio": 0.0,
                     "judge_summary": f"Ticker '{symbol}' has no real-time market data feed. Please verify ticker symbol.",
                     "empirical_proof_verified": False
+                },
+                "provenance": {
+                    "source_mode": "SIMULATED_FALLBACK",
+                    "as_of": datetime.now(timezone.utc).isoformat(),
+                    "data_source": "Unverified Ticker Guard",
+                    "is_stale": True
                 }
             }
 
@@ -79,7 +90,7 @@ class MultiAgentArena:
 
     @classmethod
     def _run_gemini_llm_debate(cls, api_key: str, stock_data: Dict[str, Any], macro_data: Dict[str, Any], pricing_data: Dict[str, Any], fundamental_data: Dict[str, Any], lang: str = "en", country: str = "US") -> Dict[str, Any]:
-        """Calls Gemini API using google-genai SDK to generate adversarial debate and CIO verdict with regional macro parity and Mianji principles."""
+        """Calls Gemini API using google-genai SDK to generate adversarial debate, Round 2 rebuttals, and CIO verdict with regional macro parity and Mianji principles."""
         client = genai.Client(api_key=api_key)
 
         lang_instruction = "Respond in English." if lang == "en" else ("Respond in Simplified Chinese." if lang == "zh" else "Respond in Simplified Chinese narrative with English financial terms in parentheses.")
@@ -88,14 +99,26 @@ class MultiAgentArena:
         central_bank_name = "Bank of Canada (BoC)" if country == "CA" else "Federal Reserve (Fed)"
         central_bank_sentiment = macro_data.get("boc_sentiment", {}).get("tone") or macro_data.get("central_bank_sentiment", {}).get("tone") if country == "CA" else macro_data.get("fed_sentiment", {}).get("tone", "RESTRICTIVE")
 
+        bridge = pricing_data.get("bridge") or {}
+        eq = pricing_data.get("earnings_quality") or fundamental_data.get("earnings_quality") or {}
+        forensic_flags = eq.get("forensic_flags") or []
+        sbc_val = bridge.get("sbc_per_share", 0.0)
+        net_debt_val = bridge.get("net_debt", 0.0)
+        sloan_ratio = eq.get("sloan_accrual_ratio", 0.0)
+
         system_instruction = (
             f"You are an institutional investment debate orchestrator managing three agents for equities in {country_context}. {lang_instruction}\n"
             "1. Bull Agent (Advocate): Highlights real competitive moats, cash flow quality, DCF upside, growth catalysts, and region-specific macroeconomic tailwinds (for Canada: Bank of Canada monetary easing cycle, TSX structural valuation discount vs US, resource export demand and high dividend yields; for US: GDP resilience, tech innovation, domestic consumption, and strong corporate cash flows).\n"
             "2. Bear Agent (Prosecutor): Scrutinizes overvaluation, P/E percentiles, technical pullback risk to 200D MA support (if price > 200D MA) or trend breakdown below 200D MA overhead resistance (if price < 200D MA), and region-specific macro cycle headwinds (for Canada: household debt sensitivity, mortgage resets, growth softening; for US: restrictive Fed rates, negative Equity Risk Premium).\n"
-            "3. CIO Agent (Judge): Impartial referee enforcing empirical evidence, Risk-Reward ratio, and institutional investment discipline (pre-trade soul check & prior framework):\n"
+            "3. Round 2 Cross-Examination Rebuttals:\n"
+            "   - bear_rebuttal: Bear Agent directly attacks Bull's thesis by interrogating Stock-Based Compensation (SBC) dilution ($X/share), Net Debt drag, and any forensic accrual flags to demonstrate optical valuation distortion.\n"
+            "   - bull_rebuttal: Bull Agent directly refutes Bear's critique by defending unit economics, cash reinvestment ROIC, balance sheet resilience, and why margin of safety protects against cyclical normalization.\n"
+            "4. CIO Agent (Judge): Impartial referee enforcing empirical evidence, Risk-Reward ratio, numerical falsification price level, and institutional investment discipline (pre-trade soul check & prior framework):\n"
             "   - judge_summary: Decisive executive investment conclusion synthesizing Bull and Bear arguments, valuation margin of safety, and recommended entry price. STRICTLY DO NOT repeat generic checklist text or static boilerplate here as it is rendered separately below.\n"
+            "   - falsification_price_level: Exact numerical price level (float) representing a decisive -3% breach below 200D SMA support or value floor.\n"
+            "   - falsification_trigger_condition: Specific condition string detailing when the thesis is invalid and position must be liquidated.\n"
             "   - mianji_framework.taxonomy_diagnosis: Analyze THIS specific stock's business engine, FCF conversion ($X), ROIC (X%), and cyclicality to diagnose why it belongs to 🌲 Tree (compounder), 🌾 Grain (cyclical/dividend value), or 🥬 Vegetable (trend-only satellite). Avoid generic boilerplate; evaluate the real business.\n"
-            "   - Pre-trade Soul Check (投前灵魂四问): Check FOMO emotional urgency (eliminate anxiety), verify Trend Temperature (regime FREEZE/FLAT/WARM/HOT, favoring right-side entry over left-side knife-catching), penetrate narrative with Reverse-DCF 10Y ceiling multiple and Prosperity Trap warnings, cap Bayesian prior confidence at <= 95% (never 100% certainty, respect unknown), and establish a mandatory pre-set falsification exit trigger with a quantified bottom threshold (e.g., breach below $X.XX, calculated as 3% below 200D MA, or quarterly FCF turning negative).\n"
+            "   - Pre-trade Soul Check (投前灵魂四问): Check FOMO emotional urgency (eliminate anxiety), verify Trend Temperature (regime FREEZE/FLAT/WARM/HOT, favoring right-side entry over left-side knife-catching), penetrate narrative with Reverse-DCF 10Y ceiling multiple and Prosperity Trap warnings, cap Bayesian prior confidence at <= 95% (never 100% certainty, respect unknown), and establish a mandatory pre-set falsification exit trigger with a quantified bottom threshold.\n"
             "   - Position Sizing & Barbell: Core SAA (80% Tree/Grain) vs Satellite TAA (20% Vegetable). Anti-ruin rule: strictly block counter-trend averaging down.\n"
             "   - Qualified Holder Mindset (只做合格持有人): '不是人在做投资，是纪律在做投资。'\n\n"
             "STRICT MANDATE: Base all numbers strictly on the provided real-time stock parameters. Never hallucinate fake prices or company names. Never output negative percentages like '-X% above support'. IMPORTANT: Strictly DO NOT mention the words 'Mianji' or '面基' anywhere in the output text.\n"
@@ -112,6 +135,10 @@ class MultiAgentArena:
             '    "key_points": ["risk 1", "risk 2", "risk 3"],\n'
             '    "downside_risk": "Technical support or overhead resistance at $X (downside risk assessment)"\n'
             '  },\n'
+            '  "bull_rebuttal": "Bull rebuttal refuting Bear claims",\n'
+            '  "bear_rebuttal": "Bear rebuttal attacking SBC dilution, Net Debt, or forensic flags",\n'
+            '  "falsification_price_level": 123.45,\n'
+            '  "falsification_trigger_condition": "Decisive breach below...",\n'
             '  "cio_verdict": {\n'
             '    "agent": "CIO Agent 👨‍⚖️",\n'
             '    "verdict": "BUY" OR "HOLD / WATCH" OR "PASS / OVERVALUED",\n'
@@ -148,6 +175,8 @@ class MultiAgentArena:
             f"50D SMA: ${pricing_data['fifty_day_sma']} | 200D SMA: ${pricing_data['two_hundred_day_sma']}\n"
             f"DCF Fair Value: ${pricing_data['dcf_fair_value']} | Ideal Buy Range: ${pricing_data['ideal_buy_range_min']} - ${pricing_data['ideal_buy_range_max']}\n"
             f"Free Cash Flow Quality: {fundamental_data['fcf_quality']} | Moat Rating: {fundamental_data['moat_rating']}\n"
+            f"Valuation Bridge: Net Debt: ${net_debt_val} | SBC Per Share: ${sbc_val}\n"
+            f"Forensic Accounting Flags: {', '.join(forensic_flags) if forensic_flags else 'None'} | Sloan Accrual Ratio: {sloan_ratio}\n"
             f"Economic Cycle Phase: {macro_data['cycle_stage']} | Central Bank ({central_bank_name}) Hawkishness: {central_bank_sentiment}\n"
             f"Taxonomy: {fundamental_data.get('taxonomy', pricing_data.get('taxonomy', 'N/A'))}\n"
             f"Reverse-DCF 10Y Ceiling: {pricing_data.get('reverse_dcf', 'N/A')}\n"
@@ -179,22 +208,50 @@ class MultiAgentArena:
         parsed = json.loads(response.text)
         parsed["symbol"] = stock_data["symbol"]
 
+        price_val = float(stock_data.get("current_price", 0.0))
+        two_hundred_sma_val = float(pricing_data.get("two_hundred_day_sma", price_val))
+        curr_val = stock_data.get("currency", "USD")
+        bottom_thresh = round(two_hundred_sma_val * 0.97, 2) if two_hundred_sma_val > 0 else round(price_val * 0.95, 2)
+
         # Ensure quantified falsification parameters exist in parsed verdict
         cio_verdict = parsed.get("cio_verdict", {})
         mianji_framework = cio_verdict.get("mianji_framework", {})
         if "soul_check" in mianji_framework:
             sc = mianji_framework["soul_check"]
-            price_val = float(stock_data.get("current_price", 0.0))
-            two_hundred_sma_val = float(pricing_data.get("two_hundred_day_sma", price_val))
-            curr_val = stock_data.get("currency", "USD")
-            bottom_thresh = round(two_hundred_sma_val * 0.97, 2) if two_hundred_sma_val > 0 else round(price_val * 0.95, 2)
-
             if "bottom_threshold" not in sc or not sc["bottom_threshold"]:
                 sc["bottom_threshold"] = bottom_thresh
             if "is_falsified" not in sc:
                 sc["is_falsified"] = bool(price_val < float(sc["bottom_threshold"]))
             if "threshold_currency" not in sc:
                 sc["threshold_currency"] = curr_val
+
+        # Populate top-level fields for US-07 institutional schema compliance
+        if not parsed.get("falsification_price_level"):
+            parsed["falsification_price_level"] = bottom_thresh
+        if not parsed.get("falsification_trigger_condition"):
+            sc = cio_verdict.get("mianji_framework", {}).get("soul_check", {})
+            parsed["falsification_trigger_condition"] = sc.get(
+                "mandatory_falsification_trigger",
+                f"Decisive break below ${bottom_thresh} {curr_val} (-3.0% under 200D MA), or quarterly FCF turning negative"
+            )
+
+        if not parsed.get("bull_rebuttal"):
+            parsed["bull_rebuttal"] = (
+                "Bull Rebuttal: Bear overstates transitory macro headwinds and multiple compression risk; "
+                "durable competitive advantages, strong cash conversion, and a disciplined balance sheet provide strong margin of safety."
+            )
+        if not parsed.get("bear_rebuttal"):
+            parsed["bear_rebuttal"] = (
+                f"Bear Rebuttal: Bull understates the risk of valuation multiple compression, net debt burden, "
+                f"and stock-based compensation dilution in a restrictive monetary environment."
+            )
+
+        parsed["provenance"] = {
+            "source_mode": "LIVE",
+            "as_of": datetime.now(timezone.utc).isoformat(),
+            "data_source": "Gemini 2.5 Flash Live Debate",
+            "is_stale": False
+        }
 
         return parsed
 
@@ -574,6 +631,45 @@ class MultiAgentArena:
             }
         }
 
+        bridge = pricing_data.get("bridge") or {}
+        eq = pricing_data.get("earnings_quality") or fundamental_data.get("earnings_quality") or {}
+        forensic_flags = eq.get("forensic_flags") or []
+        sbc_val = bridge.get("sbc_per_share", 0.0)
+
+        if lang == "zh":
+            falsification_trigger_cond = falsification_zh
+            if forensic_flags:
+                flags_str = "、".join(forensic_flags)
+                bear_rebuttal = f"空头第二轮反驳：多头刻意忽略法务财务预警（{flags_str}）与每股股权激励（SBC ${sbc_val} {curr}）的稀释侵蚀，实际现金流回报被严重粉饰。"
+            elif sbc_val and sbc_val > 0:
+                bear_rebuttal = f"空头第二轮反驳：多头忽视每股股权激励（SBC ${sbc_val} {curr}）对股东权益的实质侵蚀，在当前限制性利率环境下，真实股东回报率远低于账面宣称水平。"
+            else:
+                bear_rebuttal = f"空头第二轮反驳：多头过度乐观假设远期增速，忽视宏观周期阻力与向 200日均线 (${two_hundred_sma} {curr}) 均值回归的均线拉扯风险。"
+
+            bull_rebuttal = f"多头第二轮反驳：空头过度计价短期宏观杂音；标的具备 {moat} 护城河与扎实 FCF 转化效率，当前估值安全边际足以消化估值均值回归压力。"
+        elif lang == "hybrid":
+            falsification_trigger_cond = falsification_zh
+            if forensic_flags:
+                flags_str = ", ".join(forensic_flags)
+                bear_rebuttal = f"空头第二轮反驳 (Bear Rebuttal): 多头忽视财务法务预警 ({flags_str}) 与 SBC 稀释 (${sbc_val} {curr})，真实 FCF 收益率被虚高呈现。"
+            elif sbc_val and sbc_val > 0:
+                bear_rebuttal = f"空头第二轮反驳 (Bear Rebuttal): 股权激励稀释 (SBC: ${sbc_val} {curr}/股) 侵蚀长期股东复利回报，估值倍数缺乏支撑。"
+            else:
+                bear_rebuttal = f"空头第二轮反驳 (Bear Rebuttal): 多头忽视宏观周期阻力与资本成本约束，估值中枢面临向 200D SMA 均值回归修正压力。"
+
+            bull_rebuttal = f"多头第二轮反驳 (Bull Rebuttal): 空头过度放大短期逆风，标的凭借 {moat} 护城河与现金流复利能力，当前估值已具备充分安全边际。"
+        else:
+            falsification_trigger_cond = falsification_en
+            if forensic_flags:
+                flags_str = ", ".join(forensic_flags)
+                bear_rebuttal = f"Bear Rebuttal: Bull ignores forensic accounting flags ({flags_str}) and SBC dilution of ${sbc_val} {curr}/share, creating an optical illusion of cheap FCF yield."
+            elif sbc_val and sbc_val > 0:
+                bear_rebuttal = f"Bear Rebuttal: Heavy stock-based compensation (${sbc_val} {curr}/share) dilutes long-term equity compounding and masks structural margin compression."
+            else:
+                bear_rebuttal = f"Bear Rebuttal: Bull's thesis understates multiple compression risk under higher-for-longer cost of capital and technical pullbacks toward 200D SMA (${two_hundred_sma} {curr})."
+
+            bull_rebuttal = f"Bull Rebuttal: Bear overweights transitory cyclical / multiple headwinds; high cash conversion and competitive moat ({moat}) provide substantial margin of safety for long-term compounders."
+
         return {
             "symbol": symbol,
             "bull_argument": {
@@ -586,5 +682,15 @@ class MultiAgentArena:
                 "key_points": bear_points,
                 "downside_risk": bear_risk
             },
-            "cio_verdict": cio_verdict
+            "cio_verdict": cio_verdict,
+            "bull_rebuttal": bull_rebuttal,
+            "bear_rebuttal": bear_rebuttal,
+            "falsification_price_level": bottom_threshold,
+            "falsification_trigger_condition": falsification_trigger_cond,
+            "provenance": {
+                "source_mode": "SIMULATED_FALLBACK",
+                "as_of": datetime.now(timezone.utc).isoformat(),
+                "data_source": "Deterministic Empirical Debate Engine",
+                "is_stale": False
+            }
         }

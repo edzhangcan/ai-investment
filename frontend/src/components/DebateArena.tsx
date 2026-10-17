@@ -143,6 +143,45 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
         </div>
       </div>
 
+      {/* Round 2: Adversarial Cross-Examination Rebuttals */}
+      {(debateData.bull_rebuttal || debateData.bear_rebuttal) && (
+        <div className="mb-6 p-4 rounded-xl bg-surface-subtle border border-border-subtle shadow-sm space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
+            <span className="text-xs font-bold text-content-primary flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-brand animate-pulse"></span>
+              <span>{t.roundTwoRebuttalTitle || "Round 2: Adversarial Cross-Examination"}</span>
+            </span>
+            <span className="text-[10px] font-semibold text-content-muted">
+              Forensic SBC, Net Debt & Accrual Interrogation
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            {debateData.bull_rebuttal && (
+              <div className="p-3 rounded-lg bg-surface border-l-2 border-l-positive">
+                <span className="font-bold text-positive block mb-1">
+                  🐂 {t.bullRebuttalTitle || "Bull Rebuttal"}:
+                </span>
+                <p className="text-content-secondary leading-relaxed font-medium">
+                  {debateData.bull_rebuttal}
+                </p>
+              </div>
+            )}
+
+            {debateData.bear_rebuttal && (
+              <div className="p-3 rounded-lg bg-surface border-l-2 border-l-negative">
+                <span className="font-bold text-negative block mb-1">
+                  🐻 {t.bearRebuttalTitle || "Bear Rebuttal"}:
+                </span>
+                <p className="text-content-secondary leading-relaxed font-medium">
+                  {debateData.bear_rebuttal}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* CIO Final Verdict Banner */}
       <div className="prism-surface-subtle p-4 border-l-4 border-l-brand shadow-sm">
         <div className="flex items-center justify-between mb-2">
