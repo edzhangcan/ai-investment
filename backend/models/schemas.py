@@ -264,6 +264,9 @@ class StockAnalysisResponseSchema(BaseModel):
 # Phase 2: Portfolio, Kelly & Risk Schemas
 class KellyResult(BaseModel):
     win_prob: float
+    calibrated_win_prob: Optional[float] = None
+    correlation_penalty_factor: float = 1.0
+    same_sector_count: int = 0
     upside_pct: float
     stop_loss_pct: float
     payoff_ratio_b: float

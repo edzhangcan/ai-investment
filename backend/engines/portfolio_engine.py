@@ -15,14 +15,52 @@ from backend.engines.recommendation_engine import RecommendationEngine
 
 logger = logging.getLogger(__name__)
 
-# Standard Core Beta Anchor ETFs for 80% Core SAA
-CORE_SAA_ETFS = [
-    {"symbol": "SPY", "name": "SPDR S&P 500 ETF Trust", "target_pct": 30.0, "asset_class": "US Large Cap Beta"},
-    {"symbol": "QQQ", "name": "Invesco QQQ Trust (Nasdaq-100)", "target_pct": 20.0, "asset_class": "Tech Growth Beta"},
-    {"symbol": "SCHD", "name": "Schwab US Dividend Equity ETF", "target_pct": 10.0, "asset_class": "Quality Dividend Value"},
-    {"symbol": "TLT", "name": "iShares 20+ Year Treasury Bond ETF", "target_pct": 10.0, "asset_class": "Long-Term Treasury Hedge"},
-    {"symbol": "GLD", "name": "SPDR Gold Shares", "target_pct": 10.0, "asset_class": "Monetary Gold Anchor"}
+# Standard Core Beta Anchor ETFs for 80% Core SAA (USD & CAD)
+CORE_SAA_USD = [
+    {"symbol": "SPY", "name": "SPDR S&P 500 ETF Trust", "target_pct": 30.0, "asset_class": "US Large Cap Beta", "currency": "USD", "market": "US"},
+    {"symbol": "QQQ", "name": "Invesco QQQ Trust (Nasdaq-100)", "target_pct": 20.0, "asset_class": "Tech Growth Beta", "currency": "USD", "market": "US"},
+    {"symbol": "SCHD", "name": "Schwab US Dividend Equity ETF", "target_pct": 10.0, "asset_class": "Quality Dividend Value", "currency": "USD", "market": "US"},
+    {"symbol": "TLT", "name": "iShares 20+ Year Treasury Bond ETF", "target_pct": 10.0, "asset_class": "Long-Term Treasury Hedge", "currency": "USD", "market": "US"},
+    {"symbol": "GLD", "name": "SPDR Gold Shares", "target_pct": 10.0, "asset_class": "Monetary Gold Anchor", "currency": "USD", "market": "US"}
 ]
+
+CORE_SAA_CAD = [
+    {"symbol": "VFV.TO", "name": "Vanguard S&P 500 Index ETF (CAD)", "target_pct": 25.0, "asset_class": "US Large Cap Beta (CAD)", "currency": "CAD", "market": "CA"},
+    {"symbol": "XIC.TO", "name": "iShares Core S&P/TSX Capped Composite ETF", "target_pct": 15.0, "asset_class": "Canadian Broad Equity Beta", "currency": "CAD", "market": "CA"},
+    {"symbol": "ZDV.TO", "name": "BMO Canadian Dividend ETF", "target_pct": 15.0, "asset_class": "Canadian Quality Dividend Value", "currency": "CAD", "market": "CA"},
+    {"symbol": "ZFL.TO", "name": "BMO Long Federal Bond Index ETF", "target_pct": 15.0, "asset_class": "Long Federal Bond Hedge", "currency": "CAD", "market": "CA"},
+    {"symbol": "CGL.TO", "name": "CI Gold Bullion Fund ETF (CAD Hedged)", "target_pct": 10.0, "asset_class": "Monetary Gold Anchor (CAD)", "currency": "CAD", "market": "CA"}
+]
+
+CORE_SAA_ETFS = CORE_SAA_USD
+
+def get_core_saa_template(base_currency: str = "USD", macro_regime: str = "NEUTRAL") -> List[Dict[str, Any]]:
+    """
+    Returns 80% Core SAA ETF sleeve tilted by base currency and macro cycle regime.
+    If regime is Tightening / Late-Cycle, shifts 5% from growth equity (QQQ / VFV.TO)
+    into dividend / gold defensive anchors (SCHD/GLD or ZDV.TO/CGL.TO).
+    """
+    is_cad = str(base_currency).upper() == "CAD"
+    base_template = [dict(x) for x in (CORE_SAA_CAD if is_cad else CORE_SAA_USD)]
+
+    regime_upper = str(macro_regime).upper()
+    is_tightening = any(k in regime_upper for k in ["TIGHTEN", "LATE-CYCLE", "LATE_CYCLE", "OVERHEAT", "CONTRACTION"])
+
+    if is_tightening:
+        if is_cad:
+            for item in base_template:
+                if item["symbol"] == "VFV.TO":
+                    item["target_pct"] = round(item["target_pct"] - 5.0, 2)
+                elif item["symbol"] in ["ZDV.TO", "CGL.TO"]:
+                    item["target_pct"] = round(item["target_pct"] + 2.5, 2)
+        else:
+            for item in base_template:
+                if item["symbol"] == "QQQ":
+                    item["target_pct"] = round(item["target_pct"] - 5.0, 2)
+                elif item["symbol"] in ["SCHD", "GLD"]:
+                    item["target_pct"] = round(item["target_pct"] + 2.5, 2)
+
+    return base_template
 
 # Risk Profile Allocation Parameters
 RISK_PROFILES = {
@@ -73,13 +111,16 @@ class PortfolioEngine:
         cash_balance: float,
         risk_profile: str = "BALANCED",
         currency: str = "USD",
+        base_currency: Optional[str] = None,
+        macro_regime: str = "NEUTRAL",
         selected_symbols: Optional[List[str]] = None,
         lang: str = "en"
     ) -> Dict[str, Any]:
         """
-        Executes position sizing calculations for given capital and risk profile.
-        Supports standard portfolios and 80/20 Barbell allocation.
+        Executes position sizing calculations for given capital, base currency, and risk profile.
+        Supports standard portfolios and 80/20 Barbell allocation with macro-tilted USD & CAD ETF sleeves.
         """
+        eff_currency = (base_currency or currency or "USD").upper()
         raw_profile = risk_profile.upper()
         if raw_profile in ["MIANJI_BARBELL_80_20", "BARBELL_80_20"]:
             profile_key = "BARBELL_80_20"
@@ -111,9 +152,10 @@ class PortfolioEngine:
             # 80/20 Barbell: 80% Core Beta Anchors + 20% Satellite (2%-4% cap each)
             core_saa_pct = profile_params.get("core_saa_alloc_pct", 80.0)
             satellite_pool_pct = profile_params.get("satellite_taa_alloc_pct", 20.0)
+            core_template = get_core_saa_template(base_currency=eff_currency, macro_regime=macro_regime)
 
             # 1. Core SAA Allocations (80%)
-            for etf in CORE_SAA_ETFS:
+            for etf in core_template:
                 etf_weight = etf["target_pct"]
                 target_dollar = round(cash_balance * (etf_weight / 100.0), 2)
                 stock_data = DataProviderManager.get_stock_data(etf["symbol"])
@@ -126,15 +168,15 @@ class PortfolioEngine:
                 position_breakdown.append({
                     "symbol": etf["symbol"],
                     "company_name": f"{etf['name']} [Core SAA]",
-                    "market": "US",
-                    "currency": "USD",
+                    "market": etf.get("market", "CA" if etf["symbol"].endswith(".TO") else "US"),
+                    "currency": etf.get("currency", "CAD" if etf["symbol"].endswith(".TO") else "USD"),
                     "current_price": price,
                     "target_weight_pct": round(etf_weight, 2),
                     "actual_weight_pct": actual_weight,
                     "target_dollar_amount": target_dollar,
                     "actual_allocated_amount": actual_dollar,
                     "executable_shares": shares,
-                    "is_ca": False,
+                    "is_ca": etf["symbol"].endswith(".TO") or etf.get("market") == "CA",
                     "allocation_tier": "CORE_SAA"
                 })
 
@@ -223,6 +265,8 @@ class PortfolioEngine:
         return {
             "cash_balance": cash_balance,
             "currency": currency,
+            "base_currency": eff_currency,
+            "active_macro_regime": macro_regime,
             "risk_profile": profile_key,
             "risk_profile_label": profile_params["label"].get(lang, profile_params["label"]["en"]),
             "equity_allocation_pct": equity_alloc_pct,
@@ -236,23 +280,48 @@ class PortfolioEngine:
         }
 
     @classmethod
+    def calibrate_win_probability(cls, conviction_score: float, is_fallback_data: bool = False) -> float:
+        """
+        Calibrates raw conviction score into a Bayesian-shrunk win probability:
+          p_raw = min(max(conviction_score / 100.0, 0.05), 0.95)
+          p_shrunk = 0.50 + 0.35 * (p_raw - 0.50)
+        If is_fallback_data, applies a 0.90 multiplier (10% haircut for heuristic simulation).
+        """
+        p_raw = min(max(float(conviction_score) / 100.0, 0.05), 0.95)
+        p_shrunk = 0.50 + 0.35 * (p_raw - 0.50)
+        if is_fallback_data:
+            p_shrunk *= 0.90
+        return round(max(0.01, min(0.99, p_shrunk)), 4)
+
+    @classmethod
     def calculate_kelly_position(
         cls,
-        win_prob: float,
-        upside_pct: float,
-        stop_loss_pct: float,
+        win_prob: float = 0.55,
+        upside_pct: float = 25.0,
+        stop_loss_pct: float = 8.0,
         kelly_fraction: float = 0.25,
-        max_cap_pct: float = 4.0
+        max_cap_pct: float = 4.0,
+        conviction_score: Optional[float] = None,
+        same_sector_count: int = 0,
+        is_fallback_data: bool = False
     ) -> Dict[str, Any]:
         """
-        Calculates Fractional Kelly position sizing with finite bet cap (2%-4%).
+        Calculates Fractional Kelly position sizing with Bayesian win probability shrinkage,
+        sector correlation penalty factor, and finite bet cap (2%-4%).
         Formula:
           b = upside_pct / max(0.5, abs(stop_loss_pct))
           f* = p - (1-p)/b
           f_quarter = kelly_fraction * f*
-          w_rec = min(max_cap_pct, max(0.0, 100 * f_quarter))
+          penalty = 1.0 / (1.0 + 0.25 * same_sector_count) if same_sector_count > 0 else 1.0
+          w_rec = min(max_cap_pct, max(0.0, 100 * f_quarter * penalty))
         """
-        p = max(0.01, min(0.99, float(win_prob)))
+        if conviction_score is not None:
+            p = cls.calibrate_win_probability(conviction_score, is_fallback_data=is_fallback_data)
+            calibrated_p = p
+        else:
+            p = max(0.01, min(0.99, float(win_prob)))
+            calibrated_p = None
+
         q = 1.0 - p
         loss = max(0.5, abs(float(stop_loss_pct)))
         upside = max(0.01, float(upside_pct))
@@ -260,10 +329,21 @@ class PortfolioEngine:
         b = upside / loss
         f_star = p - (q / b)
         f_fraction = f_star * kelly_fraction
-        recommended_weight = min(max_cap_pct, max(0.0, round(f_fraction * 100.0, 2)))
+
+        # Sector correlation penalty factor: 1.0 / (1.0 + 0.25 * same_sector_count)
+        if same_sector_count > 0:
+            penalty = round(1.0 / (1.0 + 0.25 * same_sector_count), 3)
+        else:
+            penalty = 1.0
+
+        raw_weight = f_fraction * 100.0 * penalty
+        recommended_weight = min(max_cap_pct, max(0.0, round(raw_weight, 2)))
 
         return {
             "win_prob": round(p, 4),
+            "calibrated_win_prob": calibrated_p,
+            "correlation_penalty_factor": penalty,
+            "same_sector_count": same_sector_count,
             "upside_pct": round(upside, 2),
             "stop_loss_pct": round(loss, 2),
             "payoff_ratio_b": round(b, 2),

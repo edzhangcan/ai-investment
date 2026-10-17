@@ -110,6 +110,9 @@ export interface Translations {
   debateSubtitle: string;
   bullCase: string;
   bearCase: string;
+  roundTwoRebuttalTitle: string;
+  bullRebuttalTitle: string;
+  bearRebuttalTitle: string;
   cioVerdict: string;
   riskReward: string;
   recommendedBuyBracket: string;
@@ -463,6 +466,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     debateSubtitle: "Bull Agent vs Bear Agent Data Debate → CIO Verdict & Evidence Verification",
     bullCase: "Bull Case Advocate",
     bearCase: "Bear Case Prosecutor",
+    roundTwoRebuttalTitle: "Round 2: Adversarial Cross-Examination",
+    bullRebuttalTitle: "Bull Agent Rebuttal",
+    bearRebuttalTitle: "Bear Agent Rebuttal",
     cioVerdict: "Chief Investment Officer (CIO) Final Verdict",
     riskReward: "Risk / Reward Ratio",
     recommendedBuyBracket: "Recommended Entry Bracket",
@@ -807,6 +813,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     debateSubtitle: "多头辩护人 vs 空头公诉人 数据辩论 → CIO 裁决与实证核验",
     bullCase: "多头辩护人",
     bearCase: "空头公诉人",
+    roundTwoRebuttalTitle: "第二轮：多空交叉辩论与反驳",
+    bullRebuttalTitle: "多头辩护人反驳",
+    bearRebuttalTitle: "空头公诉人反驳",
     cioVerdict: "首席投资官 (CIO) 最终裁决",
     riskReward: "风险/收益比",
     recommendedBuyBracket: "建议买入区间",
@@ -1151,6 +1160,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     debateSubtitle: "多头 (Bull) vs 空头 (Bear) 数据辩论 → CIO 裁决与 Evidence 核验",
     bullCase: "多头辩护人 (Bull Case Advocate)",
     bearCase: "空头公诉人 (Bear Case Prosecutor)",
+    roundTwoRebuttalTitle: "第二轮交叉反驳 (Round 2 Cross-Examination)",
+    bullRebuttalTitle: "多头反驳 (Bull Rebuttal)",
+    bearRebuttalTitle: "空头反驳 (Bear Rebuttal)",
     cioVerdict: "CIO 最终裁决 (Chief Investment Officer Verdict)",
     riskReward: "风险/收益比 (Risk / Reward)",
     recommendedBuyBracket: "建议买入区间 (Entry Bracket)",

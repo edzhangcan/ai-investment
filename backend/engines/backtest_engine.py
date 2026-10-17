@@ -22,6 +22,15 @@ logger = logging.getLogger(__name__)
 # Base path for static data
 DATA_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "universe_historical_returns.json"))
 
+# Historical annual US 3M T-Bill yields (2021-2025 point-in-time rates)
+HISTORICAL_3M_TBILL_RATES: Dict[str, float] = {
+    "2021": 0.05,  # 0.05%
+    "2022": 2.02,  # 2.02%
+    "2023": 5.07,  # 5.07%
+    "2024": 5.25,  # 5.25%
+    "2025": 4.30   # 4.30%
+}
+
 # Core fallback baseline returns (2021-2025)
 HISTORICAL_RETURNS_DATA: Dict[str, Dict[str, float]] = {
     # US & CA Benchmarks
@@ -309,15 +318,41 @@ class BacktestEngine:
         cagr_pct = round(((curr_port_val / start_capital) ** (1.0 / len(years)) - 1.0) * 100.0, 2)
         benchmark_cagr_pct = round(((curr_bm_val / start_capital) ** (1.0 / len(years)) - 1.0) * 100.0, 2)
 
-        # Calculate Sharpe Ratio (Risk-free rate = 3.5%)
-        risk_free_rate = 3.5
-        returns_list = list(portfolio_annual_returns.values())
+        # Dynamic Risk-Free Rate calculations (Annual Historical US 3M T-Bills)
+        rf_values = [HISTORICAL_3M_TBILL_RATES.get(yr, 3.5) for yr in years]
+        avg_rf = sum(rf_values) / len(rf_values)
+
+        returns_list = [portfolio_annual_returns[yr] for yr in years]
+        bm_returns_list = [benchmark_annual_returns[yr] for yr in years]
+
         avg_ret = sum(returns_list) / len(returns_list)
+        bm_avg_ret = sum(bm_returns_list) / len(bm_returns_list)
+
         variance = sum((r - avg_ret) ** 2 for r in returns_list) / len(returns_list)
         std_dev = math.sqrt(variance) if variance > 0 else 1.0
 
-        sharpe_ratio = round((cagr_pct - risk_free_rate) / std_dev, 2) if std_dev > 0 else 1.0
+        sharpe_ratio = round((cagr_pct - avg_rf) / std_dev, 2) if std_dev > 0 else 1.0
         win_rate_pct = round((outperform_years_count / len(years)) * 100.0, 1)
+
+        # Sortino Ratio: Downside deviation of negative excess returns relative to annual T-Bill rates
+        excess_returns = [portfolio_annual_returns[yr] - HISTORICAL_3M_TBILL_RATES.get(yr, 3.5) for yr in years]
+        avg_excess_ret = sum(excess_returns) / len(excess_returns)
+        downside_sq_sum = sum(min(0.0, er) ** 2 for er in excess_returns)
+        downside_dev = math.sqrt(downside_sq_sum / len(excess_returns))
+        if downside_dev > 0.001:
+            sortino_ratio = round(avg_excess_ret / downside_dev, 2)
+        else:
+            sortino_ratio = 10.0 if avg_excess_ret > 0 else 0.0
+
+        # Benchmark Alpha & Beta relative to selected benchmark
+        bm_variance = sum((b - bm_avg_ret) ** 2 for b in bm_returns_list) / len(bm_returns_list)
+        cov_port_bm = sum((p - avg_ret) * (b - bm_avg_ret) for p, b in zip(returns_list, bm_returns_list)) / len(returns_list)
+        if bm_variance > 0.0001:
+            benchmark_beta = round(cov_port_bm / bm_variance, 2)
+        else:
+            benchmark_beta = 1.0
+
+        benchmark_alpha = round(avg_ret - (avg_rf + benchmark_beta * (bm_avg_ret - avg_rf)), 2)
 
         # 1. Calmar Ratio: CAGR / Max Drawdown
         calmar_ratio = round(cagr_pct / max(0.01, max_drawdown_pct), 2)
@@ -380,27 +415,29 @@ class BacktestEngine:
                 "recovery_days": None
             })
 
-        # 4. Rebalancing Comparison
+        # 4. Rebalancing Comparison with 10 bps quarterly turnover slippage friction
+        slippage_bps = 10.0
+        annual_slippage_pct = (slippage_bps * 4) / 100.0  # 4 quarters * 10 bps = 40 bps = 0.40%
+
         if len(unique_symbols) == 1:
             # Single-Asset Mode: Compare 100% Unhedged Buy-and-Hold vs 80/20 Disciplined Rebalance
-            # (80% Equity + 20% Tactical Cash reserve with quarterly 5% threshold rebalancing)
-            cash_rf = 3.5 / 100.0  # Cash risk-free annual return
+            cash_rf = avg_rf / 100.0  # Dynamic Cash risk-free annual return
             v_rebal_val = 1.0
             for yr in years:
                 r_stock = symbol_returns_map[unique_symbols[0]].get(yr, 10.0) / 100.0
-                # Weighted annual return with rebalance harvesting
                 v_rebal_val *= (0.80 * (1.0 + r_stock) + 0.20 * (1.0 + cash_rf))
             
-            rebal_cagr = round(((v_rebal_val ** (1.0 / len(years))) - 1.0) * 100.0, 2)
+            raw_rebal_cagr = ((v_rebal_val ** (1.0 / len(years))) - 1.0) * 100.0
+            rebal_cagr = round(max(-99.0, raw_rebal_cagr - annual_slippage_pct), 2)
             rebalancing_bonus_bps = round((rebal_cagr - cagr_pct) * 100.0, 1)
 
             rebalance_explanation_en = (
-                f"Disciplined 80/20 tactical rebalance vs 100% unhedged hold: dampens peak-to-trough drawdown by "
-                f"{round(max_drawdown_pct * 0.22, 1)}% while monetizing high volatility during cycle shocks."
+                f"Disciplined 80/20 tactical rebalance (net of 10 bps quarterly turnover friction): "
+                f"dampens peak-to-trough drawdown by {round(max_drawdown_pct * 0.22, 1)}% while harvesting volatility."
             )
             rebalance_explanation_zh = (
-                f"80/20 战术再平衡对比 100% 纯持股：回撤幅度优化约 {round(max_drawdown_pct * 0.22, 1)}%，"
-                f"在市场极端单边或脉冲震荡时自动锁利与补充现金垫。"
+                f"80/20 战术再平衡（扣除单季 10 bps 换仓滑点与交易磨损）："
+                f"回撤幅度优化约 {round(max_drawdown_pct * 0.22, 1)}%，在市场剧烈波动时纪律锁利与平抑波动。"
             )
             drift_cagr = cagr_pct
             quarterly_cagr = rebal_cagr
@@ -414,14 +451,15 @@ class BacktestEngine:
             v_drift_end = sum(v_drift_assets) / max(1, len(unique_symbols))
             drift_cagr = round(((v_drift_end ** (1.0 / len(years))) - 1.0) * 100.0, 2)
 
-            rebalancing_bonus_bps = round((cagr_pct - drift_cagr) * 100.0, 1)
-            quarterly_cagr = cagr_pct
+            net_rebal_cagr = round(cagr_pct - annual_slippage_pct, 2)
+            rebalancing_bonus_bps = round((net_rebal_cagr - drift_cagr) * 100.0, 1)
+            quarterly_cagr = net_rebal_cagr
             rebalance_explanation_en = (
-                "Quarterly rebalancing harvests volatility by trimming positions exceeding 1.5x target weight "
-                "and recharging risk budget into undervalued portfolio assets."
+                "Quarterly rebalancing (net of 10 bps turnover slippage) harvests volatility by trimming outperforming "
+                "positions and reallocating into undervalued portfolio constituents."
             )
             rebalance_explanation_zh = (
-                "季度动态再平衡机制：自动兑现超配盈利头寸（单票超标 1.5x 自动止盈并回流现金垫），收割波动率并降低极端集中度风险。"
+                "季度动态再平衡机制（已计入每季 10 bps 换仓滑点扣除）：自动兑现超配盈利头寸，收割波动率并降低单一标的集中度风险。"
             )
 
         rebalancing_simulation = {
@@ -434,12 +472,12 @@ class BacktestEngine:
 
         summary_note = (
             f"5-Year Historical Backtest (2021-2025): CAGR of {cagr_pct}% vs {benchmark} CAGR of {benchmark_cagr_pct}%. "
-            f"Sharpe: {sharpe_ratio}, Calmar Ratio: {calmar_ratio} (Robust 3Y: {robust_3y_calmar})."
+            f"Sharpe: {sharpe_ratio}, Sortino: {sortino_ratio}, Alpha: {benchmark_alpha}%, Beta: {benchmark_beta}."
             if lang == "en" else
             (f"5 年历史回测 (2021-2025)：组合年化收益率 (CAGR) {cagr_pct}%（基准 {benchmark} 为 {benchmark_cagr_pct}%）。"
-             f"夏普比率 {sharpe_ratio}，卡玛比率 {calmar_ratio}（3年稳健卡玛 {robust_3y_calmar}）。"
+             f"夏普比率 {sharpe_ratio}，索提诺比率 {sortino_ratio}，Alpha {benchmark_alpha}%，Beta {benchmark_beta}。"
              if lang == "zh" else
-             f"5 年历史回测: CAGR {cagr_pct}% vs {benchmark} {benchmark_cagr_pct}%, Sharpe {sharpe_ratio}, Calmar {calmar_ratio}.")
+             f"5 年历史回测: CAGR {cagr_pct}% vs {benchmark} {benchmark_cagr_pct}%, Sharpe {sharpe_ratio}, Sortino {sortino_ratio}.")
         )
 
         return {
@@ -452,10 +490,15 @@ class BacktestEngine:
             "benchmark_cagr_pct": benchmark_cagr_pct,
             "alpha_cagr_pct": round(cagr_pct - benchmark_cagr_pct, 2),
             "sharpe_ratio": sharpe_ratio,
+            "sortino_ratio": sortino_ratio,
+            "benchmark_alpha": benchmark_alpha,
+            "benchmark_beta": benchmark_beta,
             "calmar_ratio": calmar_ratio,
             "robust_3y_calmar_ratio": robust_3y_calmar,
             "max_drawdown_pct": round(max_drawdown_pct, 2),
             "win_rate_pct": win_rate_pct,
+            "slippage_bps_applied": slippage_bps,
+            "survivorship_bias_notice": "Evaluated on current surviving constituent universe; historical delistings excluded.",
             "total_return_pct": round(((curr_port_val / start_capital) - 1.0) * 100.0, 2),
             "benchmark_total_return_pct": round(((curr_bm_val / start_capital) - 1.0) * 100.0, 2),
             "summary_note": summary_note,
@@ -463,5 +506,7 @@ class BacktestEngine:
             "annual_breakdown": annual_breakdown,
             "underwater_curve": underwater_curve,
             "drawdown_events": drawdown_events,
-            "rebalancing_simulation": rebalancing_simulation
+            "rebalancing_simulation": rebalancing_simulation,
+            "yearly_returns": portfolio_annual_returns,
+            "yearly_risk_free_rates": HISTORICAL_3M_TBILL_RATES
         }
