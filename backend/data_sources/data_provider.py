@@ -727,7 +727,7 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "MSFT": {"fcf": 74100000000, "pe": 37.5, "name": "Microsoft Corporation"},
     "NVDA": {"fcf": 60800000000, "pe": 49.8, "name": "NVIDIA Corporation"},
     "GOOGL": {"fcf": 69500000000, "pe": 24.8, "name": "Alphabet Inc."},
-    "AMZN": {"fcf": 32200000000, "pe": 41.2, "name": "Amazon.com Inc."},
+    "AMZN": {"fcf": 53000000000, "pe": 41.2, "name": "Amazon.com Inc."},
     "META": {"fcf": 43000000000, "pe": 25.6, "name": "Meta Platforms Inc."},
     "AVGO": {"fcf": 19600000000, "pe": 32.4, "name": "Broadcom Inc."},
     "ORCL": {"fcf": 11800000000, "pe": 38.2, "name": "Oracle Corporation"},
@@ -879,6 +879,8 @@ EMPIRICAL_TAXONOMY_METRICS: Dict[str, Dict[str, float]] = {
     "META": {"roic": 0.31, "dividend_yield_pct": 0.4, "net_buyback_yield_pct": 2.2, "dilution_3y_pct": -1.8},
     "COST": {"roic": 0.21, "dividend_yield_pct": 0.6, "net_buyback_yield_pct": 0.4, "dilution_3y_pct": 0.2},
     "CSU.TO": {"roic": 0.24, "dividend_yield_pct": 0.4, "net_buyback_yield_pct": 0.1, "dilution_3y_pct": 0.0},
+    "CNR.TO": {"roic": 0.16, "dividend_yield_pct": 1.9, "net_buyback_yield_pct": 2.2, "dilution_3y_pct": -3.5},
+    "CP.TO": {"roic": 0.12, "dividend_yield_pct": 0.8, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.2},
     "CELH": {"roic": 0.22, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.5},
     # Grains (Cyclical / Value / High-yield cash cows)
     "KO": {"roic": 0.16, "dividend_yield_pct": 3.1, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": -0.5},
@@ -1122,6 +1124,13 @@ class DataProviderManager:
                             total_debt = float(info.get("totalDebt"))
                         if info.get("totalCash"):
                             total_cash = float(info.get("totalCash"))
+                        if info.get("operatingCashflow"):
+                            try:
+                                live_ocf = float(info.get("operatingCashflow"))
+                                if live_ocf > 0:
+                                    op_cash_flow = live_ocf
+                            except Exception:
+                                pass
                         if info.get("beta"):
                             beta_val = float(info.get("beta"))
 
@@ -1136,6 +1145,15 @@ class DataProviderManager:
                             net_income = free_cash_flow * 0.90
                         if not op_cash_flow or op_cash_flow <= 0:
                             op_cash_flow = free_cash_flow * 1.15
+
+                    capex_val = None
+                    if info.get("capitalExpenditures"):
+                        try:
+                            capex_val = abs(float(info.get("capitalExpenditures")))
+                        except Exception:
+                            pass
+                    if capex_val is None and op_cash_flow and free_cash_flow and op_cash_flow > free_cash_flow:
+                        capex_val = op_cash_flow - free_cash_flow
 
                     logger.info(f"Successfully fetched live real-time market data for '{normalized_symbol}' ({cand}): Price=${current_p} {resolved_currency}")
 
@@ -1154,6 +1172,7 @@ class DataProviderManager:
                         "ev_ebitda": ev_ebitda,
                         "free_cash_flow": free_cash_flow,
                         "operating_cash_flow": op_cash_flow,
+                        "capex": capex_val,
                         "net_income": net_income,
                         "total_revenue": total_revenue,
                         "revenue_growth": revenue_growth,

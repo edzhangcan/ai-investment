@@ -37,6 +37,9 @@ class ValuationBridgeSchema(BaseModel):
     less_sbc_annual: float = 0.0
     equity_value: float = 0.0
     implied_shares: float = 1.0
+    implied_shares_effective: Optional[float] = None
+    terminal_exit_multiple_used: Optional[float] = None
+    net_buyback_yield_used: Optional[float] = None
     fair_value_per_share: float = 0.0
     dynamic_wacc_used: float = 0.08
     valuation_outlier_warning: bool = False

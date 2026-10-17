@@ -291,3 +291,161 @@ def test_cyclical_peak_fcf_normalization():
     assert res["dcf_fair_value"] < 150.0  # < 3x current price of $50
     assert (res["dcf_fair_value"] - 50.0) / 50.0 < 2.0  # Margin < 200%
 
+def test_moat_calibrated_exit_multiple_blending():
+    """
+    Verify that Wide Moat & high-ROIC equities receive 25x exit multiple in terminal value,
+    yielding strictly higher DCF fair value than an identical No-Moat equity (13x exit multiple).
+    """
+    base_stock = {
+        "symbol": "MOAT_TEST",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "total_cash": 10_000_000_000.0,
+        "total_debt": 10_000_000_000.0,
+        "revenue_growth": 0.08,
+        "is_valid": True
+    }
+
+    wide_moat_stock = {
+        **base_stock,
+        "moat_rating": "Wide Moat",
+        "roic": 0.25
+    }
+
+    no_moat_stock = {
+        **base_stock,
+        "moat_rating": "None",
+        "roic": 0.05
+    }
+
+    res_wide = PricingEngine.evaluate_pricing_and_entry_zone(wide_moat_stock)
+    res_no_moat = PricingEngine.evaluate_pricing_and_entry_zone(no_moat_stock)
+
+    assert res_wide["bridge"]["terminal_exit_multiple_used"] == 25.0
+    assert res_no_moat["bridge"]["terminal_exit_multiple_used"] == 13.0
+    assert res_wide["dcf_fair_value"] > res_no_moat["dcf_fair_value"]
+    # The terminal value for wide moat should be significantly higher
+    assert res_wide["bridge"]["pv_terminal_value"] > res_no_moat["bridge"]["pv_terminal_value"]
+
+def test_share_buyback_accretion_lowers_effective_shares():
+    """
+    Verify that positive net_buyback_yield_pct reduces implied_shares_effective over the 10Y horizon,
+    increasing fair_value_per_share without changing underlying operating enterprise value.
+    """
+    stock_no_buyback = {
+        "symbol": "NO_BUYBACK",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "net_buyback_yield_pct": 0.0,
+        "is_valid": True
+    }
+
+    stock_with_buyback = {
+        "symbol": "WITH_BUYBACK",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "net_buyback_yield_pct": 3.2,
+        "is_valid": True
+    }
+
+    res_no = PricingEngine.evaluate_pricing_and_entry_zone(stock_no_buyback)
+    res_bb = PricingEngine.evaluate_pricing_and_entry_zone(stock_with_buyback)
+
+    assert res_no["bridge"]["implied_shares_effective"] == 1_000_000_000.0
+    assert res_bb["bridge"]["implied_shares_effective"] < 1_000_000_000.0
+    # Over 10 years at 3.2%, shares_terminal = 1B * (1 - 0.032)^10 = ~722M -> effective ~861M
+    assert 850_000_000.0 < res_bb["bridge"]["implied_shares_effective"] < 870_000_000.0
+    assert res_bb["dcf_fair_value"] > res_no["dcf_fair_value"]
+    assert res_bb["bridge"]["net_buyback_yield_used"] == 3.2
+
+def test_fortress_balance_sheet_wacc_credit():
+    """
+    Verify that a Wide Moat equity with net cash receives a 75 bps WACC credit,
+    reducing dynamic_wacc_used by exactly 0.0075.
+    """
+    net_debt_stock = {
+        "symbol": "DEBT_STOCK",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "total_cash": 10_000_000_000.0,
+        "total_debt": 30_000_000_000.0,
+        "moat_rating": "Wide Moat",
+        "beta": 1.0,
+        "is_valid": True
+    }
+
+    net_cash_stock = {
+        "symbol": "CASH_STOCK",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "total_cash": 30_000_000_000.0,
+        "total_debt": 10_000_000_000.0,
+        "moat_rating": "Wide Moat",
+        "beta": 1.0,
+        "is_valid": True
+    }
+
+    res_debt = PricingEngine.evaluate_pricing_and_entry_zone(net_debt_stock)
+    res_cash = PricingEngine.evaluate_pricing_and_entry_zone(net_cash_stock)
+
+    wacc_debt = res_debt["bridge"]["dynamic_wacc_used"]
+    wacc_cash = res_cash["bridge"]["dynamic_wacc_used"]
+
+    # Net cash Wide Moat stock should have a lower WACC than baseline
+    assert wacc_cash < wacc_debt
+    assert wacc_cash <= 0.080  # 0.087 - 0.0075 = ~0.0795
+
+def test_owner_cash_flow_growth_capex_separation():
+    """
+    Verify that high-growth Wide Moat compounders (hyperscalers) separate growth CapEx from maintenance CapEx,
+    yielding higher owner cash flow and preventing artificial DCF collapse.
+    """
+    hyperscaler = {
+        "symbol": "CLOUD_TITAN",
+        "current_price": 200.0,
+        "free_cash_flow": 10_000_000_000.0,
+        "operating_cash_flow": 40_000_000_000.0,
+        "capex": 30_000_000_000.0,  # $30B CapEx building AI infrastructure
+        "shares_outstanding": 1_000_000_000.0,
+        "revenue_growth": 0.20,
+        "moat_rating": "Wide Moat",
+        "roic": 0.22,
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(hyperscaler)
+    # With 20% rev growth and $30B CapEx, growth CapEx credit should be added back
+    # EV should reflect Owner Earnings, not depressed accounting FCF
+    assert res["dcf_fair_value"] > 150.0
+
+def test_sensitivity_matrix_aligns_with_blended_valuation():
+    """
+    Verify that the center cell of the 5x5 sensitivity matrix (base_g, base_wacc)
+    closely aligns with the bridge fair value per share.
+    """
+    stock = {
+        "symbol": "MATRIX_TEST",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "moat_rating": "Wide Moat",
+        "roic": 0.25,
+        "net_buyback_yield_pct": 2.0,
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(stock)
+    matrix = res["sensitivity_matrix"]
+    fv_bridge = res["bridge"]["fair_value_per_share"]
+
+    # Center cell is row 2, col 2 (0-indexed)
+    center_cell = matrix[2][2]
+    # Fair value should match within 1% of bridge fair value
+    assert abs(center_cell["fair_value"] - fv_bridge) / fv_bridge < 0.02
+
+

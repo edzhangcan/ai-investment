@@ -130,6 +130,35 @@ class PricingEngine:
         )
         terminal_growth = 0.03
 
+        # Resolve economic moat rating and ROIC
+        moat_rating = stock_data.get("moat_rating") or (stock_data.get("fundamental") or {}).get("moat_rating") or ""
+        if not moat_rating and symbol:
+            try:
+                moat_rating, _, _ = FundamentalEngine._evaluate_morningstar_moat(
+                    symbol=symbol,
+                    company_name=stock_data.get("company_name", ""),
+                    revenue=stock_data.get("total_revenue") or stock_data.get("revenue")
+                )
+            except Exception:
+                moat_rating = "Narrow Moat"
+
+        roic = float(stock_data.get("roic") or (stock_data.get("fundamental") or {}).get("roic") or 0.0)
+
+        # Net buyback yield
+        net_buyback_yield = float(
+            stock_data.get("net_buyback_yield_pct") or 
+            (stock_data.get("fundamental") or {}).get("net_buyback_yield_pct") or 
+            (stock_data.get("taxonomy") or {}).get("net_buyback_yield_pct") or 
+            0.0
+        )
+
+        # Pillar 4: Fortress balance sheet WACC credit (75 bps credit for net cash + Wide Moat compounders)
+        is_wide_moat = ("Wide" in str(moat_rating)) or ("宽" in str(moat_rating))
+        is_net_cash = (total_cash - total_debt) > 0
+        if is_wide_moat and is_net_cash and not is_financial:
+            wacc = max(0.065, wacc - 0.0075)
+        wacc = round(wacc, 4)
+
         # Revenue growth constraints based on taxonomy and sector
         raw_rev_growth = stock_data.get("revenue_growth") or 0.08
         tax_str = str(stock_data.get("taxonomy") or "")
@@ -140,18 +169,41 @@ class PricingEngine:
         else:
             rev_growth = min(max(raw_rev_growth, 0.03), 0.12)
 
-        # Deduct SBC from FCF: owner_fcf = max(0.0, raw_fcf - sbc)
-        deduct_sbc = True
-        if deduct_sbc and (raw_fcf - sbc) > 0:
-            base_fcf = raw_fcf - sbc
+        # Pillar 1: Warren Buffett Owner's Cash Flow (Growth vs Maintenance CapEx separation)
+        total_capex = float(stock_data.get("capex") or (max(0.0, operating_cf - raw_fcf) if operating_cf > raw_fcf else 0.0))
+        if total_capex > 0 and (is_wide_moat or roic >= 0.15 or "TREE" in tax_str) and rev_growth >= 0.08:
+            growth_capex_ratio = min(0.40, max(0.0, (rev_growth - 0.03) * 1.5))
+            growth_capex_credit = total_capex * growth_capex_ratio
         else:
-            base_fcf = raw_fcf
+            growth_capex_credit = 0.0
+
+        # Deduct SBC from FCF: if company executes net buybacks, offset SBC deduction
+        owner_fcf_pre_sbc = raw_fcf + growth_capex_credit
+        if sbc > 0:
+            if net_buyback_yield > 0:
+                sbc_offset_factor = min(0.50, net_buyback_yield / 4.0)
+                effective_sbc = sbc * (1.0 - sbc_offset_factor)
+            else:
+                effective_sbc = sbc
+            base_fcf = max(0.0, owner_fcf_pre_sbc - effective_sbc)
+        else:
+            base_fcf = owner_fcf_pre_sbc
 
         # Cyclical peak FCF normalization: if starting FCF yield > 12% of market cap, normalize
         if market_cap > 0 and (base_fcf / market_cap > 0.12):
             owner_fcf = market_cap * 0.09
         else:
             owner_fcf = base_fcf
+
+        # Pillar 2: Terminal Exit Multiple Calibration Matrix
+        if is_wide_moat and roic >= 0.20:
+            exit_multiple = 25.0
+        elif is_wide_moat or (("Narrow" in str(moat_rating) or "窄" in str(moat_rating)) and roic >= 0.15):
+            exit_multiple = 20.0
+        elif ("Narrow" in str(moat_rating)) or ("窄" in str(moat_rating)):
+            exit_multiple = 16.0
+        else:
+            exit_multiple = 13.0
 
         if raw_fcf > 0:
             curr_fcf = owner_fcf
@@ -160,10 +212,18 @@ class PricingEngine:
                 growth_rate = rev_growth if year <= 5 else (rev_growth + terminal_growth) / 2
                 curr_fcf *= (1 + growth_rate)
                 pv_10y_fcf += curr_fcf / ((1 + wacc) ** year)
+
+            # 1. Gordon Growth Terminal Value
             effective_g = min(terminal_growth, max(0.01, wacc - 0.038))
             effective_spread = max(0.038, wacc - effective_g)
-            term_val = (curr_fcf * (1 + effective_g)) / effective_spread
-            pv_terminal_value = term_val / ((1 + wacc) ** 10)
+            tv_gordon = (curr_fcf * (1 + effective_g)) / effective_spread
+
+            # 2. Moat-Calibrated Exit Multiple Terminal Value
+            tv_exit = curr_fcf * exit_multiple
+
+            # 3. 50/50 Institutional Wall Street & Morningstar Blend
+            tv_blended = 0.50 * tv_gordon + 0.50 * tv_exit
+            pv_terminal_value = tv_blended / ((1 + wacc) ** 10)
             enterprise_value = pv_10y_fcf + pv_terminal_value
 
             if is_financial:
@@ -179,7 +239,15 @@ class PricingEngine:
                 net_debt_clamp = min(net_debt, enterprise_value * 0.70) if net_debt > 0 else net_debt
                 equity_value = enterprise_value - net_debt_clamp
 
-            fair_value_per_share = round(max(0.01, equity_value / implied_shares), 2)
+            # Pillar 3: Share Repurchase Accretion modeling using net_buyback_yield_pct
+            clamped_buyback = min(0.04, max(0.0, net_buyback_yield / 100.0))
+            if clamped_buyback > 0 and implied_shares > 0:
+                shares_terminal = implied_shares * ((1.0 - clamped_buyback) ** 10)
+                implied_shares_effective = (implied_shares + shares_terminal) / 2.0
+            else:
+                implied_shares_effective = implied_shares
+
+            fair_value_per_share = round(max(0.01, equity_value / implied_shares_effective), 2)
             dcf_fair_value = fair_value_per_share
             outlier_warning = (fair_value_per_share / max(0.01, price) < 0.25) or (fair_value_per_share / max(0.01, price) > 3.0)
             bridge = {
@@ -191,6 +259,9 @@ class PricingEngine:
                 "less_sbc_annual": round(sbc, 2),
                 "equity_value": round(equity_value, 2),
                 "implied_shares": round(implied_shares, 2),
+                "implied_shares_effective": round(implied_shares_effective, 2),
+                "terminal_exit_multiple_used": round(exit_multiple, 1),
+                "net_buyback_yield_used": round(net_buyback_yield, 2),
                 "fair_value_per_share": fair_value_per_share,
                 "dynamic_wacc_used": wacc,
                 "valuation_outlier_warning": outlier_warning
@@ -198,6 +269,7 @@ class PricingEngine:
         else:
             # ETF / Index or missing FCF default DCF target relative to 200D SMA
             dcf_fair_value = round(max(price * 1.05, two_hundred_sma * 1.10), 2)
+            implied_shares_effective = implied_shares
             bridge = {
                 "pv_10y_fcf": 0.0,
                 "pv_terminal_value": 0.0,
@@ -207,6 +279,9 @@ class PricingEngine:
                 "less_sbc_annual": round(sbc, 2),
                 "equity_value": round(dcf_fair_value * implied_shares, 2),
                 "implied_shares": round(implied_shares, 2),
+                "implied_shares_effective": round(implied_shares, 2),
+                "terminal_exit_multiple_used": round(exit_multiple, 1),
+                "net_buyback_yield_used": round(net_buyback_yield, 2),
                 "fair_value_per_share": dcf_fair_value,
                 "dynamic_wacc_used": wacc,
                 "valuation_outlier_warning": False
@@ -222,7 +297,9 @@ class PricingEngine:
             total_debt=total_debt,
             implied_shares=implied_shares,
             price=price,
-            is_financial=is_financial
+            is_financial=is_financial,
+            exit_multiple=exit_multiple,
+            implied_shares_effective=implied_shares_effective
         )
 
         # 2. Continuous Dynamic Valuation Percentile & Timing Score
@@ -570,10 +647,13 @@ class PricingEngine:
         total_debt: float,
         implied_shares: float,
         price: float,
-        is_financial: bool = False
+        is_financial: bool = False,
+        exit_multiple: float = 20.0,
+        implied_shares_effective: Optional[float] = None
     ) -> List[List[Dict[str, Any]]]:
         """
         Builds a 5x5 DCF sensitivity matrix across Terminal Growth (rows) and WACC (columns).
+        Blends 50% Gordon Growth + 50% Moat Exit Multiple, using effective shares.
         Guarantees effective_wacc - effective_g >= 0.015 in every cell.
         Along each row (fixed g, increasing wacc): fair value strictly decreases.
         Along each column (fixed wacc, increasing g): fair value strictly increases.
@@ -593,6 +673,8 @@ class PricingEngine:
             round(base_g + 0.01, 4),
         ]
 
+        shares_to_use = implied_shares_effective if implied_shares_effective and implied_shares_effective > 0 else implied_shares
+
         matrix: List[List[Dict[str, Any]]] = []
         for g_val in g_steps:
             row: List[Dict[str, Any]] = []
@@ -600,15 +682,19 @@ class PricingEngine:
                 eff_w = max(0.04, w_val)
                 eff_g = min(g_val, eff_w - 0.015)
 
-                if owner_fcf > 0 and implied_shares > 0:
+                if owner_fcf > 0 and shares_to_use > 0:
                     curr_fcf = owner_fcf
                     pv_10y = 0.0
                     for year in range(1, 11):
                         growth = rev_growth if year <= 5 else (rev_growth + eff_g) / 2
                         curr_fcf *= (1 + growth)
                         pv_10y += curr_fcf / ((1 + eff_w) ** year)
-                    tv = (curr_fcf * (1 + eff_g)) / (eff_w - eff_g)
-                    pv_tv = tv / ((1 + eff_w) ** 10)
+                    
+                    eff_spread = max(0.015, eff_w - eff_g)
+                    tv_gordon = (curr_fcf * (1 + eff_g)) / eff_spread
+                    tv_exit = curr_fcf * exit_multiple
+                    tv_blended = 0.50 * tv_gordon + 0.50 * tv_exit
+                    pv_tv = tv_blended / ((1 + eff_w) ** 10)
                     ev = pv_10y + pv_tv
                     if is_financial:
                         equity = ev
@@ -616,7 +702,7 @@ class PricingEngine:
                         net_d = total_debt - total_cash
                         net_d_clamp = min(net_d, ev * 0.70) if net_d > 0 else net_d
                         equity = ev - net_d_clamp
-                    fv = round(max(0.01, equity / implied_shares), 2)
+                    fv = round(max(0.01, equity / shares_to_use), 2)
                 else:
                     fv = round(max(0.01, price * 1.05 * (1 + (eff_g - base_g)*2 - (eff_w - base_wacc)*3)), 2)
 
