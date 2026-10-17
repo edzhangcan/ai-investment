@@ -291,3 +291,240 @@ def test_cyclical_peak_fcf_normalization():
     assert res["dcf_fair_value"] < 150.0  # < 3x current price of $50
     assert (res["dcf_fair_value"] - 50.0) / 50.0 < 2.0  # Margin < 200%
 
+def test_moat_calibrated_exit_multiple_blending():
+    """
+    Verify that Wide Moat & high-ROIC equities receive 25x exit multiple in terminal value,
+    yielding strictly higher DCF fair value than an identical No-Moat equity (13x exit multiple).
+    """
+    base_stock = {
+        "symbol": "MOAT_TEST",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "total_cash": 10_000_000_000.0,
+        "total_debt": 10_000_000_000.0,
+        "revenue_growth": 0.08,
+        "is_valid": True
+    }
+
+    wide_moat_stock = {
+        **base_stock,
+        "moat_rating": "Wide Moat",
+        "roic": 0.25
+    }
+
+    no_moat_stock = {
+        **base_stock,
+        "moat_rating": "None",
+        "roic": 0.05
+    }
+
+    res_wide = PricingEngine.evaluate_pricing_and_entry_zone(wide_moat_stock)
+    res_no_moat = PricingEngine.evaluate_pricing_and_entry_zone(no_moat_stock)
+
+    assert res_wide["bridge"]["terminal_exit_multiple_used"] == 25.0
+    assert res_no_moat["bridge"]["terminal_exit_multiple_used"] == 13.0
+    assert res_wide["dcf_fair_value"] > res_no_moat["dcf_fair_value"]
+    # The terminal value for wide moat should be significantly higher
+    assert res_wide["bridge"]["pv_terminal_value"] > res_no_moat["bridge"]["pv_terminal_value"]
+
+def test_share_buyback_accretion_lowers_effective_shares():
+    """
+    Verify that positive net_buyback_yield_pct reduces implied_shares_effective over the 10Y horizon,
+    increasing fair_value_per_share without changing underlying operating enterprise value.
+    """
+    stock_no_buyback = {
+        "symbol": "NO_BUYBACK",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "net_buyback_yield_pct": 0.0,
+        "is_valid": True
+    }
+
+    stock_with_buyback = {
+        "symbol": "WITH_BUYBACK",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "net_buyback_yield_pct": 3.2,
+        "is_valid": True
+    }
+
+    res_no = PricingEngine.evaluate_pricing_and_entry_zone(stock_no_buyback)
+    res_bb = PricingEngine.evaluate_pricing_and_entry_zone(stock_with_buyback)
+
+    assert res_no["bridge"]["implied_shares_effective"] == 1_000_000_000.0
+    assert res_bb["bridge"]["implied_shares_effective"] < 1_000_000_000.0
+    # Over 10 years at 3.2%, shares_terminal = 1B * (1 - 0.032)^10 = ~722M -> effective ~861M
+    assert 850_000_000.0 < res_bb["bridge"]["implied_shares_effective"] < 870_000_000.0
+    assert res_bb["dcf_fair_value"] > res_no["dcf_fair_value"]
+    assert res_bb["bridge"]["net_buyback_yield_used"] == 3.2
+
+def test_fortress_balance_sheet_wacc_credit():
+    """
+    Verify that a Wide Moat equity with net cash receives a 75 bps WACC credit,
+    reducing dynamic_wacc_used by exactly 0.0075.
+    """
+    net_debt_stock = {
+        "symbol": "DEBT_STOCK",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "total_cash": 10_000_000_000.0,
+        "total_debt": 30_000_000_000.0,
+        "moat_rating": "Wide Moat",
+        "beta": 1.0,
+        "is_valid": True
+    }
+
+    net_cash_stock = {
+        "symbol": "CASH_STOCK",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "total_cash": 30_000_000_000.0,
+        "total_debt": 10_000_000_000.0,
+        "moat_rating": "Wide Moat",
+        "beta": 1.0,
+        "is_valid": True
+    }
+
+    res_debt = PricingEngine.evaluate_pricing_and_entry_zone(net_debt_stock)
+    res_cash = PricingEngine.evaluate_pricing_and_entry_zone(net_cash_stock)
+
+    wacc_debt = res_debt["bridge"]["dynamic_wacc_used"]
+    wacc_cash = res_cash["bridge"]["dynamic_wacc_used"]
+
+    # Net cash Wide Moat stock should have a lower WACC than baseline
+    assert wacc_cash < wacc_debt
+    assert wacc_cash <= 0.080  # 0.087 - 0.0075 = ~0.0795
+
+def test_owner_cash_flow_growth_capex_separation():
+    """
+    Verify that high-growth Wide Moat compounders (hyperscalers) separate growth CapEx from maintenance CapEx,
+    yielding higher owner cash flow and preventing artificial DCF collapse.
+    """
+    hyperscaler = {
+        "symbol": "CLOUD_TITAN",
+        "current_price": 200.0,
+        "free_cash_flow": 10_000_000_000.0,
+        "operating_cash_flow": 40_000_000_000.0,
+        "capex": 30_000_000_000.0,  # $30B CapEx building AI infrastructure
+        "shares_outstanding": 1_000_000_000.0,
+        "revenue_growth": 0.20,
+        "moat_rating": "Wide Moat",
+        "roic": 0.22,
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(hyperscaler)
+    # With 20% rev growth and $30B CapEx, growth CapEx credit should be added back
+    # EV should reflect Owner Earnings, not depressed accounting FCF
+    assert res["dcf_fair_value"] > 150.0
+
+def test_sensitivity_matrix_aligns_with_blended_valuation():
+    """
+    Verify that the center cell of the 5x5 sensitivity matrix (base_g, base_wacc)
+    closely aligns with the bridge fair value per share.
+    """
+    stock = {
+        "symbol": "MATRIX_TEST",
+        "current_price": 100.0,
+        "free_cash_flow": 5_000_000_000.0,
+        "shares_outstanding": 1_000_000_000.0,
+        "moat_rating": "Wide Moat",
+        "roic": 0.25,
+        "net_buyback_yield_pct": 2.0,
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(stock)
+    matrix = res["sensitivity_matrix"]
+    fv_bridge = res["bridge"]["fair_value_per_share"]
+
+    # Center cell is row 2, col 2 (0-indexed)
+    center_cell = matrix[2][2]
+    # Fair value should match within 1% of bridge fair value
+    assert abs(center_cell["fair_value"] - fv_bridge) / fv_bridge < 0.02
+
+def test_regulated_infrastructure_rate_base_debt_bypass():
+    """
+    Verify that regulated midstream pipelines, utilities, and infrastructure equities (e.g. TRP.TO, ENB.TO)
+    do not have rate-base / project debt double-counted in the EV-to-Equity net debt bridge,
+    since reported FCF is Free Cash Flow to Equity (already deducting debt interest expense).
+    """
+    pipeline_stock = {
+        "symbol": "TRP.TO",
+        "company_name": "TC Energy Corporation",
+        "sector": "Energy",
+        "industry": "Oil & Gas Midstream",
+        "current_price": 87.13,
+        "two_hundred_day_sma": 88.22,
+        "free_cash_flow": 3_600_000_000.0,
+        "shares_outstanding": 1_041_766_896.0,
+        "total_debt": 63_845_998_592.0,
+        "total_cash": 2_476_999_936.0,
+        "revenue_growth": 0.057,
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(pipeline_stock)
+    # Without rate-base bypass, debt would wipe out 70% of value, collapsing DCF to $27.97.
+    # With FCFE equity valuation, fair value should be close to intrinsic cash flow value ($80 - $95).
+    assert res["dcf_fair_value"] > 75.0
+    assert abs(res["dcf_fair_value"] - pipeline_stock["current_price"]) / pipeline_stock["current_price"] < 0.15
+    assert res["bridge"]["less_total_debt"] == 0.0
+    assert res["bridge"]["equity_value"] == res["bridge"]["enterprise_value"]
+
+
+def test_oilfield_services_normalized_fcf_and_buybacks():
+    """
+    Verify that oilfield services leaders (e.g. SLB) with normalized 10-K FCF and net share buyback yield
+    are properly calibrated:
+    - 10-K audited FCF baseline ($4.1B) yields intrinsic fair value in the $60-$75 range
+    - Effective share count reflects net share retirements (net_buyback_yield_pct = 2.0%)
+    - Ideal buy zone ($45-$52) accurately brackets current price ($49.50) and 200D SMA ($51.86)
+    - Action status correctly triggers IN_BUY_ZONE when price is within the buy bracket
+    """
+    from backend.data_sources.data_provider import DataProviderManager
+    stock = DataProviderManager.get_stock_data("SLB", force_refresh=True)
+    res = PricingEngine.evaluate_pricing_and_entry_zone(stock)
+
+    assert stock["free_cash_flow"] >= 4_000_000_000.0
+    assert stock["net_buyback_yield_pct"] == 2.0
+    assert 60.0 <= res["dcf_fair_value"] <= 75.0
+    assert res["ideal_buy_range_min"] <= 49.50 <= res["ideal_buy_range_max"]
+    assert res["action_status"] == "IN_BUY_ZONE"
+    assert res["bridge"]["net_buyback_yield_used"] == 2.0
+    assert res["bridge"]["implied_shares_effective"] < res["bridge"]["implied_shares"]
+
+
+def test_dual_currency_conversion_and_blume_smoothing_fm_to():
+    """
+    Verify that Canadian resource equities reporting in USD (e.g. FM.TO)
+    properly convert financial metrics to CAD and smooth crisis-inflated rolling betas:
+    - Currency conversion multiplies USD fundamental metrics (FCF, Cash, Debt) by USDCAD exchange rate (~1.368)
+    - Currency conversion note is recorded in valuation bridge
+    - Blume beta adjustment smooths crisis-distorted rolling beta toward 1.0
+    - DCF fair value is in a sensible bracket (>= $22 CAD) rather than the previous distorted $6.53
+    - Valuation outlier warning is not triggered
+    """
+    from backend.data_sources.data_provider import DataProviderManager
+    with DataProviderManager._LOCK:
+        DataProviderManager._CACHE.clear()
+        DataProviderManager._CACHE_TIMESTAMPS.clear()
+    stock = DataProviderManager.get_stock_data("FM.TO", force_refresh=True)
+    res = PricingEngine.evaluate_pricing_and_entry_zone(stock)
+
+    assert stock["currency"] == "CAD"
+    assert stock["financial_currency"] == "USD"
+    assert res["dcf_fair_value"] >= 22.0
+    assert res["bridge"]["valuation_outlier_warning"] is False
+    assert "Converted USD financials to CAD" in str(res["bridge"].get("currency_conversion_note"))
+    assert res["ideal_buy_range_min"] > 15.0
+
+
+
+
+

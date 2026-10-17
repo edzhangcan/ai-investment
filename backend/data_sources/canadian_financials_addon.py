@@ -16,11 +16,11 @@ CANADIAN_ADDITIONAL_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "EMA.TO": {"fcf": 720000000, "pe": 17.5, "name": "Emera Incorporated", "roic": 0.07, "dividend_yield_pct": 5.4, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 2.0},
     "AQN.TO": {"fcf": 310000000, "pe": 14.2, "name": "Algonquin Power & Utilities", "roic": 0.06, "dividend_yield_pct": 5.8, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 3.0},
     "H.TO": {"fcf": 1280000000, "pe": 21.5, "name": "Hydro One Limited", "roic": 0.09, "dividend_yield_pct": 3.1, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.4},
-    "AEM.TO": {"fcf": 1820000000, "pe": 22.0, "name": "Agnico Eagle Mines Limited", "roic": 0.14, "dividend_yield_pct": 1.8, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": 0.2},
-    "K.TO": {"fcf": 1100000000, "pe": 14.5, "name": "Kinross Gold Corporation", "roic": 0.12, "dividend_yield_pct": 1.4, "net_buyback_yield_pct": 2.0, "dilution_3y_pct": -1.0},
-    "IVN.TO": {"fcf": 850000000, "pe": 24.8, "name": "Ivanhoe Mines Ltd.", "roic": 0.18, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.8},
-    "LUN.TO": {"fcf": 920000000, "pe": 16.2, "name": "Lundin Mining Corporation", "roic": 0.13, "dividend_yield_pct": 2.4, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.5},
-    "FM.TO": {"fcf": 680000000, "pe": 28.5, "name": "First Quantum Minerals Ltd.", "roic": 0.09, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 5.2},
+    "AEM.TO": {"fcf": 1820000000, "pe": 22.0, "name": "Agnico Eagle Mines Limited", "roic": 0.14, "dividend_yield_pct": 1.8, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": 0.2, "financial_currency": "USD"},
+    "K.TO": {"fcf": 1100000000, "pe": 14.5, "name": "Kinross Gold Corporation", "roic": 0.12, "dividend_yield_pct": 1.4, "net_buyback_yield_pct": 2.0, "dilution_3y_pct": -1.0, "financial_currency": "USD"},
+    "IVN.TO": {"fcf": 850000000, "pe": 24.8, "name": "Ivanhoe Mines Ltd.", "roic": 0.18, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.8, "financial_currency": "USD"},
+    "LUN.TO": {"fcf": 920000000, "pe": 16.2, "name": "Lundin Mining Corporation", "roic": 0.13, "dividend_yield_pct": 2.4, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.5, "financial_currency": "USD"},
+    "FM.TO": {"fcf": 948000000, "pe": 28.5, "name": "First Quantum Minerals Ltd.", "roic": 0.16, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.5, "financial_currency": "USD"},
 
     # Market Leaders
     "RCI-B.TO": {"fcf": 2600000000, "pe": 14.8, "name": "Rogers Communications Inc.", "roic": 0.09, "dividend_yield_pct": 3.9, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 4.5},
@@ -42,7 +42,7 @@ CANADIAN_ADDITIONAL_FINANCIALS: Dict[str, Dict[str, Any]] = {
 
     # Gold Nuggets & Niche Compounders
     "DSG.TO": {"fcf": 240000000, "pe": 54.0, "name": "Descartes Systems Group", "roic": 0.17, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.8},
-    "FNV.TO": {"fcf": 1150000000, "pe": 32.5, "name": "Franco-Nevada Corporation", "roic": 0.16, "dividend_yield_pct": 1.1, "net_buyback_yield_pct": 0.2, "dilution_3y_pct": 0.1},
+    "FNV.TO": {"fcf": 1150000000, "pe": 32.5, "name": "Franco-Nevada Corporation", "roic": 0.16, "dividend_yield_pct": 1.1, "net_buyback_yield_pct": 0.2, "dilution_3y_pct": 0.1, "financial_currency": "USD"},
     "ENGH.TO": {"fcf": 140000000, "pe": 16.2, "name": "Enghouse Systems Limited", "roic": 0.18, "dividend_yield_pct": 3.4, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.0},
     "CTS.TO": {"fcf": 110000000, "pe": 12.5, "name": "Converge Technology Solutions", "roic": 0.14, "dividend_yield_pct": 1.2, "net_buyback_yield_pct": 3.0, "dilution_3y_pct": 0.8},
     "BYD.TO": {"fcf": 360000000, "pe": 38.5, "name": "Boyd Group Services Inc.", "roic": 0.16, "dividend_yield_pct": 0.2, "net_buyback_yield_pct": 0.1, "dilution_3y_pct": 0.5},
@@ -50,11 +50,11 @@ CANADIAN_ADDITIONAL_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "DOO.TO": {"fcf": 450000000, "pe": 8.8, "name": "BRP Inc.", "roic": 0.18, "dividend_yield_pct": 1.1, "net_buyback_yield_pct": 5.0, "dilution_3y_pct": -4.2},
     "MTY.TO": {"fcf": 160000000, "pe": 12.8, "name": "MTY Food Group Inc.", "roic": 0.15, "dividend_yield_pct": 2.4, "net_buyback_yield_pct": 2.0, "dilution_3y_pct": 0.0},
     "MAL.TO": {"fcf": 65000000, "pe": 14.5, "name": "Magellan Aerospace Corporation", "roic": 0.11, "dividend_yield_pct": 1.2, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.0},
-    "HBM.TO": {"fcf": 420000000, "pe": 19.5, "name": "Hudbay Minerals Inc.", "roic": 0.12, "dividend_yield_pct": 0.2, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 2.8},
-    "SSRM.TO": {"fcf": 190000000, "pe": 15.0, "name": "SSR Mining Inc.", "roic": 0.09, "dividend_yield_pct": 2.8, "net_buyback_yield_pct": 1.0, "dilution_3y_pct": 0.0},
-    "DPM.TO": {"fcf": 320000000, "pe": 11.8, "name": "Dundee Precious Metals", "roic": 0.21, "dividend_yield_pct": 1.6, "net_buyback_yield_pct": 3.5, "dilution_3y_pct": -2.0},
+    "HBM.TO": {"fcf": 420000000, "pe": 19.5, "name": "Hudbay Minerals Inc.", "roic": 0.12, "dividend_yield_pct": 0.2, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 2.8, "financial_currency": "USD"},
+    "SSRM.TO": {"fcf": 190000000, "pe": 15.0, "name": "SSR Mining Inc.", "roic": 0.09, "dividend_yield_pct": 2.8, "net_buyback_yield_pct": 1.0, "dilution_3y_pct": 0.0, "financial_currency": "USD"},
+    "DPM.TO": {"fcf": 320000000, "pe": 11.8, "name": "Dundee Precious Metals", "roic": 0.21, "dividend_yield_pct": 1.6, "net_buyback_yield_pct": 3.5, "dilution_3y_pct": -2.0, "financial_currency": "USD"},
     "ALS.TO": {"fcf": 95000000, "pe": 31.0, "name": "Altius Minerals Corporation", "roic": 0.13, "dividend_yield_pct": 1.5, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": 0.2},
-    "EDV.TO": {"fcf": 650000000, "pe": 13.2, "name": "Endeavour Mining plc", "roic": 0.17, "dividend_yield_pct": 3.8, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": 0.0},
+    "EDV.TO": {"fcf": 650000000, "pe": 13.2, "name": "Endeavour Mining plc", "roic": 0.17, "dividend_yield_pct": 3.8, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": 0.0, "financial_currency": "USD"},
     "CGY.TO": {"fcf": 85000000, "pe": 15.4, "name": "Calian Group Ltd.", "roic": 0.16, "dividend_yield_pct": 1.9, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.8},
     "CJT.TO": {"fcf": 180000000, "pe": 24.5, "name": "Cargojet Inc.", "roic": 0.14, "dividend_yield_pct": 1.5, "net_buyback_yield_pct": 2.0, "dilution_3y_pct": 0.0}
 }

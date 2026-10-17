@@ -727,7 +727,7 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "MSFT": {"fcf": 74100000000, "pe": 37.5, "name": "Microsoft Corporation"},
     "NVDA": {"fcf": 60800000000, "pe": 49.8, "name": "NVIDIA Corporation"},
     "GOOGL": {"fcf": 69500000000, "pe": 24.8, "name": "Alphabet Inc."},
-    "AMZN": {"fcf": 32200000000, "pe": 41.2, "name": "Amazon.com Inc."},
+    "AMZN": {"fcf": 53000000000, "pe": 41.2, "name": "Amazon.com Inc."},
     "META": {"fcf": 43000000000, "pe": 25.6, "name": "Meta Platforms Inc."},
     "AVGO": {"fcf": 19600000000, "pe": 32.4, "name": "Broadcom Inc."},
     "ORCL": {"fcf": 11800000000, "pe": 38.2, "name": "Oracle Corporation"},
@@ -807,18 +807,18 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "NA.TO": {"fcf": 3200000000, "pe": 12.4, "name": "National Bank of Canada"},
     "CWW.TO": {"fcf": 850000000, "pe": 14.8, "name": "iShares Global Water ETF"},
     "EQB.TO": {"fcf": 620000000, "pe": 9.5, "name": "EQB Inc."},
-    "ABX.TO": {"fcf": 1850000000, "pe": 18.2, "name": "Barrick Gold Corp."},
+    "ABX.TO": {"fcf": 1850000000, "pe": 18.2, "name": "Barrick Gold Corp.", "financial_currency": "USD"},
     "TECK-B.TO": {"fcf": 2100000000, "pe": 14.6, "name": "Teck Resources Ltd."},
     "TECK.B.TO": {"fcf": 2100000000, "pe": 14.6, "name": "Teck Resources Ltd."},
-    "NTR.TO": {"fcf": 2600000000, "pe": 13.5, "name": "Nutrien Ltd."},
-    "SHOP.TO": {"fcf": 1250000000, "pe": 75.4, "name": "Shopify Inc."},
+    "NTR.TO": {"fcf": 2600000000, "pe": 13.5, "name": "Nutrien Ltd.", "financial_currency": "USD"},
+    "SHOP.TO": {"fcf": 1250000000, "pe": 75.4, "name": "Shopify Inc.", "financial_currency": "USD"},
     "CNR.TO": {"fcf": 4500000000, "pe": 21.2, "name": "Canadian National Railway"},
     "CP.TO": {"fcf": 3200000000, "pe": 24.8, "name": "Canadian Pacific Kansas City"},
     "ATD.TO": {"fcf": 2800000000, "pe": 18.5, "name": "Alimentation Couche-Tard"},
     "BCE.TO": {"fcf": 2900000000, "pe": 15.2, "name": "BCE Inc."},
     "T.TO": {"fcf": 1800000000, "pe": 22.4, "name": "TELUS Corporation"},
-    "BAM.TO": {"fcf": 2400000000, "pe": 32.5, "name": "Brookfield Asset Management"},
-    "BN.TO": {"fcf": 4200000000, "pe": 18.6, "name": "Brookfield Corporation"},
+    "BAM.TO": {"fcf": 2400000000, "pe": 32.5, "name": "Brookfield Asset Management", "financial_currency": "USD"},
+    "BN.TO": {"fcf": 4200000000, "pe": 18.6, "name": "Brookfield Corporation", "financial_currency": "USD"},
     "DOL.TO": {"fcf": 1100000000, "pe": 31.2, "name": "Dollarama Inc."},
     "MFC.TO": {"fcf": 4500000000, "pe": 10.4, "name": "Manulife Financial Corp."},
     "SLF.TO": {"fcf": 3100000000, "pe": 12.8, "name": "Sun Life Financial Inc."},
@@ -879,6 +879,8 @@ EMPIRICAL_TAXONOMY_METRICS: Dict[str, Dict[str, float]] = {
     "META": {"roic": 0.31, "dividend_yield_pct": 0.4, "net_buyback_yield_pct": 2.2, "dilution_3y_pct": -1.8},
     "COST": {"roic": 0.21, "dividend_yield_pct": 0.6, "net_buyback_yield_pct": 0.4, "dilution_3y_pct": 0.2},
     "CSU.TO": {"roic": 0.24, "dividend_yield_pct": 0.4, "net_buyback_yield_pct": 0.1, "dilution_3y_pct": 0.0},
+    "CNR.TO": {"roic": 0.16, "dividend_yield_pct": 1.9, "net_buyback_yield_pct": 2.2, "dilution_3y_pct": -3.5},
+    "CP.TO": {"roic": 0.12, "dividend_yield_pct": 0.8, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.2},
     "CELH": {"roic": 0.22, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.5},
     # Grains (Cyclical / Value / High-yield cash cows)
     "KO": {"roic": 0.16, "dividend_yield_pct": 3.1, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": -0.5},
@@ -889,8 +891,13 @@ EMPIRICAL_TAXONOMY_METRICS: Dict[str, Dict[str, float]] = {
     "BMO.TO": {"roic": 0.11, "dividend_yield_pct": 4.6, "net_buyback_yield_pct": 0.4, "dilution_3y_pct": 0.7},
     "BNS.TO": {"roic": 0.10, "dividend_yield_pct": 5.8, "net_buyback_yield_pct": 0.2, "dilution_3y_pct": 0.9},
     "ENB.TO": {"roic": 0.09, "dividend_yield_pct": 6.5, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.8},
+    "TRP.TO": {"roic": 0.08, "dividend_yield_pct": 4.8, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.2},
     "SU.TO": {"roic": 0.18, "dividend_yield_pct": 4.2, "net_buyback_yield_pct": 3.5, "dilution_3y_pct": -2.0},
+    "CNQ.TO": {"roic": 0.19, "dividend_yield_pct": 4.5, "net_buyback_yield_pct": 3.0, "dilution_3y_pct": -2.0},
+    "CVE.TO": {"roic": 0.16, "dividend_yield_pct": 3.2, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": -1.5},
     "XOM": {"roic": 0.16, "dividend_yield_pct": 3.4, "net_buyback_yield_pct": 2.8, "dilution_3y_pct": -1.5},
+    "COP": {"roic": 0.17, "dividend_yield_pct": 3.0, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": -1.5},
+    "SLB": {"roic": 0.18, "dividend_yield_pct": 2.2, "net_buyback_yield_pct": 2.0, "dilution_3y_pct": -1.5},
     "JPM": {"roic": 0.17, "dividend_yield_pct": 2.3, "net_buyback_yield_pct": 1.8, "dilution_3y_pct": -0.8},
     "ONT.TO": {"roic": 0.13, "dividend_yield_pct": 0.5, "net_buyback_yield_pct": 3.0, "dilution_3y_pct": -1.0},
     # Vegetables (Negative FCF, high multiple, or dilution)
@@ -1045,6 +1052,7 @@ class DataProviderManager:
                     fin_info = REAL_UNIVERSE_FINANCIALS.get(normalized_symbol, {})
                     company_name = fin_info.get("name") or COMPANY_PROFILES_REGISTRY.get(normalized_symbol, {}).get("company_name") or cand
                     resolved_currency = currency or ("CAD" if market == "CA" else "USD")
+                    financial_currency = fin_info.get("financial_currency")
 
                     # Extract fundamental ratios from SEC/SEDAR filings or ticker.info
                     pe_ratio = fin_info.get("pe")
@@ -1110,8 +1118,13 @@ class DataProviderManager:
                             if free_cash_flow and free_cash_flow > 0:
                                 # Guard against noisy single-quarter spikes or quarterly data overriding annual 10-K/SEDAR baseline
                                 ratio = live_fcf_f / free_cash_flow
-                                if 0.35 <= ratio <= 2.8:
+                                if 0.85 <= ratio <= 1.50:
                                     free_cash_flow = live_fcf_f
+                                else:
+                                    logger.info(
+                                        f"Preserving audited 10-K/SEDAR annual FCF baseline ${free_cash_flow/1e9:.2f}B "
+                                        f"for '{normalized_symbol}' (live yfinance FCF ${live_fcf_f/1e9:.2f}B discarded due to ratio={ratio:.2f})"
+                                    )
                             else:
                                 free_cash_flow = live_fcf_f
                         if info.get("totalRevenue"):
@@ -1122,8 +1135,17 @@ class DataProviderManager:
                             total_debt = float(info.get("totalDebt"))
                         if info.get("totalCash"):
                             total_cash = float(info.get("totalCash"))
+                        if info.get("operatingCashflow"):
+                            try:
+                                live_ocf = float(info.get("operatingCashflow"))
+                                if live_ocf > 0:
+                                    op_cash_flow = live_ocf
+                            except Exception:
+                                pass
                         if info.get("beta"):
                             beta_val = float(info.get("beta"))
+                        if info.get("financialCurrency"):
+                            financial_currency = info.get("financialCurrency")
 
                     if not market_cap and shares_outstanding and current_p > 0:
                         market_cap = float(shares_outstanding) * current_p
@@ -1137,6 +1159,15 @@ class DataProviderManager:
                         if not op_cash_flow or op_cash_flow <= 0:
                             op_cash_flow = free_cash_flow * 1.15
 
+                    capex_val = None
+                    if info.get("capitalExpenditures"):
+                        try:
+                            capex_val = abs(float(info.get("capitalExpenditures")))
+                        except Exception:
+                            pass
+                    if capex_val is None and op_cash_flow and free_cash_flow and op_cash_flow > free_cash_flow:
+                        capex_val = op_cash_flow - free_cash_flow
+
                     logger.info(f"Successfully fetched live real-time market data for '{normalized_symbol}' ({cand}): Price=${current_p} {resolved_currency}")
 
                     stock_result = {
@@ -1145,6 +1176,7 @@ class DataProviderManager:
                         "company_name": company_name,
                         "market": market,
                         "currency": resolved_currency,
+                        "financial_currency": financial_currency or ("USD" if market == "US" else resolved_currency),
                         "current_price": current_p,
                         "previous_close": p_close,
                         "fifty_day_sma": sma_50,
@@ -1154,6 +1186,7 @@ class DataProviderManager:
                         "ev_ebitda": ev_ebitda,
                         "free_cash_flow": free_cash_flow,
                         "operating_cash_flow": op_cash_flow,
+                        "capex": capex_val,
                         "net_income": net_income,
                         "total_revenue": total_revenue,
                         "revenue_growth": revenue_growth,
@@ -1205,6 +1238,7 @@ class DataProviderManager:
                     "company_name": company_name,
                     "market": "CA" if is_ca else "US",
                     "currency": "CAD" if is_ca else "USD",
+                    "financial_currency": fin_info.get("financial_currency") or ("USD" if not is_ca else "CAD"),
                     "current_price": fallback_price,
                     "previous_close": fallback_price,
                     "fifty_day_sma": round(fallback_price * 0.98, 2),
