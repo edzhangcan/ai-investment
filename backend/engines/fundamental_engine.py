@@ -168,29 +168,69 @@ class FundamentalEngine:
         - GRAIN (种粮): Cyclical/Value/Dividend cash cows (~15%)
         - VEGETABLE (种菜): Negative-FCF or high-dilution trend trades (~80%)
         """
-        fcf = stock_data.get("free_cash_flow", 0) or 0
-        roic = stock_data.get("roic", 0.0) or 0.0
-        rev_growth = stock_data.get("revenue_growth", 0.0) or 0.0
-        div_yield = stock_data.get("dividend_yield_pct", 0.0) or 0.0
-        buyback_yield = stock_data.get("net_buyback_yield_pct", 0.0) or 0.0
-        dilution_3y = stock_data.get("dilution_3y_pct", 0.0) or 0.0
-        pe = stock_data.get("pe_ratio")
-        fcf_margin = stock_data.get("fcf_margin", 0.0) or 0.0
+        sector = (stock_data.get("sector") or "").strip().lower()
+        industry = (stock_data.get("industry") or "").strip().lower()
+        symbol_upper = str(stock_data.get("symbol") or "").upper().strip()
 
-        total_shareholder_yield_pct = round(float(div_yield) + float(buyback_yield), 2)
+        fcf = float(stock_data.get("free_cash_flow") or 0.0)
+        operating_cf = float(stock_data.get("operating_cash_flow") or 0.0)
+        roic = float(stock_data.get("roic") or stock_data.get("return_on_equity") or stock_data.get("returnOnEquity") or 0.0)
+        rev = float(stock_data.get("total_revenue") or stock_data.get("revenue") or 0.0)
+        rev_growth = float(stock_data.get("revenue_growth") or 0.0)
+        div_yield_val = stock_data.get("dividend_yield_pct")
+        if div_yield_val is not None:
+            div_yield = float(div_yield_val)
+        else:
+            raw_dy = float(stock_data.get("dividendYield") or 0.0)
+            div_yield = (raw_dy * 100.0) if (0.0 < raw_dy <= 0.20) else raw_dy
+        buyback_yield = float(stock_data.get("net_buyback_yield_pct") or 0.0)
+        dilution_3y = float(stock_data.get("dilution_3y_pct") or 0.0)
+        pe = stock_data.get("pe_ratio")
+
+        fcf_margin = stock_data.get("fcf_margin")
+        if fcf_margin is None and rev > 0 and fcf > 0:
+            fcf_margin = fcf / rev
+        else:
+            fcf_margin = float(fcf_margin or 0.0)
+
+        total_shareholder_yield_pct = round(div_yield + buyback_yield, 2)
+
+        is_financial = (
+            "financial" in sector or 
+            "bank" in sector or 
+            "insurance" in sector or 
+            symbol_upper in {
+                "JPM", "BAC", "C", "GS", "MS", "WFC", "BLK", "SCHW", "AXP", "USB", "PNC", "TFC", "COF",
+                "RY.TO", "TD.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "LB.TO", "CWB.TO",
+                "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BAM.TO", "BN.TO", "X.TO", "EFN.TO"
+            }
+        )
+
+        is_resource_cyclical = (
+            ("material" in sector or "mining" in industry or "energy" in sector or "copper" in industry) and
+            (operating_cf > 0 or fcf > 0)
+        )
+        is_dividend_harvest = (div_yield >= 2.5 or total_shareholder_yield_pct >= 2.5)
+
+        moat_rating = str(stock_data.get("moat_rating") or "")
+        is_wide_moat = (
+            ("Wide" in moat_rating) or 
+            ("宽" in moat_rating) or 
+            symbol_upper in ["AAPL", "MSFT", "NVDA", "CSU.TO", "SHOP.TO", "GOOGL", "GOOG", "AMZN", "META"]
+        )
 
         # Classification rules:
-        # 1. VEGETABLE (种菜): Negative FCF (fcf <= 0) or excessive dilution (dilution_3y > 8.0)
-        # 2. TREE (种树): High-ROIC (roic >= 0.15 or fcf_margin >= 0.12), steady growth (rev_growth >= 0.08), low dilution (dilution_3y <= 1.0)
-        # 3. GRAIN (种粮): All other positive-FCF value/cyclical assets
+        # 1. VEGETABLE (种菜): Negative FCF AND not financial, not resource cyclical with cash flow, not dividend harvest; OR excessive dilution (>8%)
+        # 2. TREE (种树): High-ROIC / Wide-Moat platform compounders (is_wide_moat or roic >= 0.15 or fcf_margin >= 0.10) with steady growth and controlled dilution
+        # 3. GRAIN (种粮): All other positive-FCF value/cyclical assets and harvesting dividend payers
 
-        if fcf <= 0 or dilution_3y > 8.0:
+        if (fcf <= 0 and not is_financial and not is_resource_cyclical and not is_dividend_harvest) or dilution_3y > 8.0:
             taxonomy = "VEGETABLE"
             badge_en = "🥬 Vegetable (Trend Only)"
             badge_zh = "🥬 种菜股（无基本面价值，仅限趋势交易）"
             holding_rule_en = "Trend trading only: No DCF anchor, strictly follow 4-state trend temperature and hard stop-loss."
             holding_rule_zh = "无基本面锚，不可长期死扛，不可越跌越买，严格按趋势温度右侧交易并设硬止损。"
-        elif (roic >= 0.15 or fcf_margin >= 0.12) and rev_growth >= 0.08 and dilution_3y <= 1.0:
+        elif (is_wide_moat or roic >= 0.15 or fcf_margin >= 0.10) and rev_growth >= 0.08 and dilution_3y <= 3.0:
             taxonomy = "TREE"
             badge_en = "🌲 Tree (Compounder)"
             badge_zh = "🌲 种树股（长期自由现金流复利）"

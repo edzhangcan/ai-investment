@@ -525,6 +525,62 @@ def test_dual_currency_conversion_and_blume_smoothing_fm_to():
     assert res["ideal_buy_range_min"] > 15.0
 
 
+def test_high_growth_platform_compounder_dcf_shop_to():
+    """
+    Regression test for Shopify Inc. (SHOP.TO) DCF valuation:
+    Verifies that high-growth secular platform compounders with operating leverage:
+    1. Apply Blume beta smoothing for large-cap ($30B+) equities to prevent macro rate-hike beta distortion (WACC < 10.5%).
+    2. Model operating leverage and mature FCF margin expansion (from current ~12% toward 24% Wide Moat benchmark).
+    3. Produce an institutional-grade DCF fair value (>= $165.0 CAD) aligning with institutional consensus and technical support.
+    4. Categorize market price above DCF as GROWTH_PREMIUM with realistic technical buy brackets (ideal_buy_max >= $160 CAD)
+       rather than advising absurd 85%+ catastrophic crashes ($32 CAD).
+    5. Valuation outlier warning is False.
+    """
+    shop_stock = {
+        "symbol": "SHOP.TO",
+        "current_price": 239.71,
+        "currency": "CAD",
+        "financial_currency": "USD",
+        "market_cap": 292_000_000_000.0,
+        "shares_outstanding": 1_219_581_025.0,
+        "total_revenue": 13_269_000_192.0,
+        "revenue_growth": 0.337,
+        "free_cash_flow": 1_587_750_016.0,
+        "operating_cash_flow": 2_376_999_936.0,
+        "total_cash": 4_946_999_808.0,
+        "total_debt": 178_000_000.0,
+        "beta": 2.625,
+        "fifty_day_sma": 208.27,
+        "two_hundred_day_sma": 179.84,
+        "pe_ratio": 110.0,
+        "moat_rating": "Wide Moat",
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(shop_stock, lang="en")
+
+    assert res["is_valid"] is True
+    # WACC must be smoothly discounted around ~9.97%, not punitive 12.84%
+    assert res["bridge"]["dynamic_wacc_used"] < 0.105
+    assert res["bridge"]["dynamic_wacc_used"] >= 0.090
+
+    # DCF fair value must be institutional-grade (> $165.0 CAD) rather than the flawed $40.05
+    assert res["dcf_fair_value"] >= 165.0
+    assert res["dcf_fair_value"] <= 230.0
+
+    # Must be categorized as GROWTH_PREMIUM
+    assert res["action_status"] == "GROWTH_PREMIUM"
+    assert "growth premium" in res["timing_advice"].lower()
+
+    # Buy bracket must anchor sensibly near support (>= $160 CAD) rather than $32 CAD
+    assert res["ideal_buy_range_max"] >= 160.0
+    assert res["ideal_buy_range_min"] >= 140.0
+
+    # Outlier warning must NOT be triggered
+    assert res["bridge"]["valuation_outlier_warning"] is False
+
+
+
 
 
 
