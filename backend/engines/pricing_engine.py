@@ -129,13 +129,6 @@ class PricingEngine:
             symbol_upper in INFRASTRUCTURE_SYMBOLS
         )
 
-        # Institutional Blume beta adjustment: smooths extreme rolling betas toward market 1.0
-        # for volatile cyclical and crisis-distorted equities (e.g. materials, mining, or beta > 1.8)
-        if "material" in sector or "mining" in industry or "energy" in sector or "copper" in industry or raw_beta > 1.8:
-            beta = round(0.67 * raw_beta + 0.33 * 1.0, 3)
-        else:
-            beta = raw_beta
-
         # Determine market_cap & implied_shares
         market_cap = stock_data.get("market_cap")
         shares_outstanding = stock_data.get("shares_outstanding") or stock_data.get("implied_shares")
@@ -160,18 +153,7 @@ class PricingEngine:
                 market_cap = price * 10_000_000.0
                 implied_shares = 10_000_000.0
 
-        # Dynamic CAPM WACC with financial firm & debt prudential bounds
-        wacc = cls.compute_dynamic_wacc(
-            beta=beta,
-            risk_free_rate=0.042,
-            equity_risk_premium=0.045,
-            total_debt=total_debt,
-            market_cap=market_cap,
-            is_financial=is_financial
-        )
-        terminal_growth = 0.03
-
-        # Resolve economic moat rating and ROIC
+        # Resolve economic moat rating and ROIC early
         moat_rating = stock_data.get("moat_rating") or (stock_data.get("fundamental") or {}).get("moat_rating") or ""
         if not moat_rating and symbol:
             try:
@@ -183,7 +165,43 @@ class PricingEngine:
             except Exception:
                 moat_rating = "Narrow Moat"
 
-        roic = float(stock_data.get("roic") or (stock_data.get("fundamental") or {}).get("roic") or 0.0)
+        roic = float(stock_data.get("roic") or (stock_data.get("fundamental") or {}).get("roic") or stock_data.get("return_on_equity") or stock_data.get("returnOnEquity") or 0.0)
+
+        # Pre-evaluate taxonomy early so WACC, DCF, and capex modeling have access to classification
+        taxonomy_result = stock_data.get("taxonomy")
+        if not taxonomy_result or not isinstance(taxonomy_result, dict):
+            try:
+                tax_input = dict(stock_data)
+                tax_input["moat_rating"] = moat_rating
+                tax_input["roic"] = roic
+                tax_input["symbol"] = symbol
+                taxonomy_result = FundamentalEngine.classify_stock_taxonomy(tax_input, lang=lang)
+            except Exception:
+                taxonomy_result = {"taxonomy": "TREE"}
+        taxonomy = taxonomy_result.get("taxonomy", "TREE")
+        tax_str = str(taxonomy)
+
+        # Institutional Blume beta adjustment: smooths extreme rolling betas toward market 1.0
+        # 1. Large-cap platforms ($30B+ market cap with raw_beta > 1.6): rolling 3Y/5Y betas are distorted
+        # by past macro rate-hike cycles (e.g. 2020-2022 tech volatility). Smooth 50/50 toward 1.0 and cap at 1.45.
+        # 2. Volatile cyclical and crisis-distorted equities (materials, mining, energy, or beta > 1.8): smooth 67/33.
+        if (market_cap and market_cap >= 30_000_000_000) and raw_beta > 1.6:
+            beta = round(min(1.45, 0.50 * raw_beta + 0.50 * 1.0), 3)
+        elif "material" in sector or "mining" in industry or "energy" in sector or "copper" in industry or raw_beta > 1.8:
+            beta = round(0.67 * raw_beta + 0.33 * 1.0, 3)
+        else:
+            beta = raw_beta
+
+        # Dynamic CAPM WACC with financial firm & debt prudential bounds
+        wacc = cls.compute_dynamic_wacc(
+            beta=beta,
+            risk_free_rate=0.042,
+            equity_risk_premium=0.045,
+            total_debt=total_debt,
+            market_cap=market_cap,
+            is_financial=is_financial
+        )
+        terminal_growth = 0.03
 
         # Net buyback yield
         net_buyback_yield = float(
@@ -201,14 +219,30 @@ class PricingEngine:
         wacc = round(wacc, 4)
 
         # Revenue growth constraints based on taxonomy and sector
-        raw_rev_growth = stock_data.get("revenue_growth") or 0.08
-        tax_str = str(stock_data.get("taxonomy") or "")
-        if "TREE" in tax_str:
+        raw_rev = float(stock_data.get("total_revenue") or stock_data.get("revenue") or 0.0) * fx_multiplier
+        raw_rev_growth = float(stock_data.get("revenue_growth") if stock_data.get("revenue_growth") is not None else 0.08)
+
+        # Secular High-Growth Platform Compounder detection (e.g. SHOP.TO, NVDA, CRWD)
+        is_high_growth_platform = (
+            not is_financial and
+            not is_regulated_infrastructure and
+            ("material" not in sector and "mining" not in industry and "energy" not in sector and "industrial" not in sector) and
+            (is_wide_moat or ("Narrow" in str(moat_rating)) or roic >= 0.12 or "TREE" in tax_str) and
+            raw_rev_growth >= 0.15
+        )
+
+        if is_high_growth_platform:
+            rev_growth = min(max(raw_rev_growth, 0.05), 0.24)
+            target_fcf_margin = 0.24 if (is_wide_moat or roic >= 0.20) else 0.20
+        elif "TREE" in tax_str:
             rev_growth = min(max(raw_rev_growth, 0.03), 0.15)
+            target_fcf_margin = None
         elif "GRAIN" in tax_str or "energy" in sector or "material" in sector:
             rev_growth = min(max(raw_rev_growth, 0.02), 0.08)
+            target_fcf_margin = None
         else:
             rev_growth = min(max(raw_rev_growth, 0.03), 0.12)
+            target_fcf_margin = None
 
         # Pillar 1: Warren Buffett Owner's Cash Flow (Growth vs Maintenance CapEx separation)
         if stock_data.get("capex"):
@@ -256,11 +290,29 @@ class PricingEngine:
             exit_multiple = 13.0
 
         if raw_fcf > 0:
+            curr_rev = raw_rev
+            curr_margin = (owner_fcf / raw_rev) if (raw_rev > 0 and owner_fcf > 0) else 0.0
+            has_margin_expansion = bool(
+                is_high_growth_platform and
+                target_fcf_margin is not None and
+                raw_rev > 0 and
+                curr_margin < target_fcf_margin
+            )
+
             curr_fcf = owner_fcf
             pv_10y_fcf = 0.0
             for year in range(1, 11):
-                growth_rate = rev_growth if year <= 5 else (rev_growth + terminal_growth) / 2
-                curr_fcf *= (1 + growth_rate)
+                if has_margin_expansion:
+                    # Institutional SaaS / Platform Operating Leverage Model:
+                    # Revenue growth tapers smoothly from rev_growth (years 1-5) down to terminal_growth (years 6-10)
+                    g_yr = rev_growth if year <= 5 else rev_growth - (rev_growth - terminal_growth) * ((year - 5) / 5.0)
+                    curr_rev *= (1 + g_yr)
+                    # Margin expands linearly toward mature software/platform margin benchmark
+                    margin_yr = curr_margin + (target_fcf_margin - curr_margin) * (year / 10.0)
+                    curr_fcf = curr_rev * margin_yr
+                else:
+                    growth_rate = rev_growth if year <= 5 else (rev_growth + terminal_growth) / 2
+                    curr_fcf *= (1 + growth_rate)
                 pv_10y_fcf += curr_fcf / ((1 + wacc) ** year)
 
             # 1. Gordon Growth Terminal Value
@@ -359,7 +411,9 @@ class PricingEngine:
             is_financial=is_financial,
             exit_multiple=exit_multiple,
             implied_shares_effective=implied_shares_effective,
-            is_regulated_infrastructure=is_regulated_infrastructure
+            is_regulated_infrastructure=is_regulated_infrastructure,
+            raw_rev=raw_rev,
+            target_margin=target_fcf_margin if is_high_growth_platform else None
         )
 
         # 2. Continuous Dynamic Valuation Percentile & Timing Score
@@ -423,8 +477,12 @@ class PricingEngine:
         elif dcf_target >= price:
             # Fundamentally undervalued: entry bracket allows entering on mild consolidation / 50D SMA
             ideal_buy_max = round(min(dcf_target, max(price * 0.98, fifty_sma * 0.98)), 2)
+        elif is_high_growth_platform and dcf_target < technical_anchor * 0.70:
+            # High-growth secular platform premium: when stock trades well above conservative DCF,
+            # avoid absurd 80%+ drawdown targets by synthesizing technical 200D SMA support
+            ideal_buy_max = round(max(dcf_target, technical_anchor * 0.85), 2)
         else:
-            # Fairly valued or overvalued: ceiling is bounded by conservative intersection of DCF target & technical anchor
+            # Fairly valued or mildly overvalued: ceiling is bounded by conservative intersection of DCF target & technical anchor
             ideal_buy_max = round(min(dcf_target, technical_anchor), 2)
 
         # Floor is set at 12-15% discount to ceiling, with support near 200D SMA floor
@@ -458,21 +516,30 @@ class PricingEngine:
                 action_status = "回调观察期 (PULLBACK_WATCH)"
                 advice = f"当前股价 ${price} {currency} 低于 DCF 固有价值 (${dcf_fair_value} {currency})。建议设置 Price Alert 于 ${ideal_buy_max} {currency}。"
         else:
-            if lang == "en":
-                action_status = "OVEREXTENDED"
-                advice = f"Price ${price} {currency} is overextended above DCF intrinsic fair value (${dcf_fair_value} {currency}). Wait for pullbacks to ${ideal_buy_max} {currency}."
-            elif lang == "zh":
-                action_status = "过度延伸/暂勿追高"
-                advice = f"当前股价 ${price} {currency} 高于 DCF 固有价值 (${dcf_fair_value} {currency})，股价过度延伸。建议等待回调至 ${ideal_buy_max} {currency}。"
+            is_growth_premium = (price > dcf_fair_value) and is_high_growth_platform and (dcf_target < technical_anchor * 0.75)
+            if is_growth_premium:
+                if lang == "en":
+                    action_status = "GROWTH_PREMIUM"
+                    advice = f"Price ${price} {currency} trades at a growth premium above DCF intrinsic fair value (${dcf_fair_value} {currency}). Accumulate near technical support (${ideal_buy_min} - ${ideal_buy_max} {currency}) rather than waiting for multiple collapse."
+                elif lang == "zh":
+                    action_status = "高成长溢价期"
+                    advice = f"当前股价 ${price} {currency} 处于高成长溢价期（高于 DCF 固有价值 ${dcf_fair_value} {currency}）。建议沿技术均线支撑区 (${ideal_buy_min} - ${ideal_buy_max} {currency}) 分批吸筹，避免盲目等待估值中枢崩塌。"
+                else:
+                    action_status = "高成长溢价期 (GROWTH_PREMIUM)"
+                    advice = f"当前股价 ${price} {currency} 处于高成长溢价期（高于 DCF 固有价值 ${dcf_fair_value} {currency}）。建议沿均线支撑区间 (${ideal_buy_min} - ${ideal_buy_max} {currency}) 分批布局。"
             else:
-                action_status = "过度延伸 (OVEREXTENDED)"
-                advice = f"当前股价 ${price} {currency} 高于 DCF 固有价值 (${dcf_fair_value} {currency})。建议等待 Pullback 至 ${ideal_buy_max} {currency}。"
+                if lang == "en":
+                    action_status = "OVEREXTENDED"
+                    advice = f"Price ${price} {currency} is overextended above DCF intrinsic fair value (${dcf_fair_value} {currency}). Wait for pullbacks to ${ideal_buy_max} {currency}."
+                elif lang == "zh":
+                    action_status = "过度延伸/暂勿追高"
+                    advice = f"当前股价 ${price} {currency} 高于 DCF 固有价值 (${dcf_fair_value} {currency})，股价过度延伸。建议等待回调至 ${ideal_buy_max} {currency}。"
+                else:
+                    action_status = "过度延伸 (OVEREXTENDED)"
+                    advice = f"当前股价 ${price} {currency} 高于 DCF 固有价值 (${dcf_fair_value} {currency})。建议等待 Pullback 至 ${ideal_buy_max} {currency}。"
 
         # 4. Three-Part Equity Taxonomy & Reverse-DCF Narrative Penetration Integration
-        taxonomy_result = stock_data.get("taxonomy")
-        if not taxonomy_result:
-            taxonomy_result = FundamentalEngine.classify_stock_taxonomy(stock_data, lang=lang)
-        taxonomy = taxonomy_result.get("taxonomy", "TREE")
+        # (taxonomy and taxonomy_result are pre-evaluated at function initialization)
 
         reverse_dcf = cls.solve_implied_narrative_ceiling(
             current_pe=pe,
@@ -710,7 +777,9 @@ class PricingEngine:
         is_financial: bool = False,
         exit_multiple: float = 20.0,
         implied_shares_effective: Optional[float] = None,
-        is_regulated_infrastructure: bool = False
+        is_regulated_infrastructure: bool = False,
+        raw_rev: float = 0.0,
+        target_margin: Optional[float] = None
     ) -> List[List[Dict[str, Any]]]:
         """
         Builds a 5x5 DCF sensitivity matrix across Terminal Growth (rows) and WACC (columns).
@@ -744,11 +813,20 @@ class PricingEngine:
                 eff_g = min(g_val, eff_w - 0.015)
 
                 if owner_fcf > 0 and shares_to_use > 0:
+                    curr_rev = raw_rev
+                    curr_margin = (owner_fcf / raw_rev) if (raw_rev > 0 and owner_fcf > 0) else 0.0
+                    has_exp = bool(target_margin is not None and raw_rev > 0 and curr_margin < target_margin)
                     curr_fcf = owner_fcf
                     pv_10y = 0.0
                     for year in range(1, 11):
-                        growth = rev_growth if year <= 5 else (rev_growth + eff_g) / 2
-                        curr_fcf *= (1 + growth)
+                        if has_exp:
+                            g_yr = rev_growth if year <= 5 else rev_growth - (rev_growth - eff_g) * ((year - 5) / 5.0)
+                            curr_rev *= (1 + g_yr)
+                            margin_yr = curr_margin + (target_margin - curr_margin) * (year / 10.0)
+                            curr_fcf = curr_rev * margin_yr
+                        else:
+                            growth = rev_growth if year <= 5 else (rev_growth + eff_g) / 2
+                            curr_fcf *= (1 + growth)
                         pv_10y += curr_fcf / ((1 + eff_w) ** year)
                     
                     eff_spread = max(0.015, eff_w - eff_g)
