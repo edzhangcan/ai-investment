@@ -675,7 +675,11 @@ export const App: React.FC = () => {
 
                   <PricingChart pricingData={stockData.pricing} />
                   <DebateArena debateData={stockData.debate} stock={stockData.stock} pricing={stockData.pricing} />
-                  <SecTextMiningViewer symbol={stockData.stock.symbol} />
+                  <SecTextMiningViewer
+                    symbol={stockData.stock.symbol}
+                    earningsQuality={stockData.pricing?.earnings_quality}
+                    provenance={stockData.pricing?.provenance}
+                  />
                   <BacktestViewer symbol={stockData.stock.symbol} />
 
                   <div className="prism-card p-5 transition-all">

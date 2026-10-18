@@ -160,6 +160,50 @@ export interface FundamentalData {
   total_shareholder_yield_pct?: number;
 }
 
+export interface DataProvenance {
+  source_mode?: 'LIVE' | 'CACHED' | 'SIMULATED_FALLBACK' | string;
+  provider?: string;
+  fetched_at?: string;
+  staleness_seconds?: number;
+  warning_banner?: string | null;
+}
+
+export interface EarningsQuality {
+  operating_cash_flow: number;
+  net_income: number;
+  stock_based_compensation: number;
+  cash_conversion_ratio: number;
+  sloan_accruals_ratio: number;
+  sbc_pct_of_fcf: number;
+  quality_rating: 'HIGH' | 'MODERATE' | 'LOW_ACCRUAL_RISK' | string;
+  forensic_flags: string[];
+}
+
+export interface SensitivityCell {
+  wacc: number;
+  terminal_growth: number;
+  fair_value: number;
+  upside_pct: number;
+}
+
+export interface ValuationBridge {
+  pv_10y_fcf: number;
+  pv_terminal_value: number;
+  enterprise_value: number;
+  plus_cash: number;
+  less_total_debt: number;
+  less_sbc_annual: number;
+  equity_value: number;
+  implied_shares: number;
+  implied_shares_effective?: number | null;
+  terminal_exit_multiple_used?: number | null;
+  net_buyback_yield_used?: number | null;
+  fair_value_per_share: number;
+  dynamic_wacc_used: number;
+  valuation_outlier_warning?: boolean;
+  currency_conversion_note?: string | null;
+}
+
 export interface PricingData {
   symbol: string;
   current_price: number;
@@ -181,6 +225,10 @@ export interface PricingData {
   reverse_dcf?: ReverseDcfResult;
   taxonomy?: TaxonomyResult;
   total_shareholder_yield_pct?: number;
+  bridge?: ValuationBridge;
+  sensitivity_matrix?: SensitivityCell[][];
+  earnings_quality?: EarningsQuality;
+  provenance?: DataProvenance;
 }
 
 export interface BullArgument {
@@ -243,12 +291,7 @@ export interface DebateData {
   bear_rebuttal?: string;
   falsification_price_level?: number;
   falsification_trigger_condition?: string;
-  provenance?: {
-    source_mode?: string;
-    as_of?: string;
-    data_source?: string;
-    is_stale?: boolean;
-  };
+  provenance?: DataProvenance;
 }
 
 export interface PolicyNewsItem {

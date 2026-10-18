@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
-import { Target, CheckCircle2, Sliders, AlertTriangle, TrendingUp, Layers, Table } from 'lucide-react';
+import { Target, CheckCircle2, Sliders, AlertTriangle, TrendingUp, Layers, Table, Calculator, ChevronDown, ChevronUp, Grid } from 'lucide-react';
+import { ProvenanceBadge } from './ProvenanceBadge';
 
 interface PricingChartProps {
   pricingData: any;
@@ -16,6 +17,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData }) => {
   const [showDCF, setShowDCF] = useState(true);
   const [isLog, setIsLog] = useState(false);
   const [showMatrix, setShowMatrix] = useState(false);
+  const [showInstitutionalBridge, setShowInstitutionalBridge] = useState(true);
 
   if (!pricingData) return null;
 
@@ -55,7 +57,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData }) => {
       {/* Top Header & Range Controls */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 border-b border-border-subtle pb-3">
         <div>
-          <div className="flex items-center gap-2 text-xs text-content-muted font-semibold">
+          <div className="flex items-center gap-2 text-xs text-content-muted font-semibold flex-wrap">
             <Target className="w-4 h-4 text-positive" />
             <span>{t.pricingOverlay}</span>
             {taxonomy && (
@@ -69,6 +71,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData }) => {
                 {language === 'zh' ? taxonomy.badge_zh : taxonomy.badge_en}
               </span>
             )}
+            <ProvenanceBadge provenance={pricingData.provenance} />
           </div>
           <h3 className="text-base font-bold text-content-primary mt-1">
             {dcfApplicable ? (
@@ -329,6 +332,181 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData }) => {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Institutional EV-to-Equity Bridge & 5x5 DCF Sensitivity Heatmap */}
+      {(pricingData.bridge || (pricingData.sensitivity_matrix && pricingData.sensitivity_matrix.length > 0)) && (
+        <div className="mt-4 pt-3 border-t border-border-subtle">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-brand" />
+              <span className="text-xs font-bold text-content-primary">
+                {language === 'zh' ? '机构级估值桥 (EV-to-Equity) & 5x5 敏感度矩阵' : 'Institutional DCF Bridge & 5x5 Sensitivity Matrix'}
+              </span>
+              {pricingData.bridge?.dynamic_wacc_used && (
+                <span className="px-2 py-0.5 rounded-lg bg-brand/10 border border-brand/20 text-brand text-[11px] font-mono font-bold">
+                  Dynamic WACC: {(pricingData.bridge.dynamic_wacc_used * 100).toFixed(1)}%
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowInstitutionalBridge(!showInstitutionalBridge)}
+              className="text-xs font-semibold text-brand hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Grid className="w-3.5 h-3.5" />
+              <span>
+                {showInstitutionalBridge
+                  ? (language === 'zh' ? '收起估值桥与矩阵' : 'Hide Bridge & Matrix')
+                  : (language === 'zh' ? '展开估值桥与矩阵' : 'Show Bridge & Matrix')}
+              </span>
+              {showInstitutionalBridge ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+          </div>
+
+          {showInstitutionalBridge && (
+            <div className="space-y-3">
+              {/* EV-to-Equity Valuation Bridge Metric Pills */}
+              {pricingData.bridge && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-border-subtle">
+                    <span className="text-[10px] text-content-muted block">{language === 'zh' ? '企业价值 (EV)' : 'Enterprise Value'}</span>
+                    <span className="text-xs font-bold text-content-primary font-mono">
+                      {pricingData.bridge.enterprise_value >= 1e9
+                        ? `$${(pricingData.bridge.enterprise_value / 1e9).toFixed(2)}B`
+                        : `$${(pricingData.bridge.enterprise_value / 1e6).toFixed(1)}M`}
+                    </span>
+                  </div>
+
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-border-subtle">
+                    <span className="text-[10px] text-content-muted block">{language === 'zh' ? '+ 现金储备' : '+ Cash'}</span>
+                    <span className="text-xs font-bold text-positive font-mono">
+                      +{pricingData.bridge.plus_cash >= 1e9
+                        ? `$${(pricingData.bridge.plus_cash / 1e9).toFixed(2)}B`
+                        : `$${(pricingData.bridge.plus_cash / 1e6).toFixed(1)}M`}
+                    </span>
+                  </div>
+
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-border-subtle">
+                    <span className="text-[10px] text-content-muted block">{language === 'zh' ? '- 全部总负债' : '- Total Debt'}</span>
+                    <span className="text-xs font-bold text-negative font-mono">
+                      -{pricingData.bridge.less_total_debt >= 1e9
+                        ? `$${(pricingData.bridge.less_total_debt / 1e9).toFixed(2)}B`
+                        : `$${(pricingData.bridge.less_total_debt / 1e6).toFixed(1)}M`}
+                    </span>
+                  </div>
+
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-border-subtle">
+                    <span className="text-[10px] text-content-muted block">{language === 'zh' ? '- 年度 SBC 扣除' : '- Annual SBC'}</span>
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 font-mono">
+                      -{pricingData.bridge.less_sbc_annual >= 1e9
+                        ? `$${(pricingData.bridge.less_sbc_annual / 1e9).toFixed(2)}B`
+                        : `$${(pricingData.bridge.less_sbc_annual / 1e6).toFixed(1)}M`}
+                    </span>
+                  </div>
+
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-brand/30 bg-brand/5">
+                    <span className="text-[10px] text-brand font-semibold block">{language === 'zh' ? '= 归母股权价值' : '= Equity Value'}</span>
+                    <span className="text-xs font-extrabold text-brand font-mono">
+                      {pricingData.bridge.equity_value >= 1e9
+                        ? `$${(pricingData.bridge.equity_value / 1e9).toFixed(2)}B`
+                        : `$${(pricingData.bridge.equity_value / 1e6).toFixed(1)}M`}
+                    </span>
+                  </div>
+
+                  <div className="prism-surface-subtle p-2.5 rounded-xl border border-border-subtle">
+                    <span className="text-[10px] text-content-muted block">{language === 'zh' ? '每股公允价值' : 'Fair Value / Share'}</span>
+                    <span className="text-xs font-extrabold text-positive font-mono">
+                      ${pricingData.bridge.fair_value_per_share} {currency}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Currency conversion or outlier notes */}
+              {pricingData.bridge?.currency_conversion_note && (
+                <div className="text-[11px] text-content-muted italic px-1">
+                  💡 {pricingData.bridge.currency_conversion_note}
+                </div>
+              )}
+
+              {/* 5x5 Sensitivity Matrix Table */}
+              {pricingData.sensitivity_matrix && pricingData.sensitivity_matrix.length > 0 && (
+                <div className="overflow-x-auto rounded-xl border border-border-subtle bg-surface-subtle p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-content-primary">
+                      {language === 'zh'
+                        ? '5x5 DCF 估值敏感度矩阵 (横轴: 永续增长率 g | 纵轴: 加权平均资本成本 WACC)'
+                        : '5x5 DCF Sensitivity Heatmap (Columns: Terminal Growth g | Rows: WACC)'}
+                    </span>
+                    <span className="text-[10px] text-content-muted flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span> &gt;+10% Upside
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-rose-500"></span> &lt;-10% Downside
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <span className="w-2 h-2 rounded border border-brand bg-brand/10"></span> Base Case
+                      </span>
+                    </span>
+                  </div>
+
+                  <table className="w-full text-xs text-center border-collapse">
+                    <thead>
+                      <tr className="border-b border-border-subtle text-content-muted">
+                        <th className="py-1.5 px-2 font-semibold text-left">WACC \ g</th>
+                        {pricingData.sensitivity_matrix[0].map((col: any, cIdx: number) => (
+                          <th key={cIdx} className="py-1.5 px-2 font-mono font-semibold">
+                            {(col.terminal_growth * 100).toFixed(1)}%
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pricingData.sensitivity_matrix.map((row: any[], rIdx: number) => (
+                        <tr key={rIdx} className="border-b border-border-subtle/40 hover:bg-surface/50 transition-colors">
+                          <td className="py-2 px-2 font-mono font-bold text-content-primary text-left">
+                            {(row[0].wacc * 100).toFixed(1)}%
+                          </td>
+                          {row.map((cell: any, cIdx: number) => {
+                            const isBase = rIdx === 2 && cIdx === 2;
+                            const isHighUpside = cell.upside_pct > 10.0;
+                            const isDeepDownside = cell.upside_pct < -10.0;
+                            return (
+                              <td
+                                key={cIdx}
+                                className={`py-1.5 px-2 font-mono transition-all relative ${
+                                  isBase ? 'ring-2 ring-brand rounded-lg bg-brand/10 font-bold' : ''
+                                } ${
+                                  isHighUpside
+                                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/5'
+                                    : isDeepDownside
+                                    ? 'text-rose-600 dark:text-rose-400 bg-rose-500/5'
+                                    : 'text-content-secondary'
+                                }`}
+                              >
+                                <div className="text-[11px] font-bold">${cell.fair_value}</div>
+                                <div className="text-[10px] opacity-80">
+                                  {cell.upside_pct >= 0 ? '+' : ''}{cell.upside_pct.toFixed(1)}%
+                                </div>
+                                {isBase && (
+                                  <span className="absolute -top-1 -right-1 px-1 py-0.2 rounded text-[8px] font-bold bg-brand text-white">
+                                    BASE
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -88,6 +88,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
   const [winProb, setWinProb] = useState<number>(0.55);
   const [upsidePct, setUpsidePct] = useState<number>(25.0);
   const [stopLossPct, setStopLossPct] = useState<number>(8.0);
+  const [sameSectorCount, setSameSectorCount] = useState<number>(0);
   const [kellyResult, setKellyResult] = useState<KellyResult | null>(null);
 
   // Tab 3: Frontier state
@@ -116,6 +117,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
           cash_balance: cashBalance,
           risk_profile: riskProfile,
           currency: currency,
+          base_currency: currency,
           lang: language
         })
       });
@@ -141,7 +143,9 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
           upside_pct: upsidePct,
           stop_loss_pct: stopLossPct,
           kelly_fraction: 0.25,
-          max_cap_pct: 4.0
+          max_cap_pct: 4.0,
+          conviction_score: Math.round(winProb * 100),
+          same_sector_count: sameSectorCount
         })
       });
       if (res.ok) {
@@ -215,7 +219,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
 
   useEffect(() => {
     calculateKelly();
-  }, [winProb, upsidePct, stopLossPct]);
+  }, [winProb, upsidePct, stopLossPct, sameSectorCount]);
 
   useEffect(() => {
     calculateStress();
@@ -517,7 +521,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
               </p>
 
               {/* Kelly Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
                 <div>
                   <label className="block text-xs font-semibold text-content-secondary mb-1">
                     {language === 'zh' ? '预估胜率 Win Probability (%)' : 'Win Probability (%)'}
@@ -562,28 +566,72 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
                   />
                   <span className="text-[10px] text-content-muted">{language === 'zh' ? '技术面或宪法硬止损' : 'Discipline stop level'}</span>
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-content-secondary mb-1">
+                    {language === 'zh' ? '同行业持仓数 Sector Overlap' : 'Same-Sector Overlap'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="1"
+                    value={sameSectorCount}
+                    onChange={(e) => setSameSectorCount(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-surface border border-border-subtle rounded-xl px-3 py-2 text-sm font-bold text-amber-600 dark:text-amber-400"
+                  />
+                  <span className="text-[10px] text-content-muted">{language === 'zh' ? '惩罚因子 1/(1+0.25k)' : 'Penalty: 1/(1+0.25k)'}</span>
+                </div>
               </div>
 
               {/* Kelly Output Cards */}
               {kellyResult && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-surface p-4 rounded-xl border border-border-subtle">
-                  <div>
-                    <span className="text-[10px] text-content-muted block">{language === 'zh' ? '赔率比 (b)' : 'Payoff Ratio (b)'}</span>
-                    <span className="text-base font-extrabold text-content-primary">{kellyResult.payoff_ratio_b}x</span>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-surface p-4 rounded-xl border border-border-subtle">
+                    <div>
+                      <span className="text-[10px] text-content-muted block">{language === 'zh' ? '赔率比 (b)' : 'Payoff Ratio (b)'}</span>
+                      <span className="text-base font-extrabold text-content-primary">{kellyResult.payoff_ratio_b}x</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-content-muted block">{language === 'zh' ? '理论全凯利 (f*)' : 'Full Kelly (f*)'}</span>
+                      <span className={`text-base font-extrabold ${kellyResult.full_kelly_pct > 0 ? 'text-positive' : 'text-negative'}`}>
+                        {kellyResult.full_kelly_pct}%
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-content-muted block">{language === 'zh' ? '四分之一凯利 (f/4)' : 'Quarter-Kelly'}</span>
+                      <span className="text-base font-extrabold text-brand">{kellyResult.quarter_kelly_pct}%</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-content-muted block">{language === 'zh' ? '建议仓位 (4%封顶)' : 'Capped Weight (Max 4%)'}</span>
+                      <span className="text-base font-extrabold text-warning">{kellyResult.recommended_weight_pct}%</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-content-muted block">{language === 'zh' ? '理论全凯利 (f*)' : 'Full Kelly (f*)'}</span>
-                    <span className={`text-base font-extrabold ${kellyResult.full_kelly_pct > 0 ? 'text-positive' : 'text-negative'}`}>
-                      {kellyResult.full_kelly_pct}%
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-content-muted block">{language === 'zh' ? '四分之一凯利 (f/4)' : 'Quarter-Kelly'}</span>
-                    <span className="text-base font-extrabold text-brand">{kellyResult.quarter_kelly_pct}%</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-content-muted block">{language === 'zh' ? '建议仓位 (4%封顶)' : 'Capped Weight (Max 4%)'}</span>
-                    <span className="text-base font-extrabold text-warning">{kellyResult.recommended_weight_pct}%</span>
+
+                  {/* Institutional Kelly Telemetry: Bayesian Shrinkage & Sector Correlation Penalty */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3 rounded-xl bg-surface border border-border-subtle flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-content-muted block">{language === 'zh' ? '贝叶斯收缩后胜率 (Bayesian Win Prob)' : 'Bayesian-Shrunk Win Probability'}</span>
+                        <span className="text-xs font-semibold text-content-secondary">
+                          {Math.round(winProb * 100)}% Raw → <span className="text-brand font-bold font-mono">{Math.round((kellyResult.calibrated_win_prob ?? winProb) * 100)}%</span>
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand/10 text-brand font-bold">
+                        P_shrunk
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-surface border border-border-subtle flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-content-muted block">{language === 'zh' ? '行业相关性折减因子 (Sector Penalty)' : 'Correlation Penalty Factor'}</span>
+                        <span className="text-xs font-semibold text-content-secondary">
+                          Overlap ({sameSectorCount}x) → <span className={`font-bold font-mono ${(kellyResult.correlation_penalty_factor ?? 1.0) < 1.0 ? 'text-amber-600 dark:text-amber-400' : 'text-positive'}`}>{(kellyResult.correlation_penalty_factor ?? 1.0).toFixed(3)}x</span>
+                        </span>
+                      </div>
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${(kellyResult.correlation_penalty_factor ?? 1.0) < 1.0 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'}`}>
+                        {(kellyResult.correlation_penalty_factor ?? 1.0) < 1.0 ? 'Penalized' : 'No Overlap'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
