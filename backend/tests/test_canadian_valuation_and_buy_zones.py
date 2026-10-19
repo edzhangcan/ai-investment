@@ -227,12 +227,61 @@ def test_canadian_convenience_retail_not_high_growth_platform_atd_to():
     assert res["action_status"] == "PULLBACK_WATCH"
 
 
+def test_canadian_retail_champion_lease_adjustment_and_growth_dol_to():
+    """
+    Verify that Dollarama Inc (DOL.TO) Wide Moat retail champion:
+    - Avoids IFRS 16 lease liability double-counting ($5.91B total debt contains ~$3.7B capitalized store leases)
+    - Receives growth capex credit (for opening 60-70 new stores/year and Latin America Dollarcity expansion)
+    - Reflects authentic ~11% compounder revenue growth (not crushed to 5% grocery store cap)
+    - Accretes 2.5% net share buybacks over 10Y horizon
+    - Fair value reflects institutional reality ($210 - $255 CAD vs broken $98.14)
+    - Buy zone ceiling brackets moving average support ($180 - $198 CAD) with PULLBACK_WATCH status
+    """
+    dol_stock = {
+        "symbol": "DOL.TO",
+        "company_name": "Dollarama Inc.",
+        "sector": "Consumer Defensive",
+        "industry": "Discount Stores",
+        "current_price": 205.45,
+        "fifty_day_sma": 183.40,
+        "two_hundred_day_sma": 184.54,
+        "book_value": 5.49,
+        "return_on_equity": 0.931,
+        "dividend_rate": 0.36,
+        "pe_ratio": 41.3,
+        "shares_outstanding": 268_369_510.0,
+        "market_cap": 55_136_000_000.0,
+        "total_debt": 5_908_712_960.0,  # ~$3.7B capitalized store leases
+        "total_cash": 485_027_008.0,
+        "free_cash_flow": 1_239_868_288.0,
+        "operating_cash_flow": 1_999_527_936.0,
+        "capex": 760_000_000.0,
+        "revenue_growth": 0.176,
+        "beta": 0.314,
+        "net_buyback_yield_pct": 2.5,
+        "moat_rating": "Wide Moat",
+        "currency": "CAD",
+        "financial_currency": "CAD",
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(dol_stock, lang="en")
+    assert res["is_valid"] is True
+    # Fair value must be in $200 - $255 CAD range (vs broken $98.14)
+    assert 200.0 <= res["dcf_fair_value"] <= 255.0
+    # Less total debt in bridge must reflect funded debt (< $2.5B), not $5.91B
+    assert res["bridge"]["less_total_debt"] < 2_500_000_000.0
+    # Buy zone ceiling must sensibly bracket moving averages and 20% MoS DCF target ($180 - $202 CAD)
+    assert 180.0 <= res["ideal_buy_range_max"] <= 202.0
+    assert res["action_status"] == "PULLBACK_WATCH"
+
+
 def test_sensitivity_matrix_monotonicity_canadian_bluechips():
     """
     Verify 5x5 sensitivity matrix preserves strict row and column monotonicity
     for Canadian banks, utilities, railroads, and retail conglomerates.
     """
-    symbols = ["RY.TO", "EMA.TO", "CP.TO", "WN.TO", "ATD.TO"]
+    symbols = ["RY.TO", "EMA.TO", "CP.TO", "WN.TO", "ATD.TO", "DOL.TO"]
     for sym in symbols:
         stock = DataProviderManager.get_stock_data(sym)
         res = PricingEngine.evaluate_pricing_and_entry_zone(stock)
@@ -247,3 +296,4 @@ def test_sensitivity_matrix_monotonicity_canadian_bluechips():
         for c in range(5):
             for r in range(len(matrix) - 1):
                 assert matrix[r + 1][c]["fair_value"] >= matrix[r][c]["fair_value"]
+

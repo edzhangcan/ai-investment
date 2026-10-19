@@ -141,11 +141,12 @@ class PricingEngine:
             "rail" in industry
         )
 
-        SUPERMARKET_CONGLOMERATE_SYMBOLS = {"WN.TO", "L.TO", "EMP-A.TO", "MRU.TO"}
+        LEASED_RETAIL_SYMBOLS = {"WN.TO", "L.TO", "EMP-A.TO", "MRU.TO", "DOL.TO"}
         is_supermarket_holding = (
-            symbol_upper in SUPERMARKET_CONGLOMERATE_SYMBOLS or
+            symbol_upper in LEASED_RETAIL_SYMBOLS or
             "grocery" in industry or
-            "supermarket" in industry
+            "supermarket" in industry or
+            "discount stores" in industry
         )
 
         RETAIL_GROCERY_SYMBOLS = {
@@ -278,7 +279,11 @@ class PricingEngine:
             rev_growth = min(max(raw_rev_growth, 0.05), 0.24)
             target_fcf_margin = 0.24 if (is_wide_moat or roic >= 0.20) else 0.20
         elif is_retail_or_grocery:
-            rev_growth = min(max(raw_rev_growth, 0.02), 0.05)
+            if is_wide_moat and (roic >= 0.18 or symbol_upper == "DOL.TO"):
+                # Wide Moat retail champions (e.g. DOL.TO) compound store counts and market share secularly
+                rev_growth = min(max(raw_rev_growth, 0.04), 0.11)
+            else:
+                rev_growth = min(max(raw_rev_growth, 0.02), 0.05)
             target_fcf_margin = None
         elif "TREE" in tax_str:
             rev_growth = min(max(raw_rev_growth, 0.03), 0.15)
@@ -303,6 +308,9 @@ class PricingEngine:
         if total_capex > 0 and is_railroad:
             # Transcontinental railroads: 35% of capex is network capacity expansion, siding extensions, and acquisition integration
             growth_capex_credit = total_capex * 0.35
+        elif total_capex > 0 and is_retail_or_grocery and is_wide_moat and rev_growth >= 0.06:
+            # Wide Moat retail champions expanding store fleets and international networks (e.g. DOL.TO 60+ new stores/yr & Dollarcity)
+            growth_capex_credit = total_capex * 0.20
         elif total_capex > 0 and not is_retail_or_grocery and (is_wide_moat or roic >= 0.15 or "TREE" in tax_str or is_resource_expansion) and rev_growth >= 0.06:
             eff_rev_for_capex = max(rev_growth, min(0.20, raw_rev_growth))
             growth_capex_ratio = min(0.40, max(0.20 if is_resource_expansion else 0.0, (eff_rev_for_capex - 0.03) * 1.5))
@@ -333,6 +341,8 @@ class PricingEngine:
             exit_multiple = 25.0
         elif is_railroad:
             exit_multiple = 22.0 if is_wide_moat else 20.0
+        elif is_retail_or_grocery and is_wide_moat:
+            exit_multiple = 23.0
         elif is_wide_moat and roic >= 0.20:
             exit_multiple = 25.0
         elif is_wide_moat or (("Narrow" in str(moat_rating) or "窄" in str(moat_rating)) and roic >= 0.15):
@@ -535,9 +545,10 @@ class PricingEngine:
                 effective_cash = total_cash
                 effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
             elif is_supermarket_holding:
-                # Retail & supermarket holding companies with capitalized IFRS 16 store leases (e.g. WN.TO):
-                # Deduct funded corporate debt only, avoiding double-counting rent already deducted from OCF
-                funded_debt = min(total_debt * 0.25, enterprise_value * 0.18)
+                # Retail, supermarket & discount store chains with capitalized IFRS 16 store leases (e.g. WN.TO, DOL.TO):
+                # Deduct funded corporate debt only, avoiding double-counting store rent already deducted from OCF.
+                funded_ratio = 0.38 if ("discount" in industry or symbol_upper == "DOL.TO") else 0.25
+                funded_debt = min(total_debt * funded_ratio, enterprise_value * 0.18)
                 net_debt = funded_debt - total_cash
                 equity_value = enterprise_value - (net_debt if net_debt > 0 else 0.0)
                 effective_cash = total_cash
@@ -610,7 +621,8 @@ class PricingEngine:
             target_margin=target_fcf_margin if is_high_growth_platform else None,
             is_railroad=is_railroad,
             is_supermarket_holding=is_supermarket_holding,
-            base_fair_value=dcf_fair_value
+            base_fair_value=dcf_fair_value,
+            funded_debt_ratio=funded_ratio if is_supermarket_holding else 0.25
         )
 
         # 2. Continuous Dynamic Valuation Percentile & Timing Score
@@ -1006,7 +1018,8 @@ class PricingEngine:
         target_margin: Optional[float] = None,
         is_railroad: bool = False,
         is_supermarket_holding: bool = False,
-        base_fair_value: Optional[float] = None
+        base_fair_value: Optional[float] = None,
+        funded_debt_ratio: float = 0.25
     ) -> List[List[Dict[str, Any]]]:
         """
         Builds a 5x5 DCF sensitivity matrix across Terminal Growth (rows) and WACC (columns).
@@ -1071,7 +1084,7 @@ class PricingEngine:
                         net_d_clamp = min(net_d, ev * 0.15) if net_d > 0 else net_d
                         equity = ev - net_d_clamp
                     elif is_supermarket_holding:
-                        funded_d = min(total_debt * 0.25, ev * 0.18)
+                        funded_d = min(total_debt * funded_debt_ratio, ev * 0.18)
                         net_d = funded_d - total_cash
                         equity = ev - (net_d if net_d > 0 else 0.0)
                     else:
