@@ -1146,6 +1146,12 @@ class DataProviderManager:
                             beta_val = float(info.get("beta"))
                         if info.get("financialCurrency"):
                             financial_currency = info.get("financialCurrency")
+                        book_value_val = float(info.get("bookValue")) if info.get("bookValue") else None
+                        dividend_rate_val = float(info.get("dividendRate")) if info.get("dividendRate") else None
+                        div_yield_raw = float(info.get("dividendYield")) if info.get("dividendYield") else None
+                        dividend_yield_val = (div_yield_raw * 100.0) if div_yield_raw is not None else None
+                        roe_val = float(info.get("returnOnEquity")) if info.get("returnOnEquity") else None
+                        ptb_val = float(info.get("priceToBook")) if info.get("priceToBook") else None
 
                     if not market_cap and shares_outstanding and current_p > 0:
                         market_cap = float(shares_outstanding) * current_p
@@ -1199,6 +1205,11 @@ class DataProviderManager:
                         "stock_based_compensation": sbc,
                         "total_assets": total_assets,
                         "beta": beta_val,
+                        "book_value": book_value_val,
+                        "dividend_rate": dividend_rate_val,
+                        "dividend_yield_pct": dividend_yield_val,
+                        "return_on_equity": roe_val,
+                        "price_to_book": ptb_val,
                         "source_mode": "LIVE",
                         "warning_banner": None,
                         "rsi_14": 54.0,

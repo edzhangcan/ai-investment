@@ -260,10 +260,20 @@ class FundamentalEngine:
         symbol = symbol.upper()
         name_lower = company_name.lower()
 
+        # 1. Broad Index / ETF Basket
         if "etf" in name_lower or "index" in name_lower or symbol in ["XEQT.TO", "XQET", "ZEB.TO", "VFV.TO", "XIU.TO"]:
             return ("Broad ETF / Index Basket" if lang == "en" else "指数基金/分散组合"), ["Diversified Asset Basket"], []
 
-        if symbol in ["AAPL", "MSFT", "NVDA", "CSU.TO"]:
+        # 2. Wide Moat: Secular Technology, Payment Networks & Global Compounders
+        wide_tech_and_platforms = ["AAPL", "MSFT", "NVDA", "CSU.TO", "SHOP.TO", "CRWD", "CELH", "GOOGL", "AMZN", "META", "V", "MA", "KO"]
+        # Wide Moat: North American Transcontinental Rail Duopolies (Irreplaceable Right-of-Way, High Replacement Cost)
+        wide_rails = ["CP.TO", "CNR.TO", "UNP", "CSX", "NSC"]
+        # Wide Moat: Canadian Big 6 Banking Oligopoly & Premier Global Financial Leaders (Protected Charters, Core Deposit Moat)
+        wide_banks = ["RY.TO", "TD.TO", "BMO.TO", "BNS.TO", "CM.TO", "NA.TO", "JPM", "BAC", "GS", "MS", "BLK"]
+        # Wide Moat: Premier Canadian & US Retail Moats (Dominant Market Share, Direct Sourcing)
+        wide_retail = ["DOL.TO", "COST", "WMT"]
+
+        if symbol in wide_tech_and_platforms:
             rating = "Wide Moat" if lang == "en" else ("宽护城河" if lang == "zh" else "宽护城河 (Wide Moat)")
             sources = ["Switching Costs", "Network Effects", "Brand & Patents"] if lang == "en" else ["高转换成本", "网络效应", "无形资产与专利"]
             scores = [
@@ -273,23 +283,39 @@ class FundamentalEngine:
                 { "factor_name": "Cost Advantage" if lang == "en" else "成本优势 (Cost Advantage)", "score": 8.5, "status": "Strong Moat" },
                 { "factor_name": "Efficient Scale" if lang == "en" else "有效规模 (Efficient Scale)", "score": 8.0, "status": "Moderate Moat" }
             ]
-        elif symbol in ["SHOP.TO", "CRWD", "CELH"]:
+        elif symbol in wide_rails:
             rating = "Wide Moat" if lang == "en" else ("宽护城河" if lang == "zh" else "宽护城河 (Wide Moat)")
-            sources = ["Cost Advantage", "Network Effects", "Switching Costs"] if lang == "en" else ["规模成本优势", "网络效应", "高转换成本"]
+            sources = ["Efficient Scale", "Cost Advantage", "High Replacement Cost"] if lang == "en" else ["有效规模利基", "运输成本优势", "无限重置成本"]
             scores = [
-                { "factor_name": "Switching Costs" if lang == "en" else "转换成本 (Switching Costs)", "score": 8.8, "status": "Strong Moat" },
-                { "factor_name": "Network Effects" if lang == "en" else "网络效应 (Network Effects)", "score": 8.5, "status": "Strong Moat" },
-                { "factor_name": "Brand & Patents" if lang == "en" else "无形资产 (Brand & Patents)", "score": 8.2, "status": "Strong Moat" },
-                { "factor_name": "Cost Advantage" if lang == "en" else "成本优势 (Cost Advantage)", "score": 7.8, "status": "Moderate Moat" },
-                { "factor_name": "Efficient Scale" if lang == "en" else "有效规模 (Efficient Scale)", "score": 7.5, "status": "Moderate Moat" }
+                { "factor_name": "Efficient Scale" if lang == "en" else "有效规模 (Efficient Scale)", "score": 9.6, "status": "Strong Moat" },
+                { "factor_name": "Cost Advantage" if lang == "en" else "成本优势 (Cost Advantage)", "score": 9.2, "status": "Strong Moat" },
+                { "factor_name": "High Replacement Cost" if lang == "en" else "重置成本 (Replacement Cost)", "score": 9.8, "status": "Strong Moat" },
+                { "factor_name": "Pricing Power" if lang == "en" else "定价权 (Pricing Power)", "score": 8.8, "status": "Strong Moat" }
             ]
-        elif symbol in ["TD.TO", "ONT.TO", "SU.TO", "ENB.TO", "ABX.TO"]:
+        elif symbol in wide_banks:
+            rating = "Wide Moat" if lang == "en" else ("宽护城河" if lang == "zh" else "宽护城河 (Wide Moat)")
+            sources = ["Switching Costs", "Cost Advantage", "Regulatory License"] if lang == "en" else ["高客户转换成本", "低成本核心存款", "特许经营牌照壁垒"]
+            scores = [
+                { "factor_name": "Regulatory License" if lang == "en" else "特许经营牌照 (Regulatory License)", "score": 9.5, "status": "Strong Moat" },
+                { "factor_name": "Core Deposit Advantage" if lang == "en" else "核心存款优势 (Core Deposit Advantage)", "score": 9.2, "status": "Strong Moat" },
+                { "factor_name": "Switching Costs" if lang == "en" else "转换成本 (Switching Costs)", "score": 8.8, "status": "Strong Moat" },
+                { "factor_name": "Efficient Scale" if lang == "en" else "有效规模 (Efficient Scale)", "score": 8.5, "status": "Strong Moat" }
+            ]
+        elif symbol in wide_retail:
+            rating = "Wide Moat" if lang == "en" else ("宽护城河" if lang == "zh" else "宽护城河 (Wide Moat)")
+            sources = ["Cost Advantage", "Direct Sourcing", "Real Estate Density"] if lang == "en" else ["规模成本优势", "源头直采供应链", "密集商圈物业网络"]
+            scores = [
+                { "factor_name": "Cost Advantage" if lang == "en" else "成本优势 (Cost Advantage)", "score": 9.4, "status": "Strong Moat" },
+                { "factor_name": "Direct Sourcing" if lang == "en" else "直采供应链 (Direct Sourcing)", "score": 9.0, "status": "Strong Moat" },
+                { "factor_name": "Efficient Scale" if lang == "en" else "有效规模 (Efficient Scale)", "score": 8.8, "status": "Strong Moat" }
+            ]
+        elif symbol in ["EMA.TO", "FTS.TO", "CU.TO", "ENB.TO", "TRP.TO", "PPL.TO", "WN.TO", "ATD.TO", "SU.TO", "CNQ.TO", "ABX.TO", "ONT.TO"]:
             rating = "Narrow Moat" if lang == "en" else ("窄护城河" if lang == "zh" else "窄护城河 (Narrow Moat)")
-            sources = ["Efficient Scale", "Cost Advantage"] if lang == "en" else ["有效规模利基", "规模成本优势"]
+            sources = ["Efficient Scale", "Regulated Asset Base", "Cost Advantage"] if lang == "en" else ["有效规模利基", "受监管费率基数", "规模成本优势"]
             scores = [
                 { "factor_name": "Efficient Scale" if lang == "en" else "有效规模 (Efficient Scale)", "score": 8.5, "status": "Strong Moat" },
                 { "factor_name": "Cost Advantage" if lang == "en" else "成本优势 (Cost Advantage)", "score": 8.0, "status": "Strong Moat" },
-                { "factor_name": "Switching Costs" if lang == "en" else "转换成本 (Switching Costs)", "score": 7.2, "status": "Moderate Moat" }
+                { "factor_name": "Switching Costs" if lang == "en" else "转换成本 (Switching Costs)", "score": 7.5, "status": "Moderate Moat" }
             ]
         else:
             rating = "Narrow Moat" if lang == "en" else ("窄护城河" if lang == "zh" else "窄护城河 (Narrow Moat)")
