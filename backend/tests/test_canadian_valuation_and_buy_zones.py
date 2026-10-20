@@ -345,3 +345,207 @@ def test_sensitivity_matrix_monotonicity_canadian_bluechips():
                 assert matrix[r + 1][c]["fair_value"] >= matrix[r][c]["fair_value"]
 
 
+def test_payment_network_disaggregation_visa_mastercard():
+    """
+    Verify payment networks (V, MA) bypass depository bank P/B model and
+    are valued as high-margin capital-light compounders with 22x-25x exit multiples.
+    """
+    v_stock = {
+        "symbol": "V",
+        "company_name": "Visa Inc.",
+        "sector": "Financial Services",
+        "industry": "Credit Services",
+        "current_price": 402.92,
+        "fifty_day_sma": 395.0,
+        "two_hundred_day_sma": 370.0,
+        "free_cash_flow": 20_000_000_000.0,
+        "operating_cash_flow": 21_000_000_000.0,
+        "total_revenue": 35_000_000_000.0,
+        "revenue_growth": 0.10,
+        "shares_outstanding": 1_950_000_000.0,
+        "market_cap": 780_000_000_000.0,
+        "total_debt": 22_000_000_000.0,
+        "total_cash": 18_000_000_000.0,
+        "moat_rating": "Wide Moat",
+        "return_on_equity": 0.45,
+        "roic": 0.30,
+        "currency": "USD",
+        "financial_currency": "USD",
+        "is_valid": True
+    }
+    res = PricingEngine.evaluate_pricing_and_entry_zone(v_stock, lang="en")
+    assert res["is_valid"] is True
+    # Visa fair value should reflect platform exit multiple (25x) instead of broken bank P/B ($106)
+    assert 300.0 <= res["dcf_fair_value"] <= 480.0
+    assert res["bridge"]["terminal_exit_multiple_used"] == 25.0
+    assert res["ideal_buy_range_max"] >= 270.0
+
+
+def test_alternative_asset_manager_brookfield_bn_to():
+    """
+    Verify Brookfield Corporation (BN.TO) is treated as an alternative asset manager:
+    - Avoids being forced into depository bank P/B
+    - Non-recourse project/subsidiary debt is clamped to 15% of EV
+    - Produces fair value in the $50 - $70 CAD range (spot is ~$51.46)
+    """
+    bn_stock = {
+        "symbol": "BN.TO",
+        "company_name": "Brookfield Corporation",
+        "sector": "Financial Services",
+        "industry": "Asset Management",
+        "current_price": 51.46,
+        "fifty_day_sma": 52.0,
+        "two_hundred_day_sma": 48.0,
+        "free_cash_flow": 4_200_000_000.0,
+        "total_revenue": 95_000_000_000.0,
+        "shares_outstanding": 1_550_000_000.0,
+        "market_cap": 80_000_000_000.0,
+        "total_debt": 256_000_000_000.0,  # Consolidated subsidiary project-level non-recourse debt
+        "total_cash": 15_000_000_000.0,
+        "moat_rating": "Narrow Moat",
+        "return_on_equity": 0.12,
+        "currency": "CAD",
+        "financial_currency": "CAD",
+        "is_valid": True
+    }
+    res = PricingEngine.evaluate_pricing_and_entry_zone(bn_stock, lang="en")
+    assert res["is_valid"] is True
+    assert 50.0 <= res["dcf_fair_value"] <= 75.0
+    # Net debt clamp should protect equity value from subsidiary non-recourse debt wipeout
+    assert res["bridge"]["equity_value"] > 0
+    assert res["ideal_buy_range_max"] >= 45.0
+
+
+def test_canadian_regulated_utility_cu_to_distorted_pe():
+    """
+    Verify Canadian Utilities (CU.TO) rate-base authorized ROE decouples
+    from distorted non-cash GAAP P/E (>28x) and produces fair value in $40 - $55 CAD range.
+    """
+    cu_stock = {
+        "symbol": "CU.TO",
+        "company_name": "Canadian Utilities Limited",
+        "sector": "Utilities",
+        "industry": "Utilities - Regulated Electric",
+        "current_price": 49.14,
+        "fifty_day_sma": 48.5,
+        "two_hundred_day_sma": 46.0,
+        "book_value": 26.24,
+        "dividend_rate": 1.83,
+        "pe_ratio": 38.5,  # Distorted GAAP P/E
+        "shares_outstanding": 272_000_000.0,
+        "market_cap": 13_300_000_000.0,
+        "total_debt": 11_000_000_000.0,
+        "total_cash": 400_000_000.0,
+        "free_cash_flow": 300_000_000.0,
+        "moat_rating": "Narrow Moat",
+        "currency": "CAD",
+        "financial_currency": "CAD",
+        "is_valid": True
+    }
+    res = PricingEngine.evaluate_pricing_and_entry_zone(cu_stock, lang="en")
+    assert res["is_valid"] is True
+    # Fair value should be in $40 - $55 CAD range (previously collapsed to $26)
+    assert 40.0 <= res["dcf_fair_value"] <= 55.0
+    assert res["ideal_buy_range_max"] >= 38.0
+
+
+def test_berkshire_hathaway_class_b_normalization_brk_b():
+    """
+    Verify Berkshire Hathaway Class B (BRK-B) normalizes Class A book value ($460k)
+    by 1:1500 to prevent $692,000 per share calculation errors.
+    """
+    brk_stock = {
+        "symbol": "BRK-B",
+        "company_name": "Berkshire Hathaway Inc.",
+        "sector": "Financial Services",
+        "industry": "Insurance - Diversified",
+        "current_price": 532.23,
+        "fifty_day_sma": 525.0,
+        "two_hundred_day_sma": 495.0,
+        "book_value": 461_838.0,  # Unsplit Class A book value reported on Class B ticker
+        "return_on_equity": 0.125,
+        "dividend_rate": 0.0,
+        "pe_ratio": 19.5,
+        "shares_outstanding": 2_160_000_000.0,
+        "market_cap": 1_150_000_000_000.0,
+        "total_debt": 120_000_000_000.0,
+        "total_cash": 325_000_000_000.0,
+        "moat_rating": "Wide Moat",
+        "currency": "USD",
+        "financial_currency": "USD",
+        "is_valid": True
+    }
+    res = PricingEngine.evaluate_pricing_and_entry_zone(brk_stock, lang="en")
+    assert res["is_valid"] is True
+    # Fair value should be in $450 - $700 USD range, NOT $692,000!
+    assert 450.0 <= res["dcf_fair_value"] <= 700.0
+    assert 400.0 <= res["ideal_buy_range_max"] <= 540.0
+
+
+def test_commodity_cyclical_mid_cycle_normalization_suncor_su_to():
+    """
+    Verify commodity cyclicals like Suncor Energy (SU.TO) are mid-cycle normalized:
+    - Peak FCF yield capped at 7.5% of market cap
+    - Terminal exit multiple calibrated to 9.5x-11x
+    - Prevents runaway $489 CAD valuation
+    """
+    su_stock = {
+        "symbol": "SU.TO",
+        "company_name": "Suncor Energy Inc.",
+        "sector": "Energy",
+        "industry": "Oil & Gas Integrated",
+        "current_price": 110.63,
+        "fifty_day_sma": 108.0,
+        "two_hundred_day_sma": 98.0,
+        "free_cash_flow": 12_000_000_000.0,  # Peak cyclical FCF
+        "operating_cash_flow": 16_000_000_000.0,
+        "total_revenue": 52_000_000_000.0,
+        "revenue_growth": 0.08,
+        "shares_outstanding": 1_230_000_000.0,
+        "market_cap": 75_000_000_000.0,
+        "total_debt": 14_000_000_000.0,
+        "total_cash": 2_000_000_000.0,
+        "moat_rating": "Narrow Moat",
+        "currency": "CAD",
+        "financial_currency": "CAD",
+        "is_valid": True
+    }
+    res = PricingEngine.evaluate_pricing_and_entry_zone(su_stock, lang="en")
+    assert res["is_valid"] is True
+    # Fair value should be normalized to mid-cycle ($90 - $140 CAD), NOT runaway $489 CAD!
+    assert 90.0 <= res["dcf_fair_value"] <= 140.0
+    assert res["bridge"]["terminal_exit_multiple_used"] == 16.0
+
+
+def test_universal_200d_sma_support_convergence_guardrail():
+    """
+    Verify any stock consolidating within 5% of its 200D SMA is anchored
+    to technical support and NEVER flagged as OVEREXTENDED.
+    """
+    consolidating_stock = {
+        "symbol": "TEST",
+        "company_name": "Test Consolidated Corp",
+        "sector": "Industrials",
+        "industry": "Machinery",
+        "current_price": 102.0,
+        "fifty_day_sma": 101.0,
+        "two_hundred_day_sma": 100.0,  # Price is 2% above 200D SMA
+        "free_cash_flow": 50_000_000.0,  # Modest FCF yields conservative DCF ~$85
+        "shares_outstanding": 10_000_000.0,
+        "market_cap": 1_020_000_000.0,
+        "total_debt": 200_000_000.0,
+        "total_cash": 50_000_000.0,
+        "currency": "USD",
+        "financial_currency": "USD",
+        "is_valid": True
+    }
+    res = PricingEngine.evaluate_pricing_and_entry_zone(consolidating_stock, lang="en")
+    assert res["is_valid"] is True
+    # Buy ceiling should be calibrated to technical support (~$98 - $102)
+    assert res["ideal_buy_range_max"] >= 98.0
+    # Must NEVER be OVEREXTENDED when consolidating near 200D SMA
+    assert res["action_status"] != "OVEREXTENDED"
+    assert res["action_status"] in ["PULLBACK_WATCH", "IN_BUY_ZONE"]
+
+
+
