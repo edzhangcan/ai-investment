@@ -101,20 +101,44 @@ class PricingEngine:
             sbc=sbc
         )
 
-        # Determine sector and financial / regulated infrastructure classification
+        # Determine sector and asset-class classification
         sector = (stock_data.get("sector") or "").strip().lower()
         industry = (stock_data.get("industry") or "").strip().lower()
         symbol_upper = symbol.upper().strip()
-        FINANCIAL_SYMBOLS = {
-            "JPM", "BAC", "C", "GS", "MS", "WFC", "BLK", "SCHW", "AXP", "USB", "PNC", "TFC", "COF",
+
+        PAYMENT_NETWORK_SYMBOLS = {
+            "V", "MA", "AXP", "FOUR", "PYPL", "FIS", "GPN", "SQ", "ADYEN"
+        }
+        is_payment_network = (
+            symbol_upper in PAYMENT_NETWORK_SYMBOLS or
+            any(p in industry for p in ["credit services", "payment"])
+        )
+
+        ASSET_MANAGER_SYMBOLS = {
+            "BN.TO", "BN", "BAM.TO", "BAM", "BLK", "BX", "KKR", "APO", "ARES",
+            "POW.TO", "X.TO", "GSY.TO", "EFN.TO", "CG", "OWL"
+        }
+        is_asset_manager = (
+            symbol_upper in ASSET_MANAGER_SYMBOLS or
+            "asset management" in industry
+        )
+
+        DEPOSITORY_AND_INSURANCE_SYMBOLS = {
+            "JPM", "BAC", "C", "GS", "MS", "WFC", "SCHW", "USB", "PNC", "TFC", "COF",
             "RY.TO", "TD.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "LB.TO", "CWB.TO",
-            "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BAM.TO", "BN.TO", "X.TO", "EFN.TO"
+            "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BRK-B", "BRK.B", "BRK-A", "BRK.A"
         }
         is_financial = (
-            "financial" in sector or 
-            "bank" in sector or 
-            "insurance" in sector or 
-            symbol_upper in FINANCIAL_SYMBOLS
+            not is_payment_network and
+            not is_asset_manager and
+            (
+                "bank" in sector or 
+                "insurance" in sector or 
+                "bank" in industry or 
+                "insurance" in industry or 
+                symbol_upper in DEPOSITORY_AND_INSURANCE_SYMBOLS or
+                ("financial" in sector and not is_asset_manager and not is_payment_network)
+            )
         )
 
         INFRASTRUCTURE_SYMBOLS = {
@@ -127,6 +151,51 @@ class PricingEngine:
             any(s in sector for s in ["utilities", "utility", "real estate"]) or
             any(ind in industry for ind in ["midstream", "regulated", "electric utilities", "gas utilities", "multi-utilities", "reit"]) or
             symbol_upper in INFRASTRUCTURE_SYMBOLS
+        )
+        is_utility = (
+            "utilit" in sector or "utilit" in industry or
+            symbol_upper in {"EMA.TO", "FTS.TO", "CU.TO", "AQN.TO", "BIP-UN.TO", "BEP-UN.TO", "NEE", "SO", "DUK", "AEP", "SRE"}
+        )
+
+        is_commodity_cyclical = (
+            any(c in sector for c in ["energy", "material", "materials"]) or
+            any(c in industry for c in ["oil", "gas", "mining", "exploration", "refining", "steel", "chemical", "copper", "gold"])
+        ) and not is_regulated_infrastructure and not is_utility
+
+        RAILROAD_SYMBOLS = {"CP.TO", "CNR.TO", "CP", "CNI", "UNP", "CSX", "NSC"}
+        is_railroad = (
+            symbol_upper in RAILROAD_SYMBOLS or
+            "railroad" in industry or
+            "rail" in industry
+        )
+
+        LEASED_RETAIL_SYMBOLS = {"WN.TO", "L.TO", "EMP-A.TO", "MRU.TO", "DOL.TO"}
+        is_supermarket_holding = (
+            symbol_upper in LEASED_RETAIL_SYMBOLS or
+            "grocery" in industry or
+            "supermarket" in industry or
+            "discount stores" in industry
+        )
+
+        RETAIL_GROCERY_SYMBOLS = {
+            "WN.TO", "L.TO", "MRU.TO", "EMP-A.TO", "DOL.TO", "ATD.TO",
+            "KR", "WMT", "COST", "TGT", "DG", "DLTR"
+        }
+        is_retail_or_grocery = (
+            symbol_upper in RETAIL_GROCERY_SYMBOLS or
+            is_supermarket_holding or
+            "food retail" in industry or
+            ("retail" in industry and ("consumer defensive" in sector or "defensive" in sector))
+        )
+
+        TELECOM_SYMBOLS = {
+            "QBR-B.TO", "QBR.B", "QBR-A.TO", "QBR.A", "BCE.TO", "BCE", "T.TO", "RCI-B.TO", "RCI.B", "RCI",
+            "VZ", "T", "TMUS", "CMCSA", "CHTR"
+        }
+        is_telecom = (
+            symbol_upper in TELECOM_SYMBOLS or
+            "telecom" in industry.lower() or
+            "telecommunication" in industry.lower()
         )
 
         # Determine market_cap & implied_shares
@@ -201,7 +270,7 @@ class PricingEngine:
             market_cap=market_cap,
             is_financial=is_financial
         )
-        terminal_growth = 0.03
+        terminal_growth = 0.025 if (is_regulated_infrastructure or is_utility or is_telecom) else 0.03
 
         # Net buyback yield
         net_buyback_yield = float(
@@ -222,11 +291,25 @@ class PricingEngine:
         raw_rev = float(stock_data.get("total_revenue") or stock_data.get("revenue") or 0.0) * fx_multiplier
         raw_rev_growth = float(stock_data.get("revenue_growth") if stock_data.get("revenue_growth") is not None else 0.08)
 
-        # Secular High-Growth Platform Compounder detection (e.g. SHOP.TO, NVDA, CRWD)
+        # Secular High-Growth Platform Compounder detection (e.g. SHOP.TO, NVDA, CRWD, AXON)
+        # Strictly restricted to Software, Cloud, Digital Platforms, Payment Networks, and E-Commerce
+        TECH_PLATFORM_SYMBOLS = {
+            "SHOP.TO", "SHOP", "NVDA", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "AAPL",
+            "CRWD", "NOW", "DDOG", "SNOW", "PLTR", "CRM", "UBER", "ABNB", "TSM", "ASML",
+            "AVGO", "ADBE", "INTU", "NET", "AXON", "TSLA", "FOUR", "V", "MA", "SMCI", "MDB", "PANW"
+        }
+        is_tech_sector = (
+            any(t in sector for t in ["technology", "communication", "software", "information technology"]) or
+            any(t in industry for t in ["software", "internet", "semiconductor", "cloud", "e-commerce", "platform"]) or
+            is_payment_network
+        )
         is_high_growth_platform = (
             not is_financial and
             not is_regulated_infrastructure and
-            ("material" not in sector and "mining" not in industry and "energy" not in sector and "industrial" not in sector) and
+            not is_railroad and
+            not is_retail_or_grocery and
+            (is_tech_sector or symbol_upper in TECH_PLATFORM_SYMBOLS) and
+            ("material" not in sector and "mining" not in industry and "energy" not in sector and ("industrial" not in sector or symbol_upper in TECH_PLATFORM_SYMBOLS)) and
             (is_wide_moat or ("Narrow" in str(moat_rating)) or roic >= 0.12 or "TREE" in tax_str) and
             raw_rev_growth >= 0.15
         )
@@ -234,6 +317,17 @@ class PricingEngine:
         if is_high_growth_platform:
             rev_growth = min(max(raw_rev_growth, 0.05), 0.24)
             target_fcf_margin = 0.24 if (is_wide_moat or roic >= 0.20) else 0.20
+        elif is_retail_or_grocery:
+            if is_wide_moat and (roic >= 0.18 or symbol_upper == "DOL.TO"):
+                # Wide Moat retail champions (e.g. DOL.TO) compound store counts and market share secularly
+                rev_growth = min(max(raw_rev_growth, 0.04), 0.11)
+            else:
+                rev_growth = min(max(raw_rev_growth, 0.02), 0.05)
+            target_fcf_margin = None
+        elif is_telecom:
+            # Telecom infrastructure: steady regulated / subscription growth
+            rev_growth = min(max(raw_rev_growth, 0.02), 0.055)
+            target_fcf_margin = None
         elif "TREE" in tax_str:
             rev_growth = min(max(raw_rev_growth, 0.03), 0.15)
             target_fcf_margin = None
@@ -254,7 +348,13 @@ class PricingEngine:
             ("material" in sector or "mining" in industry or "energy" in sector or "copper" in industry)
             and (roic >= 0.10 or rev_growth >= 0.06 or raw_rev_growth >= 0.10)
         )
-        if total_capex > 0 and (is_wide_moat or roic >= 0.15 or "TREE" in tax_str or is_resource_expansion) and rev_growth >= 0.06:
+        if total_capex > 0 and is_railroad:
+            # Transcontinental railroads: 35% of capex is network capacity expansion, siding extensions, and acquisition integration
+            growth_capex_credit = total_capex * 0.35
+        elif total_capex > 0 and is_retail_or_grocery and is_wide_moat and rev_growth >= 0.06:
+            # Wide Moat retail champions expanding store fleets and international networks (e.g. DOL.TO 60+ new stores/yr & Dollarcity)
+            growth_capex_credit = total_capex * 0.20
+        elif total_capex > 0 and not is_retail_or_grocery and (is_wide_moat or roic >= 0.15 or "TREE" in tax_str or is_resource_expansion) and rev_growth >= 0.06:
             eff_rev_for_capex = max(rev_growth, min(0.20, raw_rev_growth))
             growth_capex_ratio = min(0.40, max(0.20 if is_resource_expansion else 0.0, (eff_rev_for_capex - 0.03) * 1.5))
             growth_capex_credit = total_capex * growth_capex_ratio
@@ -274,22 +374,199 @@ class PricingEngine:
             base_fcf = owner_fcf_pre_sbc
 
         # Cyclical peak FCF normalization: if starting FCF yield > 12% of market cap, normalize
-        if market_cap > 0 and (base_fcf / market_cap > 0.12):
+        if is_telecom and raw_rev > 0 and (base_fcf / raw_rev > 0.18):
+            # Mature telecom network capital intensity normalization:
+            # Reinvestments in 5G spectrum and fiber buildouts mean sustainable FCF margin is bounded at 18% of revenue
+            owner_fcf = raw_rev * 0.18
+        elif is_commodity_cyclical and market_cap > 0 and (base_fcf / market_cap > 0.09):
+            # Energy & Mining peak cycle normalization: FCF yield capped at 8.0% mid-cycle market cap
+            owner_fcf = market_cap * 0.08
+        elif market_cap > 0 and (base_fcf / market_cap > 0.12):
             owner_fcf = market_cap * 0.09
         else:
             owner_fcf = base_fcf
 
         # Pillar 2: Terminal Exit Multiple Calibration Matrix
-        if is_wide_moat and roic >= 0.20:
+        if is_high_growth_platform and (is_wide_moat or roic >= 0.20):
+            exit_multiple = 25.0
+        elif is_payment_network:
+            exit_multiple = 25.0 if is_wide_moat else 22.0
+        elif is_asset_manager:
+            exit_multiple = 18.0 if is_wide_moat else 15.5
+        elif is_railroad:
+            exit_multiple = 22.0 if is_wide_moat else 20.0
+        elif is_retail_or_grocery and is_wide_moat:
+            exit_multiple = 23.0
+        elif is_telecom:
+            exit_multiple = 16.0 if (is_wide_moat or roic >= 0.15) else 14.5
+        elif is_wide_moat and roic >= 0.20:
             exit_multiple = 25.0
         elif is_wide_moat or (("Narrow" in str(moat_rating) or "窄" in str(moat_rating)) and roic >= 0.15):
             exit_multiple = 20.0
+        elif is_regulated_infrastructure or is_retail_or_grocery:
+            exit_multiple = 16.5
         elif ("Narrow" in str(moat_rating)) or ("窄" in str(moat_rating)):
             exit_multiple = 16.0
         else:
             exit_multiple = 13.0
 
-        if raw_fcf > 0:
+        # Calculate implied effective shares with buyback accretion
+        clamped_buyback = min(0.04, max(0.0, net_buyback_yield / 100.0))
+        if clamped_buyback > 0 and implied_shares > 0:
+            shares_terminal = implied_shares * ((1.0 - clamped_buyback) ** 10)
+            implied_shares_effective = (implied_shares + shares_terminal) / 2.0
+        else:
+            implied_shares_effective = implied_shares
+
+        # Asset-Class Specialized Valuation Models
+        if is_financial:
+            # Sub-Engine 1: Depository Commercial Bank & Financial Institution Valuation
+            # Wall Street standard: Justified Price-to-Book (ROE vs Ke) + Retention-Compounded DDM + Normalized EPS Multiple
+            book_val = float(stock_data.get("book_value") or stock_data.get("bookValue") or 0.0)
+            roe_val = float(stock_data.get("return_on_equity") or stock_data.get("returnOnEquity") or roic or 0.14)
+            # Depository bank mid-cycle ROE floor: credit loss provisions temporarily depress ROE below normal 13-15%
+            if roe_val < 0.12:
+                roe_val = 0.14
+
+            # Berkshire Hathaway Class A vs Class B per-share book value normalization (1 Class A = 1500 Class B)
+            if symbol_upper in {"BRK-B", "BRK.B"} and book_val > 5000.0:
+                book_val = book_val / 1500.0
+
+            div_rate = float(stock_data.get("dividend_rate") or stock_data.get("dividendRate") or 0.0)
+            ke_bank = max(0.075, min(0.095, wacc))
+            g_bank = 0.035
+
+            fair_pb = 0.0
+            if book_val > 0:
+                justified_pb = max(1.0, min(3.2, (roe_val - g_bank) / max(0.02, ke_bank - g_bank)))
+                fair_pb = justified_pb * book_val
+
+            eps_est = (price / float(pe)) if (pe and float(pe) > 0) else (net_inc / implied_shares if implied_shares > 0 else 0.0)
+            if symbol_upper in {"BRK-B", "BRK.B"} and eps_est > 1000.0:
+                eps_est = eps_est / 1500.0
+            
+            fair_ddm = 0.0
+            if div_rate > 0:
+                payout_ratio = min(0.70, max(0.35, div_rate / max(1.0, eps_est))) if eps_est > 0 else 0.45
+                g_div = min(0.06, max(0.035, roe_val * (1.0 - payout_ratio)))
+                spread = max(0.028, ke_bank - g_div)
+                fair_ddm = (div_rate * (1 + g_div)) / spread
+
+            fair_pe_val = 0.0
+            bank_pe = 16.0 if is_wide_moat else 13.5
+            if eps_est > 0:
+                fair_pe_val = bank_pe * eps_est
+
+            components = []
+            weights = []
+            if fair_pb > 0:
+                components.append(fair_pb)
+                weights.append(0.40)
+            if fair_ddm > 0:
+                components.append(fair_ddm)
+                weights.append(0.35)
+            if fair_pe_val > 0:
+                components.append(fair_pe_val)
+                weights.append(0.25)
+
+            if components:
+                total_w = sum(weights)
+                dcf_fair_value = round(sum(c * (w / total_w) for c, w in zip(components, weights)), 2)
+            else:
+                dcf_fair_value = round(price * 1.0, 2)
+
+            equity_value = round(dcf_fair_value * implied_shares_effective, 2)
+            enterprise_value = equity_value
+            effective_cash = 0.0
+            effective_debt = 0.0
+            pv_terminal_value = round(enterprise_value * 0.70, 2)
+            pv_10y_fcf = round(enterprise_value * 0.30, 2)
+            fair_value_per_share = dcf_fair_value
+            outlier_warning = (fair_value_per_share / max(0.01, price) < 0.25) or (fair_value_per_share / max(0.01, price) > 3.0)
+
+            bank_note = "Commercial Bank Valuation: Justified P/B (ROE), DDM, and Normalized EPS Multiples"
+            bridge_note = f"{currency_conversion_note} | {bank_note}" if currency_conversion_note else bank_note
+
+            bridge = {
+                "pv_10y_fcf": pv_10y_fcf,
+                "pv_terminal_value": pv_terminal_value,
+                "enterprise_value": enterprise_value,
+                "plus_cash": effective_cash,
+                "less_total_debt": effective_debt,
+                "less_sbc_annual": round(sbc, 2),
+                "equity_value": equity_value,
+                "implied_shares": round(implied_shares, 2),
+                "implied_shares_effective": round(implied_shares_effective, 2),
+                "terminal_exit_multiple_used": round(exit_multiple, 1),
+                "net_buyback_yield_used": round(net_buyback_yield, 2),
+                "fair_value_per_share": fair_value_per_share,
+                "dynamic_wacc_used": wacc,
+                "valuation_outlier_warning": outlier_warning,
+                "currency_conversion_note": bridge_note
+            }
+
+        elif is_utility:
+            # Sub-Engine 2: Regulated Rate-Base Electric & Gas Utility Valuation
+            # Values guaranteed rate-base earning authorized 9.5%-10.2% ROE and reliable dividends
+            div_rate = float(stock_data.get("dividend_rate") or stock_data.get("dividendRate") or 0.0)
+            book_val_util = float(stock_data.get("book_value") or stock_data.get("bookValue") or 0.0)
+            ke_util = max(0.052, min(0.068, 0.042 + (0.42 * 0.045)))  # ~6.09% utility Ke
+            g_util = 0.025
+            fair_ddm = (div_rate * (1 + g_util)) / (ke_util - g_util) if div_rate > 0 else 0.0
+
+            # Rate-base authorized earnings decouple from temporary non-cash GAAP P/E distortions
+            if pe and float(pe) > 0 and float(pe) <= 28.0:
+                eps_est = price / float(pe)
+            elif book_val_util > 0:
+                eps_est = book_val_util * 0.098  # Authorized rate-base ROE mid-cycle
+            elif div_rate > 0:
+                eps_est = div_rate / 0.65  # Regulated utility payout ratio mid-point
+            else:
+                eps_est = net_inc / implied_shares if implied_shares > 0 else 0.0
+
+            util_pe = 18.0 if is_wide_moat else 17.5
+            fair_pe_val = util_pe * eps_est if eps_est > 0 else 0.0
+
+            if fair_ddm > 0 and fair_pe_val > 0:
+                dcf_fair_value = round(0.55 * fair_ddm + 0.45 * fair_pe_val, 2)
+            elif fair_ddm > 0:
+                dcf_fair_value = round(fair_ddm, 2)
+            elif fair_pe_val > 0:
+                dcf_fair_value = round(fair_pe_val, 2)
+            else:
+                dcf_fair_value = round(price * 1.0, 2)
+
+            equity_value = round(dcf_fair_value * implied_shares_effective, 2)
+            enterprise_value = equity_value
+            effective_cash = round(total_cash, 2)
+            effective_debt = 0.0  # Rate-base debt is self-servicing under authorized regulated tariffs
+            pv_terminal_value = round(enterprise_value * 0.70, 2)
+            pv_10y_fcf = round(enterprise_value * 0.30, 2)
+            fair_value_per_share = dcf_fair_value
+            outlier_warning = (fair_value_per_share / max(0.01, price) < 0.25) or (fair_value_per_share / max(0.01, price) > 3.0)
+
+            util_note = "Regulated Utility Valuation: Rate-Base DDM and Allowed ROE multiples without penalizing growth capex"
+            bridge_note = f"{currency_conversion_note} | {util_note}" if currency_conversion_note else util_note
+
+            bridge = {
+                "pv_10y_fcf": pv_10y_fcf,
+                "pv_terminal_value": pv_terminal_value,
+                "enterprise_value": enterprise_value,
+                "plus_cash": effective_cash,
+                "less_total_debt": effective_debt,
+                "less_sbc_annual": round(sbc, 2),
+                "equity_value": equity_value,
+                "implied_shares": round(implied_shares, 2),
+                "implied_shares_effective": round(implied_shares_effective, 2),
+                "terminal_exit_multiple_used": round(exit_multiple, 1),
+                "net_buyback_yield_used": round(net_buyback_yield, 2),
+                "fair_value_per_share": fair_value_per_share,
+                "dynamic_wacc_used": wacc,
+                "valuation_outlier_warning": outlier_warning,
+                "currency_conversion_note": bridge_note
+            }
+
+        elif raw_fcf > 0:
             curr_rev = raw_rev
             curr_margin = (owner_fcf / raw_rev) if (raw_rev > 0 and owner_fcf > 0) else 0.0
             has_margin_expansion = bool(
@@ -328,18 +605,30 @@ class PricingEngine:
             pv_terminal_value = tv_blended / ((1 + wacc) ** 10)
             enterprise_value = pv_10y_fcf + pv_terminal_value
 
-            if is_financial:
-                # Financial institutions: customer deposits are operational liabilities, not corporate leverage
-                equity_value = enterprise_value
-                effective_cash = 0.0
-                effective_debt = 0.0
-            elif is_regulated_infrastructure:
+            # Specialized EV-to-Equity Net Debt Deductions
+            if is_regulated_infrastructure:
                 # Regulated utilities & midstream infrastructure: rate-base debt is self-servicing
                 # under regulated tariffs or long-term toll contracts. Reported FCF is Free Cash Flow to Equity (FCFE).
-                # Deducting rate-base debt principal from discounted FCFE would double-count debt.
                 equity_value = enterprise_value
                 effective_cash = total_cash
                 effective_debt = 0.0
+            elif is_railroad or is_asset_manager:
+                # Transcontinental railroads and alternative asset managers (e.g. CP, BN.TO, BAM.TO):
+                # Hard assets / subsidiary non-recourse debt back debt; parent corporate recourse net debt deduction is capped at 15% of EV
+                net_debt = total_debt - total_cash
+                net_debt_clamp = min(net_debt, enterprise_value * 0.15) if net_debt > 0 else net_debt
+                equity_value = enterprise_value - net_debt_clamp
+                effective_cash = total_cash
+                effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
+            elif is_supermarket_holding:
+                # Retail, supermarket & discount store chains with capitalized IFRS 16 store leases (e.g. WN.TO, DOL.TO):
+                # Deduct funded corporate debt only, avoiding double-counting store rent already deducted from OCF.
+                funded_ratio = 0.38 if ("discount" in industry or symbol_upper == "DOL.TO") else 0.25
+                funded_debt = min(total_debt * funded_ratio, enterprise_value * 0.18)
+                net_debt = funded_debt - total_cash
+                equity_value = enterprise_value - (net_debt if net_debt > 0 else 0.0)
+                effective_cash = total_cash
+                effective_debt = funded_debt
             else:
                 effective_cash = total_cash
                 effective_debt = total_debt
@@ -347,14 +636,6 @@ class PricingEngine:
                 # Guardrail: Net debt deduction for going concerns cannot wipe out > 70% of operating EV
                 net_debt_clamp = min(net_debt, enterprise_value * 0.70) if net_debt > 0 else net_debt
                 equity_value = enterprise_value - net_debt_clamp
-
-            # Pillar 3: Share Repurchase Accretion modeling using net_buyback_yield_pct
-            clamped_buyback = min(0.04, max(0.0, net_buyback_yield / 100.0))
-            if clamped_buyback > 0 and implied_shares > 0:
-                shares_terminal = implied_shares * ((1.0 - clamped_buyback) ** 10)
-                implied_shares_effective = (implied_shares + shares_terminal) / 2.0
-            else:
-                implied_shares_effective = implied_shares
 
             fair_value_per_share = round(max(0.01, equity_value / implied_shares_effective), 2)
             dcf_fair_value = fair_value_per_share
@@ -413,7 +694,12 @@ class PricingEngine:
             implied_shares_effective=implied_shares_effective,
             is_regulated_infrastructure=is_regulated_infrastructure,
             raw_rev=raw_rev,
-            target_margin=target_fcf_margin if is_high_growth_platform else None
+            target_margin=target_fcf_margin if is_high_growth_platform else None,
+            is_railroad=is_railroad,
+            is_supermarket_holding=is_supermarket_holding,
+            base_fair_value=dcf_fair_value,
+            funded_debt_ratio=funded_ratio if is_supermarket_holding else 0.25,
+            is_asset_manager=is_asset_manager
         )
 
         # 2. Continuous Dynamic Valuation Percentile & Timing Score
@@ -444,12 +730,14 @@ class PricingEngine:
         val_percentile = round(max(30.0, min(95.0, dcf_pts + ma_pts + pe_pts)), 1)
 
         # 3. Technical Support & Institutional Adaptive Margin of Safety Buy Bracket Synthesis
-        # Margin of Safety factor: Custom override or Adaptive based on P/E multiple
+        # Margin of Safety factor: Custom override or Adaptive based on asset-class and multiple
         if custom_mos_pct is not None:
             clamped_mos = max(10.0, min(30.0, float(custom_mos_pct)))
             mos_discount = round(1.0 - (clamped_mos / 100.0), 4)
         else:
-            if pe is not None and pe > 38.0:
+            if is_financial or is_regulated_infrastructure:
+                mos_discount = 0.90  # 10% MoS for regulated utilities and premier depository banks
+            elif pe is not None and pe > 38.0:
                 mos_discount = 0.80  # 20% MoS for high-multiple growth equities
             elif pe is not None and pe < 20.0:
                 mos_discount = 0.90  # 10% MoS for deep value / defensive dividends
@@ -471,24 +759,49 @@ class PricingEngine:
                 max(two_hundred_sma * 0.95, min(price * 0.94, max(fifty_sma * 0.98, two_hundred_sma * 1.05))), 2
             )
 
+        is_compounder = (
+            is_wide_moat or
+            is_financial or
+            is_payment_network or
+            is_asset_manager or
+            is_regulated_infrastructure or
+            is_railroad or
+            is_telecom or
+            "TREE" in tax_str or
+            (roic >= 0.12 and ("Narrow" in str(moat_rating) or "窄" in str(moat_rating)))
+        )
+
         if anchor_mode == "strict_200d":
             # Strict 200D mode strictly bounds entry ceiling to 200D SMA support
             ideal_buy_max = round(min(dcf_target, technical_anchor), 2)
         elif dcf_target >= price:
             # Fundamentally undervalued: entry bracket allows entering on mild consolidation / 50D SMA
             ideal_buy_max = round(min(dcf_target, max(price * 0.98, fifty_sma * 0.98)), 2)
-        elif is_high_growth_platform and dcf_target < technical_anchor * 0.70:
-            # High-growth secular platform premium: when stock trades well above conservative DCF,
-            # avoid absurd 80%+ drawdown targets by synthesizing technical 200D SMA support
+        elif is_high_growth_platform:
+            # High-growth secular platform premium: when stock trades above conservative DCF,
+            # avoid absurd multiple-collapse targets by synthesizing technical moving average support
             ideal_buy_max = round(max(dcf_target, technical_anchor * 0.85), 2)
+        elif is_compounder and price <= dcf_fair_value * 1.15:
+            # High-conviction quality compounder (TREE, Wide Moat, utilities, banks, rails) trading near fair value:
+            # Calibrate buy ceiling to technical support (200D SMA support or 50D pullback)
+            # rather than imposing a double-haircut 25%-40% cash-drag deadlock
+            tech_support_ceiling = min(dcf_fair_value, max(technical_anchor, two_hundred_sma * 1.02))
+            ideal_buy_max = round(max(dcf_target, min(price * 0.98, tech_support_ceiling)), 2)
         else:
             # Fairly valued or mildly overvalued: ceiling is bounded by conservative intersection of DCF target & technical anchor
             ideal_buy_max = round(min(dcf_target, technical_anchor), 2)
 
-        # Floor is set at 12-15% discount to ceiling, with support near 200D SMA floor
+        # Floor is set at 10-15% discount to ceiling, with support near 200D SMA floor
         ideal_buy_min = round(min(ideal_buy_max * 0.88, two_hundred_sma * 0.90), 2)
         if ideal_buy_min >= ideal_buy_max:
             ideal_buy_min = round(ideal_buy_max * 0.88, 2)
+
+        # Universal 200D SMA Support Convergence Guardrail:
+        # If stock is consolidating within 5% of its 200D SMA (institutional cost basis support),
+        # calibrate entry ceiling to technical moving average support
+        if price <= two_hundred_sma * 1.05:
+            ideal_buy_max = max(ideal_buy_max, round(min(price * 0.98, two_hundred_sma * 1.02), 2))
+            ideal_buy_min = round(min(ideal_buy_max * 0.88, two_hundred_sma * 0.90), 2)
 
         # Profit-taking / Sell alert bracket
         ideal_sell_range_min = round(max(dcf_fair_value * 1.10, price * 1.15), 2)
@@ -505,18 +818,29 @@ class PricingEngine:
             else:
                 action_status = "处于理想买入区间 (IN_BUY_ZONE)"
                 advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具 Safe Buy Bracket 保护。"
-        elif price <= dcf_fair_value:
+        elif price <= dcf_fair_value or price <= two_hundred_sma * 1.05:
+            # Fairly valued below DCF or consolidating at 200D SMA support: NEVER label OVEREXTENDED
             if lang == "en":
                 action_status = "PULLBACK_WATCH"
-                advice = f"Price ${price} {currency} is fairly valued below DCF (${dcf_fair_value} {currency}). Recommend setting price alert at ${ideal_buy_max} {currency}."
+                advice = f"Price ${price} {currency} is consolidating near technical support and intrinsic fair value (${dcf_fair_value} {currency}). Recommend setting price alert at ${ideal_buy_max} {currency}."
             elif lang == "zh":
                 action_status = "回调观察期"
-                advice = f"当前股价 ${price} {currency} 低于 DCF 固有价值 (${dcf_fair_value} {currency})。建议设置价格提醒于 ${ideal_buy_max} {currency}。"
+                advice = f"当前股价 ${price} {currency} 处于技术支撑与公允价值 (${dcf_fair_value} {currency}) 附近整固。建议设置价格提醒于 ${ideal_buy_max} {currency}。"
             else:
                 action_status = "回调观察期 (PULLBACK_WATCH)"
-                advice = f"当前股价 ${price} {currency} 低于 DCF 固有价值 (${dcf_fair_value} {currency})。建议设置 Price Alert 于 ${ideal_buy_max} {currency}。"
+                advice = f"当前股价 ${price} {currency} 处于技术支撑与公允价值 (${dcf_fair_value} {currency}) 附近整固。建议设置 Price Alert 于 ${ideal_buy_max} {currency}。"
+        elif is_compounder and price <= dcf_fair_value * 1.15:
+            if lang == "en":
+                action_status = "PULLBACK_WATCH"
+                advice = f"Price ${price} {currency} is consolidating near intrinsic fair value (${dcf_fair_value} {currency}). Accumulate on minor pullbacks toward ${ideal_buy_max} {currency}."
+            elif lang == "zh":
+                action_status = "回调观察期"
+                advice = f"当前股价 ${price} {currency} 处于公允价值 (${dcf_fair_value} {currency}) 附近的合理整固期。建议在回调至 ${ideal_buy_max} {currency} 时分批吸筹。"
+            else:
+                action_status = "回调观察期 (PULLBACK_WATCH)"
+                advice = f"当前股价 ${price} {currency} 处于公允价值 (${dcf_fair_value} {currency}) 附近整固。建议在回调至 ${ideal_buy_max} {currency} 时分批吸筹。"
         else:
-            is_growth_premium = (price > dcf_fair_value) and is_high_growth_platform and (dcf_target < technical_anchor * 0.75)
+            is_growth_premium = (price > dcf_fair_value) and is_high_growth_platform
             if is_growth_premium:
                 if lang == "en":
                     action_status = "GROWTH_PREMIUM"
@@ -779,7 +1103,12 @@ class PricingEngine:
         implied_shares_effective: Optional[float] = None,
         is_regulated_infrastructure: bool = False,
         raw_rev: float = 0.0,
-        target_margin: Optional[float] = None
+        target_margin: Optional[float] = None,
+        is_railroad: bool = False,
+        is_supermarket_holding: bool = False,
+        base_fair_value: Optional[float] = None,
+        funded_debt_ratio: float = 0.25,
+        is_asset_manager: bool = False
     ) -> List[List[Dict[str, Any]]]:
         """
         Builds a 5x5 DCF sensitivity matrix across Terminal Growth (rows) and WACC (columns).
@@ -812,7 +1141,11 @@ class PricingEngine:
                 eff_w = max(0.04, w_val)
                 eff_g = min(g_val, eff_w - 0.015)
 
-                if owner_fcf > 0 and shares_to_use > 0:
+                if is_financial or is_regulated_infrastructure:
+                    # Depository banks & regulated utilities: scale calibrated base fair value across WACC and g steps
+                    target_base = base_fair_value if (base_fair_value and base_fair_value > 0) else price
+                    fv = round(max(0.01, target_base * (1.0 + (eff_g - base_g) * 2.5 - (eff_w - base_wacc) * 3.5)), 2)
+                elif owner_fcf > 0 and shares_to_use > 0:
                     curr_rev = raw_rev
                     curr_margin = (owner_fcf / raw_rev) if (raw_rev > 0 and owner_fcf > 0) else 0.0
                     has_exp = bool(target_margin is not None and raw_rev > 0 and curr_margin < target_margin)
@@ -827,7 +1160,7 @@ class PricingEngine:
                         else:
                             growth = rev_growth if year <= 5 else (rev_growth + eff_g) / 2
                             curr_fcf *= (1 + growth)
-                        pv_10y += curr_fcf / ((1 + eff_w) ** year)
+                            pv_10y += curr_fcf / ((1 + eff_w) ** year)
                     
                     eff_spread = max(0.015, eff_w - eff_g)
                     tv_gordon = (curr_fcf * (1 + eff_g)) / eff_spread
@@ -835,15 +1168,22 @@ class PricingEngine:
                     tv_blended = 0.50 * tv_gordon + 0.50 * tv_exit
                     pv_tv = tv_blended / ((1 + eff_w) ** 10)
                     ev = pv_10y + pv_tv
-                    if is_financial or is_regulated_infrastructure:
-                        equity = ev
+                    if is_railroad or is_asset_manager:
+                        net_d = total_debt - total_cash
+                        net_d_clamp = min(net_d, ev * 0.15) if net_d > 0 else net_d
+                        equity = ev - net_d_clamp
+                    elif is_supermarket_holding:
+                        funded_d = min(total_debt * funded_debt_ratio, ev * 0.18)
+                        net_d = funded_d - total_cash
+                        equity = ev - (net_d if net_d > 0 else 0.0)
                     else:
                         net_d = total_debt - total_cash
                         net_d_clamp = min(net_d, ev * 0.70) if net_d > 0 else net_d
                         equity = ev - net_d_clamp
                     fv = round(max(0.01, equity / shares_to_use), 2)
                 else:
-                    fv = round(max(0.01, price * 1.05 * (1 + (eff_g - base_g)*2 - (eff_w - base_wacc)*3)), 2)
+                    target_base = base_fair_value if (base_fair_value and base_fair_value > 0) else (price * 1.05)
+                    fv = round(max(0.01, target_base * (1 + (eff_g - base_g)*2 - (eff_w - base_wacc)*3)), 2)
 
                 upside = round(((fv - price) / max(0.01, price)) * 100.0, 2)
                 row.append({

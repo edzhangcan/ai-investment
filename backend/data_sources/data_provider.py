@@ -819,7 +819,7 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "T.TO": {"fcf": 1800000000, "pe": 22.4, "name": "TELUS Corporation"},
     "BAM.TO": {"fcf": 2400000000, "pe": 32.5, "name": "Brookfield Asset Management", "financial_currency": "USD"},
     "BN.TO": {"fcf": 4200000000, "pe": 18.6, "name": "Brookfield Corporation", "financial_currency": "USD"},
-    "DOL.TO": {"fcf": 1100000000, "pe": 31.2, "name": "Dollarama Inc."},
+    "DOL.TO": {"fcf": 1250000000, "pe": 35.0, "name": "Dollarama Inc.", "net_buyback_yield_pct": 2.5},
     "MFC.TO": {"fcf": 4500000000, "pe": 10.4, "name": "Manulife Financial Corp."},
     "SLF.TO": {"fcf": 3100000000, "pe": 12.8, "name": "Sun Life Financial Inc."},
     "POW.TO": {"fcf": 2200000000, "pe": 11.0, "name": "Power Corporation of Canada"},
@@ -882,6 +882,8 @@ EMPIRICAL_TAXONOMY_METRICS: Dict[str, Dict[str, float]] = {
     "CNR.TO": {"roic": 0.16, "dividend_yield_pct": 1.9, "net_buyback_yield_pct": 2.2, "dilution_3y_pct": -3.5},
     "CP.TO": {"roic": 0.12, "dividend_yield_pct": 0.8, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.2},
     "CELH": {"roic": 0.22, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.5},
+    "DOL.TO": {"roic": 0.28, "dividend_yield_pct": 0.3, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": -5.0},
+    "QBR-B.TO": {"roic": 0.16, "dividend_yield_pct": 2.8, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": 0.0},
     # Grains (Cyclical / Value / High-yield cash cows)
     "KO": {"roic": 0.16, "dividend_yield_pct": 3.1, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": -0.5},
     "PEP": {"roic": 0.17, "dividend_yield_pct": 3.0, "net_buyback_yield_pct": 0.6, "dilution_3y_pct": -0.4},
@@ -1146,6 +1148,12 @@ class DataProviderManager:
                             beta_val = float(info.get("beta"))
                         if info.get("financialCurrency"):
                             financial_currency = info.get("financialCurrency")
+                        book_value_val = float(info.get("bookValue")) if info.get("bookValue") else None
+                        dividend_rate_val = float(info.get("dividendRate")) if info.get("dividendRate") else None
+                        div_yield_raw = float(info.get("dividendYield")) if info.get("dividendYield") else None
+                        dividend_yield_val = (div_yield_raw * 100.0) if div_yield_raw is not None else None
+                        roe_val = float(info.get("returnOnEquity")) if info.get("returnOnEquity") else None
+                        ptb_val = float(info.get("priceToBook")) if info.get("priceToBook") else None
 
                     if not market_cap and shares_outstanding and current_p > 0:
                         market_cap = float(shares_outstanding) * current_p
@@ -1199,6 +1207,11 @@ class DataProviderManager:
                         "stock_based_compensation": sbc,
                         "total_assets": total_assets,
                         "beta": beta_val,
+                        "book_value": book_value_val,
+                        "dividend_rate": dividend_rate_val,
+                        "dividend_yield_pct": dividend_yield_val,
+                        "return_on_equity": roe_val,
+                        "price_to_book": ptb_val,
                         "source_mode": "LIVE",
                         "warning_banner": None,
                         "rsi_14": 54.0,
