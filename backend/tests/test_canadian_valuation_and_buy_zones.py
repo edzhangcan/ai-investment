@@ -276,12 +276,59 @@ def test_canadian_retail_champion_lease_adjustment_and_growth_dol_to():
     assert res["action_status"] == "PULLBACK_WATCH"
 
 
+def test_canadian_telecom_challenger_qbr_b_to():
+    """
+    Verify that Quebecor Inc (QBR-B.TO) post-Freedom Mobile telecom challenger:
+    - Ingests post-merger audited cash flows ($1.1B - $1.4B FCF vs obsolete $620M)
+    - Normalizes capital intensity to 18% of revenue for recurring 5G/fiber spectrum capex
+    - Receives telecom infrastructure exit multiple (16.0x) and 2.5% terminal growth
+    - Produces institutional fair value in $80 - $105 CAD range (vs broken $37.26)
+    - Brackets ideal buy zone near 50D/200D SMA support ($55 - $65 CAD) with PULLBACK_WATCH status
+    """
+    qbr_stock = {
+        "symbol": "QBR-B.TO",
+        "company_name": "Quebecor Inc.",
+        "sector": "Communication Services",
+        "industry": "Telecom Services",
+        "current_price": 64.74,
+        "fifty_day_sma": 63.53,
+        "two_hundred_day_sma": 64.00,
+        "pe_ratio": 15.9,
+        "book_value": 9.20,
+        "return_on_equity": 0.352,
+        "dividend_rate": 1.80,
+        "shares_outstanding": 223_493_481.0,
+        "market_cap": 14_468_967_482.0,
+        "total_debt": 7_166_300_160.0,
+        "total_cash": 97_600_000.0,
+        "free_cash_flow": 1_417_400_064.0,  # Live post-Freedom Mobile FCF
+        "operating_cash_flow": 2_061_900_000.0,
+        "capex": 640_000_000.0,
+        "total_revenue": 5_787_200_000.0,
+        "revenue_growth": 0.043,
+        "beta": 0.595,
+        "net_buyback_yield_pct": 1.2,
+        "moat_rating": "Narrow Moat",
+        "currency": "CAD",
+        "financial_currency": "CAD",
+        "is_valid": True
+    }
+
+    res = PricingEngine.evaluate_pricing_and_entry_zone(qbr_stock, lang="en")
+    assert res["is_valid"] is True
+    assert 80.0 <= res["dcf_fair_value"] <= 105.0
+    assert res["bridge"]["terminal_exit_multiple_used"] == 16.0
+    assert 55.0 <= res["ideal_buy_range_min"] <= 60.0
+    assert 60.0 <= res["ideal_buy_range_max"] <= 65.0
+    assert res["action_status"] == "PULLBACK_WATCH"
+
+
 def test_sensitivity_matrix_monotonicity_canadian_bluechips():
     """
     Verify 5x5 sensitivity matrix preserves strict row and column monotonicity
-    for Canadian banks, utilities, railroads, and retail conglomerates.
+    for Canadian banks, utilities, railroads, retail conglomerates, and telecoms.
     """
-    symbols = ["RY.TO", "EMA.TO", "CP.TO", "WN.TO", "ATD.TO", "DOL.TO"]
+    symbols = ["RY.TO", "EMA.TO", "CP.TO", "WN.TO", "ATD.TO", "DOL.TO", "QBR-B.TO"]
     for sym in symbols:
         stock = DataProviderManager.get_stock_data(sym)
         res = PricingEngine.evaluate_pricing_and_entry_zone(stock)
@@ -296,4 +343,5 @@ def test_sensitivity_matrix_monotonicity_canadian_bluechips():
         for c in range(5):
             for r in range(len(matrix) - 1):
                 assert matrix[r + 1][c]["fair_value"] >= matrix[r][c]["fair_value"]
+
 

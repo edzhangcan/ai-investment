@@ -160,6 +160,16 @@ class PricingEngine:
             ("retail" in industry and ("consumer defensive" in sector or "defensive" in sector))
         )
 
+        TELECOM_SYMBOLS = {
+            "QBR-B.TO", "QBR.B", "QBR-A.TO", "QBR.A", "BCE.TO", "BCE", "T.TO", "RCI-B.TO", "RCI.B", "RCI",
+            "VZ", "T", "TMUS", "CMCSA", "CHTR"
+        }
+        is_telecom = (
+            symbol_upper in TELECOM_SYMBOLS or
+            "telecom" in industry.lower() or
+            "telecommunication" in industry.lower()
+        )
+
         # Determine market_cap & implied_shares
         market_cap = stock_data.get("market_cap")
         shares_outstanding = stock_data.get("shares_outstanding") or stock_data.get("implied_shares")
@@ -232,7 +242,7 @@ class PricingEngine:
             market_cap=market_cap,
             is_financial=is_financial
         )
-        terminal_growth = 0.03
+        terminal_growth = 0.025 if (is_regulated_infrastructure or is_utility or is_telecom) else 0.03
 
         # Net buyback yield
         net_buyback_yield = float(
@@ -285,6 +295,10 @@ class PricingEngine:
             else:
                 rev_growth = min(max(raw_rev_growth, 0.02), 0.05)
             target_fcf_margin = None
+        elif is_telecom:
+            # Telecom infrastructure: steady regulated / subscription growth
+            rev_growth = min(max(raw_rev_growth, 0.02), 0.055)
+            target_fcf_margin = None
         elif "TREE" in tax_str:
             rev_growth = min(max(raw_rev_growth, 0.03), 0.15)
             target_fcf_margin = None
@@ -331,7 +345,11 @@ class PricingEngine:
             base_fcf = owner_fcf_pre_sbc
 
         # Cyclical peak FCF normalization: if starting FCF yield > 12% of market cap, normalize
-        if market_cap > 0 and (base_fcf / market_cap > 0.12):
+        if is_telecom and raw_rev > 0 and (base_fcf / raw_rev > 0.18):
+            # Mature telecom network capital intensity normalization:
+            # Reinvestments in 5G spectrum and fiber buildouts mean sustainable FCF margin is bounded at 18% of revenue
+            owner_fcf = raw_rev * 0.18
+        elif market_cap > 0 and (base_fcf / market_cap > 0.12):
             owner_fcf = market_cap * 0.09
         else:
             owner_fcf = base_fcf
@@ -343,6 +361,8 @@ class PricingEngine:
             exit_multiple = 22.0 if is_wide_moat else 20.0
         elif is_retail_or_grocery and is_wide_moat:
             exit_multiple = 23.0
+        elif is_telecom:
+            exit_multiple = 16.0 if (is_wide_moat or roic >= 0.15) else 14.5
         elif is_wide_moat and roic >= 0.20:
             exit_multiple = 25.0
         elif is_wide_moat or (("Narrow" in str(moat_rating) or "窄" in str(moat_rating)) and roic >= 0.15):
@@ -687,6 +707,7 @@ class PricingEngine:
             is_financial or
             is_regulated_infrastructure or
             is_railroad or
+            is_telecom or
             "TREE" in tax_str or
             (roic >= 0.12 and ("Narrow" in str(moat_rating) or "窄" in str(moat_rating)))
         )

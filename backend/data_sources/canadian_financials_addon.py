@@ -24,7 +24,7 @@ CANADIAN_ADDITIONAL_FINANCIALS: Dict[str, Dict[str, Any]] = {
 
     # Market Leaders
     "RCI-B.TO": {"fcf": 2600000000, "pe": 14.8, "name": "Rogers Communications Inc.", "roic": 0.09, "dividend_yield_pct": 3.9, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 4.5},
-    "QBR-B.TO": {"fcf": 620000000, "pe": 11.2, "name": "Quebecor Inc.", "roic": 0.13, "dividend_yield_pct": 4.2, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": 0.0},
+    "QBR-B.TO": {"fcf": 1100000000, "pe": 16.0, "name": "Quebecor Inc.", "roic": 0.16, "dividend_yield_pct": 2.8, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": 0.0},
     "GWO.TO": {"fcf": 3800000000, "pe": 10.8, "name": "Great-West Lifeco Inc.", "roic": 0.14, "dividend_yield_pct": 5.1, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": 0.5},
     "IFC.TO": {"fcf": 2400000000, "pe": 16.5, "name": "Intact Financial Corporation", "roic": 0.16, "dividend_yield_pct": 2.0, "net_buyback_yield_pct": 0.6, "dilution_3y_pct": 0.3},
     "WSP.TO": {"fcf": 1100000000, "pe": 32.4, "name": "WSP Global Inc.", "roic": 0.12, "dividend_yield_pct": 0.7, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.8},

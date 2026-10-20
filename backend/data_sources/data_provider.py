@@ -883,6 +883,7 @@ EMPIRICAL_TAXONOMY_METRICS: Dict[str, Dict[str, float]] = {
     "CP.TO": {"roic": 0.12, "dividend_yield_pct": 0.8, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.2},
     "CELH": {"roic": 0.22, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.5},
     "DOL.TO": {"roic": 0.28, "dividend_yield_pct": 0.3, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": -5.0},
+    "QBR-B.TO": {"roic": 0.16, "dividend_yield_pct": 2.8, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": 0.0},
     # Grains (Cyclical / Value / High-yield cash cows)
     "KO": {"roic": 0.16, "dividend_yield_pct": 3.1, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": -0.5},
     "PEP": {"roic": 0.17, "dividend_yield_pct": 3.0, "net_buyback_yield_pct": 0.6, "dilution_3y_pct": -0.4},
