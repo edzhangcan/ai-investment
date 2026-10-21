@@ -11,21 +11,33 @@ import json
 import re
 
 class CentralBankSpeechStreamer:
-    """Real-time NLP stream processor for central bank speeches and policy statements."""
+    """
+    Real-time NLP stream processor for central bank speeches and policy statements.
+    
+    Architecture Overview:
+    1. Ingestion: Accepts transcribed speech chunks or policy statements (Fed FOMC, Bank of Canada).
+    2. Sentiment Extraction: Evaluates lexical and n-gram terms matching restrictive (hawkish) or accommodative (dovish) language.
+    3. Trajectory Tracking: Computes running moving averages of speech chunks to detect intraday policy stance shifts.
+    4. Macro Delta Bridge: Calculates the net delta between the baseline prior policy stance and current speech delivery.
+    5. Cross-Asset Transmission: Translates policy stance into multi-asset implications (Treasuries, Equity multiples, FX, and 80/20 Barbell posture).
+    """
 
-    HAWKISH_TERMS = [
+    # Pre-frozen immutable tuples of lowercased n-grams for zero-overhead membership testing.
+    # Hawkish terms reflect monetary tightening, persistent inflation concerns, and restrictive stance.
+    HAWKISH_TERMS: tuple = (
         "restrictive", "inflation remains elevated", "elevated inflation", "above target",
         "upside risks", "patience", "tightening", "rate hike", "higher for longer",
         "stubborn inflation", "demand pressures", "premature", "unconditional commitment",
         "not yet confident", "re-accelerate", "labor market remains tight", "core inflation persistent"
-    ]
+    )
 
-    DOVISH_TERMS = [
+    # Dovish terms reflect monetary easing, disinflationary progress, and accommodative policy shifts.
+    DOVISH_TERMS: tuple = (
         "rate cuts", "rate reduction", "easing", "accommodative", "cooling",
         "progress on inflation", "gradual reduction", "softening", "downside risks",
         "economic slack", "policy recalibration", "moderating wages", "moving sustainably toward 2 percent",
         "well-anchored", "less restrictive", "slowing pace", "normalized balance sheet"
-    ]
+    )
 
     SPEECHES: Dict[str, Dict[str, Any]] = {
         "fomc-latest-2026": {
@@ -178,7 +190,19 @@ class CentralBankSpeechStreamer:
 
     @classmethod
     def analyze_segment_nlp(cls, text: str, lang: str = "en") -> Dict[str, Any]:
-        """Performs lexical and n-gram NLP sentiment analysis on a single speech text chunk."""
+        """
+        Performs lexical and n-gram NLP sentiment analysis on a single speech text chunk.
+
+        Scoring Methodology:
+        - Sentiment is evaluated as a normalized contrast ratio:
+            sentiment = (hawkish_count - dovish_count) / (hawkish_count + dovish_count)
+          yielding a bounded scalar in [-1.0, 1.0].
+        - If neither hawkish nor dovish terms are detected, sentiment defaults to 0.0 (neutral).
+        - Stance Classification Thresholds:
+            * > +0.15: Restrictive / Hawkish bias (prioritizing price stability over employment growth)
+            * < -0.15: Accommodative / Dovish bias (prioritizing growth, employment, or noting disinflation)
+            * [-0.15, +0.15]: Neutral / Balanced data-dependent holding pattern
+        """
         lower = text.lower()
         hawkish_found = [term for term in cls.HAWKISH_TERMS if term in lower]
         dovish_found = [term for term in cls.DOVISH_TERMS if term in lower]
