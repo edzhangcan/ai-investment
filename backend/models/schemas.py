@@ -335,3 +335,36 @@ class RebalancingComparison(BaseModel):
     explanation_en: str
     explanation_zh: str
 
+# PL-705: Central Bank Speech Streaming Schemas
+class SpeechSegmentSchema(BaseModel):
+    index: int
+    speaker: str
+    text: str
+    timestamp: str = ""
+    hawkish_terms: List[str] = Field(default_factory=list)
+    dovish_terms: List[str] = Field(default_factory=list)
+    segment_sentiment: float = 0.0
+    cumulative_score: float = 0.0
+    stance: str = "Neutral"
+
+class CentralBankSpeechMetadataSchema(BaseModel):
+    id: str
+    title: str
+    central_bank: str
+    country: str
+    speaker: str
+    date: str
+    baseline_score: float = 0.0
+    total_segments: int = 0
+    event_type: str = "Policy Decision & Press Conference"
+
+class CentralBankSpeechStreamEventSchema(BaseModel):
+    event_type: Literal["init", "chunk", "complete", "heartbeat"] = "chunk"
+    metadata: Optional[CentralBankSpeechMetadataSchema] = None
+    segment: Optional[SpeechSegmentSchema] = None
+    final_score: Optional[float] = None
+    stance_delta: Optional[float] = None
+    final_stance: Optional[str] = None
+    market_implications: Optional[Dict[str, str]] = None
+
+
