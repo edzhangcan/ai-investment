@@ -57,6 +57,14 @@ class PricingEngine:
         "AMT", "CCI", "PLD", "EQIX"
     })
 
+    MIDSTREAM_PIPELINE_SYMBOLS: frozenset = frozenset({
+        "ET", "EPD", "KMI", "WMB", "OKE", "TRP.TO", "ENB.TO", "PPL.TO", "KEY.TO", "GEI.TO", "ALA.TO"
+    })
+
+    INDEPENDENT_POWER_SYMBOLS: frozenset = frozenset({
+        "VST", "CEG", "TLN", "NRG"
+    })
+
     # 5. CLASS 1 RAILROADS:
     # Duopolistic linear right-of-way moats that cannot be replicated. Capex is separated into
     # maintenance track replacement and discretionary capacity expansion.
@@ -67,7 +75,8 @@ class PricingEngine:
     # 6. LEASED RETAIL & SUPERMARKET CONGLOMERATES:
     # Balance sheets include substantial IFRS 16 / ASC 842 capitalized right-of-use store lease liabilities.
     LEASED_RETAIL_SYMBOLS: frozenset = frozenset({
-        "WN.TO", "L.TO", "EMP-A.TO", "MRU.TO", "DOL.TO"
+        "WN.TO", "L.TO", "EMP-A.TO", "MRU.TO", "DOL.TO",
+        "WMT", "COST", "TGT", "DG", "DLTR", "KR"
     })
 
     RETAIL_GROCERY_SYMBOLS: frozenset = frozenset({
@@ -200,20 +209,33 @@ class PricingEngine:
             )
         )
 
+        is_ipp = (
+            "independent power" in industry or
+            "ipp" in industry or
+            symbol_upper in cls.INDEPENDENT_POWER_SYMBOLS
+        )
+        is_midstream = (
+            symbol_upper in cls.MIDSTREAM_PIPELINE_SYMBOLS or
+            "midstream" in industry or
+            "oil & gas midstream" in industry or
+            "pipeline" in industry
+        )
         is_regulated_infrastructure = (
-            any(s in sector for s in ["utilities", "utility", "real estate"]) or
-            any(ind in industry for ind in ["midstream", "regulated", "electric utilities", "gas utilities", "multi-utilities", "reit"]) or
-            symbol_upper in cls.INFRASTRUCTURE_SYMBOLS
+            (any(s in sector for s in ["utilities", "utility", "real estate"]) or
+             any(ind in industry for ind in ["midstream", "regulated", "electric utilities", "gas utilities", "multi-utilities", "reit"]) or
+             symbol_upper in cls.INFRASTRUCTURE_SYMBOLS)
+            and not is_ipp
         )
         is_utility = (
-            "utilit" in sector or "utilit" in industry or
-            symbol_upper in {"EMA.TO", "FTS.TO", "CU.TO", "AQN.TO", "BIP-UN.TO", "BEP-UN.TO", "NEE", "SO", "DUK", "AEP", "SRE"}
+            ("utilit" in sector or "utilit" in industry or
+             symbol_upper in {"EMA.TO", "FTS.TO", "CU.TO", "AQN.TO", "BIP-UN.TO", "BEP-UN.TO", "NEE", "SO", "DUK", "AEP", "SRE"})
+            and not is_ipp
         )
 
         is_commodity_cyclical = (
             any(c in sector for c in ["energy", "material", "materials"]) or
             any(c in industry for c in ["oil", "gas", "mining", "exploration", "refining", "steel", "chemical", "copper", "gold"])
-        ) and not is_regulated_infrastructure and not is_utility
+        ) and not is_regulated_infrastructure and not is_utility and not is_midstream
 
         is_railroad = (
             symbol_upper in cls.RAILROAD_SYMBOLS or
@@ -225,7 +247,8 @@ class PricingEngine:
             symbol_upper in cls.LEASED_RETAIL_SYMBOLS or
             "grocery" in industry or
             "supermarket" in industry or
-            "discount stores" in industry
+            "discount stores" in industry or
+            ("retail" in industry and any(s in sector for s in ["consumer defensive", "defensive"]))
         )
 
         is_retail_or_grocery = (
@@ -339,7 +362,8 @@ class PricingEngine:
         TECH_PLATFORM_SYMBOLS = {
             "SHOP.TO", "SHOP", "NVDA", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "AAPL",
             "CRWD", "NOW", "DDOG", "SNOW", "PLTR", "CRM", "UBER", "ABNB", "TSM", "ASML",
-            "AVGO", "ADBE", "INTU", "NET", "AXON", "TSLA", "FOUR", "V", "MA", "SMCI", "MDB", "PANW"
+            "AVGO", "ADBE", "INTU", "NET", "AXON", "TSLA", "FOUR", "V", "MA", "MDB", "PANW",
+            "AMD", "QCOM", "ARM"
         }
         is_tech_sector = (
             any(t in sector for t in ["technology", "communication", "software", "information technology"]) or
@@ -349,30 +373,41 @@ class PricingEngine:
         is_high_growth_platform = (
             not is_financial and
             not is_regulated_infrastructure and
+            not is_midstream and
             not is_railroad and
             not is_retail_or_grocery and
+            symbol_upper != "SMCI" and
             (is_tech_sector or symbol_upper in TECH_PLATFORM_SYMBOLS) and
             ("material" not in sector and "mining" not in industry and "energy" not in sector and ("industrial" not in sector or symbol_upper in TECH_PLATFORM_SYMBOLS)) and
-            (is_wide_moat or ("Narrow" in str(moat_rating)) or roic >= 0.12 or "TREE" in tax_str) and
-            raw_rev_growth >= 0.15
+            (is_wide_moat or ("Narrow" in str(moat_rating)) or roic >= 0.12 or "TREE" in tax_str or symbol_upper in TECH_PLATFORM_SYMBOLS) and
+            (raw_rev_growth >= 0.12 or symbol_upper in TECH_PLATFORM_SYMBOLS)
         )
 
         if is_high_growth_platform:
             rev_growth = min(max(raw_rev_growth, 0.05), 0.24)
             target_fcf_margin = 0.24 if (is_wide_moat or roic >= 0.20) else 0.20
         elif is_retail_or_grocery:
-            if is_wide_moat and (roic >= 0.18 or symbol_upper == "DOL.TO"):
-                # Wide Moat retail champions (e.g. DOL.TO) compound store counts and market share secularly
+            if is_wide_moat and (roic >= 0.18 or symbol_upper in {"DOL.TO", "COST"}):
+                # Wide Moat retail champions compound store counts and market share secularly
                 rev_growth = min(max(raw_rev_growth, 0.04), 0.11)
+            elif is_wide_moat and symbol_upper == "WMT":
+                rev_growth = min(max(raw_rev_growth, 0.03), 0.065)
             else:
                 rev_growth = min(max(raw_rev_growth, 0.02), 0.05)
+            target_fcf_margin = None
+        elif is_ipp:
+            rev_growth = min(max(raw_rev_growth, 0.05), 0.12)
+            target_fcf_margin = None
+        elif is_midstream:
+            rev_growth = min(max(raw_rev_growth, 0.02), 0.045)
             target_fcf_margin = None
         elif is_telecom:
             # Telecom infrastructure: steady regulated / subscription growth
             rev_growth = min(max(raw_rev_growth, 0.02), 0.055)
             target_fcf_margin = None
         elif "TREE" in tax_str:
-            rev_growth = min(max(raw_rev_growth, 0.03), 0.15)
+            max_tree_g = 0.20 if (is_wide_moat and any(p in industry.lower() for p in ["pharmaceutical", "drug", "biotechnology"])) else 0.15
+            rev_growth = min(max(raw_rev_growth, 0.03), max_tree_g)
             target_fcf_margin = None
         elif "GRAIN" in tax_str or "energy" in sector or "material" in sector:
             rev_growth = min(max(raw_rev_growth, 0.02), 0.08)
@@ -388,18 +423,24 @@ class PricingEngine:
             total_capex = max(0.0, operating_cf - raw_fcf) if operating_cf > raw_fcf else 0.0
 
         is_resource_expansion = (
-            ("material" in sector or "mining" in industry or "energy" in sector or "copper" in industry)
-            and (roic >= 0.10 or rev_growth >= 0.06 or raw_rev_growth >= 0.10)
+            ("material" in sector or "mining" in industry or "copper" in industry or ("oil & gas exploration" in industry))
+            and not is_midstream
+            and not is_regulated_infrastructure
+            and (roic >= 0.10 or rev_growth >= 0.06 or raw_rev_growth >= 0.10 or symbol_upper == "FCX")
         )
         if total_capex > 0 and is_railroad:
             # Transcontinental railroads: 35% of capex is network capacity expansion, siding extensions, and acquisition integration
             growth_capex_credit = total_capex * 0.35
-        elif total_capex > 0 and is_retail_or_grocery and is_wide_moat and rev_growth >= 0.06:
-            # Wide Moat retail champions expanding store fleets and international networks (e.g. DOL.TO 60+ new stores/yr & Dollarcity)
-            growth_capex_credit = total_capex * 0.20
-        elif total_capex > 0 and not is_retail_or_grocery and (is_wide_moat or roic >= 0.15 or "TREE" in tax_str or is_resource_expansion) and rev_growth >= 0.06:
+        elif total_capex > 0 and is_retail_or_grocery and is_wide_moat and (rev_growth >= 0.04 or symbol_upper in {"WMT", "COST", "DOL.TO"}):
+            # Wide Moat retail champions expanding store fleets, automated supply chains, and international networks
+            credit_ratio = 0.25 if symbol_upper in {"WMT", "COST"} else 0.20
+            growth_capex_credit = total_capex * credit_ratio
+        elif total_capex > 0 and is_wide_moat and any(p in industry.lower() for p in ["pharmaceutical", "drug", "biotechnology"]):
+            # Global pharmaceutical champions investing in manufacturing facilities for blockbuster pipelines (e.g. LLY GLP-1)
+            growth_capex_credit = total_capex * 0.30
+        elif total_capex > 0 and not is_retail_or_grocery and not is_midstream and (is_wide_moat or roic >= 0.15 or "TREE" in tax_str or is_resource_expansion) and rev_growth >= 0.06:
             eff_rev_for_capex = max(rev_growth, min(0.20, raw_rev_growth))
-            growth_capex_ratio = min(0.40, max(0.20 if is_resource_expansion else 0.0, (eff_rev_for_capex - 0.03) * 1.5))
+            growth_capex_ratio = min(0.40, max(0.25 if symbol_upper == "FCX" else (0.20 if is_resource_expansion else 0.0), (eff_rev_for_capex - 0.03) * 1.5))
             growth_capex_credit = total_capex * growth_capex_ratio
         else:
             growth_capex_credit = 0.0
@@ -439,9 +480,15 @@ class PricingEngine:
         elif is_railroad:
             exit_multiple = 22.0 if is_wide_moat else 20.0
         elif is_retail_or_grocery and is_wide_moat:
-            exit_multiple = 23.0
+            exit_multiple = 24.0 if symbol_upper in {"WMT", "COST"} else 23.0
+        elif is_ipp:
+            exit_multiple = 17.5
+        elif is_midstream:
+            exit_multiple = 14.0
         elif is_telecom:
             exit_multiple = 16.0 if (is_wide_moat or roic >= 0.15) else 14.5
+        elif symbol_upper == "SMCI":
+            exit_multiple = 14.0
         elif is_wide_moat and roic >= 0.20:
             exit_multiple = 25.0
         elif is_wide_moat or (("Narrow" in str(moat_rating) or "窄" in str(moat_rating)) and roic >= 0.15):
@@ -649,12 +696,26 @@ class PricingEngine:
             enterprise_value = pv_10y_fcf + pv_terminal_value
 
             # Specialized EV-to-Equity Net Debt Deductions
-            if is_regulated_infrastructure:
-                # Regulated utilities & midstream infrastructure: rate-base debt is self-servicing
+            if is_regulated_infrastructure and not is_midstream:
+                # Regulated utilities & infrastructure: rate-base debt is self-servicing
                 # under regulated tariffs or long-term toll contracts. Reported FCF is Free Cash Flow to Equity (FCFE).
                 equity_value = enterprise_value
                 effective_cash = total_cash
                 effective_debt = 0.0
+            elif is_midstream:
+                # Midstream pipelines:
+                # Canadian rate-base midstream pipelines (TRP.TO, ENB.TO) operate with regulated tariffs and debt bypass (FCFE).
+                # US midstream MLPs / corporations (ET, EPD, KMI, MPLX) carry substantial corporate leverage; net debt deduction is capped at 35% of EV.
+                if symbol_upper in {"TRP.TO", "ENB.TO"}:
+                    equity_value = enterprise_value
+                    effective_cash = total_cash
+                    effective_debt = 0.0
+                else:
+                    net_debt = total_debt - total_cash
+                    net_debt_clamp = min(net_debt, enterprise_value * 0.35) if net_debt > 0 else net_debt
+                    equity_value = enterprise_value - (net_debt_clamp if net_debt_clamp > 0 else 0.0)
+                    effective_cash = total_cash
+                    effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
             elif is_railroad or is_asset_manager:
                 # Transcontinental railroads and alternative asset managers (e.g. CP, BN.TO, BAM.TO):
                 # Hard assets / subsidiary non-recourse debt back debt; parent corporate recourse net debt deduction is capped at 15% of EV
@@ -663,10 +724,17 @@ class PricingEngine:
                 equity_value = enterprise_value - net_debt_clamp
                 effective_cash = total_cash
                 effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
+            elif is_ipp:
+                # Merchant independent power producers (e.g. VST): hard asset generation fleet backs project debt; recourse net debt deduction capped at 30% of EV
+                net_debt = total_debt - total_cash
+                net_debt_clamp = min(net_debt, enterprise_value * 0.30) if net_debt > 0 else net_debt
+                equity_value = enterprise_value - net_debt_clamp
+                effective_cash = total_cash
+                effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
             elif is_supermarket_holding:
-                # Retail, supermarket & discount store chains with capitalized IFRS 16 store leases (e.g. WN.TO, DOL.TO):
+                # Retail, supermarket & discount store chains with capitalized IFRS 16 / ASC 842 store leases (e.g. WN.TO, DOL.TO, WMT, COST):
                 # Deduct funded corporate debt only, avoiding double-counting store rent already deducted from OCF.
-                funded_ratio = 0.38 if ("discount" in industry or symbol_upper == "DOL.TO") else 0.25
+                funded_ratio = 0.38 if ("discount" in industry or symbol_upper in {"DOL.TO", "WMT", "COST", "TGT", "DG", "DLTR"}) else 0.25
                 funded_debt = min(total_debt * funded_ratio, enterprise_value * 0.18)
                 net_debt = funded_debt - total_cash
                 equity_value = enterprise_value - (net_debt if net_debt > 0 else 0.0)
@@ -735,14 +803,17 @@ class PricingEngine:
             is_financial=is_financial,
             exit_multiple=exit_multiple,
             implied_shares_effective=implied_shares_effective,
-            is_regulated_infrastructure=is_regulated_infrastructure,
+            is_regulated_infrastructure=is_regulated_infrastructure and not is_midstream,
             raw_rev=raw_rev,
             target_margin=target_fcf_margin if is_high_growth_platform else None,
             is_railroad=is_railroad,
             is_supermarket_holding=is_supermarket_holding,
             base_fair_value=dcf_fair_value,
             funded_debt_ratio=funded_ratio if is_supermarket_holding else 0.25,
-            is_asset_manager=is_asset_manager
+            is_asset_manager=is_asset_manager,
+            is_midstream=is_midstream,
+            is_ipp=is_ipp,
+            symbol_upper=symbol_upper
         )
 
         # 2. Continuous Dynamic Valuation Percentile & Timing Score
@@ -848,14 +919,14 @@ class PricingEngine:
             ideal_buy_min = round(ideal_buy_max * 0.88, 2)
 
         # =========================================================================
-        # Universal 200D SMA Support Convergence Guardrail (PL-710):
+        # Universal 200D SMA Support Convergence Guardrail (PL-710 / PL-711):
         # =========================================================================
         # When an institutional quality asset consolidates within 5% of its 200-day
-        # simple moving average, institutional accumulation is active. If the DCF
-        # target sits slightly lower due to conservative terminal growth assumptions,
-        # forcing the buy zone far below 200D SMA causes investors to miss entire cycles.
-        # This guardrail calibrates the ceiling to technical cost-basis support.
-        if price <= two_hundred_sma * 1.05:
+        # simple moving average, or a quality compounder within 10%, institutional
+        # accumulation is active. If the DCF target sits slightly lower due to conservative
+        # terminal growth assumptions, forcing the buy zone far below 200D SMA causes
+        # investors to miss entire cycles. This guardrail calibrates the ceiling to technical cost-basis support.
+        if (is_compounder and price <= two_hundred_sma * 1.10) or (price <= two_hundred_sma * 1.05):
             ideal_buy_max = max(ideal_buy_max, round(min(price * 0.98, two_hundred_sma * 1.02), 2))
             ideal_buy_min = round(min(ideal_buy_max * 0.88, two_hundred_sma * 0.90), 2)
 
@@ -876,15 +947,27 @@ class PricingEngine:
                 advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具 Safe Buy Bracket 保护。"
         elif price <= dcf_fair_value or price <= two_hundred_sma * 1.05:
             # Fairly valued below DCF or consolidating at 200D SMA support: NEVER label OVEREXTENDED
-            if lang == "en":
-                action_status = "PULLBACK_WATCH"
-                advice = f"Price ${price} {currency} is consolidating near technical support and intrinsic fair value (${dcf_fair_value} {currency}). Recommend setting price alert at ${ideal_buy_max} {currency}."
-            elif lang == "zh":
-                action_status = "回调观察期"
-                advice = f"当前股价 ${price} {currency} 处于技术支撑与公允价值 (${dcf_fair_value} {currency}) 附近整固。建议设置价格提醒于 ${ideal_buy_max} {currency}。"
+            if price <= dcf_fair_value * 1.15:
+                if lang == "en":
+                    action_status = "PULLBACK_WATCH"
+                    advice = f"Price ${price} {currency} is consolidating near technical support and intrinsic fair value (${dcf_fair_value} {currency}). Recommend setting price alert at ${ideal_buy_max} {currency}."
+                elif lang == "zh":
+                    action_status = "回调观察期"
+                    advice = f"当前股价 ${price} {currency} 处于技术支撑与公允价值 (${dcf_fair_value} {currency}) 附近整固。建议设置价格提醒于 ${ideal_buy_max} {currency}。"
+                else:
+                    action_status = "回调观察期 (PULLBACK_WATCH)"
+                    advice = f"当前股价 ${price} {currency} 处于技术支撑与公允价值 (${dcf_fair_value} {currency}) 附近整固。建议设置 Price Alert 于 ${ideal_buy_max} {currency}。"
             else:
-                action_status = "回调观察期 (PULLBACK_WATCH)"
-                advice = f"当前股价 ${price} {currency} 处于技术支撑与公允价值 (${dcf_fair_value} {currency}) 附近整固。建议设置 Price Alert 于 ${ideal_buy_max} {currency}。"
+                # Consolidating at technical support while above conservative DCF (e.g. FCX, AMD, VST)
+                if lang == "en":
+                    action_status = "PULLBACK_WATCH"
+                    advice = f"Price ${price} {currency} is consolidating near 200D SMA technical support (${two_hundred_sma} {currency}) while trading above conservative DCF (${dcf_fair_value} {currency}). Recommend setting price alert at ${ideal_buy_max} {currency}."
+                elif lang == "zh":
+                    action_status = "回调观察期"
+                    advice = f"当前股价 ${price} {currency} 处于 200日均线技术支撑 (${two_hundred_sma} {currency}) 附近整固，当前溢价高于保守 DCF 固有价值 (${dcf_fair_value} {currency})。建议设置价格提醒于 ${ideal_buy_max} {currency}。"
+                else:
+                    action_status = "回调观察期 (PULLBACK_WATCH)"
+                    advice = f"当前股价 ${price} {currency} 处于 200D SMA 技术支撑 (${two_hundred_sma} {currency}) 附近整固（高于保守 DCF ${dcf_fair_value} {currency}）。建议设置 Price Alert 于 ${ideal_buy_max} {currency}。"
         elif is_compounder and price <= dcf_fair_value * 1.15:
             if lang == "en":
                 action_status = "PULLBACK_WATCH"
@@ -1164,7 +1247,10 @@ class PricingEngine:
         is_supermarket_holding: bool = False,
         base_fair_value: Optional[float] = None,
         funded_debt_ratio: float = 0.25,
-        is_asset_manager: bool = False
+        is_asset_manager: bool = False,
+        is_midstream: bool = False,
+        is_ipp: bool = False,
+        symbol_upper: str = ""
     ) -> List[List[Dict[str, Any]]]:
         """
         Builds a 5x5 DCF sensitivity matrix across Terminal Growth (rows) and WACC (columns).
@@ -1227,6 +1313,17 @@ class PricingEngine:
                     if is_railroad or is_asset_manager:
                         net_d = total_debt - total_cash
                         net_d_clamp = min(net_d, ev * 0.15) if net_d > 0 else net_d
+                        equity = ev - net_d_clamp
+                    elif is_midstream:
+                        if symbol_upper in {"TRP.TO", "ENB.TO"}:
+                            equity = ev
+                        else:
+                            net_d = total_debt - total_cash
+                            net_d_clamp = min(net_d, ev * 0.35) if net_d > 0 else net_d
+                            equity = ev - (net_d_clamp if net_d_clamp > 0 else 0.0)
+                    elif is_ipp:
+                        net_d = total_debt - total_cash
+                        net_d_clamp = min(net_d, ev * 0.30) if net_d > 0 else net_d
                         equity = ev - net_d_clamp
                     elif is_supermarket_holding:
                         funded_d = min(total_debt * funded_debt_ratio, ev * 0.18)
