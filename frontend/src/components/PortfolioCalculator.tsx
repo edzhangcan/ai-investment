@@ -28,43 +28,16 @@ import {
 import {
   KellyResult,
   EfficientFrontierResponse,
-  LiabilityStressResponse
+  LiabilityStressResponse,
+  PositionBreakdownItem,
+  PortfolioCalculateResponse,
+  DataProvenance
 } from '../types';
 
 interface PortfolioCalculatorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectStock?: (symbol: string) => void;
-}
-
-interface PositionBreakdownItem {
-  symbol: string;
-  company_name: string;
-  market: string;
-  currency: string;
-  current_price: number;
-  target_weight_pct: number;
-  actual_weight_pct: number;
-  target_dollar_amount: number;
-  actual_allocated_amount: number;
-  executable_shares: number;
-  is_ca: boolean;
-  allocation_tier?: string;
-}
-
-interface PortfolioCalculateResponse {
-  cash_balance: number;
-  currency: string;
-  risk_profile: string;
-  risk_profile_label: string;
-  equity_allocation_pct: number;
-  cash_buffer_pct: number;
-  max_per_stock_pct: number;
-  is_barbell?: boolean;
-  total_allocated_dollars: number;
-  residual_unallocated_cash: number;
-  strategy_summary: string;
-  position_breakdown: PositionBreakdownItem[];
 }
 
 export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({

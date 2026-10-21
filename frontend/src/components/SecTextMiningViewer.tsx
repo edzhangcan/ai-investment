@@ -4,6 +4,7 @@ import { BilingualHoverCard } from './BilingualHoverCard';
 import { FileText, TrendingUp, AlertTriangle, ShieldCheck, Database, FileDiff, ShieldAlert, Activity, CheckCircle2 } from 'lucide-react';
 import { ProvenanceBadge } from './ProvenanceBadge';
 import { EarningsQuality, DataProvenance } from '../types';
+import { fetchSecTextMining } from '../api/client';
 
 interface SecTextMiningViewerProps {
   symbol: string;
@@ -42,21 +43,24 @@ export const SecTextMiningViewer: React.FC<SecTextMiningViewerProps> = ({
   const [activeYearIndex, setActiveYearIndex] = useState(0);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchMiningData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://${window.location.hostname || '127.0.0.1'}:8000/api/stock/${symbol}/filings/mining?lang=${language}`);
-        if (res.ok) {
-          const json = await res.json();
-          setData(json);
-        }
-      } catch (e) {
+        const json = await fetchSecTextMining(symbol, language, controller.signal);
+        setData(json);
+      } catch (e: any) {
+        if (e.name === 'AbortError') return;
         console.warn("Text mining fetch error:", e);
       } finally {
         setLoading(false);
       }
     };
     fetchMiningData();
+
+    return () => {
+      controller.abort();
+    };
   }, [symbol, language]);
 
   if (loading) {
