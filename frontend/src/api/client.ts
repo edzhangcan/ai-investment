@@ -115,14 +115,14 @@ export async function syncWatchlistTargetsApi(signal?: AbortSignal): Promise<any
   return res.json();
 }
 
-export async function fetchPushAlertConfig(): Promise<any> {
+export async function fetchPushAlertConfig(signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/push-alerts/config`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Fetch push alert config failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function savePushAlertConfig(discordWebhookUrl: string, isDiscordEnabled: boolean): Promise<any> {
+export async function savePushAlertConfig(discordWebhookUrl: string, isDiscordEnabled: boolean, signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/push-alerts/config`;
   const res = await fetch(url, {
     method: 'POST',
@@ -130,18 +130,20 @@ export async function savePushAlertConfig(discordWebhookUrl: string, isDiscordEn
     body: JSON.stringify({
       discord_webhook_url: discordWebhookUrl,
       is_discord_enabled: isDiscordEnabled
-    })
+    }),
+    signal
   });
   if (!res.ok) throw new Error(`Save push alert config failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function testDiscordWebhook(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
+export async function testDiscordWebhook(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/push-alerts/test`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, lang })
+    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, lang }),
+    signal
   });
   if (!res.ok) {
     const err = await res.json();
@@ -150,12 +152,13 @@ export async function testDiscordWebhook(discordWebhookUrl: string, lang: string
   return res.json();
 }
 
-export async function dispatchMultiTypeDiscordAlert(discordWebhookUrl: string, alertType: string, lang: string = 'en'): Promise<any> {
+export async function dispatchMultiTypeDiscordAlert(discordWebhookUrl: string, alertType: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/push-alerts/dispatch`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, alert_type: alertType, lang })
+    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, alert_type: alertType, lang }),
+    signal
   });
   if (!res.ok) {
     const err = await res.json();
@@ -164,25 +167,25 @@ export async function dispatchMultiTypeDiscordAlert(discordWebhookUrl: string, a
   return res.json();
 }
 
-export async function testMacroDigestAlert(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
-  return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'macro_digest', lang);
+export async function testMacroDigestAlert(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+  return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'macro_digest', lang, signal);
 }
 
-export async function testBundledBuyAlert(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
-  return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'bundled_buy', lang);
+export async function testBundledBuyAlert(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+  return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'bundled_buy', lang, signal);
 }
 
-export async function testSellDangerAlert(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
-  return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'sell_danger', lang);
+export async function testSellDangerAlert(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+  return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'sell_danger', lang, signal);
 }
 
-export async function testGoldNuggetsAlert(discordWebhookUrl: string, lang: string = 'en'): Promise<any> {
-  return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'gold_nuggets', lang);
+export async function testGoldNuggetsAlert(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+  return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'gold_nuggets', lang, signal);
 }
 
-export async function fetchValuationAlertSettings(): Promise<any> {
+export async function fetchValuationAlertSettings(signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/settings/valuation-alerts`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Fetch valuation settings failed: ${res.statusText}`);
   return res.json();
 }
@@ -191,12 +194,13 @@ export async function saveValuationAlertSettings(payload: {
   global_mos_pct: number;
   technical_anchor_mode: string;
   ticker_overrides: Record<string, { target_buy?: number | null; target_sell?: number | null }>;
-}): Promise<any> {
+}, signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/settings/valuation-alerts`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    signal
   });
   if (!res.ok) {
     const err = await res.json();
@@ -205,9 +209,9 @@ export async function saveValuationAlertSettings(payload: {
   return res.json();
 }
 
-export async function resetValuationAlertSettings(): Promise<any> {
+export async function resetValuationAlertSettings(signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/settings/valuation-alerts/reset`;
-  const res = await fetch(url, { method: 'POST' });
+  const res = await fetch(url, { method: 'POST', signal });
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.detail || 'Failed to reset settings');
@@ -215,30 +219,30 @@ export async function resetValuationAlertSettings(): Promise<any> {
   return res.json();
 }
 
-export async function fetchAlertHistoryApi(): Promise<any[]> {
+export async function fetchAlertHistoryApi(signal?: AbortSignal): Promise<any[]> {
   const url = `${getApiBaseUrl()}/api/alerts/history`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Fetch alert history failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function deleteAlertHistoryItemApi(alertId: number): Promise<any> {
+export async function deleteAlertHistoryItemApi(alertId: number, signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/alerts/history/${alertId}`;
-  const res = await fetch(url, { method: 'DELETE' });
+  const res = await fetch(url, { method: 'DELETE', signal });
   if (!res.ok) throw new Error(`Delete alert item failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function clearAllAlertHistoryApi(): Promise<any> {
+export async function clearAllAlertHistoryApi(signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/alerts/history`;
-  const res = await fetch(url, { method: 'DELETE' });
+  const res = await fetch(url, { method: 'DELETE', signal });
   if (!res.ok) throw new Error(`Clear all alert history failed: ${res.statusText}`);
   return res.json();
 }
 
-export async function triggerPriceAlertCheckApi(): Promise<any> {
+export async function triggerPriceAlertCheckApi(signal?: AbortSignal): Promise<any> {
   const url = `${getApiBaseUrl()}/api/alerts/trigger-check`;
-  const res = await fetch(url, { method: 'POST' });
+  const res = await fetch(url, { method: 'POST', signal });
   if (!res.ok) throw new Error(`Trigger price alert check failed: ${res.statusText}`);
   return res.json();
 }

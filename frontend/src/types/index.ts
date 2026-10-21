@@ -166,6 +166,7 @@ export interface DataProvenance {
   fetched_at?: string;
   staleness_seconds?: number;
   warning_banner?: string | null;
+  is_real_time?: boolean;
 }
 
 export interface EarningsQuality {
@@ -251,6 +252,9 @@ export interface CIOVerdict {
   risk_reward_ratio: number;
   judge_summary: string;
   empirical_proof_verified: boolean;
+  falsification_price_level?: number;
+  falsification_trigger_condition?: string;
+  kill_switch_active?: boolean;
   discipline_audit?: {
     is_compliant: boolean;
     audit_verdict: string;
@@ -440,6 +444,39 @@ export interface LiabilityStressResponse {
   is_runway_secure: boolean;
   verdict_en: string;
   verdict_zh: string;
+}
+
+export interface PositionBreakdownItem {
+  symbol: string;
+  company_name: string;
+  market: string;
+  currency: string;
+  current_price: number;
+  target_weight_pct: number;
+  actual_weight_pct: number;
+  target_dollar_amount: number;
+  actual_allocated_amount: number;
+  executable_shares: number;
+  is_ca: boolean;
+  allocation_tier?: string;
+}
+
+export interface PortfolioCalculateResponse {
+  cash_balance: number;
+  currency: string;
+  base_currency?: 'USD' | 'CAD' | string;
+  active_macro_regime?: string;
+  risk_profile: string;
+  risk_profile_label: string;
+  equity_allocation_pct: number;
+  cash_buffer_pct: number;
+  max_per_stock_pct: number;
+  is_barbell?: boolean;
+  total_allocated_dollars: number;
+  residual_unallocated_cash: number;
+  strategy_summary: string;
+  position_breakdown: PositionBreakdownItem[];
+  provenance?: DataProvenance;
 }
 
 // Phase 3: Ergodicity Backtest

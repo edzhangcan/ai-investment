@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import {
   TrendingUp,
   LayoutDashboard,
@@ -110,15 +110,27 @@ export const App: React.FC = () => {
     }
   };
 
+  const stockAbortControllerRef = useRef<AbortController | null>(null);
+  const dashboardAbortControllerRef = useRef<AbortController | null>(null);
+
   const loadDashboard = async (targetCountry: 'US' | 'CA' = macroCountry, forceRefresh: boolean = false) => {
+    if (dashboardAbortControllerRef.current) {
+      dashboardAbortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    dashboardAbortControllerRef.current = controller;
+
     setLoadingDashboard(true);
     try {
-      const data = await fetchMacroDashboard(language, forceRefresh, targetCountry);
+      const data = await fetchMacroDashboard(language, forceRefresh, targetCountry, controller.signal);
       setDashboardData(data);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error("Dashboard fetch error:", err);
     } finally {
-      setLoadingDashboard(false);
+      if (dashboardAbortControllerRef.current === controller) {
+        setLoadingDashboard(false);
+      }
     }
   };
 
@@ -128,16 +140,32 @@ export const App: React.FC = () => {
   }, [language, macroCountry]);
 
   const loadStock = async (sym: string) => {
+    if (stockAbortControllerRef.current) {
+      stockAbortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    stockAbortControllerRef.current = controller;
+
     setLoadingStock(true);
     try {
-      const data = await fetchStockAnalysis(sym, language);
+      const data = await fetchStockAnalysis(sym, language, controller.signal);
       setStockData(data);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error(`Stock fetch error for ${sym}:`, err);
     } finally {
-      setLoadingStock(false);
+      if (stockAbortControllerRef.current === controller) {
+        setLoadingStock(false);
+      }
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (stockAbortControllerRef.current) stockAbortControllerRef.current.abort();
+      if (dashboardAbortControllerRef.current) dashboardAbortControllerRef.current.abort();
+    };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
