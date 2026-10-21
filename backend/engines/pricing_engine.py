@@ -694,6 +694,7 @@ class PricingEngine:
             tv_blended = 0.50 * tv_gordon + 0.50 * tv_exit
             pv_terminal_value = tv_blended / ((1 + wacc) ** 10)
             enterprise_value = pv_10y_fcf + pv_terminal_value
+            funded_ratio = 0.25
 
             # Specialized EV-to-Equity Net Debt Deductions
             if is_regulated_infrastructure and not is_midstream:
@@ -772,6 +773,7 @@ class PricingEngine:
             # ETF / Index or missing FCF default DCF target relative to 200D SMA
             dcf_fair_value = round(max(price * 1.05, two_hundred_sma * 1.10), 2)
             implied_shares_effective = implied_shares
+            funded_ratio = 0.25
             bridge = {
                 "pv_10y_fcf": 0.0,
                 "pv_terminal_value": 0.0,
@@ -1037,6 +1039,9 @@ class PricingEngine:
             "currency": currency,
             "fifty_day_sma": fifty_sma,
             "two_hundred_day_sma": two_hundred_sma,
+            "volume": stock_data.get("volume"),
+            "average_volume": stock_data.get("average_volume"),
+            "historical_series": stock_data.get("historical_series"),
             "pe_ratio": pe if pe is not None else "N/A",
             "valuation_status": val_status,
             "valuation_percentile": val_percentile,

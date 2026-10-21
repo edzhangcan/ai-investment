@@ -1,3 +1,9 @@
+export interface HistoricalPricePoint {
+  date: string;
+  close: number;
+  volume?: number | null;
+}
+
 export interface StockData {
   is_valid?: boolean;
   error?: string;
@@ -17,6 +23,9 @@ export interface StockData {
   net_income?: number | null;
   total_revenue?: number | null;
   revenue_growth?: number | null;
+  volume?: number | null;
+  average_volume?: number | null;
+  historical_series?: HistoricalPricePoint[] | null;
   rsi_14?: number | null;
   dividend_yield_pct?: number | null;
   net_buyback_yield_pct?: number | null;
@@ -211,6 +220,9 @@ export interface PricingData {
   currency: string;
   fifty_day_sma: number;
   two_hundred_day_sma: number;
+  volume?: number | null;
+  average_volume?: number | null;
+  historical_series?: HistoricalPricePoint[] | null;
   pe_ratio?: number | null;
   valuation_status: string;
   valuation_percentile: number;

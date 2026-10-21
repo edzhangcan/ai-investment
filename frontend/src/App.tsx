@@ -701,7 +701,7 @@ export const App: React.FC = () => {
                     );
                   })()}
 
-                  <PricingChart pricingData={stockData.pricing} />
+                  <PricingChart pricingData={stockData.pricing} stockData={stockData.stock} />
                   <DebateArena debateData={stockData.debate} stock={stockData.stock} pricing={stockData.pricing} />
                   <SecTextMiningViewer
                     symbol={stockData.stock.symbol}

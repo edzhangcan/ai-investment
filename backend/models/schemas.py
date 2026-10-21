@@ -45,6 +45,11 @@ class ValuationBridgeSchema(BaseModel):
     valuation_outlier_warning: bool = False
     currency_conversion_note: Optional[str] = None
 
+class HistoricalPricePointSchema(BaseModel):
+    date: str
+    close: float
+    volume: Optional[float] = None
+
 class StockDataSchema(BaseModel):
     symbol: str
     company_name: str
@@ -63,6 +68,9 @@ class StockDataSchema(BaseModel):
     net_income: Optional[float] = None
     total_revenue: Optional[float] = None
     revenue_growth: Optional[float] = None
+    volume: Optional[float] = None
+    average_volume: Optional[float] = None
+    historical_series: Optional[List[HistoricalPricePointSchema]] = None
     rsi_14: float = 50.0
     dividend_yield_pct: Optional[float] = 0.0
     net_buyback_yield_pct: Optional[float] = 0.0
@@ -152,6 +160,9 @@ class PricingAnalysisSchema(BaseModel):
     currency: str
     fifty_day_sma: float
     two_hundred_day_sma: float
+    volume: Optional[float] = None
+    average_volume: Optional[float] = None
+    historical_series: Optional[List[HistoricalPricePointSchema]] = None
     pe_ratio: Optional[float] = None
     valuation_status: str
     valuation_percentile: int
