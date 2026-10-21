@@ -757,6 +757,8 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "VLO": {"fcf": 4200000000, "pe": 9.5, "name": "Valero Energy Corp."},
     "WMB": {"fcf": 2800000000, "pe": 22.1, "name": "Williams Companies"},
     "KMI": {"fcf": 2400000000, "pe": 18.4, "name": "Kinder Morgan Inc."},
+    "ET": {"fcf": 3160000000, "pe": 13.8, "name": "Energy Transfer LP"},
+    "VST": {"fcf": 2850000000, "pe": 26.6, "name": "Vistra Corp."},
 
     # US Financials
     "JPM": {"fcf": 48200000000, "pe": 12.1, "name": "JPMorgan Chase & Co."},
