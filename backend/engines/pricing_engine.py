@@ -9,7 +9,78 @@ from typing import Dict, Any, Optional, List
 from backend.engines.fundamental_engine import FundamentalEngine
 
 class PricingEngine:
-    """Valuation & Technical Timing Engine."""
+    """
+    Valuation & Technical Timing Engine (Universal Valuation 2.0).
+
+    Synthesizes fundamental cash flow generation with market microstructure:
+    1. Multi-Archetype Valuation: Dedicated sub-engines for Financials (Excess Returns / PB-ROE),
+       Rate-Base Utilities (Regulated DDM / Allowed ROE), Asset Managers, Payment Networks,
+       Railroads, Leased Retailers, and High-Growth SaaS Platforms.
+    2. Net Debt Enterprise Bridge: Differentiates operational working capital, debt-free tollbooths,
+       and non-recourse project debt from corporate leverage.
+    3. Dynamic CAPM WACC: Calibrated with Blume beta regression, size premia, and country risk spreads.
+    4. Adaptive Margin of Safety: Calibrates entry discounts (10% - 20%) to business predictability.
+    5. Technical Timing Guardrails: Incorporates 50D/200D SMA support zones and RSI momentum.
+    """
+
+    # 1. PAYMENT NETWORKS:
+    # Asset-light transaction tollbooths with ultra-high ROIC (often >30%).
+    # No balance sheet credit risk or loan loss provisioning. Free cash flow conversion is near 100%.
+    PAYMENT_NETWORK_SYMBOLS: frozenset = frozenset({
+        "V", "MA", "AXP", "FOUR", "PYPL", "FIS", "GPN", "SQ", "ADYEN"
+    })
+
+    # 2. ALTERNATIVE ASSET MANAGERS:
+    # Earnings driven by Fee-Bearing Capital (FBC), contractual management fees, and performance carry.
+    # Core operating parent debt is distinct from asset-level non-recourse portfolio debt.
+    ASSET_MANAGER_SYMBOLS: frozenset = frozenset({
+        "BN.TO", "BN", "BAM.TO", "BAM", "BLK", "BX", "KKR", "APO", "ARES",
+        "POW.TO", "X.TO", "GSY.TO", "EFN.TO", "CG", "OWL"
+    })
+
+    # 3. DEPOSITORY BANKS & LIFE INSURERS:
+    # Debt and customer deposits are operating raw materials, not enterprise leverage.
+    # Standard EV-to-Equity Net Debt deductions produce invalid results; valued via PB-ROE / Excess Returns.
+    DEPOSITORY_AND_INSURANCE_SYMBOLS: frozenset = frozenset({
+        "JPM", "BAC", "C", "GS", "MS", "WFC", "SCHW", "USB", "PNC", "TFC", "COF",
+        "RY.TO", "TD.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "LB.TO", "CWB.TO",
+        "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BRK-B", "BRK.B", "BRK-A", "BRK.A"
+    })
+
+    # 4. REGULATED UTILITIES & MIDSTREAM INFRASTRUCTURE:
+    # Asset-heavy monopolies with regulated rate-bases (ROE guaranteed by regulators)
+    # or long-term take-or-pay volume contracts. High leverage is serviceable via contractual cash flows.
+    INFRASTRUCTURE_SYMBOLS: frozenset = frozenset({
+        "TRP.TO", "ENB.TO", "PPL.TO", "KEY.TO", "GEI.TO", "ALA.TO",
+        "FTS.TO", "EMA.TO", "AQN.TO", "CU.TO", "BIP-UN.TO", "BEP-UN.TO",
+        "KMI", "WMB", "OKE", "ET", "EPD", "NEE", "SO", "DUK", "AEP", "SRE",
+        "AMT", "CCI", "PLD", "EQIX"
+    })
+
+    # 5. CLASS 1 RAILROADS:
+    # Duopolistic linear right-of-way moats that cannot be replicated. Capex is separated into
+    # maintenance track replacement and discretionary capacity expansion.
+    RAILROAD_SYMBOLS: frozenset = frozenset({
+        "CP.TO", "CNR.TO", "CP", "CNI", "UNP", "CSX", "NSC"
+    })
+
+    # 6. LEASED RETAIL & SUPERMARKET CONGLOMERATES:
+    # Balance sheets include substantial IFRS 16 / ASC 842 capitalized right-of-use store lease liabilities.
+    LEASED_RETAIL_SYMBOLS: frozenset = frozenset({
+        "WN.TO", "L.TO", "EMP-A.TO", "MRU.TO", "DOL.TO"
+    })
+
+    RETAIL_GROCERY_SYMBOLS: frozenset = frozenset({
+        "WN.TO", "L.TO", "MRU.TO", "EMP-A.TO", "DOL.TO", "ATD.TO",
+        "KR", "WMT", "COST", "TGT", "DG", "DLTR"
+    })
+
+    # 7. TELECOMMUNICATIONS CARRIERS:
+    # Capital-intensive oligopolies with high recurring ARPU, steady dividend yields, and spectrum moats.
+    TELECOM_SYMBOLS: frozenset = frozenset({
+        "QBR-B.TO", "QBR.B", "QBR-A.TO", "QBR.A", "BCE.TO", "BCE", "T.TO", "RCI-B.TO", "RCI.B", "RCI",
+        "VZ", "T", "TMUS", "CMCSA", "CHTR"
+    })
 
     @classmethod
     def evaluate_pricing_and_entry_zone(
@@ -106,28 +177,16 @@ class PricingEngine:
         industry = (stock_data.get("industry") or "").strip().lower()
         symbol_upper = symbol.upper().strip()
 
-        PAYMENT_NETWORK_SYMBOLS = {
-            "V", "MA", "AXP", "FOUR", "PYPL", "FIS", "GPN", "SQ", "ADYEN"
-        }
         is_payment_network = (
-            symbol_upper in PAYMENT_NETWORK_SYMBOLS or
+            symbol_upper in cls.PAYMENT_NETWORK_SYMBOLS or
             any(p in industry for p in ["credit services", "payment"])
         )
 
-        ASSET_MANAGER_SYMBOLS = {
-            "BN.TO", "BN", "BAM.TO", "BAM", "BLK", "BX", "KKR", "APO", "ARES",
-            "POW.TO", "X.TO", "GSY.TO", "EFN.TO", "CG", "OWL"
-        }
         is_asset_manager = (
-            symbol_upper in ASSET_MANAGER_SYMBOLS or
+            symbol_upper in cls.ASSET_MANAGER_SYMBOLS or
             "asset management" in industry
         )
 
-        DEPOSITORY_AND_INSURANCE_SYMBOLS = {
-            "JPM", "BAC", "C", "GS", "MS", "WFC", "SCHW", "USB", "PNC", "TFC", "COF",
-            "RY.TO", "TD.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "LB.TO", "CWB.TO",
-            "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BRK-B", "BRK.B", "BRK-A", "BRK.A"
-        }
         is_financial = (
             not is_payment_network and
             not is_asset_manager and
@@ -136,21 +195,15 @@ class PricingEngine:
                 "insurance" in sector or 
                 "bank" in industry or 
                 "insurance" in industry or 
-                symbol_upper in DEPOSITORY_AND_INSURANCE_SYMBOLS or
+                symbol_upper in cls.DEPOSITORY_AND_INSURANCE_SYMBOLS or
                 ("financial" in sector and not is_asset_manager and not is_payment_network)
             )
         )
 
-        INFRASTRUCTURE_SYMBOLS = {
-            "TRP.TO", "ENB.TO", "PPL.TO", "KEY.TO", "GEI.TO", "ALA.TO",
-            "FTS.TO", "EMA.TO", "AQN.TO", "CU.TO", "BIP-UN.TO", "BEP-UN.TO",
-            "KMI", "WMB", "OKE", "ET", "EPD", "NEE", "SO", "DUK", "AEP", "SRE",
-            "AMT", "CCI", "PLD", "EQIX"
-        }
         is_regulated_infrastructure = (
             any(s in sector for s in ["utilities", "utility", "real estate"]) or
             any(ind in industry for ind in ["midstream", "regulated", "electric utilities", "gas utilities", "multi-utilities", "reit"]) or
-            symbol_upper in INFRASTRUCTURE_SYMBOLS
+            symbol_upper in cls.INFRASTRUCTURE_SYMBOLS
         )
         is_utility = (
             "utilit" in sector or "utilit" in industry or
@@ -162,38 +215,28 @@ class PricingEngine:
             any(c in industry for c in ["oil", "gas", "mining", "exploration", "refining", "steel", "chemical", "copper", "gold"])
         ) and not is_regulated_infrastructure and not is_utility
 
-        RAILROAD_SYMBOLS = {"CP.TO", "CNR.TO", "CP", "CNI", "UNP", "CSX", "NSC"}
         is_railroad = (
-            symbol_upper in RAILROAD_SYMBOLS or
+            symbol_upper in cls.RAILROAD_SYMBOLS or
             "railroad" in industry or
             "rail" in industry
         )
 
-        LEASED_RETAIL_SYMBOLS = {"WN.TO", "L.TO", "EMP-A.TO", "MRU.TO", "DOL.TO"}
         is_supermarket_holding = (
-            symbol_upper in LEASED_RETAIL_SYMBOLS or
+            symbol_upper in cls.LEASED_RETAIL_SYMBOLS or
             "grocery" in industry or
             "supermarket" in industry or
             "discount stores" in industry
         )
 
-        RETAIL_GROCERY_SYMBOLS = {
-            "WN.TO", "L.TO", "MRU.TO", "EMP-A.TO", "DOL.TO", "ATD.TO",
-            "KR", "WMT", "COST", "TGT", "DG", "DLTR"
-        }
         is_retail_or_grocery = (
-            symbol_upper in RETAIL_GROCERY_SYMBOLS or
+            symbol_upper in cls.RETAIL_GROCERY_SYMBOLS or
             is_supermarket_holding or
             "food retail" in industry or
             ("retail" in industry and ("consumer defensive" in sector or "defensive" in sector))
         )
 
-        TELECOM_SYMBOLS = {
-            "QBR-B.TO", "QBR.B", "QBR-A.TO", "QBR.A", "BCE.TO", "BCE", "T.TO", "RCI-B.TO", "RCI.B", "RCI",
-            "VZ", "T", "TMUS", "CMCSA", "CHTR"
-        }
         is_telecom = (
-            symbol_upper in TELECOM_SYMBOLS or
+            symbol_upper in cls.TELECOM_SYMBOLS or
             "telecom" in industry.lower() or
             "telecommunication" in industry.lower()
         )
@@ -730,7 +773,14 @@ class PricingEngine:
         val_percentile = round(max(30.0, min(95.0, dcf_pts + ma_pts + pe_pts)), 1)
 
         # 3. Technical Support & Institutional Adaptive Margin of Safety Buy Bracket Synthesis
-        # Margin of Safety factor: Custom override or Adaptive based on asset-class and multiple
+        #
+        # Business Rationale for Adaptive Margin of Safety:
+        # A static 20% margin of safety penalizes high-predictability utility/financial dividends
+        # with permanent cash drag, while underprotecting against multiple compression in high-beta tech.
+        # - Regulated Utilities & Depository Banks: 10% MoS (contractual/authorized ROE floor).
+        # - High Multiple Equities (P/E > 38): 20% MoS (multiple compression buffer).
+        # - Low Multiple / Defensive (P/E < 20): 10% MoS (prevents value-trap cash drag).
+        # - Standard Compounders: 15% MoS (balanced Graham & Dodd baseline).
         if custom_mos_pct is not None:
             clamped_mos = max(10.0, min(30.0, float(custom_mos_pct)))
             mos_discount = round(1.0 - (clamped_mos / 100.0), 4)
@@ -746,7 +796,8 @@ class PricingEngine:
 
         dcf_target = round(dcf_fair_value * mos_discount, 2)
 
-        # Technical Support Pullback Anchor based on anchor_mode
+        # Technical Support Pullback Anchor based on anchor_mode:
+        # Prevents setting price targets that are technically disconnected from market realities.
         if anchor_mode == "strict_200d":
             # Strict 200D SMA support: anchor entry at 200D SMA support
             technical_anchor = round(min(two_hundred_sma * 1.0, price * 0.95), 2)
@@ -796,9 +847,14 @@ class PricingEngine:
         if ideal_buy_min >= ideal_buy_max:
             ideal_buy_min = round(ideal_buy_max * 0.88, 2)
 
-        # Universal 200D SMA Support Convergence Guardrail:
-        # If stock is consolidating within 5% of its 200D SMA (institutional cost basis support),
-        # calibrate entry ceiling to technical moving average support
+        # =========================================================================
+        # Universal 200D SMA Support Convergence Guardrail (PL-710):
+        # =========================================================================
+        # When an institutional quality asset consolidates within 5% of its 200-day
+        # simple moving average, institutional accumulation is active. If the DCF
+        # target sits slightly lower due to conservative terminal growth assumptions,
+        # forcing the buy zone far below 200D SMA causes investors to miss entire cycles.
+        # This guardrail calibrates the ceiling to technical cost-basis support.
         if price <= two_hundred_sma * 1.05:
             ideal_buy_max = max(ideal_buy_max, round(min(price * 0.98, two_hundred_sma * 1.02), 2))
             ideal_buy_min = round(min(ideal_buy_max * 0.88, two_hundred_sma * 0.90), 2)
