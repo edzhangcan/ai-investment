@@ -729,9 +729,9 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "GOOGL": {"fcf": 69500000000, "pe": 24.8, "name": "Alphabet Inc."},
     "AMZN": {"fcf": 53000000000, "pe": 41.2, "name": "Amazon.com Inc."},
     "META": {"fcf": 43000000000, "pe": 25.6, "name": "Meta Platforms Inc."},
-    "AVGO": {"fcf": 19600000000, "pe": 32.4, "name": "Broadcom Inc."},
+    "AVGO": {"fcf": 30600000000, "pe": 43.1, "name": "Broadcom Inc."},
     "ORCL": {"fcf": 11800000000, "pe": 38.2, "name": "Oracle Corporation"},
-    "AMD": {"fcf": 1420000000, "pe": 115.0, "name": "Advanced Micro Devices"},
+    "AMD": {"fcf": 8840000000, "pe": 115.0, "name": "Advanced Micro Devices"},
     "CRM": {"fcf": 12400000000, "pe": 44.5, "name": "Salesforce Inc."},
     "ADBE": {"fcf": 7800000000, "pe": 42.1, "name": "Adobe Inc."},
     "CSCO": {"fcf": 12800000000, "pe": 15.6, "name": "Cisco Systems Inc."},
@@ -773,12 +773,12 @@ REAL_UNIVERSE_FINANCIALS: Dict[str, Dict[str, Any]] = {
 
     # US Consumer & Industrials
     "TSLA": {"fcf": 4400000000, "pe": 65.2, "name": "Tesla Inc."},
-    "COST": {"fcf": 6700000000, "pe": 52.1, "name": "Costco Wholesale"},
-    "WMT": {"fcf": 15100000000, "pe": 31.8, "name": "Walmart Inc."},
+    "COST": {"fcf": 6750000000, "pe": 48.0, "name": "Costco Wholesale"},
+    "WMT": {"fcf": 15100000000, "pe": 42.9, "name": "Walmart Inc."},
     "PG": {"fcf": 18200000000, "pe": 26.4, "name": "Procter & Gamble"},
     "HD": {"fcf": 16500000000, "pe": 24.8, "name": "Home Depot Inc."},
     "UNH": {"fcf": 29100000000, "pe": 22.5, "name": "UnitedHealth Group"},
-    "LLY": {"fcf": 8200000000, "pe": 68.4, "name": "Eli Lilly & Co."},
+    "LLY": {"fcf": 11060000000, "pe": 42.8, "name": "Eli Lilly & Co."},
     "JNJ": {"fcf": 18400000000, "pe": 15.8, "name": "Johnson & Johnson"},
     "V": {"fcf": 20400000000, "pe": 30.2, "name": "Visa Inc."},
     "MA": {"fcf": 13800000000, "pe": 35.6, "name": "Mastercard Inc."},
@@ -1114,13 +1114,31 @@ class DataProviderManager:
                         live_ps = info.get("priceToSalesTrailing12Months")
                         if live_ps and float(live_ps) > 0:
                             ps_ratio = round(float(live_ps), 1)
+                        live_ocf = None
+                        if info.get("operatingCashflow"):
+                            try:
+                                val_ocf = float(info.get("operatingCashflow"))
+                                if val_ocf != 0:
+                                    live_ocf = val_ocf
+                                    op_cash_flow = live_ocf
+                            except Exception:
+                                pass
+
                         live_fcf = info.get("freeCashflow")
                         if live_fcf and float(live_fcf) != 0:
                             live_fcf_f = float(live_fcf)
                             if free_cash_flow and free_cash_flow > 0:
-                                # Guard against noisy single-quarter spikes or quarterly data overriding annual 10-K/SEDAR baseline
                                 ratio = live_fcf_f / free_cash_flow
-                                if 0.85 <= ratio <= 1.50:
+                                # 1. Normal year-over-year variation range (0.85x to 1.50x)
+                                is_normal_range = (0.85 <= ratio <= 1.50)
+                                # 2. Verified expansion: higher than historical baseline, but corroborated by live operating cash flow
+                                is_corroborated_growth = (
+                                    ratio > 1.50 and
+                                    live_ocf is not None and
+                                    live_ocf > 0 and
+                                    0.25 <= (live_fcf_f / live_ocf) <= 1.05
+                                )
+                                if is_normal_range or is_corroborated_growth:
                                     free_cash_flow = live_fcf_f
                                 else:
                                     logger.info(
@@ -1137,13 +1155,6 @@ class DataProviderManager:
                             total_debt = float(info.get("totalDebt"))
                         if info.get("totalCash"):
                             total_cash = float(info.get("totalCash"))
-                        if info.get("operatingCashflow"):
-                            try:
-                                live_ocf = float(info.get("operatingCashflow"))
-                                if live_ocf > 0:
-                                    op_cash_flow = live_ocf
-                            except Exception:
-                                pass
                         if info.get("beta"):
                             beta_val = float(info.get("beta"))
                         if info.get("financialCurrency"):
