@@ -17,8 +17,11 @@ import {
   Scale,
   AlertTriangle,
   Building2,
-  DollarSign
+  DollarSign,
+  Radio
 } from 'lucide-react';
+import { CentralBankSpeechStreamer } from './CentralBankSpeechStreamer';
+
 
 interface MacroDashboardProps {
   macroData: MacroData;
@@ -42,9 +45,11 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
   const { t, language } = useLanguage();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshToast, setRefreshToast] = useState<string | null>(null);
+  const [showSpeechStreamer, setShowSpeechStreamer] = useState<boolean>(true);
 
   const activeCountry: 'US' | 'CA' = selectedCountry || (macroData.country as 'US' | 'CA') || 'US';
   const isCA = activeCountry === 'CA';
+  const isZh = language === 'zh';
 
   const handleRefresh = async () => {
     if (!onRefreshMacro || isRefreshing) return;
@@ -274,6 +279,20 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
             <Building2 className="w-3.5 h-3.5 text-brand" />
             <span>{isCA ? 'BoC' : 'Fed'}: {activeSentiment.tone}</span>
           </span>
+
+          {/* Toggle Live Speech Stream Button */}
+          <button
+            type="button"
+            onClick={() => setShowSpeechStreamer(!showSpeechStreamer)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              showSpeechStreamer
+                ? 'bg-brand/10 border border-brand/30 text-brand shadow-sm'
+                : 'prism-surface-subtle border border-border-subtle text-content-muted hover:text-content-primary'
+            }`}
+          >
+            <Radio className={`w-3.5 h-3.5 ${showSpeechStreamer ? 'animate-pulse text-brand' : ''}`} />
+            <span>{isZh ? (showSpeechStreamer ? '收起央行发言流' : '实时央行发言流') : (showSpeechStreamer ? 'Hide Speech Stream' : 'Live Speech Stream')}</span>
+          </button>
         </div>
       </div>
 
@@ -289,6 +308,12 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
         </div>
         <p className="text-content-secondary">{macroData.plain_explanation}</p>
       </div>
+
+      {/* Central Bank Speech Streaming & Real-Time NLP Section (PL-705) */}
+      {showSpeechStreamer && (
+        <CentralBankSpeechStreamer country={activeCountry} />
+      )}
+
 
       {/* Big Picture Macro & 4-Layer Gold Board */}
       <div className="mb-8">

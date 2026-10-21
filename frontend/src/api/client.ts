@@ -1,4 +1,4 @@
-import { StockAnalysisResponse, MacroData } from '../types';
+import { StockAnalysisResponse, MacroData, CentralBankSpeechMetadata } from '../types';
 
 export const getApiBaseUrl = () => {
   if (typeof window !== 'undefined' && window.location && window.location.hostname) {
@@ -242,4 +242,17 @@ export async function triggerPriceAlertCheckApi(): Promise<any> {
   if (!res.ok) throw new Error(`Trigger price alert check failed: ${res.statusText}`);
   return res.json();
 }
+
+export async function fetchCentralBankSpeeches(country?: 'US' | 'CA', signal?: AbortSignal): Promise<CentralBankSpeechMetadata[]> {
+  const query = country ? `?country=${country}` : '';
+  const url = `${getApiBaseUrl()}/api/macro/speeches${query}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`Fetch speeches failed: ${res.statusText}`);
+  return res.json();
+}
+
+export function getSpeechStreamUrl(speechId: string, speed: number = 1.0, lang: string = 'en'): string {
+  return `${getApiBaseUrl()}/api/macro/speech/${speechId}/stream?speed=${speed}&lang=${lang}`;
+}
+
 

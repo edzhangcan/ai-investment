@@ -504,3 +504,48 @@ export interface BacktestResultData {
   yearly_returns?: Record<string, number>;
   yearly_risk_free_rates?: Record<string, number>;
 }
+
+// PL-705: Central Bank Speech Streaming Types
+export interface SpeechSegment {
+  index: number;
+  speaker: string;
+  text: string;
+  timestamp?: string;
+  hawkish_terms: string[];
+  dovish_terms: string[];
+  segment_sentiment: number;
+  cumulative_score: number;
+  stance: string;
+}
+
+export interface CentralBankSpeechMetadata {
+  id: string;
+  title: string;
+  central_bank: string;
+  country: 'US' | 'CA' | string;
+  speaker: string;
+  date: string;
+  baseline_score: number;
+  total_segments: number;
+  event_type: string;
+}
+
+export interface CentralBankSpeechStreamEvent {
+  event_type: 'init' | 'chunk' | 'complete' | 'error' | 'heartbeat';
+  metadata?: CentralBankSpeechMetadata;
+  segment?: SpeechSegment;
+  total_segments?: number;
+  progress_pct?: number;
+  final_score?: number;
+  baseline_score?: number;
+  stance_delta?: number;
+  final_stance?: string;
+  market_implications?: {
+    treasury_yields?: string;
+    equity_multiples?: string;
+    fx_impact?: string;
+    barbell_strategy?: string;
+  };
+  error?: string;
+}
+
