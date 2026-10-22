@@ -22,8 +22,8 @@ from backend.agents.agent_arena import MultiAgentArena
 
 router = APIRouter(tags=["Multi-Agent Debate Streaming"])
 
-def _run_debate_for_ticker(ticker: str, lang: str = "en") -> dict:
-    stock_data = DataProviderManager.get_stock_data(ticker)
+def _run_debate_for_ticker(ticker: str, lang: str = "en", force_refresh: bool = False) -> dict:
+    stock_data = DataProviderManager.get_stock_data(ticker, force_refresh=force_refresh)
     symbol = ticker.strip().upper()
     is_ca = (
         stock_data.get("market") == "CA"
@@ -41,7 +41,8 @@ def _run_debate_for_ticker(ticker: str, lang: str = "en") -> dict:
         pricing_data,
         fundamental_data,
         lang=lang,
-        country=country
+        country=country,
+        verify_filings=force_refresh
     )
 
 @router.websocket("/ws/debate/{ticker}")
@@ -94,16 +95,17 @@ async def stream_debate(websocket: WebSocket, ticker: str):
 
 @router.post("/api/debate/{symbol}")
 @router.get("/api/debate/{symbol}")
-def run_and_save_debate(symbol: str, lang: str = "en", session: Optional[Session] = Depends(get_session)):
+def run_and_save_debate(symbol: str, lang: str = "en", force_refresh: bool = False, session: Optional[Session] = Depends(get_session)):
     """
     Executes multi-agent debate (Opening, Round 2 Rebuttals, CIO Verdict),
     persists transcript and falsification trigger to SQLite, and returns DebateTranscriptSchema.
+    Bypasses local quote cache and verifies SEC/SEDAR filings when force_refresh=True.
     """
     if not symbol or len(symbol.strip()) == 0:
         raise HTTPException(status_code=400, detail="Symbol cannot be empty")
 
     clean_sym = symbol.strip().upper()
-    debate_result = _run_debate_for_ticker(clean_sym, lang=lang)
+    debate_result = _run_debate_for_ticker(clean_sym, lang=lang, force_refresh=force_refresh)
 
     # Persist transcript to SQLite
     try:

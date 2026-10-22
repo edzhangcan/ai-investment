@@ -139,7 +139,7 @@ export const App: React.FC = () => {
     fetchWatchlistSymbols();
   }, [language, macroCountry]);
 
-  const loadStock = async (sym: string) => {
+  const loadStock = async (sym: string, forceRefresh: boolean = false) => {
     if (stockAbortControllerRef.current) {
       stockAbortControllerRef.current.abort();
     }
@@ -148,7 +148,7 @@ export const App: React.FC = () => {
 
     setLoadingStock(true);
     try {
-      const data = await fetchStockAnalysis(sym, language, controller.signal);
+      const data = await fetchStockAnalysis(sym, language, controller.signal, forceRefresh);
       setStockData(data);
     } catch (err: any) {
       if (err.name === 'AbortError') return;
@@ -702,7 +702,12 @@ export const App: React.FC = () => {
                   })()}
 
                   <PricingChart pricingData={stockData.pricing} stockData={stockData.stock} />
-                  <DebateArena debateData={stockData.debate} stock={stockData.stock} pricing={stockData.pricing} />
+                  <DebateArena
+                    debateData={stockData.debate}
+                    stock={stockData.stock}
+                    pricing={stockData.pricing}
+                    onRefreshDebate={(force) => loadStock(stockData.stock.symbol, force ?? true)}
+                  />
                   <SecTextMiningViewer
                     symbol={stockData.stock.symbol}
                     earningsQuality={stockData.pricing?.earnings_quality}

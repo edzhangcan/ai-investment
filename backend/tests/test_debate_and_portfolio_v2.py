@@ -165,6 +165,23 @@ def test_us07_debate_sse_stream_endpoint():
         assert "cio_verdict" in stage3
         assert "falsification_price_level" in stage3
 
+def test_pl716_debate_and_stock_force_refresh_ground_truth_verification():
+    """Verify that force_refresh=true parameter bypasses cache and upgrades debate to verified filing ground truth."""
+    # 1. Test GET /api/stock/AAPL?force_refresh=true
+    stock_res = client.get("/api/stock/AAPL?force_refresh=true&lang=en")
+    assert stock_res.status_code == 200
+    s_data = stock_res.json()
+    assert "stock" in s_data
+    assert "debate" in s_data
+    assert s_data["debate"]["provenance"]["source_mode"] == "LIVE"
+
+    # 2. Test POST /api/debate/AAPL?force_refresh=true
+    debate_res = client.post("/api/debate/AAPL?force_refresh=true&lang=zh")
+    assert debate_res.status_code == 200
+    d_data = debate_res.json()
+    assert d_data["provenance"]["source_mode"] == "LIVE"
+    assert "Verified" in d_data["provenance"]["data_source"] or "Gemini" in d_data["provenance"]["data_source"]
+    assert d_data["cio_verdict"]["empirical_proof_verified"] is True
 
 # ==============================================================================
 # US-08: Correlated Kelly & Multi-Currency Barbell Verification

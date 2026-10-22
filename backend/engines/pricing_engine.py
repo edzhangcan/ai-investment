@@ -88,7 +88,20 @@ class PricingEngine:
     # Capital-intensive oligopolies with high recurring ARPU, steady dividend yields, and spectrum moats.
     TELECOM_SYMBOLS: frozenset = frozenset({
         "QBR-B.TO", "QBR.B", "QBR-A.TO", "QBR.A", "BCE.TO", "BCE", "T.TO", "RCI-B.TO", "RCI.B", "RCI",
-        "VZ", "T", "TMUS", "CMCSA", "CHTR"
+        "VZ", "T", "TMUS", "CHTR"
+    })
+
+    # 8. PRECIOUS METALS ROYALTY & STREAMING:
+    # Asset-light financing entities with zero mining operations, zero sustaining capex liabilities,
+    # and fixed-price purchase contracts. High cash margins (70-80%) and low capital intensity.
+    METALS_ROYALTY_SYMBOLS: frozenset = frozenset({
+        "FNV", "FNV.TO", "WPM", "WPM.TO", "OR", "OR.TO", "SAND", "SAND.TO", "ALS.TO", "RGLD", "TFPM"
+    })
+
+    # 9. SENIOR METALS & MINING TIER-1 CHAMPIONS:
+    # Global multi-asset producers with large reserves, low-cost Tier-1 mining complexes, and decades of mine life.
+    SENIOR_MINING_CHAMPIONS: frozenset = frozenset({
+        "AEM.TO", "AEM", "ABX.TO", "ABX", "GOLD", "FCX", "SCCO", "BHP", "RIO", "VALE", "NEM"
     })
 
     @classmethod
@@ -232,7 +245,24 @@ class PricingEngine:
             and not is_ipp
         )
 
+        is_metals_royalty = (
+            symbol_upper in cls.METALS_ROYALTY_SYMBOLS or
+            any(r in industry for r in ["royalty", "streaming"]) or
+            any(r in (stock_data.get("company_name") or "").lower() for r in ["royalty", "royalties"])
+        )
+
+        is_mining_materials = (
+            symbol_upper in cls.SENIOR_MINING_CHAMPIONS or
+            any(m in industry for m in [
+                "gold", "copper", "silver", "metals", "mining", "other industrial metals & mining", 
+                "precious metals & mining", "aluminum", "steel", "coking coal", "mineral", "iron & steel",
+                "other precious metals & mining"
+            ]) or
+            any(m in sector for m in ["basic materials", "materials"])
+        ) and not is_regulated_infrastructure and not is_utility and not is_midstream and not is_metals_royalty
+
         is_commodity_cyclical = (
+            is_mining_materials or
             any(c in sector for c in ["energy", "material", "materials"]) or
             any(c in industry for c in ["oil", "gas", "mining", "exploration", "refining", "steel", "chemical", "copper", "gold"])
         ) and not is_regulated_infrastructure and not is_utility and not is_midstream
@@ -336,7 +366,17 @@ class PricingEngine:
             market_cap=market_cap,
             is_financial=is_financial
         )
-        terminal_growth = 0.025 if (is_regulated_infrastructure or is_utility or is_telecom) else 0.03
+
+        # Institutional Metals & Mining Cost of Capital Prudential Hurdle Floor
+        # Resource extraction carries physical geological depletion, permitting, jurisdictional, and commodity price cycle volatility.
+        # Trailing safe-haven or inflation-hedge betas (e.g. gold acting as portfolio hedge) cannot artificially compress mining WACC below institutional hurdle rates.
+        if is_mining_materials:
+            wacc = max(0.0885, wacc)
+
+        terminal_growth = (
+            0.018 if is_mining_materials
+            else (0.025 if (is_regulated_infrastructure or is_utility or is_telecom) else 0.03)
+        )
 
         # Net buyback yield
         net_buyback_yield = float(
@@ -428,7 +468,11 @@ class PricingEngine:
             and not is_regulated_infrastructure
             and (roic >= 0.10 or rev_growth >= 0.06 or raw_rev_growth >= 0.10 or symbol_upper == "FCX")
         )
-        if total_capex > 0 and is_railroad:
+        if total_capex > 0 and is_mining_materials:
+            # In metals & mining, sustaining capex (waste stripping, underground development, tailing storage facilities)
+            # is essential to maintain baseline throughput and cannot be credited back as discretionary owner cash flow.
+            growth_capex_credit = 0.0
+        elif total_capex > 0 and is_railroad:
             # Transcontinental railroads: 35% of capex is network capacity expansion, siding extensions, and acquisition integration
             growth_capex_credit = total_capex * 0.35
         elif total_capex > 0 and is_retail_or_grocery and is_wide_moat and (rev_growth >= 0.04 or symbol_upper in {"WMT", "COST", "DOL.TO"}):
@@ -462,6 +506,9 @@ class PricingEngine:
             # Mature telecom network capital intensity normalization:
             # Reinvestments in 5G spectrum and fiber buildouts mean sustainable FCF margin is bounded at 18% of revenue
             owner_fcf = raw_rev * 0.18
+        elif is_mining_materials and market_cap > 0 and (base_fcf / market_cap > 0.075):
+            # Institutional Metals & Mining peak-cycle normalization: FCF yield capped at 6.5% mid-cycle market cap
+            owner_fcf = market_cap * 0.065
         elif is_commodity_cyclical and market_cap > 0 and (base_fcf / market_cap > 0.09):
             # Energy & Mining peak cycle normalization: FCF yield capped at 8.0% mid-cycle market cap
             owner_fcf = market_cap * 0.08
@@ -489,6 +536,18 @@ class PricingEngine:
             exit_multiple = 16.0 if (is_wide_moat or roic >= 0.15) else 14.5
         elif symbol_upper == "SMCI":
             exit_multiple = 14.0
+        elif is_metals_royalty:
+            # Precious metals royalty & streaming operators (FNV, WPM, OR, ALS.TO)
+            exit_multiple = 19.0 if is_wide_moat else 17.5
+        elif is_mining_materials:
+            # Institutional Metals & Mining Valuation Archetype (BMO / Scotiabank Global Mining Standards)
+            if symbol_upper in cls.SENIOR_MINING_CHAMPIONS or (is_wide_moat and roic >= 0.15):
+                exit_multiple = 10.5
+            elif any(g in industry for g in ["gold", "copper", "silver", "precious metals"]):
+                exit_multiple = 9.0
+            else:
+                # Steel, aluminum, bulk commodities, specialty chemicals (TECK-B.TO, NUE, CLF, AA, STLD)
+                exit_multiple = 8.5
         elif is_wide_moat and roic >= 0.20:
             exit_multiple = 25.0
         elif is_wide_moat or (("Narrow" in str(moat_rating) or "窄" in str(moat_rating)) and roic >= 0.15):
@@ -592,6 +651,8 @@ class PricingEngine:
                 "fair_value_per_share": fair_value_per_share,
                 "dynamic_wacc_used": wacc,
                 "valuation_outlier_warning": outlier_warning,
+                "is_mining_materials": is_mining_materials,
+                "is_metals_royalty": is_metals_royalty,
                 "currency_conversion_note": bridge_note
             }
 
@@ -653,6 +714,8 @@ class PricingEngine:
                 "fair_value_per_share": fair_value_per_share,
                 "dynamic_wacc_used": wacc,
                 "valuation_outlier_warning": outlier_warning,
+                "is_mining_materials": is_mining_materials,
+                "is_metals_royalty": is_metals_royalty,
                 "currency_conversion_note": bridge_note
             }
 
@@ -691,7 +754,15 @@ class PricingEngine:
             tv_exit = curr_fcf * exit_multiple
 
             # 3. 50/50 Institutional Wall Street & Morningstar Blend
-            tv_blended = 0.50 * tv_gordon + 0.50 * tv_exit
+            if is_mining_materials:
+                # Physical Life-of-Mine (LoM) Reserve Depletion Adjustment:
+                # Mineral reserves are finite and depleting. Perpetual Gordon Growth past Year 10
+                # requires massive replacement discovery, permitting, and construction capex drag.
+                # Apply an institutional 0.65x LoM reserve exhaustion factor to Gordon perpetual value.
+                tv_gordon_effective = tv_gordon * 0.65
+                tv_blended = 0.50 * tv_gordon_effective + 0.50 * tv_exit
+            else:
+                tv_blended = 0.50 * tv_gordon + 0.50 * tv_exit
             pv_terminal_value = tv_blended / ((1 + wacc) ** 10)
             enterprise_value = pv_10y_fcf + pv_terminal_value
             funded_ratio = 0.25
@@ -767,6 +838,8 @@ class PricingEngine:
                 "fair_value_per_share": fair_value_per_share,
                 "dynamic_wacc_used": wacc,
                 "valuation_outlier_warning": outlier_warning,
+                "is_mining_materials": is_mining_materials,
+                "is_metals_royalty": is_metals_royalty,
                 "currency_conversion_note": currency_conversion_note
             }
         else:
@@ -789,6 +862,8 @@ class PricingEngine:
                 "fair_value_per_share": dcf_fair_value,
                 "dynamic_wacc_used": wacc,
                 "valuation_outlier_warning": False,
+                "is_mining_materials": is_mining_materials,
+                "is_metals_royalty": is_metals_royalty,
                 "currency_conversion_note": currency_conversion_note
             }
 

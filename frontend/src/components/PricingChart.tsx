@@ -147,12 +147,13 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, stockDa
 
   return (
     <div className="prism-card p-5 mb-6 transition-all">
-      {/* Top Header & Range Controls */}
+      {/* Top Header: Identity, Provenance, Taxonomy & Valuation Anchors */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 border-b border-border-subtle pb-3">
         <div>
           <div className="flex items-center gap-2 text-xs text-content-muted font-semibold flex-wrap">
             <Target className="w-4 h-4 text-positive" />
-            <span>{t.pricingOverlay}</span>
+            <span className="text-sm font-bold text-content-primary">{t.pricingOverlay}</span>
+            <ProvenanceBadge provenance={pricingData.provenance} />
             {taxonomy && (
               <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${
                 taxonomy.taxonomy === 'TREE'
@@ -164,67 +165,39 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, stockDa
                 {language === 'zh' ? taxonomy.badge_zh : taxonomy.badge_en}
               </span>
             )}
-            <ProvenanceBadge provenance={pricingData.provenance} />
           </div>
-          <h3 className="text-base font-bold text-content-primary mt-1">
-            {dcfApplicable ? (
-              <>
-                {t.idealBuyRange}: <span className="text-positive">${buyMin} – ${buyMax} {currency}</span>
-              </>
-            ) : (
-              <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4" />
-                {language === 'zh' ? '种菜股：无基本面安全边际买入区间' : 'Vegetable Stock: No Fundamental DCF Buy Zone'}
-              </span>
-            )}
-          </h3>
-          <p className="text-[11px] text-content-muted mt-0.5">
+          <p className="text-[11px] text-content-muted mt-1">
             {t.chartSubtitleHelp}
           </p>
         </div>
 
-        {/* Time Horizon & Scale Selector Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Log / Linear Toggle Button */}
-          <button
-            onClick={() => setIsLog(!isLog)}
-            className={`h-7 px-2.5 rounded-xl font-bold text-xs border transition-all inline-flex items-center gap-1 cursor-pointer box-border ${
-              isLog
-                ? 'bg-brand text-white border-brand shadow-sm'
-                : 'bg-surface-subtle text-content-secondary border-border-subtle hover:text-content-primary'
-            }`}
-            title="Toggle between Logarithmic Scale and Linear Scale"
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>{isLog ? t.logScaleLabel : t.linearScaleLabel}</span>
-          </button>
-
-          <div className="flex bg-surface-subtle p-1 rounded-xl border border-border-subtle text-xs">
-            {(['1M', '3M', '6M', '1Y', '5Y'] as const).map((tf) => (
-              <button
-                key={tf}
-                onClick={() => setTimeframe(tf)}
-                className={`h-7 px-2.5 rounded-lg font-bold transition-all inline-flex items-center cursor-pointer box-border ${
-                  timeframe === tf
-                    ? 'bg-brand text-white shadow-sm'
-                    : 'text-content-secondary hover:text-content-primary hover:bg-surface'
-                }`}
-              >
-                {tf}
-              </button>
-            ))}
-          </div>
-
-          {dcfApplicable && (
-            <div className="text-xs font-medium text-content-secondary flex items-center gap-1.5 bg-surface-subtle px-3 py-1.5 rounded-xl border border-border-subtle shadow-sm">
-              <span>
-                <BilingualHoverCard termKey="DCF">
-                  {t.fairValue}
-                </BilingualHoverCard>:
-              </span>
-              <span className="font-extrabold text-warning font-mono"> ${dcfFairValue} {currency}</span>
+        {/* Right Side: Ideal Buy Range & Fair Value Anchors */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="text-left md:text-right">
+            <div className="text-base font-bold text-content-primary">
+              {dcfApplicable ? (
+                <>
+                  <span className="text-xs font-semibold text-content-muted">{t.idealBuyRange}: </span>
+                  <span className="text-positive">${buyMin} – ${buyMax} {currency}</span>
+                </>
+              ) : (
+                <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1.5 text-xs font-bold">
+                  <AlertTriangle className="w-4 h-4" />
+                  {language === 'zh' ? '种菜股：无基本面安全边际买入区间' : 'Vegetable Stock: No Fundamental DCF Buy Zone'}
+                </span>
+              )}
             </div>
-          )}
+            {dcfApplicable && (
+              <div className="text-xs font-medium text-content-secondary flex items-center md:justify-end gap-1.5 mt-0.5">
+                <span>
+                  <BilingualHoverCard termKey="DCF">
+                    {t.fairValue}
+                  </BilingualHoverCard>:
+                </span>
+                <span className="font-extrabold text-warning font-mono">${dcfFairValue} {currency}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -290,69 +263,104 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, stockDa
         </div>
       </div>
 
-      {/* Layer Toggles & Shareholder Yield Callout */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3 prism-surface-subtle p-2.5 text-xs">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-content-muted font-semibold flex items-center gap-1">
-            <Sliders className="w-3.5 h-3.5 text-brand" />
-            <span>Chart Overlays:</span>
-          </span>
-
-          <label className="flex items-center gap-1.5 cursor-pointer text-content-secondary font-medium hover:text-content-primary">
-            <input
-              type="checkbox"
-              checked={show50D}
-              onChange={(e) => setShow50D(e.target.checked)}
-              className="accent-brand rounded"
-            />
-            <span>
-              <BilingualHoverCard termKey="SMA50">
-                50D SMA
-              </BilingualHoverCard> (${fiftySma})
-            </span>
-          </label>
-
-          <label className="flex items-center gap-1.5 cursor-pointer text-content-secondary font-medium hover:text-content-primary">
-            <input
-              type="checkbox"
-              checked={show200D}
-              onChange={(e) => setShow200D(e.target.checked)}
-              className="accent-brand rounded"
-            />
-            <span>
-              <BilingualHoverCard termKey="SMA200">
-                200D SMA
-              </BilingualHoverCard> (${twoHundredSma})
-            </span>
-          </label>
-
-          {dcfApplicable && (
-            <label className="flex items-center gap-1.5 cursor-pointer text-warning font-medium">
-              <input
-                type="checkbox"
-                checked={showDCF}
-                onChange={(e) => setShowDCF(e.target.checked)}
-                className="accent-warning rounded"
-              />
-              <span>
-                <BilingualHoverCard termKey="DCF">
-                  DCF Fair Value
-                </BilingualHoverCard> (${dcfFairValue})
-              </span>
-            </label>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Total Shareholder Yield Pill */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-semibold">
-            <Layers className="w-3.5 h-3.5" />
-            <span>{t.shareholderYieldLabel}:</span>
-            <span className="font-extrabold font-mono">{shareholderYield}%</span>
+      {/* Chart Diagram Toolbar: Timeframe Horizons, Scale Mode & Technical Overlays (Placed Next to Diagram) */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3 prism-surface-subtle p-2.5 rounded-xl border border-border-subtle text-xs">
+        {/* Left: Timeframe Horizon Selector (1M/3M/6M/1Y/5Y) and Linear / Log Scale Toggle */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex bg-surface p-0.5 rounded-lg border border-border-subtle text-xs">
+            {(['1M', '3M', '6M', '1Y', '5Y'] as const).map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                className={`h-6 px-2.5 rounded-md font-bold transition-all inline-flex items-center cursor-pointer box-border ${
+                  timeframe === tf
+                    ? 'bg-brand text-white shadow-sm'
+                    : 'text-content-secondary hover:text-content-primary hover:bg-surface-subtle'
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
           </div>
 
-          <div className="text-content-secondary font-medium">
-            Current Price: <span className="font-bold text-content-primary">${currentPrice} {currency}</span>
+          {/* Log / Linear Toggle Button */}
+          <button
+            onClick={() => setIsLog(!isLog)}
+            className={`h-6 px-2.5 rounded-lg font-bold text-xs border transition-all inline-flex items-center gap-1 cursor-pointer box-border ${
+              isLog
+                ? 'bg-brand text-white border-brand shadow-sm'
+                : 'bg-surface text-content-secondary border-border-subtle hover:text-content-primary'
+            }`}
+            title="Toggle between Logarithmic Scale and Linear Scale"
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>{isLog ? t.logScaleLabel : t.linearScaleLabel}</span>
+          </button>
+        </div>
+
+        {/* Right: Technical Overlays (50D, 200D, DCF) and Shareholder Yield */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-content-muted font-semibold flex items-center gap-1">
+              <Sliders className="w-3.5 h-3.5 text-brand" />
+              <span>Overlays:</span>
+            </span>
+
+            <label className="flex items-center gap-1.5 cursor-pointer text-content-secondary font-medium hover:text-content-primary">
+              <input
+                type="checkbox"
+                checked={show50D}
+                onChange={(e) => setShow50D(e.target.checked)}
+                className="accent-brand rounded"
+              />
+              <span>
+                <BilingualHoverCard termKey="SMA50">
+                  50D SMA
+                </BilingualHoverCard> (${fiftySma})
+              </span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer text-content-secondary font-medium hover:text-content-primary">
+              <input
+                type="checkbox"
+                checked={show200D}
+                onChange={(e) => setShow200D(e.target.checked)}
+                className="accent-brand rounded"
+              />
+              <span>
+                <BilingualHoverCard termKey="SMA200">
+                  200D SMA
+                </BilingualHoverCard> (${twoHundredSma})
+              </span>
+            </label>
+
+            {dcfApplicable && (
+              <label className="flex items-center gap-1.5 cursor-pointer text-warning font-medium">
+                <input
+                  type="checkbox"
+                  checked={showDCF}
+                  onChange={(e) => setShowDCF(e.target.checked)}
+                  className="accent-warning rounded"
+                />
+                <span>
+                  <BilingualHoverCard termKey="DCF">
+                    DCF Fair Value
+                  </BilingualHoverCard> (${dcfFairValue})
+                </span>
+              </label>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            {/* Total Shareholder Yield Pill */}
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-semibold text-[11px]">
+              <Layers className="w-3.5 h-3.5" />
+              <span>{t.shareholderYieldLabel}: <span className="font-mono font-extrabold">{shareholderYield}%</span></span>
+            </div>
+
+            <div className="text-content-secondary font-medium text-xs">
+              <span className="font-bold text-content-primary font-mono">${currentPrice} {currency}</span>
+            </div>
           </div>
         </div>
       </div>

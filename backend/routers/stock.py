@@ -18,17 +18,18 @@ from backend.agents.agent_arena import MultiAgentArena
 router = APIRouter(prefix="/api/stock", tags=["Stock Analyzer"])
 
 @router.get("/{ticker}")
-def analyze_stock(ticker: str, lang: str = "en", session: Optional[Session] = Depends(get_session)):
+def analyze_stock(ticker: str, lang: str = "en", force_refresh: bool = False, session: Optional[Session] = Depends(get_session)):
     """
     Synthesizes stock metrics, fundamental analysis, valuation models, technical overlays,
     and runs the Bull vs Bear vs CIO multi-agent debate in target language (en, zh, hybrid).
     Respects user-configured Margin of Safety (MoS) and technical anchor mode settings.
+    Bypasses local quote cache and verifies SEC/SEDAR filings when force_refresh=True.
     """
     if not ticker or len(ticker.strip()) == 0:
         raise HTTPException(status_code=400, detail="Ticker symbol cannot be empty")
 
     symbol = ticker.strip().upper()
-    stock_data = DataProviderManager.get_stock_data(symbol)
+    stock_data = DataProviderManager.get_stock_data(symbol, force_refresh=force_refresh)
 
     # Detect country: CA for TSX/TSXV tickers or CAD currency or market == CA
     is_ca = (
@@ -59,7 +60,15 @@ def analyze_stock(ticker: str, lang: str = "en", session: Optional[Session] = De
         custom_mos_pct=custom_mos,
         anchor_mode=anchor_mode
     )
-    debate_data = MultiAgentArena.run_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang, country=country)
+    debate_data = MultiAgentArena.run_debate(
+        stock_data,
+        macro_data,
+        pricing_data,
+        fundamental_data,
+        lang=lang,
+        country=country,
+        verify_filings=force_refresh
+    )
     news_data = NewsClient.fetch_stock_news(symbol)
     profile_data = fundamental_data.get("company_profile")
 

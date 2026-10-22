@@ -113,6 +113,9 @@ export interface Translations {
   roundTwoRebuttalTitle: string;
   bullRebuttalTitle: string;
   bearRebuttalTitle: string;
+  retrieveGroundTruthBtn: string;
+  retrievingGroundTruth: string;
+  groundTruthVerifiedSuccess: string;
   cioVerdict: string;
   riskReward: string;
   recommendedBuyBracket: string;
@@ -489,6 +492,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     roundTwoRebuttalTitle: "Round 2: Adversarial Cross-Examination",
     bullRebuttalTitle: "Bull Agent Rebuttal",
     bearRebuttalTitle: "Bear Agent Rebuttal",
+    retrieveGroundTruthBtn: "Retrieve Ground Truth",
+    retrievingGroundTruth: "Retrieving Filings...",
+    groundTruthVerifiedSuccess: "Audited filing facts verified and updated!",
     cioVerdict: "Chief Investment Officer (CIO) Final Verdict",
     riskReward: "Risk / Reward Ratio",
     recommendedBuyBracket: "Recommended Entry Bracket",
@@ -856,6 +862,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     roundTwoRebuttalTitle: "第二轮：多空交叉辩论与反驳",
     bullRebuttalTitle: "多头辩护人反驳",
     bearRebuttalTitle: "空头公诉人反驳",
+    retrieveGroundTruthBtn: "拉取财报真实数据",
+    retrievingGroundTruth: "正在拉取实时财报...",
+    groundTruthVerifiedSuccess: "已拉取并验证最新审计财报真实数据！",
     cioVerdict: "首席投资官 (CIO) 最终裁决",
     riskReward: "风险/收益比",
     recommendedBuyBracket: "建议买入区间",
@@ -1223,6 +1232,9 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     roundTwoRebuttalTitle: "第二轮交叉反驳 (Round 2 Cross-Examination)",
     bullRebuttalTitle: "多头反驳 (Bull Rebuttal)",
     bearRebuttalTitle: "空头反驳 (Bear Rebuttal)",
+    retrieveGroundTruthBtn: "拉取财报真实数据 (Retrieve Ground Truth)",
+    retrievingGroundTruth: "正在拉取实时财报 (Retrieving Filings...)",
+    groundTruthVerifiedSuccess: "已拉取并验证最新审计财报真实数据 (Ground Truth Verified!)",
     cioVerdict: "CIO 最终裁决 (Chief Investment Officer Verdict)",
     riskReward: "风险/收益比 (Risk / Reward)",
     recommendedBuyBracket: "建议买入区间 (Entry Bracket)",
