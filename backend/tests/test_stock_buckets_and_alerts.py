@@ -266,3 +266,135 @@ def test_sell_off_holding_endpoint(client: TestClient, session: Session):
     assert db_item.bucket == "REGULAR"
     assert db_item.last_sell_price == 440.0
     assert db_item.realized_pnl_pct == 10.0
+
+
+def test_shares_and_total_value_tracking(client: TestClient, session: Session, monkeypatch):
+    """
+    PL-721 Fix 1: When user moves a stock into HOLDING, track shares_held and total_value.
+    Total value = shares_held * current_price.
+    Unrealized P&L $ = total_value - total_cost.
+    """
+    from backend.data_sources.data_provider import DataProviderManager
+    with DataProviderManager._LOCK:
+        DataProviderManager._CACHE["TESTVAL"] = {
+            "symbol": "TESTVAL",
+            "current_price": 200.0,
+            "two_hundred_day_sma": 190.0,
+            "fifty_day_sma": 195.0,
+            "company_name": "Test Valuation Corp"
+        }
+
+    res = client.post("/api/watchlist/set-bucket", json={
+        "symbol": "TESTVAL",
+        "company_name": "Test Valuation Corp",
+        "bucket": "HOLDING",
+        "buy_in_price": 180.0,
+        "buy_in_date": "2026-10-10",
+        "shares_held": 50.0
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["symbol"] == "TESTVAL"
+    assert data["bucket"] == "HOLDING"
+    assert data["shares_held"] == 50.0
+    assert data["buy_in_price"] == 180.0
+    assert data["current_price"] == 200.0
+    assert data["total_value"] == 10000.0  # 50 * 200.0
+    assert data["total_cost"] == 9000.0    # 50 * 180.0
+    assert data["unrealized_pnl_dollar"] == 1000.0
+    assert data["unrealized_pnl_pct"] == 11.11
+
+
+def test_scale_in_additional_buy_blending(client: TestClient, session: Session):
+    """
+    PL-721 Fix 2: When stock is already in HOLDING, additional buy-in blends
+    cost basis via weighted average: (s1*p1 + s2*p2) / (s1 + s2).
+    """
+    from backend.data_sources.data_provider import DataProviderManager
+    with DataProviderManager._LOCK:
+        DataProviderManager._CACHE["SCALE"] = {
+            "symbol": "SCALE",
+            "current_price": 150.0,
+            "two_hundred_day_sma": 130.0,
+            "company_name": "Scale Corp"
+        }
+
+    # 1. Initial buy: 10 shares @ $100
+    res1 = client.post("/api/watchlist/set-bucket", json={
+        "symbol": "SCALE",
+        "company_name": "Scale Corp",
+        "bucket": "HOLDING",
+        "buy_in_price": 100.0,
+        "buy_in_date": "2026-10-01",
+        "shares_held": 10.0
+    })
+    assert res1.status_code == 200
+    d1 = res1.json()
+    assert d1["shares_held"] == 10.0
+    assert d1["buy_in_price"] == 100.0
+
+    # 2. Additional buy-in: +10 shares @ $140
+    res2 = client.post("/api/watchlist/set-bucket", json={
+        "symbol": "SCALE",
+        "company_name": "Scale Corp",
+        "bucket": "HOLDING",
+        "buy_in_price": 140.0,
+        "buy_in_date": "2026-10-22",
+        "shares_held": 10.0,
+        "is_additional_buy": True
+    })
+    assert res2.status_code == 200
+    d2 = res2.json()
+    assert d2["shares_held"] == 20.0
+    # Weighted average: (10*100 + 10*140) / 20 = 2400 / 20 = 120.0
+    assert d2["buy_in_price"] == 120.0
+    assert d2["total_cost"] == 2400.0
+    assert d2["total_value"] == 3000.0  # 20 * 150.0
+    assert d2["unrealized_pnl_dollar"] == 600.0
+    assert d2["unrealized_pnl_pct"] == 25.0
+
+
+def test_portfolio_total_value_and_dynamic_allocation(client: TestClient, session: Session):
+    """
+    PL-721 Fix 4: Portfolio total value = sum(stock_total_value across all holdings).
+    Dynamic allocation % = (stock_total_value / portfolio_total_value) * 100.
+    """
+    from backend.data_sources.data_provider import DataProviderManager
+    with DataProviderManager._LOCK:
+        DataProviderManager._CACHE["PORT1"] = {"symbol": "PORT1", "current_price": 100.0, "company_name": "P1"}
+        DataProviderManager._CACHE["PORT2"] = {"symbol": "PORT2", "current_price": 100.0, "company_name": "P2"}
+
+    # Stock 1: 25 shares @ $100 -> value $2,500
+    client.post("/api/watchlist/set-bucket", json={
+        "symbol": "PORT1",
+        "company_name": "P1",
+        "bucket": "HOLDING",
+        "buy_in_price": 100.0,
+        "buy_in_date": "2026-10-01",
+        "shares_held": 25.0
+    })
+
+    # Stock 2: 75 shares @ $100 -> value $7,500
+    client.post("/api/watchlist/set-bucket", json={
+        "symbol": "PORT2",
+        "company_name": "P2",
+        "bucket": "HOLDING",
+        "buy_in_price": 100.0,
+        "buy_in_date": "2026-10-01",
+        "shares_held": 75.0
+    })
+
+    res = client.get("/api/watchlist?bucket=HOLDING")
+    assert res.status_code == 200
+    holdings = {it["symbol"]: it for it in res.json()}
+
+    # Total portfolio value = $2,500 + $7,500 = $10,000 (plus any existing holdings if present)
+    p1 = holdings["PORT1"]
+    p2 = holdings["PORT2"]
+    assert p1["total_value"] == 2500.0
+    assert p2["total_value"] == 7500.0
+
+    # P1 allocation should be 2500 / total, P2 should be 7500 / total
+    # Specifically, ratio of P1 to P2 should be 1:3
+    assert p2["portfolio_allocation_pct"] == round(p1["portfolio_allocation_pct"] * 3, 2)
+

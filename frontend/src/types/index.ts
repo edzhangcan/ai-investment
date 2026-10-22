@@ -616,6 +616,9 @@ export interface StockTrackingItem {
   last_sell_date?: string;
   realized_pnl_pct?: number;
   current_price?: number;
+  total_value?: number;
+  total_cost?: number;
+  unrealized_pnl_dollar?: number;
   unrealized_pnl_pct?: number;
   falsification_floor?: number;
   batting_zone?: string;
@@ -632,6 +635,7 @@ export interface SetBucketPayload {
   target_buy_price?: number;
   target_sell_price?: number;
   portfolio_allocation_pct?: number;
+  is_additional_buy?: boolean;
 }
 
 export interface SellHoldingPayload {

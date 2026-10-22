@@ -49,6 +49,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   const [newTarget, setNewTarget] = useState('');
   const [newBuyPrice, setNewBuyPrice] = useState('');
   const [newAlloc, setNewAlloc] = useState('3.0');
+  const [newShares, setNewShares] = useState('10');
 
   // Modal states for item actions
   const [activeModalItem, setActiveModalItem] = useState<StockTrackingItem | null>(null);
@@ -134,7 +135,8 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
       bucket: newBucket,
       target_buy_price: newTarget ? parseFloat(newTarget) : undefined,
       buy_in_price: newBuyPrice ? parseFloat(newBuyPrice) : undefined,
-      portfolio_allocation_pct: parseFloat(newAlloc) || 3.0,
+      shares_held: newBucket === 'HOLDING' ? (parseFloat(newShares) || 10) : undefined,
+      portfolio_allocation_pct: newBucket === 'WATCHLIST' ? (parseFloat(newAlloc) || 3.0) : undefined,
     };
 
     try {
@@ -144,6 +146,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
       setNewName('');
       setNewTarget('');
       setNewBuyPrice('');
+      setNewShares('10');
       if (onWatchlistChange) onWatchlistChange();
     } catch (e) {
       console.warn("Failed to add stock tracking item:", e);
@@ -162,6 +165,28 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
 
   const holdings = items.filter((it) => it.bucket === 'HOLDING');
   const watchlist = items.filter((it) => it.bucket === 'WATCHLIST' || !it.bucket);
+
+  const portfolioTotalValue = holdings.reduce((sum, h) => {
+    if (h.total_value !== undefined && h.total_value !== null) {
+      return sum + h.total_value;
+    }
+    const shares = h.shares_held || 0;
+    const price = h.current_price || h.buy_in_price || 0;
+    return sum + (shares * price);
+  }, 0);
+
+  const portfolioTotalCost = holdings.reduce((sum, h) => {
+    if (h.total_cost !== undefined && h.total_cost !== null) {
+      return sum + h.total_cost;
+    }
+    const shares = h.shares_held || 0;
+    const costPrice = h.buy_in_price || 0;
+    return sum + (shares * costPrice);
+  }, 0);
+
+  const portfolioPnlDollar = portfolioTotalValue - portfolioTotalCost;
+  const portfolioPnlPct = portfolioTotalCost > 0 ? ((portfolioTotalValue - portfolioTotalCost) / portfolioTotalCost) * 100 : 0;
+  const isPortfolioPositive = portfolioPnlDollar >= 0;
 
   const openSellOffModal = (item: StockTrackingItem) => {
     setActiveModalItem(item);
@@ -294,32 +319,46 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
 
             <div className="grid grid-cols-2 gap-2">
               {newBucket === 'HOLDING' ? (
-                <input
-                  type="number"
-                  step="0.01"
-                  value={newBuyPrice}
-                  onChange={(e) => setNewBuyPrice(e.target.value)}
-                  placeholder="Buy-In Price ($)"
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:border-brand shadow-sm"
-                />
+                <>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={newBuyPrice}
+                    onChange={(e) => setNewBuyPrice(e.target.value)}
+                    placeholder="Buy-In Price ($)"
+                    className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:border-brand shadow-sm font-semibold"
+                  />
+                  <input
+                    type="number"
+                    step="1"
+                    min="0.001"
+                    value={newShares}
+                    onChange={(e) => setNewShares(e.target.value)}
+                    placeholder="Shares to Buy"
+                    className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:border-brand shadow-sm font-semibold"
+                  />
+                </>
               ) : (
-                <input
-                  type="number"
-                  step="0.01"
-                  value={newTarget}
-                  onChange={(e) => setNewTarget(e.target.value)}
-                  placeholder="Target Buy Price ($)"
-                  className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:border-brand shadow-sm"
-                />
+                <>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newTarget}
+                    onChange={(e) => setNewTarget(e.target.value)}
+                    placeholder="Target Buy Price ($)"
+                    className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:border-brand shadow-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={newAlloc}
+                    onChange={(e) => setNewAlloc(e.target.value)}
+                    placeholder="Alloc % (max 4.0%)"
+                    className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:border-brand shadow-sm"
+                  />
+                </>
               )}
-              <input
-                type="number"
-                step="0.5"
-                value={newAlloc}
-                onChange={(e) => setNewAlloc(e.target.value)}
-                placeholder="Alloc % (max 4.0%)"
-                className="bg-surface border border-border-subtle rounded-xl px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:border-brand shadow-sm"
-              />
             </div>
 
             <button
@@ -342,7 +381,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
 
           {/* TAB 1: HOLDINGS */}
           {activeTab === 'HOLDINGS' && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-content-muted uppercase tracking-wider">
                   Active Holdings ({holdings.length})
@@ -352,6 +391,44 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                 </span>
               </div>
 
+              {/* Portfolio Value Summary Card */}
+              {holdings.length > 0 && (
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-surface to-surface-subtle border border-border-subtle shadow-sm space-y-3">
+                  <div className="flex items-center justify-between text-xs font-semibold text-content-muted">
+                    <span className="flex items-center gap-1.5 text-content-primary font-bold">
+                      <Briefcase className="w-4 h-4 text-brand" />
+                      <span>Total Portfolio Value</span>
+                    </span>
+                    <span className="prism-badge-neutral text-[10px]">
+                      {holdings.length} {holdings.length === 1 ? 'Position' : 'Positions'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-baseline justify-between flex-wrap gap-2">
+                    <div className="text-2xl font-black tracking-tight text-content-primary">
+                      ${portfolioTotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div className={`px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 ${
+                      isPortfolioPositive 
+                        ? 'bg-positive/10 text-positive border border-positive/20' 
+                        : 'bg-negative/10 text-negative border border-negative/20'
+                    }`}>
+                      <TrendingUp className={`w-3.5 h-3.5 ${!isPortfolioPositive ? 'rotate-180' : ''}`} />
+                      <span>
+                        {isPortfolioPositive ? '+' : ''}${portfolioPnlDollar.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({isPortfolioPositive ? '+' : ''}{portfolioPnlPct.toFixed(2)}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-content-muted pt-2 border-t border-border-subtle">
+                    <span>Total Cost Basis:</span>
+                    <span className="font-semibold text-content-secondary">
+                      ${portfolioTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {loading && holdings.length === 0 ? (
                 <div className="text-center py-6 text-xs text-content-muted">Loading holdings...</div>
               ) : holdings.length === 0 ? (
@@ -360,13 +437,19 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                 </div>
               ) : (
                 holdings.map((item) => {
-                  const pnl = item.unrealized_pnl_pct ?? 0;
+                  const stockValue = item.total_value ?? ((item.shares_held || 0) * (item.current_price || item.buy_in_price || 0));
+                  const stockCost = item.total_cost ?? ((item.shares_held || 0) * (item.buy_in_price || 0));
+                  const pnlDollar = item.unrealized_pnl_dollar ?? (stockValue - stockCost);
+                  const pnl = item.unrealized_pnl_pct ?? (stockCost > 0 ? ((stockValue - stockCost) / stockCost) * 100 : 0);
                   const isPositive = pnl >= 0;
+                  const allocPct = portfolioTotalValue > 0 ? (stockValue / portfolioTotalValue) * 100 : (item.portfolio_allocation_pct || 0);
+
                   return (
                     <div
                       key={item.symbol}
-                      className="prism-card p-3.5 hover:border-brand transition-all flex flex-col gap-2 rounded-xl border border-border-subtle bg-surface"
+                      className="prism-card p-3.5 hover:border-brand transition-all flex flex-col gap-3 rounded-xl border border-border-subtle bg-surface"
                     >
+                      {/* Top Row: Symbol, Market, Company & Unrealized Return */}
                       <div className="flex items-start justify-between">
                         <div 
                           className="cursor-pointer"
@@ -389,24 +472,75 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                         {/* Realized / Unrealized P&L */}
                         <div className="text-right">
                           <div className={`text-sm font-black ${isPositive ? 'text-positive' : 'text-negative'}`}>
-                            {isPositive ? '+' : ''}{pnl.toFixed(2)}%
+                            {isPositive ? '+' : ''}${pnlDollar.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
-                          <div className="text-[10px] text-content-muted">
-                            Cost: ${item.buy_in_price?.toFixed(2) || '--'}
+                          <div className={`text-[11px] font-semibold ${isPositive ? 'text-positive' : 'text-negative'}`}>
+                            {isPositive ? '+' : ''}{pnl.toFixed(2)}%
                           </div>
                         </div>
                       </div>
 
-                      {/* Floor & Exit Warning */}
+                      {/* Position Value and Shares Matrix */}
+                      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-surface-subtle border border-border-subtle text-xs">
+                        <div>
+                          <span className="text-[10px] text-content-muted block">Position Value</span>
+                          <span className="font-bold text-content-primary">
+                            ${stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-content-muted block">Shares Held</span>
+                          <span className="font-semibold text-content-secondary">
+                            {item.shares_held != null ? `${item.shares_held} sh` : '--'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-content-muted block">Avg Cost</span>
+                          <span className="font-semibold text-content-secondary">
+                            ${item.buy_in_price?.toFixed(2) || '--'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-content-muted block">Current Price</span>
+                          <span className="font-semibold text-content-secondary">
+                            ${item.current_price?.toFixed(2) || '--'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Dynamic Portfolio Allocation Bar */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-content-muted">Portfolio Allocation</span>
+                          <span className="font-bold text-brand">{allocPct.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-surface-subtle border border-border-subtle rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-brand rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(100, Math.max(0, allocPct))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Floor & Action Buttons */}
                       <div className="flex items-center justify-between text-[11px] pt-2 border-t border-border-subtle">
                         <div className="flex items-center gap-1.5 text-content-secondary">
-                          <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+                          <ShieldAlert className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                           <span>
                             Floor: ${item.falsification_floor?.toFixed(2) || '--'}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openBuyInModal(item)}
+                            className="px-2.5 py-1 text-[11px] font-bold bg-brand/10 hover:bg-brand text-brand hover:text-white rounded-lg transition-all cursor-pointer flex items-center gap-1"
+                            title="Execute additional buy-in to blend cost basis"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>{t.buyInBtn || "Buy In"}</span>
+                          </button>
                           <button
                             type="button"
                             onClick={() => openSellOffModal(item)}
@@ -602,6 +736,8 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
             symbol={activeModalItem.symbol}
             companyName={activeModalItem.company_name}
             currentPrice={activeModalItem.current_price || activeModalItem.target_buy_price || 0}
+            existingShares={activeModalItem.bucket === 'HOLDING' ? activeModalItem.shares_held : undefined}
+            existingBuyInPrice={activeModalItem.bucket === 'HOLDING' ? activeModalItem.buy_in_price : undefined}
             onSuccess={() => {
               fetchTrackedStocks();
               setActiveTab('HOLDINGS');

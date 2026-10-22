@@ -13,6 +13,7 @@ interface StockBucketBadgeProps {
   currentPrice: number;
   buyInPrice?: number;
   buyInDate?: string;
+  sharesHeld?: number;
   onBucketChange?: (newBucket: StockBucket) => void;
   className?: string;
 }
@@ -24,6 +25,7 @@ export const StockBucketBadge: React.FC<StockBucketBadgeProps> = ({
   currentPrice,
   buyInPrice,
   buyInDate,
+  sharesHeld,
   onBucketChange,
   className = ''
 }) => {
@@ -33,13 +35,15 @@ export const StockBucketBadge: React.FC<StockBucketBadgeProps> = ({
   const [isPending, setIsPending] = useState(false);
 
   const handleSelect = async (targetBucket: StockBucket) => {
-    if (targetBucket === currentBucket || isPending) return;
+    if (isPending) return;
 
-    // Case 1: Switching to HOLDING requires logging purchase details
+    // Case 1: Switching to HOLDING or adding to active HOLDING
     if (targetBucket === 'HOLDING') {
       setIsBuyInOpen(true);
       return;
     }
+
+    if (targetBucket === currentBucket) return;
 
     // Case 2: Switching away from an active HOLDING requires executing disciplined sell-off
     if (currentBucket === 'HOLDING') {
@@ -109,10 +113,10 @@ export const StockBucketBadge: React.FC<StockBucketBadgeProps> = ({
           onClick={() => handleSelect('HOLDING')}
           className={`h-7 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
             currentBucket === 'HOLDING'
-              ? 'bg-brand text-white shadow-xs font-bold border border-brand'
+              ? 'bg-brand text-white shadow-xs font-bold border border-brand hover:brightness-105'
               : 'text-content-muted hover:text-content-primary'
           }`}
-          title="Owned Portfolio Holding (Falsification Floor Active)"
+          title={currentBucket === 'HOLDING' ? "Owned Portfolio Holding • Click to buy more shares" : "Owned Portfolio Holding (Falsification Floor Active)"}
         >
           <Briefcase className="w-3.5 h-3.5 shrink-0" />
           <span>{t.bucketHolding}</span>
@@ -126,6 +130,8 @@ export const StockBucketBadge: React.FC<StockBucketBadgeProps> = ({
         symbol={symbol}
         companyName={companyName}
         currentPrice={currentPrice}
+        existingShares={currentBucket === 'HOLDING' ? sharesHeld : undefined}
+        existingBuyInPrice={currentBucket === 'HOLDING' ? buyInPrice : undefined}
         onSuccess={() => {
           if (onBucketChange) onBucketChange('HOLDING');
         }}

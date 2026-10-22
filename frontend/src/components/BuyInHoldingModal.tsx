@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Briefcase, Calendar, DollarSign, ShieldAlert, Check } from 'lucide-react';
+import { X, Briefcase, Calendar, DollarSign, ShieldAlert, Check, Layers, TrendingUp } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { setStockBucketApi } from '../api/client';
 import { StockTrackingItem } from '../types';
@@ -10,7 +10,8 @@ interface BuyInHoldingModalProps {
   symbol: string;
   companyName: string;
   currentPrice: number;
-  initialAllocation?: number;
+  existingShares?: number;
+  existingBuyInPrice?: number;
   onSuccess?: (item: StockTrackingItem) => void;
 }
 
@@ -20,26 +21,43 @@ export const BuyInHoldingModal: React.FC<BuyInHoldingModalProps> = ({
   symbol,
   companyName,
   currentPrice,
-  initialAllocation = 3.0,
+  existingShares,
+  existingBuyInPrice,
   onSuccess
 }) => {
   const { t } = useLanguage();
   const todayStr = new Date().toISOString().split('T')[0];
 
+  const isAdditionalBuy = existingShares !== undefined && existingShares > 0;
+
   const [buyPrice, setBuyPrice] = useState<string>(currentPrice > 0 ? currentPrice.toString() : '');
   const [buyDate, setBuyDate] = useState<string>(todayStr);
-  const [allocation, setAllocation] = useState<string>(initialAllocation.toString());
-  const [shares, setShares] = useState<string>('');
+  const [shares, setShares] = useState<string>('10');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
+  const priceNum = parseFloat(buyPrice) || 0;
+  const sharesNum = parseFloat(shares) || 0;
+  const transactionTotal = priceNum * sharesNum;
+
+  // Blended calculations if adding to existing position
+  const prevShares = existingShares || 0;
+  const prevPrice = existingBuyInPrice || 0;
+  const prevCost = prevShares * prevPrice;
+  const newTotalShares = prevShares + sharesNum;
+  const newTotalCost = prevCost + transactionTotal;
+  const blendedAvgPrice = newTotalShares > 0 ? newTotalCost / newTotalShares : priceNum;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const priceNum = parseFloat(buyPrice);
-    if (isNaN(priceNum) || priceNum <= 0) {
+    if (priceNum <= 0) {
       setErrorMsg("Please enter a valid buy-in price.");
+      return;
+    }
+    if (sharesNum <= 0) {
+      setErrorMsg("Please specify the number of shares to buy.");
       return;
     }
 
@@ -52,8 +70,8 @@ export const BuyInHoldingModal: React.FC<BuyInHoldingModalProps> = ({
         bucket: 'HOLDING',
         buy_in_price: priceNum,
         buy_in_date: buyDate || todayStr,
-        portfolio_allocation_pct: parseFloat(allocation) || 3.0,
-        shares_held: shares ? parseFloat(shares) : undefined
+        shares_held: sharesNum,
+        is_additional_buy: isAdditionalBuy
       });
       if (onSuccess) onSuccess(res);
       onClose();
@@ -81,7 +99,7 @@ export const BuyInHoldingModal: React.FC<BuyInHoldingModalProps> = ({
             </div>
             <div>
               <h3 id="buy-in-modal-title" className="text-base font-bold text-content-primary">
-                {t.logHoldingTitle}
+                {isAdditionalBuy ? "Additional Buy-In (Scale-In)" : t.logHoldingTitle}
               </h3>
               <p className="text-xs text-content-muted">
                 {symbol} • {companyName}
@@ -91,11 +109,27 @@ export const BuyInHoldingModal: React.FC<BuyInHoldingModalProps> = ({
           <button 
             type="button" 
             onClick={onClose} 
-            className="p-1 text-content-muted hover:text-content-primary rounded-lg"
+            className="p-1 text-content-muted hover:text-content-primary rounded-lg cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Existing Position Card if Additional Buy */}
+        {isAdditionalBuy && (
+          <div className="p-3 mb-4 rounded-xl bg-surface-subtle border border-border-subtle flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-brand shrink-0" />
+              <div>
+                <span className="font-semibold text-content-primary">Current Position:</span>
+                <span className="text-content-secondary ml-1">{prevShares} shares @ ${prevPrice.toFixed(2)}</span>
+              </div>
+            </div>
+            <span className="font-bold text-brand">
+              ${(prevShares * (currentPrice || prevPrice)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+        )}
 
         {/* Informative Discipline Callout */}
         <div className="p-3 mb-4 rounded-xl bg-brand/5 border border-brand/20 text-xs text-content-secondary flex items-start gap-2">
@@ -111,84 +145,118 @@ export const BuyInHoldingModal: React.FC<BuyInHoldingModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-content-primary mb-1.5 flex items-center gap-1">
+                <DollarSign className="w-3.5 h-3.5 text-brand" />
+                <span>{isAdditionalBuy ? "Buy Price ($)" : t.buyInPrice}</span>
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                required
+                value={buyPrice}
+                onChange={(e) => setBuyPrice(e.target.value)}
+                className="w-full bg-surface border border-border-subtle rounded-xl px-3 py-2 text-sm text-content-primary focus:outline-none focus:border-brand shadow-sm font-semibold"
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-content-primary mb-1.5 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-brand" />
+                <span>{t.buyInDate}</span>
+              </label>
+              <input
+                type="date"
+                required
+                value={buyDate}
+                onChange={(e) => setBuyDate(e.target.value)}
+                className="w-full bg-surface border border-border-subtle rounded-xl px-3 py-2 text-sm text-content-primary focus:outline-none focus:border-brand shadow-sm"
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="block text-xs font-bold text-content-primary mb-1.5 flex items-center gap-1">
-              <DollarSign className="w-3.5 h-3.5 text-brand" />
-              <span>{t.buyInPrice}</span>
+            <label className="block text-xs font-bold text-content-primary mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <TrendingUp className="w-3.5 h-3.5 text-brand" />
+                <span>{isAdditionalBuy ? "Additional Shares to Buy" : "Number of Shares to Buy"}</span>
+              </span>
+              {transactionTotal > 0 && (
+                <span className="text-[11px] text-content-muted">
+                  Outlay: ${transactionTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              )}
             </label>
             <input
               type="number"
-              step="0.01"
+              step="1"
+              min="0.001"
               required
-              value={buyPrice}
-              onChange={(e) => setBuyPrice(e.target.value)}
-              className="w-full bg-surface border border-border-subtle rounded-xl px-3 py-2 text-sm text-content-primary focus:outline-none focus:border-brand shadow-sm"
-              placeholder="0.00"
+              value={shares}
+              onChange={(e) => setShares(e.target.value)}
+              placeholder="e.g. 50"
+              className="w-full bg-surface border border-border-subtle rounded-xl px-3 py-2 text-sm text-content-primary focus:outline-none focus:border-brand shadow-sm font-bold"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-content-primary mb-1.5 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-brand" />
-              <span>{t.buyInDate}</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={buyDate}
-              onChange={(e) => setBuyDate(e.target.value)}
-              className="w-full bg-surface border border-border-subtle rounded-xl px-3 py-2 text-sm text-content-primary focus:outline-none focus:border-brand shadow-sm"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-content-secondary mb-1">
-                {t.suggestedAlloc} (%)
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                min="0.5"
-                max="4.0"
-                value={allocation}
-                onChange={(e) => setAllocation(e.target.value)}
-                className="w-full bg-surface border border-border-subtle rounded-xl px-3 py-2 text-xs text-content-primary focus:outline-none focus:border-brand shadow-sm"
-              />
-              <span className="text-[10px] text-content-muted mt-0.5 block">Max 4.0% finite bet</span>
+          {/* Live Position Impact Preview */}
+          <div className="p-3 rounded-xl bg-surface-subtle border border-border-subtle text-xs space-y-1.5">
+            <div className="flex items-center justify-between text-content-secondary">
+              <span>Transaction Value:</span>
+              <span className="font-bold text-content-primary">
+                ${transactionTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-content-secondary mb-1">
-                {t.calcTableShares || "Shares"}
-              </label>
-              <input
-                type="number"
-                step="1"
-                min="0"
-                value={shares}
-                onChange={(e) => setShares(e.target.value)}
-                placeholder="Optional"
-                className="w-full bg-surface border border-border-subtle rounded-xl px-3 py-2 text-xs text-content-primary focus:outline-none focus:border-brand shadow-sm"
-              />
-            </div>
+            {isAdditionalBuy && (
+              <>
+                <div className="flex items-center justify-between text-content-secondary">
+                  <span>Resulting Total Shares:</span>
+                  <span className="font-bold text-brand">
+                    {newTotalShares} shares (+{sharesNum})
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-content-secondary">
+                  <span>Blended Cost Basis:</span>
+                  <span className="font-bold text-content-primary">
+                    ${blendedAvgPrice.toFixed(2)} / share
+                  </span>
+                </div>
+              </>
+            )}
+            {!isAdditionalBuy && (
+              <div className="flex items-center justify-between text-content-secondary">
+                <span>Initial Position Value:</span>
+                <span className="font-bold text-brand">
+                  ${transactionTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-border-subtle">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-content-muted hover:text-content-primary rounded-xl"
+              className="px-4 py-2 text-xs font-bold text-content-muted hover:text-content-primary rounded-xl cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2 text-xs font-bold bg-brand text-white hover:bg-brand/90 rounded-xl flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+              disabled={isSubmitting || sharesNum <= 0 || priceNum <= 0}
+              className="px-5 py-2 text-xs font-bold bg-brand text-white hover:bg-brand/90 rounded-xl flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer transition-all"
             >
               <Check className="w-4 h-4" />
-              <span>{isSubmitting ? "Saving..." : t.logHoldingTitle}</span>
+              <span>
+                {isSubmitting
+                  ? "Saving..."
+                  : isAdditionalBuy
+                  ? `Confirm Buy-In (+${sharesNum} sh)`
+                  : t.logHoldingTitle}
+              </span>
             </button>
           </div>
         </form>

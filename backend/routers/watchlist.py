@@ -42,7 +42,8 @@ class SetBucketSchema(BaseModel):
     shares_held: Optional[float] = Field(default=None, ge=0, description="Number of shares held")
     target_buy_price: Optional[float] = Field(default=None, gt=0, description="Custom target buy threshold")
     target_sell_price: Optional[float] = Field(default=None, gt=0, description="Target profit-taking threshold")
-    portfolio_allocation_pct: Optional[float] = Field(default=3.0, ge=0.0, le=100.0)
+    portfolio_allocation_pct: Optional[float] = Field(default=0.0, ge=0.0, le=100.0)
+    is_additional_buy: Optional[bool] = Field(default=False, description="Add shares to existing holding position")
 
 
 class SellHoldingSchema(BaseModel):
@@ -69,6 +70,9 @@ class WatchlistResponseSchema(BaseModel):
     realized_pnl_pct: Optional[float] = None
     holding_days: Optional[int] = None
     current_price: Optional[float] = None
+    total_value: Optional[float] = None
+    total_cost: Optional[float] = None
+    unrealized_pnl_dollar: Optional[float] = None
     unrealized_pnl_pct: Optional[float] = None
     falsification_floor: Optional[float] = None
     batting_zone: Optional[str] = None
@@ -104,8 +108,23 @@ def enrich_item_quote(
     floor = round(sma200 * 0.97, 2) if sma200 > 0 else None
 
     unrealized_pnl = None
-    if item.bucket == "HOLDING" and item.buy_in_price and item.buy_in_price > 0 and curr_price > 0:
-        unrealized_pnl = round(((curr_price - item.buy_in_price) / item.buy_in_price) * 100.0, 2)
+    total_value = None
+    total_cost = None
+    unrealized_pnl_dollar = None
+
+    if item.bucket == "HOLDING":
+        shares = float(item.shares_held) if item.shares_held is not None else None
+        buy_p = float(item.buy_in_price) if item.buy_in_price is not None else None
+        effective_curr = curr_price if curr_price > 0 else (buy_p or 0.0)
+
+        if shares is not None and shares > 0:
+            total_value = round(shares * effective_curr, 2)
+            if buy_p and buy_p > 0:
+                total_cost = round(shares * buy_p, 2)
+                unrealized_pnl_dollar = round(total_value - total_cost, 2)
+                unrealized_pnl = round(((total_value - total_cost) / total_cost) * 100.0, 2)
+        elif buy_p and buy_p > 0 and curr_price > 0:
+            unrealized_pnl = round(((curr_price - buy_p) / buy_p) * 100.0, 2)
 
     holding_days = holding_days_override
     if holding_days is None and item.buy_in_date:
@@ -136,6 +155,9 @@ def enrich_item_quote(
         realized_pnl_pct=item.realized_pnl_pct,
         holding_days=holding_days,
         current_price=curr_price if curr_price > 0 else None,
+        total_value=total_value,
+        total_cost=total_cost,
+        unrealized_pnl_dollar=unrealized_pnl_dollar,
         unrealized_pnl_pct=unrealized_pnl,
         falsification_floor=floor,
         batting_zone=batting_zone,
@@ -148,13 +170,34 @@ def get_watchlist(
     bucket: Optional[str] = Query(None, description="Filter by bucket: HOLDING, WATCHLIST, or ALL"),
     session: Session = Depends(get_session)
 ):
-    """Returns tracked stocks filtered by bucket, enriched with live pricing and telemetry."""
+    """Returns tracked stocks filtered by bucket, enriched with live pricing, total values, and dynamic allocations."""
     query = select(UserWatchlistDB)
     if bucket and bucket.upper() != "ALL":
         query = query.where(UserWatchlistDB.bucket == bucket.upper())
 
     items = session.exec(query).all()
-    return [enrich_item_quote(it, allow_network=False) for it in items]
+
+    # Calculate portfolio total value across all active holdings
+    all_holdings = session.exec(select(UserWatchlistDB).where(UserWatchlistDB.bucket == "HOLDING")).all()
+    holding_values = {}
+    for h in all_holdings:
+        enr = enrich_item_quote(h, allow_network=False)
+        if enr.total_value and enr.total_value > 0:
+            holding_values[h.symbol] = enr.total_value
+
+    portfolio_total_value = sum(holding_values.values())
+
+    enriched_items = []
+    for it in items:
+        resp = enrich_item_quote(it, allow_network=False)
+        if resp.bucket == "HOLDING":
+            if portfolio_total_value > 0 and resp.total_value:
+                resp.portfolio_allocation_pct = round((resp.total_value / portfolio_total_value) * 100.0, 2)
+            elif portfolio_total_value > 0 and (resp.total_value is None or resp.total_value == 0):
+                resp.portfolio_allocation_pct = 0.0
+        enriched_items.append(resp)
+
+    return enriched_items
 
 
 @router.get("/status/{symbol}")
@@ -190,13 +233,20 @@ def get_stock_bucket_status(symbol: str, session: Session = Depends(get_session)
             "data": None
         }
 
+    status_data = enrich_item_quote(item, allow_network=False)
+    if item.bucket == "HOLDING" and status_data.total_value:
+        all_holdings = session.exec(select(UserWatchlistDB).where(UserWatchlistDB.bucket == "HOLDING")).all()
+        portfolio_total_val = sum((enrich_item_quote(h, allow_network=False).total_value or 0.0) for h in all_holdings)
+        if portfolio_total_val > 0:
+            status_data.portfolio_allocation_pct = round((status_data.total_value / portfolio_total_val) * 100.0, 2)
+
     return {
         "symbol": norm,
         "bucket": item.bucket,
         "is_holding": item.bucket == "HOLDING",
         "is_watchlist": item.bucket == "WATCHLIST",
         "is_tracked": True,
-        "data": enrich_item_quote(item, allow_network=False)
+        "data": status_data
     }
 
 
@@ -205,6 +255,7 @@ def set_stock_bucket(payload: SetBucketSchema, session: Session = Depends(get_se
     """
     Transitions a stock between HOLDING, WATCHLIST, and REGULAR.
     Enforces mutual exclusivity: any stock belongs to exactly one bucket.
+    Supports additional buy-in (scale-in) blending for existing holdings.
     """
     norm = payload.symbol.upper().strip()
     target_bucket = payload.bucket.upper().strip()
@@ -265,12 +316,28 @@ def set_stock_bucket(payload: SetBucketSchema, session: Session = Depends(get_se
         existing.company_name = company_name
         existing.bucket = target_bucket
         if target_bucket == "HOLDING":
-            existing.buy_in_price = buy_price
-            existing.buy_in_date = buy_date
-            if payload.shares_held is not None:
-                existing.shares_held = payload.shares_held
-            if payload.portfolio_allocation_pct is not None:
-                existing.portfolio_allocation_pct = payload.portfolio_allocation_pct
+            # Check for additional buy-in (scale-in) blending
+            if payload.is_additional_buy and existing.bucket == "HOLDING" and (existing.shares_held or 0) > 0:
+                prev_shares = float(existing.shares_held or 0.0)
+                prev_price = float(existing.buy_in_price or 0.0)
+                add_shares = float(payload.shares_held or 0.0)
+                add_price = float(payload.buy_in_price or curr_price)
+                total_shares = prev_shares + add_shares
+                if total_shares > 0:
+                    total_cost = (prev_shares * prev_price) + (add_shares * add_price)
+                    blended_price = round(total_cost / total_shares, 2)
+                else:
+                    blended_price = add_price
+                existing.shares_held = total_shares
+                existing.buy_in_price = blended_price
+                existing.buy_in_date = payload.buy_in_date or buy_date
+            else:
+                existing.buy_in_price = buy_price
+                existing.buy_in_date = buy_date
+                if payload.shares_held is not None:
+                    existing.shares_held = payload.shares_held
+                if payload.portfolio_allocation_pct is not None:
+                    existing.portfolio_allocation_pct = payload.portfolio_allocation_pct
         elif target_bucket == "WATCHLIST":
             if target_buy and target_buy > 0:
                 existing.target_buy_price = target_buy
@@ -282,7 +349,13 @@ def set_stock_bucket(payload: SetBucketSchema, session: Session = Depends(get_se
         session.add(existing)
         session.commit()
         session.refresh(existing)
-        return enrich_item_quote(existing, allow_network=False)
+        resp = enrich_item_quote(existing, allow_network=False)
+        if existing.bucket == "HOLDING" and resp.total_value:
+            all_holdings = session.exec(select(UserWatchlistDB).where(UserWatchlistDB.bucket == "HOLDING")).all()
+            portfolio_total_val = sum((enrich_item_quote(h, allow_network=False).total_value or 0.0) for h in all_holdings)
+            if portfolio_total_val > 0:
+                resp.portfolio_allocation_pct = round((resp.total_value / portfolio_total_val) * 100.0, 2)
+        return resp
 
     # Create new tracked record
     new_item = UserWatchlistDB(
@@ -291,7 +364,7 @@ def set_stock_bucket(payload: SetBucketSchema, session: Session = Depends(get_se
         bucket=target_bucket,
         target_buy_price=target_buy if target_bucket == "WATCHLIST" else None,
         target_sell_price=payload.target_sell_price,
-        portfolio_allocation_pct=payload.portfolio_allocation_pct or 3.0,
+        portfolio_allocation_pct=payload.portfolio_allocation_pct or 0.0,
         buy_in_price=buy_price if target_bucket == "HOLDING" else None,
         buy_in_date=buy_date if target_bucket == "HOLDING" else None,
         shares_held=payload.shares_held if target_bucket == "HOLDING" else None,
@@ -301,7 +374,13 @@ def set_stock_bucket(payload: SetBucketSchema, session: Session = Depends(get_se
     session.add(new_item)
     session.commit()
     session.refresh(new_item)
-    return enrich_item_quote(new_item, allow_network=False)
+    resp = enrich_item_quote(new_item, allow_network=False)
+    if new_item.bucket == "HOLDING" and resp.total_value:
+        all_holdings = session.exec(select(UserWatchlistDB).where(UserWatchlistDB.bucket == "HOLDING")).all()
+        portfolio_total_val = sum((enrich_item_quote(h, allow_network=False).total_value or 0.0) for h in all_holdings)
+        if portfolio_total_val > 0:
+            resp.portfolio_allocation_pct = round((resp.total_value / portfolio_total_val) * 100.0, 2)
+    return resp
 
 
 @router.post("/sell-holding")

@@ -534,6 +534,7 @@ export const App: React.FC = () => {
                                 currentPrice={currPrice}
                                 buyInPrice={trackingItem?.buy_in_price ?? undefined}
                                 buyInDate={trackingItem?.buy_in_date ?? undefined}
+                                sharesHeld={trackingItem?.shares_held ?? undefined}
                                 onBucketChange={async () => {
                                   await fetchWatchlistSymbols();
                                 }}
