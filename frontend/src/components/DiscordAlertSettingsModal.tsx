@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Bell, Send, CheckCircle2, Radio, RefreshCw, Sparkles, TrendingUp, AlertTriangle, Newspaper } from 'lucide-react';
+import { X, Bell, Send, CheckCircle2, Radio, RefreshCw, Sparkles, TrendingUp, AlertTriangle, ShieldAlert, Newspaper } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import {
   fetchPushAlertConfig,
@@ -250,7 +250,7 @@ export const DiscordAlertSettingsModal: React.FC<DiscordAlertSettingsModalProps>
                 disabled={Boolean(activeTest) || !isConfigured}
                 className="p-2.5 bg-surface hover:bg-surface-subtle border border-border-subtle hover:border-negative text-negative rounded-xl text-[11px] font-bold transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               >
-                {activeTest === 'sell' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5 text-negative" />}
+                {activeTest === 'sell' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5 text-negative" />}
                 <span className="truncate">{t.discordTestSellBtn}</span>
               </button>
 

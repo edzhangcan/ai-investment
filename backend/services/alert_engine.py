@@ -76,48 +76,61 @@ class PriceAlertEngine:
 
                 cutoff = get_utc_now() - timedelta(hours=COOLDOWN_HOURS)
 
-                # Evaluate Buy Zone Alert Trigger
+                # Evaluate Batting Zone & Trend Temperature
+                trend_eval = self.evaluate_symbol_trend_temperature(quote)
+                is_right_side = trend_eval.get("is_right_side", False)
+                trend_state = trend_eval.get("state", "FLAT")
+
+                # Evaluate Buy Zone Alert Trigger: Current price enters ideal buy zone AND batting zone is Right-Side
                 if target_buy and target_buy > 0 and current_price <= target_buy:
-                    recent_buy = session.exec(
-                        select(PriceAlertLogDB)
-                        .where(PriceAlertLogDB.symbol == item.symbol)
-                        .where(PriceAlertLogDB.status.in_(["TRIGGERED", "BUY_TRIGGERED"]))
-                        .where(PriceAlertLogDB.triggered_at >= cutoff)
-                    ).first()
+                    if is_right_side:
+                        recent_buy = session.exec(
+                            select(PriceAlertLogDB)
+                            .where(PriceAlertLogDB.symbol == item.symbol)
+                            .where(PriceAlertLogDB.status.in_(["TRIGGERED", "BUY_TRIGGERED"]))
+                            .where(PriceAlertLogDB.triggered_at >= cutoff)
+                        ).first()
 
-                    if not recent_buy:
-                        log_entry = PriceAlertLogDB(
-                            symbol=item.symbol,
-                            company_name=item.company_name,
-                            current_price=current_price,
-                            target_buy_price=target_buy,
-                            notification_channel="IN_APP",
-                            status="BUY_TRIGGERED",
-                            message=f"Stock ${item.symbol} reached target buy price (${current_price} <= ${target_buy})",
-                            triggered_at=get_utc_now()
+                        if not recent_buy:
+                            log_entry = PriceAlertLogDB(
+                                symbol=item.symbol,
+                                company_name=item.company_name,
+                                current_price=current_price,
+                                target_buy_price=target_buy,
+                                notification_channel="IN_APP",
+                                status="BUY_TRIGGERED",
+                                message=f"Stock ${item.symbol} reached target buy price (${current_price} <= ${target_buy}) with Right-Side Batting Zone confirmation ({trend_state})",
+                                triggered_at=get_utc_now()
+                            )
+                            session.add(log_entry)
+                            session.commit()
+                            session.refresh(log_entry)
+
+                            dispatch_res = await dispatcher.dispatch_price_alert(
+                                symbol=item.symbol,
+                                company_name=item.company_name,
+                                current_price=current_price,
+                                target_buy_price=target_buy,
+                                session=session,
+                                alert_type="BUY"
+                            )
+
+                            triggered_results.append({
+                                "log_id": log_entry.id,
+                                "symbol": item.symbol,
+                                "company_name": item.company_name,
+                                "current_price": current_price,
+                                "target_price": target_buy,
+                                "batting_zone": "RIGHT_SIDE",
+                                "trend_state": trend_state,
+                                "alert_type": "BUY",
+                                "dispatch": dispatch_res
+                            })
+                    else:
+                        logger.info(
+                            f"[BUY ALERT SUPPRESSED] ${item.symbol} is in buy zone (${current_price} <= ${target_buy}), "
+                            f"but batting zone is LEFT_SIDE ({trend_state}). Awaiting right-side reversal confirmation."
                         )
-                        session.add(log_entry)
-                        session.commit()
-                        session.refresh(log_entry)
-
-                        dispatch_res = await dispatcher.dispatch_price_alert(
-                            symbol=item.symbol,
-                            company_name=item.company_name,
-                            current_price=current_price,
-                            target_buy_price=target_buy,
-                            session=session,
-                            alert_type="BUY"
-                        )
-
-                        triggered_results.append({
-                            "log_id": log_entry.id,
-                            "symbol": item.symbol,
-                            "company_name": item.company_name,
-                            "current_price": current_price,
-                            "target_price": target_buy,
-                            "alert_type": "BUY",
-                            "dispatch": dispatch_res
-                        })
 
                 # Evaluate Sell / Profit-Taking Alert Trigger
                 if target_sell and target_sell > 0 and current_price >= target_sell:
@@ -162,51 +175,55 @@ class PriceAlertEngine:
                             "dispatch": dispatch_res
                         })
 
-                # Evaluate Falsification Bottom Threshold Trigger (decisive break below 200D MA)
-                two_hundred_sma = float(pricing_eval.get("two_hundred_day_sma") or 0.0)
-                if two_hundred_sma > 0:
-                    bottom_threshold = round(two_hundred_sma * 0.97, 2)
-                    if current_price < bottom_threshold:
-                        recent_falsification = session.exec(
-                            select(PriceAlertLogDB)
-                            .where(PriceAlertLogDB.symbol == item.symbol)
-                            .where(PriceAlertLogDB.status == "FALSIFICATION_TRIGGERED")
-                            .where(PriceAlertLogDB.triggered_at >= cutoff)
-                        ).first()
+                # Evaluate Falsification / Danger Threshold Trigger (decisive break below 200D MA / thesis floor)
+                two_hundred_sma = float(pricing_eval.get("two_hundred_day_sma") or quote.get("two_hundred_day_sma") or 0.0)
+                bottom_threshold = round(two_hundred_sma * 0.97, 2) if two_hundred_sma > 0 else 0.0
+                if override_data.get("falsification_floor"):
+                    bottom_threshold = float(override_data["falsification_floor"])
 
-                        if not recent_falsification:
-                            log_entry = PriceAlertLogDB(
-                                symbol=item.symbol,
-                                company_name=item.company_name,
-                                current_price=current_price,
-                                target_buy_price=bottom_threshold,
-                                notification_channel="IN_APP",
-                                status="FALSIFICATION_TRIGGERED",
-                                message=f"🚨 Falsification Triggered: ${item.symbol} breached 200D MA floor (${current_price} < ${bottom_threshold})",
-                                triggered_at=get_utc_now()
-                            )
-                            session.add(log_entry)
-                            session.commit()
-                            session.refresh(log_entry)
+                if bottom_threshold > 0 and current_price < bottom_threshold:
+                    recent_falsification = session.exec(
+                        select(PriceAlertLogDB)
+                        .where(PriceAlertLogDB.symbol == item.symbol)
+                        .where(PriceAlertLogDB.status.in_(["FALSIFICATION_TRIGGERED", "SELL_DANGER_TRIGGERED"]))
+                        .where(PriceAlertLogDB.triggered_at >= cutoff)
+                    ).first()
 
-                            dispatch_res = await dispatcher.dispatch_price_alert(
-                                symbol=item.symbol,
-                                company_name=item.company_name,
-                                current_price=current_price,
-                                target_buy_price=bottom_threshold,
-                                session=session,
-                                alert_type="FALSIFICATION"
-                            )
+                    if not recent_falsification:
+                        diff_pct = round(((bottom_threshold - current_price) / bottom_threshold) * 100, 2)
+                        log_entry = PriceAlertLogDB(
+                            symbol=item.symbol,
+                            company_name=item.company_name,
+                            current_price=current_price,
+                            target_buy_price=bottom_threshold,
+                            notification_channel="IN_APP",
+                            status="FALSIFICATION_TRIGGERED",
+                            message=f"🚨 Danger / Falsification Triggered: ${item.symbol} breached thesis floor (${current_price} < ${bottom_threshold}, -{diff_pct}%)",
+                            triggered_at=get_utc_now()
+                        )
+                        session.add(log_entry)
+                        session.commit()
+                        session.refresh(log_entry)
 
-                            triggered_results.append({
-                                "log_id": log_entry.id,
-                                "symbol": item.symbol,
-                                "company_name": item.company_name,
-                                "current_price": current_price,
-                                "target_price": bottom_threshold,
-                                "alert_type": "FALSIFICATION",
-                                "dispatch": dispatch_res
-                            })
+                        dispatch_res = await dispatcher.dispatch_price_alert(
+                            symbol=item.symbol,
+                            company_name=item.company_name,
+                            current_price=current_price,
+                            target_buy_price=bottom_threshold,
+                            session=session,
+                            alert_type="FALSIFICATION"
+                        )
+
+                        triggered_results.append({
+                            "log_id": log_entry.id,
+                            "symbol": item.symbol,
+                            "company_name": item.company_name,
+                            "current_price": current_price,
+                            "target_price": bottom_threshold,
+                            "breakdown_pct": diff_pct,
+                            "alert_type": "FALSIFICATION",
+                            "dispatch": dispatch_res
+                        })
             except Exception as e:
                 logger.error(f"Error checking price alert for {item.symbol}: {e}")
 
@@ -354,6 +371,68 @@ class PriceAlertEngine:
             "sma_50": round(sma_50, 2),
             "sma_200": round(sma_200, 2),
             "transition": "NONE"
+        }
+
+    @classmethod
+    def evaluate_symbol_trend_temperature(cls, quote: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Evaluates trend temperature and batting zone for a given stock quote.
+        Uses historical_series if available to compute volatility-normalized Z-score,
+        otherwise falls back to 50D/200D SMA relationships.
+        Returns dict with: state, hitting_zone ("RIGHT_SIDE" | "LEFT_SIDE"), is_right_side, label_en, label_zh.
+        """
+        import pandas as pd
+        curr = float(quote.get("current_price") or 0.0)
+        sma50 = float(quote.get("fifty_day_sma") or 0.0)
+        sma200 = float(quote.get("two_hundred_day_sma") or 0.0)
+
+        hist = quote.get("historical_series")
+        state = "FLAT"
+        if hist and isinstance(hist, list) and len(hist) >= 5:
+            try:
+                df = pd.DataFrame(hist)
+                trend_res = cls.compute_trend_temperature(df)
+                state = trend_res.get("state", "FLAT")
+                if sma50 <= 0:
+                    sma50 = float(trend_res.get("sma_50") or 0.0)
+                if sma200 <= 0:
+                    sma200 = float(trend_res.get("sma_200") or 0.0)
+            except Exception:
+                state = "FLAT"
+
+        # Determine Right-Side vs Left-Side Batting Zone:
+        # 1. State is HOT or WARM -> RIGHT_SIDE
+        # 2. Or price is trading above both 50D and 200D moving averages -> WARM (Right-Side Batting Zone)
+        # 3. Or price is decisively below 200D SMA or 50D SMA -> LEFT_SIDE (Falling knife / Left-Side watch)
+        if state in ["WARM", "HOT"]:
+            hitting_zone = "RIGHT_SIDE"
+            is_right_side = True
+        elif curr > 0 and sma50 > 0 and sma200 > 0 and curr >= sma50 and curr >= sma200:
+            state = "WARM"
+            hitting_zone = "RIGHT_SIDE"
+            is_right_side = True
+        elif curr > 0 and sma50 > 0 and curr >= sma50:
+            state = "WARM"
+            hitting_zone = "RIGHT_SIDE"
+            is_right_side = True
+        elif curr > 0 and sma200 > 0 and curr < sma200 * 0.98:
+            state = "FREEZE"
+            hitting_zone = "LEFT_SIDE"
+            is_right_side = False
+        else:
+            state = "FLAT"
+            hitting_zone = "LEFT_SIDE"
+            is_right_side = False
+
+        label_en = "WARM (Right-Side Batting Zone)" if is_right_side else ("FREEZE (Blood Chips Left-Side)" if state == "FREEZE" else "FLAT (Left-Side Consolidation)")
+        label_zh = "温（温转热右侧击球区）" if is_right_side else ("冻（血筹区：左侧勿抄底）" if state == "FREEZE" else "平（左侧整理待右侧确认）")
+
+        return {
+            "state": state,
+            "hitting_zone": hitting_zone,
+            "is_right_side": is_right_side,
+            "state_label_en": label_en,
+            "state_label_zh": label_zh
         }
 
 alert_engine = PriceAlertEngine()

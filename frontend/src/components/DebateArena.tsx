@@ -259,28 +259,137 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
           {cio.judge_summary || "Ground-truth audit confirms solid FCF conversion and wide economic moat, supporting disciplined DCA allocation."}
         </p>
 
-        {/* Dedicated Thesis Falsification Kill-Switch Callout Box */}
-        {(debateData.falsification_price_level || debateData.falsification_trigger_condition) && (
-          <div className="mb-3.5 p-3.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50/80 dark:bg-rose-950/40 text-xs shadow-sm">
-            <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
-              <span className="font-extrabold text-rose-700 dark:text-rose-400 flex items-center gap-1.5 text-xs">
-                <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                <span>{language === 'zh' ? '⚡ 投资假说证伪熔断线 (Thesis Falsification Kill-Switch)' : '⚡ Thesis Falsification Kill-Switch'}</span>
-              </span>
-              {debateData.falsification_price_level && (
-                <span className="px-2.5 py-0.5 rounded-md font-mono font-black text-[11px] bg-rose-600 text-white shadow-sm">
-                  Floor: ${debateData.falsification_price_level.toFixed(2)} {stock?.currency || 'USD'}
-                </span>
+        {/* Consolidated Thesis Falsification Kill-Switch & Breach Guard */}
+        {(() => {
+          const currPrice = Number(stock?.current_price ?? pricing?.current_price ?? 0);
+          const rawFloor = debateData.falsification_price_level ?? cio?.mianji_framework?.soul_check?.bottom_threshold ?? (stock?.two_hundred_day_sma ? stock.two_hundred_day_sma * 0.97 : null);
+          const bottomFloor = rawFloor ? Number(rawFloor) : null;
+          const isFalsified = Boolean(
+            cio?.mianji_framework?.soul_check?.is_falsified || 
+            (bottomFloor && currPrice > 0 && currPrice < bottomFloor)
+          );
+          const currency = cio?.mianji_framework?.soul_check?.threshold_currency || stock?.currency || 'USD';
+          const falsificationCondition = debateData.falsification_trigger_condition || cio?.mianji_framework?.soul_check?.mandatory_falsification_trigger;
+
+          if (!bottomFloor && !falsificationCondition) return null;
+
+          return (
+            <div className={`mb-3.5 p-3.5 rounded-xl border text-xs shadow-sm transition-all ${
+              isFalsified
+                ? 'border-negative bg-negative/10 dark:bg-negative/20 shadow-negative/10'
+                : 'border-rose-300 dark:border-rose-800 bg-rose-50/70 dark:bg-rose-950/30'
+            }`}>
+              {/* Header with Title, Status Badge, and Quantified Floor */}
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <BilingualHoverCard termKey="FalsificationTrigger">
+                    <span className="font-extrabold text-xs text-rose-700 dark:text-rose-400 flex items-center gap-1.5 cursor-help">
+                      {isFalsified ? (
+                        <AlertTriangle className="w-4 h-4 text-negative animate-bounce shrink-0" />
+                      ) : (
+                        <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                      )}
+                      <span>
+                        {language === 'zh'
+                          ? '⚡ 投资假说证伪熔断线与离场铁律 (Thesis Falsification Kill-Switch)'
+                          : '⚡ Thesis Falsification Kill-Switch & Exit Discipline'}
+                      </span>
+                    </span>
+                  </BilingualHoverCard>
+
+                  {/* Status Badge */}
+                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 ${
+                    isFalsified
+                      ? 'bg-negative text-white'
+                      : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                  }`}>
+                    {isFalsified ? (
+                      <>
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        <span>{t.falsificationBreachedWarning || (language === 'zh' ? '证伪底线已击穿' : 'THRESHOLD BREACHED')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3 h-3 shrink-0" />
+                        <span>{language === 'zh' ? '🛡️ 运行在安全边界上方' : '🛡️ Above Floor (Valid)'}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+
+                {/* Floor Badge */}
+                {bottomFloor !== null && (
+                  <span className={`px-2.5 py-0.5 rounded-md font-mono font-bold text-[11px] border ${
+                    isFalsified
+                      ? 'bg-negative text-white border-negative'
+                      : 'bg-surface border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                  }`}>
+                    Floor: ${bottomFloor.toFixed(2)} {currency} (-3% 200D MA)
+                  </span>
+                )}
+              </div>
+
+              {/* Body Condition / Breach Explanation */}
+              {isFalsified ? (
+                <div className="space-y-2">
+                  <p className="text-negative font-semibold leading-relaxed">
+                    {t.falsificationBreachedDesc || (language === 'zh'
+                      ? '当前股价已跌破量化止损底线。恪守反破产投资宪法：破位机械离场，严禁左侧逆势加仓补仓！'
+                      : 'Current price has decisively breached the quantitative falsification floor. Obey anti-ruin constitution: execute stop-loss discipline, never average down on the left side!')}
+                    {falsificationCondition && <span className="block mt-1 font-medium">({falsificationCondition})</span>}
+                  </p>
+
+                  {/* Immediate Alert Dispatch Trigger */}
+                  {bottomFloor !== null && (
+                    <div className="pt-2 border-t border-negative/20 flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-[11px] text-negative font-mono font-medium">
+                        {currency} ${currPrice.toFixed(2)} &lt; Floor ${bottomFloor.toFixed(2)} ({currPrice && bottomFloor ? `-${(((bottomFloor - currPrice) / bottomFloor) * 100).toFixed(1)}%` : ''})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleNotifyFalsification(bottomFloor, currPrice)}
+                        disabled={isNotifyingFalsification || falsificationSent}
+                        className={`h-7 px-3 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 transition-all shadow-sm cursor-pointer ${
+                          falsificationSent 
+                            ? 'bg-positive text-white' 
+                            : 'bg-negative hover:bg-negative/90 text-white'
+                        } disabled:opacity-70`}
+                      >
+                        {falsificationSent ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>{t.falsificationNotified || (language === 'zh' ? '证伪告警已推送！' : 'Falsification Notified!')}</span>
+                          </>
+                        ) : (
+                          <>
+                            <BellRing className="w-3.5 h-3.5" />
+                            <span>{isNotifyingFalsification ? "..." : (t.notifyFalsificationBtn || (language === 'zh' ? '推送告警通知 (Discord/应用内)' : 'Broadcast Alert (Discord/In-App)'))}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <p className="text-content-primary font-medium leading-relaxed">
+                    <span className="font-bold text-rose-600 dark:text-rose-400">
+                      {language === 'zh' ? '核心证伪诱因 (Trigger Condition): ' : 'Trigger Condition: '}
+                    </span>
+                    {falsificationCondition || (language === 'zh'
+                      ? '跌破200日均线支撑（-3%缓冲带）或核心内生自由现金流转负。'
+                      : 'Decisive breach below 200D SMA support (-3% buffer) or fundamental FCF collapse.')}
+                  </p>
+                  <p className="text-[11px] text-content-muted mt-1">
+                    {language === 'zh'
+                      ? '💡 当前股价运行于证伪底线上方，假说逻辑保持健康。若后续破位触发熔断，系统将自动锁定加仓权限并向 Discord 推送危险告警。'
+                      : '💡 Current price trades safely above the falsification floor. If breached, the platform enforces cut-loss discipline and broadcasts an immediate Discord danger alert.'}
+                  </p>
+                </div>
               )}
             </div>
-            {debateData.falsification_trigger_condition && (
-              <p className="text-content-primary font-medium leading-relaxed">
-                <span className="font-bold text-rose-600 dark:text-rose-400">Trigger Condition: </span>
-                {debateData.falsification_trigger_condition}
-              </p>
-            )}
-          </div>
-        )}
+          );
+        })()}
 
         {/* Pre-Trade Soul Check & Prior Audit Framework */}
         {cio.mianji_framework && (
@@ -386,75 +495,6 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
                         <span className="font-medium text-content-primary">
                           {sc.variant_view_penetration}
                         </span>
-                      )}
-                    </div>
-                  )}
-
-                  {sc.mandatory_falsification_trigger && (
-                    <div className={`sm:col-span-2 p-2.5 rounded-lg border text-content-secondary transition-all ${
-                      isFalsified 
-                        ? 'bg-negative/10 border-negative shadow-sm' 
-                        : 'bg-negative/5 border-negative/20'
-                    }`}>
-                      <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-                        <div className="flex items-center gap-1.5">
-                          <BilingualHoverCard termKey="FalsificationTrigger">
-                            <span className="text-negative font-bold flex items-center gap-1 cursor-help">
-                              {isFalsified ? (
-                                <AlertTriangle className="w-4 h-4 text-negative animate-bounce shrink-0" />
-                              ) : (
-                                <ShieldAlert className="w-3.5 h-3.5 text-negative shrink-0" />
-                              )}
-                              <span>{isFalsified ? (t.falsificationBreachedWarning || "证伪底线已击穿") : (t.falsificationTriggerTitle || "离场铁律与证伪底线")}:</span>
-                            </span>
-                          </BilingualHoverCard>
-                        </div>
-                        {bottomFloor !== null && (
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
-                            isFalsified 
-                              ? 'bg-negative text-white border-negative' 
-                              : 'bg-negative/10 text-negative border-negative/20'
-                          }`}>
-                            Floor: ${bottomFloor.toFixed(2)} {currency}
-                          </span>
-                        )}
-                      </div>
-
-                      <p className={`font-medium leading-relaxed ${isFalsified ? 'text-negative font-semibold' : 'text-content-primary'}`}>
-                        {isFalsified 
-                          ? `${t.falsificationBreachedDesc || "当前股价已跌破量化止损底线。恪守反破产投资宪法：破位机械离场，严禁左侧逆势加仓补仓！"} (${sc.mandatory_falsification_trigger})`
-                          : sc.mandatory_falsification_trigger}
-                      </p>
-
-                      {/* Immediate Falsification Alert Dispatch Trigger */}
-                      {isFalsified && bottomFloor !== null && (
-                        <div className="mt-2 pt-2 border-t border-negative/20 flex items-center justify-between flex-wrap gap-2">
-                          <span className="text-[10px] text-negative font-medium">
-                            {currency} ${currPrice.toFixed(2)} &lt; Floor ${bottomFloor.toFixed(2)} (-3% 200D MA)
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleNotifyFalsification(bottomFloor, currPrice)}
-                            disabled={isNotifyingFalsification || falsificationSent}
-                            className={`h-7 px-3 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 transition-all shadow-sm cursor-pointer ${
-                              falsificationSent 
-                                ? 'bg-positive text-white' 
-                                : 'bg-negative hover:bg-negative/90 text-white'
-                            } disabled:opacity-70`}
-                          >
-                            {falsificationSent ? (
-                              <>
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>{t.falsificationNotified || "证伪告警已推送！"}</span>
-                              </>
-                            ) : (
-                              <>
-                                <BellRing className="w-3.5 h-3.5" />
-                                <span>{isNotifyingFalsification ? "..." : (t.notifyFalsificationBtn || "推送告警通知 (Discord/应用内)")}</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
                       )}
                     </div>
                   )}

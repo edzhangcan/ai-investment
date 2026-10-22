@@ -160,7 +160,7 @@ class DiscordNotifier:
         buy_stocks: Optional[List[Dict[str, Any]]] = None,
         lang: str = "en"
     ) -> Dict[str, Any]:
-        """2. Bundled Watchlist Buy-In Notification (Single Combined Embed) with live watchlist & quotes."""
+        """2. Bundled Watchlist Buy-In Notification (Single Combined Embed) with live quotes & Right-Side Batting Zone confirmation."""
         from backend.data_sources.data_provider import DataProviderManager
         from sqlmodel import Session, select
         from backend.database import engine
@@ -171,26 +171,40 @@ class DiscordNotifier:
         if not stocks:
             stocks = []
             try:
+                from backend.services.alert_engine import PriceAlertEngine
+                from backend.engines.pricing_engine import PricingEngine
                 with Session(engine) as session:
                     watchlist_items = session.exec(select(UserWatchlistDB)).all()
                     for item in watchlist_items:
                         s_data = DataProviderManager.get_stock_data(item.symbol)
                         if s_data.get("is_valid"):
                             curr_price = float(s_data.get("current_price", 0.0))
-                            target_buy = float(item.target_buy_price) if item.target_buy_price else round(curr_price * 0.90, 2)
-                            discount = round(((target_buy - curr_price) / target_buy) * 100, 2) if target_buy > 0 else 0.0
-                            stocks.append({
-                                "symbol": item.symbol,
-                                "company_name": s_data.get("company_name", item.company_name),
-                                "current_price": curr_price,
-                                "target_buy_price": target_buy,
-                                "discount_pct": max(0.0, discount),
-                                "currency": s_data.get("currency", "USD")
-                            })
+                            pricing_eval = PricingEngine.evaluate_pricing_and_entry_zone(s_data)
+                            target_buy = float(item.target_buy_price) if item.target_buy_price else float(pricing_eval.get("ideal_buy_range_max") or 0.0)
+                            if target_buy <= 0:
+                                target_buy = round(curr_price * 0.90, 2)
+
+                            trend_eval = PriceAlertEngine.evaluate_symbol_trend_temperature(s_data)
+                            is_right_side = trend_eval.get("is_right_side", False)
+                            trend_state = trend_eval.get("state", "WARM")
+
+                            # Dual Condition: Inside Buy Zone AND Right-Side Batting Zone
+                            if curr_price <= target_buy and is_right_side:
+                                discount = round(((target_buy - curr_price) / target_buy) * 100, 2) if target_buy > 0 else 0.0
+                                stocks.append({
+                                    "symbol": item.symbol,
+                                    "company_name": s_data.get("company_name", item.company_name),
+                                    "current_price": curr_price,
+                                    "target_buy_price": target_buy,
+                                    "discount_pct": max(0.0, discount),
+                                    "currency": s_data.get("currency", "USD"),
+                                    "trend_state": trend_state,
+                                    "batting_zone": "RIGHT_SIDE"
+                                })
             except Exception as e:
                 logger.debug(f"Error reading watchlist for buy alert: {e}")
 
-        # Fallback if watchlist is empty
+        # Fallback simulation if no active watchlist stocks currently meet dual condition
         if not stocks:
             sample_candidates = ["SHOP.TO", "TD.TO", "NVDA"]
             for sym in sample_candidates:
@@ -204,29 +218,31 @@ class DiscordNotifier:
                         "current_price": p,
                         "target_buy_price": dcf,
                         "discount_pct": 15.2,
-                        "currency": s_data.get("currency", "USD")
+                        "currency": s_data.get("currency", "USD"),
+                        "trend_state": "WARM",
+                        "batting_zone": "RIGHT_SIDE"
                     })
 
         stocks = stocks[:4]  # Bounded to top 4 for concise embed card
 
         if lang == "zh":
-            title = f"观察列表买入信号汇总 ({len(stocks)} 只股票已进入理想买入区间)"
-            description = "以下关注列表中的优质股票已达到或接近您设定的**理想目标买入价位**，安全边际充足：\n"
+            title = f"🎯 观察列表买入信号汇总 ({len(stocks)} 只标的已进入买入区间且处于右侧击球区)"
+            description = "以下关注列表中的优质股票已到达**理想买入区间**，并且量价技术指标已**确认右侧反转（温/热击球区）**，拒绝左侧接飞刀，安全边际充沛：\n"
             fields = []
             for s in stocks:
                 fields.append({
                     "name": f"{s['company_name']} (${s['symbol']})",
-                    "value": f"• 实时现价: `${s['current_price']} {s.get('currency', '')}`\n• 目标买入价: `${s['target_buy_price']} {s.get('currency', '')}`\n• 安全边际折价: `{s['discount_pct']}%`",
+                    "value": f"• 实时现价: `${s['current_price']} {s.get('currency', '')}`\n• 目标买入价: `${s['target_buy_price']} {s.get('currency', '')}` (折价 `{s['discount_pct']}%`)\n• 击球区确认: `🎯 右侧安全击球区 ({s.get('trend_state', 'WARM')})`",
                     "inline": False
                 })
         else:
-            title = f"BUNDLED BUY-IN ALERT ({len(stocks)} Stocks Reached Target Buy Zone)"
-            description = "The following Watchlist stocks have dropped into your target **BUY Zone**. Real-time market prices offer a solid margin of safety:\n"
+            title = f"🎯 BUNDLED BUY-IN ALERT ({len(stocks)} Stocks in Buy Zone with Right-Side Momentum)"
+            description = "The following Watchlist stocks have entered their target **BUY Zone** with **confirmed Right-Side Batting Zone pivot (WARM/HOT)**. Strictly avoids left-side falling knives:\n"
             fields = []
             for s in stocks:
                 fields.append({
                     "name": f"{s['company_name']} (${s['symbol']})",
-                    "value": f"• Live Market Price: `${s['current_price']} {s.get('currency', '')}`\n• Target Buy Threshold: `${s['target_buy_price']} {s.get('currency', '')}`\n• Safety Margin Discount: `{s['discount_pct']}%`",
+                    "value": f"• Live Market Price: `${s['current_price']} {s.get('currency', '')}`\n• Target Buy Threshold: `${s['target_buy_price']} {s.get('currency', '')}` (Discount `{s['discount_pct']}%`)\n• Batting Zone: `🎯 Confirmed Right-Side ({s.get('trend_state', 'WARM')})`",
                     "inline": False
                 })
 
@@ -236,7 +252,7 @@ class DiscordNotifier:
             description=description,
             color=cls.DISCORD_COLOR_BUY_ZONE,
             fields=fields,
-            footer_text="Prism Loop • Bundled Watchlist Buy-In Alert"
+            footer_text="Prism Loop • Right-Side Batting Zone Buy Alert"
         )
 
     @classmethod
@@ -246,48 +262,81 @@ class DiscordNotifier:
         sell_stocks: Optional[List[Dict[str, Any]]] = None,
         lang: str = "en"
     ) -> Dict[str, Any]:
-        """3. Watchlist Sell & Danger Zone Risk Alert with live quotes and valuation audit."""
+        """3. Watchlist Sell & Danger Zone Risk Alert triggered when price breaches falsification threshold."""
         from backend.data_sources.data_provider import DataProviderManager
 
         stocks = sell_stocks
 
         if not stocks:
             stocks = []
-            sample_risks = [
-                {"symbol": "INTC", "reason_en": "High P/E multiple relative to EPS decline and manufacturing delay risks", "reason_zh": "利润率承压与先进制程延误风险", "action": "TRIM / SELL"},
-                {"symbol": "BLDP.TO", "reason_en": "Prolonged negative FCF burn and commercial adoption delays", "reason_zh": "长期自由现金流持续失血与商业化放缓", "action": "PASS / AVOID"}
-            ]
-            for r in sample_risks:
-                s_data = DataProviderManager.get_stock_data(r["symbol"])
+            try:
+                from sqlmodel import Session, select
+                from backend.database import engine
+                from backend.models.db_models import UserWatchlistDB
+                with Session(engine) as session:
+                    watchlist_items = session.exec(select(UserWatchlistDB)).all()
+                    for item in watchlist_items:
+                        s_data = DataProviderManager.get_stock_data(item.symbol)
+                        if s_data.get("is_valid"):
+                            curr_p = float(s_data.get("current_price", 0.0))
+                            sma200 = float(s_data.get("two_hundred_day_sma") or 0.0)
+                            falsification_floor = round(sma200 * 0.97, 2) if sma200 > 0 else 0.0
+                            if falsification_floor > 0 and curr_p < falsification_floor:
+                                breakdown = round(((falsification_floor - curr_p) / falsification_floor) * 100, 2)
+                                stocks.append({
+                                    "symbol": item.symbol,
+                                    "company_name": s_data.get("company_name", item.company_name),
+                                    "current_price": curr_p,
+                                    "falsification_floor": falsification_floor,
+                                    "breakdown_pct": breakdown,
+                                    "currency": s_data.get("currency", "USD"),
+                                    "risk_reason_zh": f"股价跌破 200日均线支撑底线 (-3% 缓冲)，击穿价位 ${falsification_floor}，假说证伪。",
+                                    "risk_reason_en": f"Price breached 200D SMA support floor (-3% buffer) at ${falsification_floor}. Thesis falsified.",
+                                    "suggested_action": "🚨 强制机械离场 / 止损 (MANDATORY CUT-LOSS EXIT)"
+                                })
+            except Exception as e:
+                logger.debug(f"Error scanning watchlist for falsification breaches: {e}")
+
+        # Fallback simulation when no active watchlist stock is currently breached
+        if not stocks:
+            sample_candidates = ["INTC", "BLDP.TO"]
+            for sym in sample_candidates:
+                s_data = DataProviderManager.get_stock_data(sym)
                 p = float(s_data.get("current_price", 20.0)) if s_data.get("is_valid") else 20.0
+                floor = round(p * 1.05, 2)  # Simulated breached floor
+                breakdown = round(((floor - p) / floor) * 100, 1)
                 stocks.append({
-                    "symbol": r["symbol"],
-                    "company_name": s_data.get("company_name", r["symbol"]),
+                    "symbol": sym,
+                    "company_name": s_data.get("company_name", sym),
                     "current_price": p,
+                    "falsification_floor": floor,
+                    "breakdown_pct": breakdown,
                     "currency": s_data.get("currency", "USD"),
-                    "risk_reason_en": r["reason_en"],
-                    "risk_reason_zh": r["reason_zh"],
-                    "suggested_action": r["action"]
+                    "risk_reason_zh": f"跌破 200日均线离场底线 (${floor})，投资假说逻辑证伪。",
+                    "risk_reason_en": f"Decisively breached 200D MA exit floor (${floor}). Investment thesis falsified.",
+                    "suggested_action": "🚨 强制机械离场 / 止损 (MANDATORY CUT-LOSS EXIT)"
                 })
 
+        stocks = stocks[:4]
+
         if lang == "zh":
-            title = f"预警信号: 观察列表风险卖出提醒 ({len(stocks)} 只股票)"
-            description = "**高风险预警**: 观察列表与持仓监控中检测到以下标的存在估值过热或基本面走弱风险，建议评估止损或减仓：\n"
+            title = f"🚨 假说证伪熔断预警: 观察列表标的击穿量化离场底线 ({len(stocks)} 只股票)"
+            description = "**高风险熔断触发**: 观察列表与持仓监控中检测到以下标的已**跌破 200D 均线量化证伪底线（-3%缓冲带）**。投资假说已被证伪，严格恪守反破产投资宪法：**破位机械离场，严禁逆势抄底加仓！**\n"
             fields = []
             for s in stocks:
                 fields.append({
-                    "name": f"{s['company_name']} (${s['symbol']})",
-                    "value": f"• 实时现价: `${s['current_price']} {s.get('currency', '')}`\n• 风险诱因: `{s.get('risk_reason_zh', s.get('risk_reason_en', '估值偏高'))}`\n• 建议操作: **{s['suggested_action']}**",
+                    "name": f"{s['company_name']} (${s['symbol']}) - 现价 ${s['current_price']} {s.get('currency', '')}",
+                    "value": f"• 证伪熔断底线: `${s['falsification_floor']} {s.get('currency', '')}` (跌破幅度 `-{s['breakdown_pct']}%`)\n• 熔断诱因: {s.get('risk_reason_zh')}\n• 纪律操作要求: **{s['suggested_action']}**",
                     "inline": False
                 })
         else:
-            title = f"DANGER ALERT: Watchlist Sell / Risk Warning ({len(stocks)} Stocks)"
-            description = "**High Risk Warning**: The following stocks have entered overbought territory or triggered guidance warning indicators:\n"
+            title = f"🚨 FALSIFICATION ALERT: Watchlist Stocks Breached Exit Floor ({len(stocks)} Stocks)"
+            description = "**High Risk Falsification Alert**: Monitored stocks have **breached their quantified 200D SMA exit floor (-3% buffer)**. Pre-trade investment thesis is falsified. Strictly obey anti-ruin constitution: **Execute stop-loss discipline, never average down on the left side!**\n"
             fields = []
             for s in stocks:
                 fields.append({
-                    "name": f"{s['company_name']} (${s['symbol']})",
-                    "value": f"• Live Price: `${s['current_price']} {s.get('currency', '')}`\n• Risk Factor: `{s.get('risk_reason_en', 'Overextended valuation')}`\n• Recommended Action: **{s['suggested_action']}**",
+                    "name": f"{s['company_name']} (${s['symbol']}) - Live ${s['current_price']} {s.get('currency', '')}",
+                    "value": f"• Falsification Floor: `${s['falsification_floor']} {s.get('currency', '')}` (Breach Margin `-{s['breakdown_pct']}%`)\n• Trigger Factor: {s.get('risk_reason_en')}\n• Mandatory Action: **{s['suggested_action']}**",
                     "inline": False
                 })
 
@@ -295,9 +344,9 @@ class DiscordNotifier:
             webhook_url=webhook_url,
             title=title,
             description=description,
-            color=cls.DISCORD_COLOR_DANGER_ZONE,
+            color=cls.DISCORD_COLOR_FALSIFICATION,
             fields=fields,
-            footer_text="Prism Loop • High-Priority Danger Risk Alert"
+            footer_text="Prism Loop • Pre-Trade Constitution Falsification Alert"
         )
 
     @classmethod
