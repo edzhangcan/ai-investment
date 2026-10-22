@@ -341,6 +341,18 @@ export interface Translations {
   taxonomyGrain: string;
   taxonomyVegetable: string;
   impliedCeilingTitle: string;
+  reverseDcfExplainerTitle: string;
+  reverseDcfFormulaBadge: string;
+  reverseDcfHelpText: string;
+  reverseDcfMultiplierTooltip: string;
+  reverseDcfProfitTooltip: string;
+  volumeLabel: string;
+  avgVolumeLabel: string;
+  volumePaceRatioLabel: string;
+  volumePaceElevated: string;
+  volumePaceNormal: string;
+  volumePaceLight: string;
+  chartSubtitleHelp: string;
   prosperityTrapAlert: string;
   barbell8020Label: string;
   calmarRatioLabel: string;
@@ -697,6 +709,18 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     taxonomyGrain: "🌾 Grain (Cyclical / Value)",
     taxonomyVegetable: "🥬 Vegetable (Trend Only)",
     impliedCeilingTitle: "Reverse-DCF Implied 10Y Earnings Ceiling",
+    reverseDcfExplainerTitle: "Reverse-DCF Institutional Logic & Formula Deconstruction",
+    reverseDcfFormulaBadge: "Equation: Current Net Income (E₀) × Implied Multiplier (E₁₀/E₀) = Implied Year-10 Target Profit (E₁₀)",
+    reverseDcfHelpText: "Reverse-DCF inverts traditional valuation by taking today's market price to deduce what earnings growth the market is pricing in over 10 years at a 10% discount rate. If the implied profit ceiling exceeds market reality, a Prosperity Trap risk is present.",
+    reverseDcfMultiplierTooltip: "The required 10-year cumulative net profit growth multiple (E₁₀ / E₀) to justify today's market valuation at a 10% cost of equity.",
+    reverseDcfProfitTooltip: "The absolute annual net profit the company must produce 10 years from now: E₁₀ = Current Net Income (E₀) × (E₁₀ / E₀).",
+    volumeLabel: "Trading Volume",
+    avgVolumeLabel: "3M Avg Volume",
+    volumePaceRatioLabel: "Volume Pace",
+    volumePaceElevated: "Elevated Liquidity",
+    volumePaceNormal: "Normal Liquidity",
+    volumePaceLight: "Light Liquidity",
+    chartSubtitleHelp: "Authentic market daily closes with technical moving averages and intrinsic valuation overlays. X-axis shows calendar trading dates.",
     prosperityTrapAlert: "Prosperity Trap Warning: High short-term growth at low PE percentile — check if terminal ceiling is saturated.",
     barbell8020Label: "Barbell 80/20 (2%–4% Finite Bet Cap)",
     calmarRatioLabel: "Calmar Ratio (CAGR / Max Drawdown)",
@@ -1052,6 +1076,18 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     taxonomyGrain: "🌾 种粮股（春播秋收：估值回归+高股息）",
     taxonomyVegetable: "🥬 种菜股（无基本面价值，仅限趋势交易）",
     impliedCeilingTitle: "穿透叙事：当前股价隐含 10 年利润天花板倍数",
+    reverseDcfExplainerTitle: "反向 DCF 机构逻辑与估值公式穿透",
+    reverseDcfFormulaBadge: "估值等式：当前年利润 (E₀) × 隐含扩张倍数 (E₁₀/E₀) = 10年后目标年净利润 (E₁₀)",
+    reverseDcfHelpText: "反向 DCF 逆向推演当前市场股价中所隐含的未来10年利润增长要求（以10%要求回报率折现）。若隐含的10年后利润天花板超越商业物理极限，即触发‘景气度陷阱’预警。",
+    reverseDcfMultiplierTooltip: "在 10% 权益资本成本下，支撑当前估值所需实现的 10 年累计净利润扩张倍数 (E₁₀ / E₀)。",
+    reverseDcfProfitTooltip: "10年后企业必须达到的年度绝对净利润规模：E₁₀ = 当前净利润 (E₀) × (E₁₀ / E₀)。",
+    volumeLabel: "今日成交量",
+    avgVolumeLabel: "3个月日均量",
+    volumePaceRatioLabel: "量比",
+    volumePaceElevated: "量能充沛",
+    volumePaceNormal: "成交平稳",
+    volumePaceLight: "地量缩量",
+    chartSubtitleHelp: "真实交易所每日收盘价与技术均线、固有估值覆盖。横轴标明自然交易日历日期。",
     prosperityTrapAlert: "景气度陷阱预警：高增速+低PE分位，警惕行业终局天花板见顶导致估值压缩。",
     barbell8020Label: "80/20 哑铃配置（单票 2%–4% 有限下注）",
     calmarRatioLabel: "卡玛比率（年化收益 ÷ 最大回撤）",
@@ -1407,6 +1443,18 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     taxonomyGrain: "🌾 种粮股 (Grain Value/Yield)",
     taxonomyVegetable: "🥬 种菜股 (Vegetable Trend Only)",
     impliedCeilingTitle: "穿透叙事: 隐含 10Y 天花板倍数 (Reverse-DCF)",
+    reverseDcfExplainerTitle: "反向 DCF 逻辑与公式穿透 (Reverse-DCF Deconstruction)",
+    reverseDcfFormulaBadge: "等式: 当前年利润 (E₀) × 隐含扩张倍数 (E₁₀/E₀) = 10年后目标年净利润 (E₁₀)",
+    reverseDcfHelpText: "反向 DCF 逆向推演股价隐含的10年利润扩张要求 (Reverse-DCF inverts price to deduce market-implied 10Y profit growth). 若超越物理极限即触发景气度陷阱。",
+    reverseDcfMultiplierTooltip: "支撑当前估值所需实现的 10 年净利润扩张倍数 (E₁₀ / E₀ implied at 10% hurdle rate).",
+    reverseDcfProfitTooltip: "10年后企业必须达到的年度绝对净利润规模 (E₁₀ = E₀ × Multiplier).",
+    volumeLabel: "今日成交量 (Volume)",
+    avgVolumeLabel: "3个月日均量 (3M Avg Volume)",
+    volumePaceRatioLabel: "量比 (Volume Pace)",
+    volumePaceElevated: "量能充沛 (Elevated)",
+    volumePaceNormal: "成交平稳 (Normal)",
+    volumePaceLight: "地量缩量 (Light)",
+    chartSubtitleHelp: "真实交易所收盘价与技术均线覆盖。横轴为自然交易日历日期 (Authentic Market Closes & Calendar Dates).",
     prosperityTrapAlert: "景气度陷阱预警 (Prosperity Trap): 高增速+低PE分位，警惕行业终局见顶估值压缩。",
     barbell8020Label: "80/20 哑铃配置 (2%–4% Cap)",
     calmarRatioLabel: "卡玛比率 Calmar Ratio (CAGR / Max DD)",

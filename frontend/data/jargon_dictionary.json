@@ -1,4 +1,59 @@
 {
+  "Volume": {
+    "term_en": "Trading Volume (Daily Liquidity)",
+    "term_zh": "今日成交量 (实时流动性)",
+    "definition_en": "Total number of shares exchanged between buyers and sellers during the current trading session. High volume confirms institutional conviction, while low volume signals indifference or retail drift.",
+    "definition_zh": "在当前交易日内买卖双方实际换手成交的股票总股数。高成交量反映大型公募、对冲基金等机构资金深度参与，低成交量则反映交投清淡或仅存散户自发博弈。",
+    "analogy_en": "Foot traffic inside a superstore on Saturday afternoon compared to an empty mall on a rainy Tuesday morning.",
+    "analogy_zh": "就像周末下午人头攒动、排队结账的超级百货，比起阴雨天冷冷清清的空旷商铺，人流越旺代表买卖热度越高。",
+    "favor_direction": "higher",
+    "favor_explanation_en": "Elevated volume on upward price moves or support breakouts indicates strong institutional accumulation. Low volume breakouts often lack follow-through and are prone to false reversals.",
+    "favor_explanation_zh": "价格突破或在均线支撑位反弹时伴随放量最有利，说明机构主力正在积极建仓吸筹；无量上涨往往属于虚假冲高，易受空头回踩吞噬。"
+  },
+  "AvgVolume": {
+    "term_en": "3-Month Average Volume (Baseline Liquidity)",
+    "term_zh": "3个月日均成交量 (流动性基准)",
+    "definition_en": "The average daily share volume calculated over the preceding 63 trading days (approx. 3 calendar months). Serves as the institutional liquidity baseline against which daily volume spikes are measured.",
+    "definition_zh": "过去 63 个交易日（约 3 个自然月）内每个交易日换手股数的算术平均值。作为衡量股票基础流动性及今日量能是否异动放量的权威基准指标。",
+    "analogy_en": "The standard average daily customer count for a restaurant over a whole season, used to see if today's crowd is an exceptional rush or a quiet lull.",
+    "analogy_zh": "一家餐厅过去一个季度的平均每日客流基准，用来对比今天到底是大排长龙还是异常冷清。",
+    "favor_direction": "stable",
+    "favor_explanation_en": "A deep average volume (>1M shares/day) ensures institutional capital can enter and exit without suffering high market impact or bid-ask slippage penalties.",
+    "favor_explanation_zh": "高且平稳的日均量最有利（如日均换手超百万股），能确保大型资金进出自由，不致因流动性匮乏而承担巨大的冲击成本与滑点亏损。"
+  },
+  "ReverseDCF": {
+    "term_en": "Reverse-DCF (Narrative Penetration Model)",
+    "term_zh": "反向 DCF 估值模型 (穿透市场叙事)",
+    "definition_en": "A fundamental valuation model that inverts standard DCF: taking the live stock price as given and solving for the exact 10-year earnings growth rate required to justify today's valuation at a 10% hurdle rate.",
+    "definition_zh": "逆向现金流折现模型：将当前市场价格视为已知输入，倒推出在 10% 权益回报率（折现率）下，企业在未来 10 年必须实现的利润增长速度与规模，从而穿透市场过热或悲观叙事。",
+    "analogy_en": "Instead of guessing how fast a marathon runner will run, you look at their required race time to qualify for the Olympics and ask: 'Is human biology capable of this pace?'",
+    "analogy_zh": "不再主观盲猜运动员能跑多快，而是看着奥运金牌所需的严苛完赛时间反问：'以人类生理极限，他真能跑出这个速度吗？'以此识破资本泡沫。",
+    "favor_direction": "lower_multiple",
+    "favor_explanation_en": "Lower implied growth multiple is favorable (< 2.5x). When the market only prices in modest 1.5x–2.0x 10-year expansion, any operational surprise produces massive upside, leaving ample margin of safety.",
+    "favor_explanation_zh": "隐含扩张倍数越低越有利（如 < 2.5倍）：当市场预期极低仅定价 1.5-2.0 倍增长时，企业稍有超预期即能引发估值与业绩双击；若隐含倍数超 8-10 倍，哪怕业绩优秀也极易遭遇景气度陷阱。"
+  },
+  "EarningsExpansionMultiple": {
+    "term_en": "10-Year Implied Earnings Expansion Multiple (E₁₀ / E₀)",
+    "term_zh": "10年隐含净利润扩张倍数 (E₁₀ / E₀)",
+    "definition_en": "The ratio of required Year-10 net income (E₁₀) to current net income (E₀) implied by today's stock price. Indicates how many times earnings must multiply over a decade.",
+    "definition_zh": "当前股价所隐含的第 10 年目标净利润 (E₁₀) 与基准期当前净利润 (E₀) 之比值。直观展示未来十年内企业的净利润总盘子必须翻多少倍，才能支撑当前市值。",
+    "analogy_en": "Asking an athlete earning $100k today if they can credibly expand their income to $500k (5.0x) within 10 years without changing sports.",
+    "analogy_zh": "问一个今年净赚 10 万元的创业者，能不能在不转换赛道的前提下，10 年后做到年净赚 50 万（5.0 倍），以此验证商业规划的真实性。",
+    "favor_direction": "lower_multiple",
+    "favor_explanation_en": "Lower required multiple indicates conservative market expectations and lower multiple compression risk. Multiples > 5.0x require sustained double-digit annual compound growth.",
+    "favor_explanation_zh": "所需扩张倍数越温和越好：较低倍数说明市场并未被疯狂叙事绑架，安全边际深厚；若倍数高达 5-10 倍，必须连续十年维持双位数高复合增长方能兑现。"
+  },
+  "ImpliedProfit": {
+    "term_en": "Implied Year-10 Target Net Income (E₁₀)",
+    "term_zh": "10年后目标年净利润规模 (E₁₀)",
+    "definition_en": "The absolute annual net profit (in currency billions) that the company must deliver in Year 10, calculated as Current Net Income (E₀) × Implied Multiplier (E₁₀ / E₀).",
+    "definition_zh": "企业在第 10 年必须向股东兑现的绝对年度净利润规模（以十亿计）：E₁₀ = 当前净利润 (E₀) × 隐含扩张倍数 (E₁₀ / E₀)。",
+    "analogy_en": "A company currently netting $2B per year having to generate $10B net profit every single year by 2036 just for today's buyers to break even at a 10% hurdle rate.",
+    "analogy_zh": "一家目前年赚 20 亿的公司，到 10 年后必须做到年纯赚 100 亿，今天的买入者才能拿到合格的 10% 投资回报率。",
+    "favor_direction": "credible",
+    "favor_explanation_en": "The implied profit must be credible when compared against the total addressable market (TAM) of the industry. If implied profit exceeds total industry revenue, the stock is a Prosperity Trap.",
+    "favor_explanation_zh": "隐含目标净利润必须符合行业总有效市场空间（TAM）常识。若算出的 10 年后目标利润甚至超越了全行业的总盘子，则百分之百属于击鼓传花的景气度陷阱。"
+  },
   "IdealBuyZone": {
     "term_en": "Ideal Buy Zone (Margin of Safety)",
     "term_zh": "理想建仓买入区 (安全边际)",
