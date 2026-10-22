@@ -230,7 +230,7 @@ class FundamentalEngine:
             badge_zh = "🥬 种菜股（无基本面价值，仅限趋势交易）"
             holding_rule_en = "Trend trading only: No DCF anchor, strictly follow 4-state trend temperature and hard stop-loss."
             holding_rule_zh = "无基本面锚，不可长期死扛，不可越跌越买，严格按趋势温度右侧交易并设硬止损。"
-        elif (is_wide_moat or roic >= 0.15 or fcf_margin >= 0.10) and rev_growth >= 0.08 and dilution_3y <= 3.0:
+        elif not is_resource_cyclical and (is_wide_moat or roic >= 0.15 or fcf_margin >= 0.10) and rev_growth >= 0.08 and dilution_3y <= 3.0:
             taxonomy = "TREE"
             badge_en = "🌲 Tree (Compounder)"
             badge_zh = "🌲 种树股（长期自由现金流复利）"
