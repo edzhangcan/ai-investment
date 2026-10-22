@@ -202,7 +202,7 @@ class FundamentalEngine:
             symbol_upper in {
                 "JPM", "BAC", "C", "GS", "MS", "WFC", "BLK", "SCHW", "AXP", "USB", "PNC", "TFC", "COF",
                 "RY.TO", "TD.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "LB.TO", "CWB.TO",
-                "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BAM.TO", "BN.TO", "X.TO", "EFN.TO"
+                "POW.TO", "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BAM.TO", "BN.TO", "X.TO", "EFN.TO"
             }
         )
 

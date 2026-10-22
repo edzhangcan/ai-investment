@@ -35,7 +35,7 @@ class PricingEngine:
     # Core operating parent debt is distinct from asset-level non-recourse portfolio debt.
     ASSET_MANAGER_SYMBOLS: frozenset = frozenset({
         "BN.TO", "BN", "BAM.TO", "BAM", "BLK", "BX", "KKR", "APO", "ARES",
-        "POW.TO", "X.TO", "GSY.TO", "EFN.TO", "CG", "OWL"
+        "X.TO", "GSY.TO", "EFN.TO", "CG", "OWL"
     })
 
     # 3. DEPOSITORY BANKS & LIFE INSURERS:
@@ -44,7 +44,7 @@ class PricingEngine:
     DEPOSITORY_AND_INSURANCE_SYMBOLS: frozenset = frozenset({
         "JPM", "BAC", "C", "GS", "MS", "WFC", "SCHW", "USB", "PNC", "TFC", "COF",
         "RY.TO", "TD.TO", "BNS.TO", "BMO.TO", "CM.TO", "NA.TO", "LB.TO", "CWB.TO",
-        "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BRK-B", "BRK.B", "BRK-A", "BRK.A"
+        "POW.TO", "GWO.TO", "MFC.TO", "SLF.TO", "IFC.TO", "IAG.TO", "BRK-B", "BRK.B", "BRK-A", "BRK.A"
     })
 
     # 4. REGULATED UTILITIES & MIDSTREAM INFRASTRUCTURE:
@@ -102,6 +102,34 @@ class PricingEngine:
     # Global multi-asset producers with large reserves, low-cost Tier-1 mining complexes, and decades of mine life.
     SENIOR_MINING_CHAMPIONS: frozenset = frozenset({
         "AEM.TO", "AEM", "ABX.TO", "ABX", "GOLD", "FCX", "SCCO", "BHP", "RIO", "VALE", "NEM"
+    })
+
+    # 10. SENIOR UPSTREAM ENERGY & INTEGRATED PRODUCERS:
+    # Global supermajors and long-reserve oil sands producers with Tier-1 multi-decade reserve bases.
+    SENIOR_ENERGY_CHAMPIONS: frozenset = frozenset({
+        "XOM", "CVX", "SU.TO", "SU", "CNQ.TO", "CNQ", "CVE.TO", "CVE", "BP", "SHEL", "TTE"
+    })
+
+    # 11. SERIAL ACQUIRERS / VERTICAL SOFTWARE M&A ROLL-UPS:
+    # Serial capital allocators whose top-line growth is driven by deploying FCF into software/industrial acquisitions.
+    SERIAL_ACQUIRER_SYMBOLS: frozenset = frozenset({
+        "CSU.TO", "CSU", "TOI.V", "LMN.V", "ENGH.TO", "ENGH"
+    })
+
+    # 12. ASSET-LIGHT WHOLE-BUSINESS SECURITIZATION FRANCHISE TOLLBOOTHS:
+    # 90%+ franchised brands with recurring top-line franchise royalties and securitized debt structures.
+    FRANCHISE_ROYALTY_SYMBOLS: frozenset = frozenset({
+        "WING", "DPZ", "YUM", "QSR.TO", "QSR", "MTY.TO", "MTY"
+    })
+
+    # 13. AIR FREIGHT, CARGO & LOGISTICS TRANSPORTATION:
+    AIR_TRANSPORT_SYMBOLS: frozenset = frozenset({
+        "CJT.TO", "CJT", "FDX", "UPS", "DAL", "LUV", "UAL", "AAL"
+    })
+
+    # 14. CYCLICAL POWERSPORTS & AUTOMOTIVE CAPITAL GOODS:
+    AUTO_AND_POWERSPORTS_SYMBOLS: frozenset = frozenset({
+        "DOO.TO", "DOO", "PII", "MG.TO", "MG", "F", "GM", "TSLA", "RACE", "HMC", "TM"
     })
 
     @classmethod
@@ -294,6 +322,52 @@ class PricingEngine:
             "telecommunication" in industry.lower()
         )
 
+        is_refining = (
+            any(r in industry for r in ["refining & marketing", "oil & gas refining"]) or
+            symbol_upper in {"MPC", "VLO"}
+        )
+
+        is_energy_cyclical = (
+            (
+                "energy" in sector or
+                symbol_upper in cls.SENIOR_ENERGY_CHAMPIONS or
+                any(e in industry for e in [
+                    "oil & gas e&p", "oil & gas refining", "oil & gas integrated", 
+                    "exploration & production", "refining & marketing"
+                ])
+            )
+            and not is_midstream
+            and not is_regulated_infrastructure
+            and not is_utility
+            and not is_ipp
+            and not any(s in industry for s in ["equipment", "services", "oilfield"])
+        )
+
+        is_franchise_royalty = (
+            symbol_upper in cls.FRANCHISE_ROYALTY_SYMBOLS or
+            ("restaurants" in industry and any(f in (stock_data.get("company_name") or "").lower() for f in ["wingstop", "domino", "restaurant brands", "mty"]))
+        )
+
+        is_serial_acquirer = (
+            symbol_upper in cls.SERIAL_ACQUIRER_SYMBOLS
+        )
+
+        is_auto_or_powersports = (
+            (symbol_upper in cls.AUTO_AND_POWERSPORTS_SYMBOLS or
+             any(a in industry for a in ["recreational vehicles", "auto parts", "auto manufacturers"]))
+            and symbol_upper != "TSLA"
+        )
+
+        is_air_transport = (
+            symbol_upper in cls.AIR_TRANSPORT_SYMBOLS or
+            any(a in industry for a in ["airlines", "air freight", "air delivery"])
+        )
+
+        is_defense_contractor = (
+            "aerospace & defense" in industry or
+            symbol_upper in {"CGY.TO", "CGY", "CACI", "LDOS", "SAIC"}
+        )
+
         # Determine market_cap & implied_shares
         market_cap = stock_data.get("market_cap")
         shares_outstanding = stock_data.get("shares_outstanding") or stock_data.get("implied_shares")
@@ -349,11 +423,17 @@ class PricingEngine:
         # Institutional Blume beta adjustment: smooths extreme rolling betas toward market 1.0
         # 1. Large-cap platforms ($30B+ market cap with raw_beta > 1.6): rolling 3Y/5Y betas are distorted
         # by past macro rate-hike cycles (e.g. 2020-2022 tech volatility). Smooth 50/50 toward 1.0 and cap at 1.45.
-        # 2. Volatile cyclical and crisis-distorted equities (materials, mining, energy, or beta > 1.8): smooth 67/33.
+        # 2. Franchise royalty companies with extreme raw betas: smooth 50/50 toward 1.0.
+        # 3. Volatile cyclical and crisis-distorted equities (materials, mining, energy, powersports, or beta > 1.8): smooth 67/33.
+        # 4. Low-covariance speculative equities (raw_beta < 0.55): smooth 50/50 toward 1.0 to prevent under-discounting.
         if (market_cap and market_cap >= 30_000_000_000) and raw_beta > 1.6:
             beta = round(min(1.45, 0.50 * raw_beta + 0.50 * 1.0), 3)
-        elif "material" in sector or "mining" in industry or "energy" in sector or "copper" in industry or raw_beta > 1.8:
+        elif is_franchise_royalty and raw_beta > 1.3:
+            beta = round(min(1.20, 0.50 * raw_beta + 0.50 * 1.0), 3)
+        elif "material" in sector or "mining" in industry or "energy" in sector or "copper" in industry or is_auto_or_powersports or raw_beta > 1.8:
             beta = round(0.67 * raw_beta + 0.33 * 1.0, 3)
+        elif raw_beta < 0.55:
+            beta = round(0.50 * raw_beta + 0.50 * 1.0, 3)
         else:
             beta = raw_beta
 
@@ -367,15 +447,20 @@ class PricingEngine:
             is_financial=is_financial
         )
 
-        # Institutional Metals & Mining Cost of Capital Prudential Hurdle Floor
-        # Resource extraction carries physical geological depletion, permitting, jurisdictional, and commodity price cycle volatility.
-        # Trailing safe-haven or inflation-hedge betas (e.g. gold acting as portfolio hedge) cannot artificially compress mining WACC below institutional hurdle rates.
+        # Institutional Cost of Capital Prudential Hurdle Floors
+        # 1. Metals & Mining: geological depletion, permitting, jurisdictional, and commodity price cycle volatility.
         if is_mining_materials:
             wacc = max(0.0885, wacc)
+        # 2. Refining / Cyclical Powersports: crack spread & powersports volatility.
+        elif is_refining or is_auto_or_powersports:
+            wacc = max(0.0850, wacc)
+        # 3. Transportation, Logistics & Defense Contractors: capital intensity and contract re-bidding risk.
+        elif is_air_transport or is_defense_contractor:
+            wacc = max(0.0800, wacc)
 
         terminal_growth = (
-            0.018 if is_mining_materials
-            else (0.025 if (is_regulated_infrastructure or is_utility or is_telecom) else 0.03)
+            0.018 if (is_mining_materials or is_refining)
+            else (0.025 if (is_regulated_infrastructure or is_utility or is_telecom or is_energy_cyclical) else 0.03)
         )
 
         # Net buyback yield
@@ -402,7 +487,7 @@ class PricingEngine:
         TECH_PLATFORM_SYMBOLS = {
             "SHOP.TO", "SHOP", "NVDA", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "AAPL",
             "CRWD", "NOW", "DDOG", "SNOW", "PLTR", "CRM", "UBER", "ABNB", "TSM", "ASML",
-            "AVGO", "ADBE", "INTU", "NET", "AXON", "TSLA", "FOUR", "V", "MA", "MDB", "PANW",
+            "AVGO", "ADBE", "INTU", "NET", "AXON", "TSLA", "V", "MA", "MDB", "PANW",
             "AMD", "QCOM", "ARM"
         }
         is_tech_sector = (
@@ -416,6 +501,9 @@ class PricingEngine:
             not is_midstream and
             not is_railroad and
             not is_retail_or_grocery and
+            not is_energy_cyclical and
+            not is_auto_or_powersports and
+            not is_serial_acquirer and
             symbol_upper != "SMCI" and
             (is_tech_sector or symbol_upper in TECH_PLATFORM_SYMBOLS) and
             ("material" not in sector and "mining" not in industry and "energy" not in sector and ("industrial" not in sector or symbol_upper in TECH_PLATFORM_SYMBOLS)) and
@@ -424,8 +512,37 @@ class PricingEngine:
         )
 
         if is_high_growth_platform:
-            rev_growth = min(max(raw_rev_growth, 0.05), 0.24)
-            target_fcf_margin = 0.24 if (is_wide_moat or roic >= 0.20) else 0.20
+            # Guardrail: Processors reporting gross pass-through interchange revenue (P/S < 2.5x)
+            # cannot sustain 24% bottom-line compound growth across entire volume base
+            ps_val = float(stock_data.get("ps_ratio") or 0.0)
+            if is_payment_network:
+                max_pay_g = 0.18 if is_wide_moat else 0.12
+                rev_growth = min(max(raw_rev_growth, 0.05), max_pay_g)
+                target_fcf_margin = None
+            elif ps_val > 0 and ps_val < 2.0:
+                rev_growth = min(max(raw_rev_growth, 0.05), 0.14)
+                target_fcf_margin = None
+            else:
+                rev_growth = min(max(raw_rev_growth, 0.05), 0.24)
+                target_fcf_margin = 0.24 if (is_wide_moat or roic >= 0.20) else 0.20
+        elif is_serial_acquirer:
+            # Serial acquirers (e.g. CSU.TO): Deploy operating cash flow into M&A acquisitions.
+            # Organic revenue growth is 4.0% - 5.5% (avoids double-counting reinvested acquisition cash flow).
+            rev_growth = min(max(raw_rev_growth, 0.03), 0.055)
+            target_fcf_margin = None
+        elif is_energy_cyclical:
+            # Upstream hydrocarbon E&P and refining: volume growth is bounded by reservoir depletion and OPEC+
+            rev_growth = min(max(raw_rev_growth, 0.02), 0.06)
+            target_fcf_margin = None
+        elif is_auto_or_powersports:
+            rev_growth = min(max(raw_rev_growth, 0.02), 0.055)
+            target_fcf_margin = None
+        elif is_air_transport:
+            rev_growth = min(max(raw_rev_growth, 0.02), 0.055)
+            target_fcf_margin = None
+        elif is_defense_contractor:
+            rev_growth = min(max(raw_rev_growth, 0.03), 0.07)
+            target_fcf_margin = None
         elif is_retail_or_grocery:
             if is_wide_moat and (roic >= 0.18 or symbol_upper in {"DOL.TO", "COST"}):
                 # Wide Moat retail champions compound store counts and market share secularly
@@ -469,9 +586,17 @@ class PricingEngine:
             and (roic >= 0.10 or rev_growth >= 0.06 or raw_rev_growth >= 0.10 or symbol_upper == "FCX")
         )
         if total_capex > 0 and is_mining_materials:
-            # In metals & mining, sustaining capex (waste stripping, underground development, tailing storage facilities)
-            # is essential to maintain baseline throughput and cannot be credited back as discretionary owner cash flow.
-            growth_capex_credit = 0.0
+            # In metals & mining, sustaining capex is essential to maintain baseline throughput.
+            # Senior Tier-1 mining champions (FCX, ABX, AEM) undertaking multi-year greenfield smelters/mine expansions:
+            # When capex / OCF > 0.45 and market cap >= $25B, grant an institutional 35% growth capex credit.
+            if symbol_upper in cls.SENIOR_MINING_CHAMPIONS and operating_cf > 0 and (total_capex / operating_cf > 0.45):
+                growth_capex_credit = total_capex * 0.35
+            else:
+                growth_capex_credit = 0.0
+        elif total_capex > 0 and is_franchise_royalty:
+            # Franchise royalty tollbooths: franchisees fund store buildouts & maintenance;
+            # franchisor corporate capex is discretionary tech & network expansion (65% growth credit)
+            growth_capex_credit = total_capex * 0.65
         elif total_capex > 0 and is_railroad:
             # Transcontinental railroads: 35% of capex is network capacity expansion, siding extensions, and acquisition integration
             growth_capex_credit = total_capex * 0.35
@@ -509,6 +634,16 @@ class PricingEngine:
         elif is_mining_materials and market_cap > 0 and (base_fcf / market_cap > 0.075):
             # Institutional Metals & Mining peak-cycle normalization: FCF yield capped at 6.5% mid-cycle market cap
             owner_fcf = market_cap * 0.065
+        elif is_refining and market_cap > 0 and (base_fcf / market_cap > 0.08):
+            # Merchant refining crack spread boom normalization: FCF yield capped at 7.0% mid-cycle market cap
+            owner_fcf = market_cap * 0.070
+        elif is_energy_cyclical and market_cap > 0 and (base_fcf / market_cap > 0.085):
+            # Institutional Energy mid-cycle normalization: FCF yield capped at 8.0% mid-cycle market cap
+            owner_fcf = market_cap * 0.080
+        elif is_auto_or_powersports and market_cap > 0 and (base_fcf / market_cap > 0.09):
+            owner_fcf = market_cap * 0.075
+        elif is_air_transport and market_cap > 0 and (base_fcf / market_cap > 0.09):
+            owner_fcf = market_cap * 0.08
         elif is_commodity_cyclical and market_cap > 0 and (base_fcf / market_cap > 0.09):
             # Energy & Mining peak cycle normalization: FCF yield capped at 8.0% mid-cycle market cap
             owner_fcf = market_cap * 0.08
@@ -521,7 +656,11 @@ class PricingEngine:
         if is_high_growth_platform and (is_wide_moat or roic >= 0.20):
             exit_multiple = 25.0
         elif is_payment_network:
-            exit_multiple = 25.0 if is_wide_moat else 22.0
+            exit_multiple = 25.0 if is_wide_moat else 18.0
+        elif is_serial_acquirer:
+            exit_multiple = 22.0
+        elif is_franchise_royalty:
+            exit_multiple = 24.0 if is_wide_moat else 22.0
         elif is_asset_manager:
             exit_multiple = 18.0 if is_wide_moat else 15.5
         elif is_railroad:
@@ -548,6 +687,24 @@ class PricingEngine:
             else:
                 # Steel, aluminum, bulk commodities, specialty chemicals (TECK-B.TO, NUE, CLF, AA, STLD)
                 exit_multiple = 8.5
+        elif is_refining:
+            # Merchant refiners (MPC, VLO): volatile crack spread commodity processors
+            exit_multiple = 8.5
+        elif is_energy_cyclical:
+            # Institutional Upstream Energy & Integrated Valuation Archetype
+            if symbol_upper in cls.SENIOR_ENERGY_CHAMPIONS or (is_wide_moat and roic >= 0.15):
+                exit_multiple = 16.0 if ("Narrow" in str(moat_rating) or is_wide_moat) else 10.0
+            elif any(e in industry for e in ["integrated", "oil sands"]):
+                exit_multiple = 16.0 if ("Narrow" in str(moat_rating) or is_wide_moat) else 9.5
+            else:
+                # Upstream E&P (EOG, OXY, TOU.TO, DVN)
+                exit_multiple = 10.0
+        elif is_auto_or_powersports:
+            exit_multiple = 10.0
+        elif is_air_transport:
+            exit_multiple = 11.5
+        elif is_defense_contractor:
+            exit_multiple = 13.5
         elif is_wide_moat and roic >= 0.20:
             exit_multiple = 25.0
         elif is_wide_moat or (("Narrow" in str(moat_rating) or "窄" in str(moat_rating)) and roic >= 0.15):
@@ -593,6 +750,10 @@ class PricingEngine:
             eps_est = (price / float(pe)) if (pe and float(pe) > 0) else (net_inc / implied_shares if implied_shares > 0 else 0.0)
             if symbol_upper in {"BRK-B", "BRK.B"} and eps_est > 1000.0:
                 eps_est = eps_est / 1500.0
+            # Guardrail: Financial institution normalized EPS bounded to 4.0% - 20.0% of share price (P/E 5.0x to 25.0x)
+            if price > 0:
+                if eps_est > (price * 0.20) or eps_est < (price * 0.04):
+                    eps_est = price / 13.5
             
             fair_ddm = 0.0
             if div_rate > 0:
@@ -726,7 +887,9 @@ class PricingEngine:
                 is_high_growth_platform and
                 target_fcf_margin is not None and
                 raw_rev > 0 and
-                curr_margin < target_fcf_margin
+                curr_margin < target_fcf_margin and
+                curr_margin >= 0.03 and
+                (market_cap == 0 or raw_rev <= market_cap * 2.0)
             )
 
             curr_fcf = owner_fcf
@@ -760,6 +923,18 @@ class PricingEngine:
                 # requires massive replacement discovery, permitting, and construction capex drag.
                 # Apply an institutional 0.65x LoM reserve exhaustion factor to Gordon perpetual value.
                 tv_gordon_effective = tv_gordon * 0.65
+                tv_blended = 0.50 * tv_gordon_effective + 0.50 * tv_exit
+            elif is_refining:
+                # Refining crack spread mean-reversion & decarbonization drag: 0.70x
+                tv_gordon_effective = tv_gordon * 0.70
+                tv_blended = 0.50 * tv_gordon_effective + 0.50 * tv_exit
+            elif is_energy_cyclical and not any(e in industry for e in ["integrated", "oil sands"]):
+                # Upstream shale E&P reserve depletion (wells decline 15-25% annually): 0.75x
+                tv_gordon_effective = tv_gordon * 0.75
+                tv_blended = 0.50 * tv_gordon_effective + 0.50 * tv_exit
+            elif is_auto_or_powersports or is_air_transport:
+                # Heavy capital goods & equipment reinvestment drag: 0.75x
+                tv_gordon_effective = tv_gordon * 0.75
                 tv_blended = 0.50 * tv_gordon_effective + 0.50 * tv_exit
             else:
                 tv_blended = 0.50 * tv_gordon + 0.50 * tv_exit
@@ -803,6 +978,21 @@ class PricingEngine:
                 equity_value = enterprise_value - net_debt_clamp
                 effective_cash = total_cash
                 effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
+            elif is_franchise_royalty:
+                # Franchise Whole-Business Securitization:
+                # Debt is backed by top-line franchise royalty contracts and non-recourse to physical stores; net debt capped at 25% EV
+                net_debt = total_debt - total_cash
+                net_debt_clamp = min(net_debt, enterprise_value * 0.25) if net_debt > 0 else net_debt
+                equity_value = enterprise_value - net_debt_clamp
+                effective_cash = total_cash
+                effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
+            elif is_energy_cyclical:
+                # Upstream energy & refining: debt backed by hydrocarbon reserve base; net debt deduction capped at 40% EV
+                net_debt = total_debt - total_cash
+                net_debt_clamp = min(net_debt, enterprise_value * 0.40) if net_debt > 0 else net_debt
+                equity_value = enterprise_value - net_debt_clamp
+                effective_cash = total_cash
+                effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
             elif is_supermarket_holding:
                 # Retail, supermarket & discount store chains with capitalized IFRS 16 / ASC 842 store leases (e.g. WN.TO, DOL.TO, WMT, COST):
                 # Deduct funded corporate debt only, avoiding double-counting store rent already deducted from OCF.
@@ -818,6 +1008,10 @@ class PricingEngine:
                 net_debt = total_debt - total_cash
                 # Guardrail: Net debt deduction for going concerns cannot wipe out > 70% of operating EV
                 net_debt_clamp = min(net_debt, enterprise_value * 0.70) if net_debt > 0 else net_debt
+                # Universal Corporate Cash Cap Guardrail:
+                # Cash added to operating enterprise value cannot exceed 35% of EV (prevents client escrow, customer deposits, or policyholder cash from inflating equity value)
+                if net_debt_clamp < 0:
+                    net_debt_clamp = max(net_debt_clamp, -enterprise_value * 0.35)
                 equity_value = enterprise_value - net_debt_clamp
 
             fair_value_per_share = round(max(0.01, equity_value / implied_shares_effective), 2)
@@ -1254,6 +1448,10 @@ class PricingEngine:
             wacc = (we * ke) + (wd * kd_after_tax)
         else:
             wacc = ke
+
+        # Small-cap size premium hurdle: equities with market cap < $5B carry higher illiquidity and cost of equity
+        if mcap > 0 and mcap < 5_000_000_000 and not is_financial:
+            wacc = max(0.0780, wacc + 0.008)
 
         return round(min(max(wacc, 0.06), 0.14), 4)
 
