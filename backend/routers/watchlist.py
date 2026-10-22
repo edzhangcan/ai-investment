@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from backend.database import get_session
 from backend.models.db_models import UserWatchlistDB, TradeDecisionJournalDB, get_utc_now
-from backend.data_sources.data_provider import data_provider_manager
+from backend.data_sources.data_provider import data_provider_manager, DataProviderManager, FALLBACK_STOCK_DATA
 from backend.engines.pricing_engine import PricingEngine
 from backend.services.alert_engine import PriceAlertEngine
 
@@ -211,8 +211,22 @@ def set_stock_bucket(payload: SetBucketSchema, session: Session = Depends(get_se
     if target_bucket not in ["HOLDING", "WATCHLIST", "REGULAR"]:
         raise HTTPException(status_code=400, detail="Invalid bucket. Must be HOLDING, WATCHLIST, or REGULAR.")
 
-    quote = data_provider_manager.get_stock_quote(norm)
-    curr_price = float(quote.get("current_price") or 0.0)
+    # High-Performance Fast Quote Lookup (Sub-millisecond)
+    quote = None
+    with DataProviderManager._LOCK:
+        if norm in DataProviderManager._CACHE:
+            quote = DataProviderManager._CACHE[norm]
+    if not quote and norm in FALLBACK_STOCK_DATA:
+        quote = FALLBACK_STOCK_DATA[norm]
+    if not quote and (not payload.buy_in_price or target_bucket == "WATCHLIST"):
+        try:
+            quote = data_provider_manager.get_stock_quote(norm)
+        except Exception:
+            quote = {}
+    elif not quote:
+        quote = {}
+
+    curr_price = float(quote.get("current_price") or payload.buy_in_price or 0.0)
     company_name = payload.company_name or quote.get("company_name") or f"{norm} Corp"
 
     # Case 1: Transition to REGULAR (Remove from tracked DB)
@@ -268,7 +282,7 @@ def set_stock_bucket(payload: SetBucketSchema, session: Session = Depends(get_se
         session.add(existing)
         session.commit()
         session.refresh(existing)
-        return enrich_item_quote(existing)
+        return enrich_item_quote(existing, allow_network=False)
 
     # Create new tracked record
     new_item = UserWatchlistDB(
@@ -287,7 +301,7 @@ def set_stock_bucket(payload: SetBucketSchema, session: Session = Depends(get_se
     session.add(new_item)
     session.commit()
     session.refresh(new_item)
-    return enrich_item_quote(new_item)
+    return enrich_item_quote(new_item, allow_network=False)
 
 
 @router.post("/sell-holding")
@@ -342,8 +356,18 @@ def sell_holding(payload: SellHoldingSchema, session: Session = Depends(get_sess
     item.updated_at = get_utc_now()
 
     if post_bucket == "WATCHLIST":
-        # Re-anchor target buy price to 95% ceiling
-        quote = data_provider_manager.get_stock_quote(norm)
+        # Re-anchor target buy price to 95% ceiling using cached quote
+        quote = None
+        with DataProviderManager._LOCK:
+            if norm in DataProviderManager._CACHE:
+                quote = DataProviderManager._CACHE[norm]
+        if not quote and norm in FALLBACK_STOCK_DATA:
+            quote = FALLBACK_STOCK_DATA[norm]
+        if not quote:
+            try:
+                quote = data_provider_manager.get_stock_quote(norm)
+            except Exception:
+                quote = {}
         try:
             pricing = PricingEngine.evaluate_pricing_and_entry_zone(quote)
             buy_ceiling = float(pricing.get("ideal_buy_range_max") or 0.0)

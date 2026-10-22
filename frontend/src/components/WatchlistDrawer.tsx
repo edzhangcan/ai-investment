@@ -70,12 +70,25 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   const fetchOpportunities = async () => {
     try {
       const res = await refreshRecommendationsApi("ALL", 0, "en", "US");
-      if (res && res.recommendations) {
-        // Filter regular stocks with >= 10% discount and right side
-        const opps = res.recommendations.filter((r: any) => {
-          const discount = r.upside_discount_pct || 0;
-          return discount >= 10.0;
-        });
+      const pool = res?.recommended_stocks || res?.overall_recommended_stocks || res?.recommendations || [];
+      if (pool.length > 0) {
+        // Filter regular stocks with >= 10% discount to ideal buy zone ceiling
+        const opps = pool
+          .filter((r: any) => {
+            const ceiling = r.key_metrics?.ideal_buy_range_max || r.ideal_buy_range_max || 0;
+            const price = r.current_price || 0;
+            return ceiling > 0 && price > 0 && price <= (ceiling * 0.90);
+          })
+          .map((r: any) => {
+            const ceiling = r.key_metrics?.ideal_buy_range_max || r.ideal_buy_range_max || 0;
+            const price = r.current_price || 0;
+            const discountPct = ceiling > 0 ? Math.round(((ceiling - price) / ceiling) * 100) : 10;
+            return {
+              ...r,
+              ideal_buy_range_max: ceiling,
+              upside_discount_pct: discountPct
+            };
+          });
         setRegularOpportunities(opps.slice(0, 8));
       }
     } catch (e) {
@@ -86,9 +99,14 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchTrackedStocks();
-      fetchOpportunities();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && activeTab === 'REGULAR' && regularOpportunities.length === 0) {
+      fetchOpportunities();
+    }
+  }, [isOpen, activeTab, regularOpportunities.length]);
 
   const handleSyncTargets = async () => {
     setIsSyncing(true);

@@ -29,9 +29,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session
+from sqlmodel import Session, select, func
 from backend.config import settings
 from backend.database import init_db, engine
+from backend.models.db_models import RecommendationSnapshotDB
 from backend.routers import macro, stock, debate, watchlist, alerts, portfolio, backtest, push_alerts, valuation_settings
 
 # Configure logging format for production and development debugging
@@ -40,25 +41,46 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 
+def _run_universe_refresh_sync():
+    """Worker function executed inside a thread pool to avoid blocking asyncio event loop."""
+    try:
+        from backend.engines.recommendation_engine import RecommendationEngine
+        logging.info("Worker thread scanning US & Canadian stock universes for macro recommendation refresh...")
+        for c in ["US", "CA"]:
+            for l in ["en", "zh", "hybrid"]:
+                RecommendationEngine.refresh_stock_universe_job(force=True, lang=l, country=c)
+        logging.info("Worker thread US & CA stock universe scan complete. Next background refresh in 2 hours.")
+    except Exception as e:
+        logging.error(f"Error in stock universe refresh daemon thread: {e}")
+
 async def run_universe_refresh_daemon():
     """
     Background Async Worker Daemon:
     Runs continuously every 7,200 seconds (2 hours) to calculate and cache
     recommendations for 128 North American universe stocks across English, Chinese, and Hybrid modes.
+    Non-blocking: offloads heavy synchronous calculation to asyncio.to_thread.
     """
-    await asyncio.sleep(1)  # Allow uvicorn to bind port immediately
-    logging.info("Starting 2-Hour Automated Stock Universe Refresh Daemon...")
+    await asyncio.sleep(10)  # Allow uvicorn to bind port and serve initial client requests
+    
+    # Check if database already has valid snapshots on startup
+    has_snapshots = False
+    try:
+        with Session(engine) as session:
+            count = session.exec(select(func.count(RecommendationSnapshotDB.id))).one()
+            if count and count > 0:
+                has_snapshots = True
+                logging.info(f"Database already populated with {count} recommendation snapshots. Skipping startup scan.")
+    except Exception as e:
+        logging.warning(f"Failed to check initial snapshot count: {e}")
+
+    if not has_snapshots:
+        logging.info("Starting initial background Stock Universe Refresh in worker thread...")
+        await asyncio.to_thread(_run_universe_refresh_sync)
+
     while True:
-        try:
-            from backend.engines.recommendation_engine import RecommendationEngine
-            logging.info("Daemon scanning US & Canadian stock universes for macro recommendation refresh...")
-            for c in ["US", "CA"]:
-                for l in ["en", "zh", "hybrid"]:
-                    RecommendationEngine.refresh_stock_universe_job(force=True, lang=l, country=c)
-            logging.info("Daemon US & CA stock universe scan complete. Next background refresh in 2 hours.")
-        except Exception as e:
-            logging.error(f"Error in stock universe refresh daemon: {e}")
         await asyncio.sleep(7200)
+        logging.info("Starting scheduled 2-Hour Stock Universe Refresh in worker thread...")
+        await asyncio.to_thread(_run_universe_refresh_sync)
 
 async def run_alerts_scheduler_daemon():
     """
@@ -67,7 +89,7 @@ async def run_alerts_scheduler_daemon():
     1. Scheduled triggers (Morning Macro Digest at 8:00 AM EST, Midday Gold Nuggets at 12:00 PM EST).
     2. Watchlist target price condition triggers with 12-hour anti-spam cooldown protection.
     """
-    await asyncio.sleep(5)  # Allow uvicorn to bind port immediately
+    await asyncio.sleep(45)  # Allow uvicorn, frontend bootstrap, and client connections to fully settle
     logging.info("Starting Automated Scheduled & Conditional Alerts Daemon...")
     while True:
         try:
