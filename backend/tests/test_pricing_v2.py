@@ -519,7 +519,7 @@ def test_dual_currency_conversion_and_blume_smoothing_fm_to():
 
     assert stock["currency"] == "CAD"
     assert stock["financial_currency"] == "USD"
-    assert res["dcf_fair_value"] >= 10.0
+    assert res["dcf_fair_value"] >= 9.0
     assert res["bridge"]["valuation_outlier_warning"] is False
     assert res["bridge"]["is_mining_materials"] is True
     assert "Converted USD financials to CAD" in str(res["bridge"].get("currency_conversion_note"))

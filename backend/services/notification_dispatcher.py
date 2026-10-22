@@ -32,14 +32,22 @@ class NotificationDispatcher:
         upper_type = alert_type.upper()
         is_sell = upper_type == "SELL"
         is_falsification = upper_type == "FALSIFICATION"
+        is_stop_loss = upper_type == "STOP_LOSS"
+        is_discovery = upper_type in ["DISCOVERY_BUY", "REGULAR_DISCOVERY"]
         diff_pct = round(abs((target_buy_price - current_price) / max(0.01, target_buy_price)) * 100, 2)
         
         if is_falsification:
             event = "FALSIFICATION_THRESHOLD_BREACHED"
-            msg = f"🚨 FALSIFICATION ALERT: ${symbol} ({company_name}) has breached its bottom threshold! Current: ${current_price} < Floor: ${target_buy_price}. Mandatory exit rule active."
+            msg = f"🚨 FALSIFICATION ALERT: Holding ${symbol} ({company_name}) has breached its bottom threshold! Current: ${current_price} < Floor: ${target_buy_price}. Mandatory exit rule active."
+        elif is_stop_loss:
+            event = "HOLDING_STOP_LOSS_TRIGGERED"
+            msg = f"🚨 STOP-LOSS ALERT: Holding ${symbol} ({company_name}) drawdown breached -7% stop-loss in consolidation. Mandatory cut-loss rule active."
         elif is_sell:
             event = "PRICE_SELL_ZONE_TRIGGERED"
             msg = f"⚠️ ${symbol} ({company_name}) has reached your Profit-Taking Target! Current: ${current_price} >= Target: ${target_buy_price}"
+        elif is_discovery:
+            event = "REGULAR_UNIVERSE_DISCOVERY_BUY"
+            msg = f"💎 VALUE DISCOVERY: Regular stock ${symbol} ({company_name}) dropped >=10% below Buy Ceiling to ${current_price}. Right-side momentum confirmed! Consider adding to Watchlist."
         else:
             event = "PRICE_BUY_ZONE_TRIGGERED"
             msg = f"🔥 ${symbol} ({company_name}) has entered your Target Buy Zone! Current: ${current_price} <= Target: ${target_buy_price}"
@@ -64,16 +72,26 @@ class NotificationDispatcher:
                 config = session.exec(select(PushAlertConfigDB)).first()
                 if config and config.is_discord_enabled and config.discord_webhook_url:
                     if is_falsification:
-                        title = f"🚨 FALSIFICATION ALERT: ${symbol} Breached Floor"
+                        title = f"🚨 FALSIFICATION ALERT: Holding ${symbol} Breached Floor"
                         description = (
-                            f"⚠️ **{company_name}** (`${symbol}`) has fallen below its **quantified 200D MA exit floor**!\n\n"
+                            f"⚠️ Owned holding **{company_name}** (`${symbol}`) has fallen below its **quantified 200D MA exit floor**!\n\n"
                             f"• **Current Price**: `${current_price}`\n"
                             f"• **Bottom Exit Floor**: `${target_buy_price}` (-3.0% buffer under 200D MA)\n"
                             f"• **Breakdown Margin**: `-{diff_pct}%` below floor\n\n"
-                            f"**Investment Constitution Mandate**: Pre-trade falsification condition is met. Strictly prohibit averaging down. Execute stop-loss discipline."
+                            f"**Investment Constitution Mandate**: Pre-trade falsification condition is met. Strictly prohibit averaging down on the left side. Execute stop-loss discipline."
                         )
                         color = PushNotifier.DISCORD_COLOR_FALSIFICATION
-                        footer = "Prism Loop • Pre-Trade Constitution Falsification Alert"
+                        footer = "Prism Loop • Owned Holding Falsification Alert"
+                    elif is_stop_loss:
+                        title = f"🚨 STOP-LOSS ALERT: Holding ${symbol} Drawdown"
+                        description = (
+                            f"⚠️ Owned holding **{company_name}** (`${symbol}`) has triggered a **-7% stop-loss threshold** in consolidation!\n\n"
+                            f"• **Current Price**: `${current_price}`\n"
+                            f"• **Stop Floor**: `${target_buy_price}`\n\n"
+                            f"**Mandatory Action**: Cut loss mechanically to protect portfolio survival."
+                        )
+                        color = PushNotifier.DISCORD_COLOR_FALSIFICATION
+                        footer = "Prism Loop • Anti-Ruin Constitution Stop-Loss"
                     elif is_sell:
                         title = f"🔴 PROFIT-TAKING ALERT: ${symbol}"
                         description = (
@@ -84,16 +102,27 @@ class NotificationDispatcher:
                         )
                         color = PushNotifier.DISCORD_COLOR_SELL_DANGER
                         footer = "Prism Loop • Profit-Taking / Resistance Alert"
-                    else:
-                        title = f"🟢 BUY ZONE ALERT: ${symbol}"
+                    elif is_discovery:
+                        title = f"💎 VALUE DISCOVERY: ${symbol} at Deep Discount"
                         description = (
-                            f"**{company_name}** (`${symbol}`) has entered your **Target Buy Zone**!\n\n"
+                            f"Regular universe stock **{company_name}** (`${symbol}`) is trading at a **deep 10%+ discount** below its DCF Buy Ceiling with **Right-Side Batting Zone confirmation**!\n\n"
                             f"• **Current Price**: `${current_price}`\n"
-                            f"• **Target Buy Threshold**: `${target_buy_price}`\n"
+                            f"• **Buy Zone Ceiling**: `${target_buy_price}`\n"
+                            f"• **Deep Discount**: `{diff_pct}%` below ceiling\n\n"
+                            f"**Suggested Action**: Star and add to your Watchlist to monitor actively."
+                        )
+                        color = PushNotifier.DISCORD_COLOR_MACRO_DIGEST
+                        footer = "Prism Loop • Regular Universe Opportunity Alert"
+                    else:
+                        title = f"🟢 WATCHLIST BUY ZONE ALERT: ${symbol}"
+                        description = (
+                            f"**{company_name}** (`${symbol}`) in your Watchlist has entered your **Target Buy Zone** with **Right-Side Batting Zone momentum**!\n\n"
+                            f"• **Current Price**: `${current_price}`\n"
+                            f"• **Target Buy Threshold**: `${target_buy_price}` (95% Buy Ceiling)\n"
                             f"• **Discount Margin**: `{diff_pct}%` below target"
                         )
                         color = PushNotifier.DISCORD_COLOR_BUY_ZONE
-                        footer = "Prism Loop • Margin of Safety Buy Zone Alert"
+                        footer = "Prism Loop • Watchlist Buy Zone Alert"
 
                     fields = [
                         {"name": "Stock Ticker", "value": f"${symbol}", "inline": True},

@@ -42,6 +42,14 @@ def ensure_schema_migrations() -> None:
     """
     migrations = [
         ("user_watchlists", "target_sell_price", "REAL"),
+        ("user_watchlists", "bucket", "TEXT DEFAULT 'WATCHLIST'"),
+        ("user_watchlists", "buy_in_price", "REAL"),
+        ("user_watchlists", "buy_in_date", "TEXT"),
+        ("user_watchlists", "shares_held", "REAL"),
+        ("user_watchlists", "last_sell_price", "REAL"),
+        ("user_watchlists", "last_sell_date", "TEXT"),
+        ("user_watchlists", "realized_pnl_pct", "REAL"),
+        ("user_watchlists", "updated_at", "TIMESTAMP"),
         ("recommendation_snapshots", "country", "TEXT DEFAULT 'US'"),
         ("debate_transcripts", "bull_rebuttal", "TEXT"),
         ("debate_transcripts", "bear_rebuttal", "TEXT"),
@@ -59,6 +67,11 @@ def ensure_schema_migrations() -> None:
                     conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"))
             except Exception:
                 pass
+        try:
+            # Backfill any null or empty bucket to WATCHLIST for existing data
+            conn.execute(text("UPDATE user_watchlists SET bucket = 'WATCHLIST' WHERE bucket IS NULL OR bucket = ''"))
+        except Exception:
+            pass
 
 def init_db():
     """

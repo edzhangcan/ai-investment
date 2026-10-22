@@ -1,4 +1,13 @@
-import { StockAnalysisResponse, MacroData, CentralBankSpeechMetadata } from '../types';
+import { 
+  StockAnalysisResponse, 
+  MacroData, 
+  CentralBankSpeechMetadata,
+  StockBucket,
+  StockTrackingItem,
+  SetBucketPayload,
+  SellHoldingPayload,
+  StockBucketStatusResponse
+} from '../types';
 
 export const getApiBaseUrl = () => {
   if (typeof window !== 'undefined' && window.location && window.location.hostname) {
@@ -82,10 +91,42 @@ export async function calculateKellySizeApi(payload: any, signal?: AbortSignal):
   return res.json();
 }
 
-export async function fetchWatchlistApi(signal?: AbortSignal): Promise<any[]> {
-  const url = `${getApiBaseUrl()}/api/watchlist`;
+export async function fetchWatchlistApi(bucket?: StockBucket | 'ALL', signal?: AbortSignal): Promise<StockTrackingItem[]> {
+  const query = bucket && bucket !== 'ALL' ? `?bucket=${bucket}` : '';
+  const url = `${getApiBaseUrl()}/api/watchlist${query}`;
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Watchlist API failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchStockBucketStatusApi(symbol: string, signal?: AbortSignal): Promise<StockBucketStatusResponse> {
+  const url = `${getApiBaseUrl()}/api/watchlist/status/${encodeURIComponent(symbol.toUpperCase())}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`Stock bucket status API failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function setStockBucketApi(payload: SetBucketPayload, signal?: AbortSignal): Promise<StockTrackingItem> {
+  const url = `${getApiBaseUrl()}/api/watchlist/set-bucket`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal
+  });
+  if (!res.ok) throw new Error(`Set stock bucket failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function sellHoldingApi(payload: SellHoldingPayload, signal?: AbortSignal): Promise<any> {
+  const url = `${getApiBaseUrl()}/api/watchlist/sell-holding`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal
+  });
+  if (!res.ok) throw new Error(`Sell holding failed: ${res.statusText}`);
   return res.json();
 }
 
@@ -102,7 +143,7 @@ export async function addWatchlistApi(payload: any, signal?: AbortSignal): Promi
 }
 
 export async function deleteWatchlistApi(symbol: string, signal?: AbortSignal): Promise<any> {
-  const url = `${getApiBaseUrl()}/api/watchlist/${symbol.toUpperCase()}`;
+  const url = `${getApiBaseUrl()}/api/watchlist/${encodeURIComponent(symbol.toUpperCase())}`;
   const res = await fetch(url, { method: 'DELETE', signal });
   if (!res.ok) throw new Error(`Delete watchlist failed: ${res.statusText}`);
   return res.json();

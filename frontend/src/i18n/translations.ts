@@ -382,6 +382,29 @@ export interface Translations {
   accountingForensicsTitle: string;
   bayesianWinProb: string;
   correlationPenaltyFactor: string;
+  // PL-721
+  bucketHolding: string;
+  bucketWatchlist: string;
+  bucketRegular: string;
+  bucketRegularOpp: string;
+  buyInPrice: string;
+  buyInDate: string;
+  sellOffPrice: string;
+  sellOffDate: string;
+  realizedPnl: string;
+  holdingDuration: string;
+  logHoldingTitle: string;
+  logHoldingSubtitle: string;
+  sellHoldingTitle: string;
+  sellHoldingSubtitle: string;
+  postSellDestination: string;
+  exitToRegular: string;
+  keepOnWatchlist: string;
+  falsificationHoldingsOnlyNotice: string;
+  markAsHoldingToActivate: string;
+  sellOffBtn: string;
+  buyInBtn: string;
+  daysUnit: string;
 }
 
 export const TRANSLATIONS: Record<LanguageMode, Translations> = {
@@ -753,6 +776,29 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     accountingForensicsTitle: "Accounting Forensics & Earnings Quality Audit",
     bayesianWinProb: "Bayesian-Shrunk Win Probability",
     correlationPenaltyFactor: "Correlation Penalty Factor",
+    // PL-721
+    bucketHolding: "Holdings",
+    bucketWatchlist: "Watchlist",
+    bucketRegular: "Regular",
+    bucketRegularOpp: "Regular Opportunities",
+    buyInPrice: "Buy-In Price",
+    buyInDate: "Buy-In Date",
+    sellOffPrice: "Sell-Off Price",
+    sellOffDate: "Sell-Off Date",
+    realizedPnl: "Realized P&L",
+    holdingDuration: "Holding Duration",
+    logHoldingTitle: "Log Position as Holding",
+    logHoldingSubtitle: "Enables Thesis Falsification Kill-Switch & Stop-Loss Monitoring",
+    sellHoldingTitle: "Disciplined Sell-Off",
+    sellHoldingSubtitle: "Record realized performance and archive trade to journal",
+    postSellDestination: "Post-Sell Destination",
+    exitToRegular: "Exit to Regular (Un-track)",
+    keepOnWatchlist: "Keep on Watchlist (95% Buy Ceiling)",
+    falsificationHoldingsOnlyNotice: "Thesis Falsification Kill-Switch is active for owned portfolio holdings.",
+    markAsHoldingToActivate: "Mark as Holding to activate Thesis Falsification Kill-Switch",
+    sellOffBtn: "Sell Off",
+    buyInBtn: "Buy In",
+    daysUnit: "days",
   },
 
   zh: {
@@ -1123,6 +1169,29 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     accountingForensicsTitle: "会计法证与财报质量审计",
     bayesianWinProb: "贝叶斯收缩后胜率",
     correlationPenaltyFactor: "行业相关性折减因子",
+    // PL-721
+    bucketHolding: "持仓标的",
+    bucketWatchlist: "关注列表",
+    bucketRegular: "常规标的",
+    bucketRegularOpp: "常规深度机会",
+    buyInPrice: "买入成本价",
+    buyInDate: "买入建仓日期",
+    sellOffPrice: "卖出平仓价",
+    sellOffDate: "卖出平仓日期",
+    realizedPnl: "平仓实现收益",
+    holdingDuration: "持仓周期",
+    logHoldingTitle: "记入实盘持仓",
+    logHoldingSubtitle: "启用 200日均线证伪底线熔断与反破产纪律监控",
+    sellHoldingTitle: "纪律平仓卖出",
+    sellHoldingSubtitle: "记录平仓实盘收益并归档交易决策日志",
+    postSellDestination: "平仓后状态流转",
+    exitToRegular: "彻底平仓离场（转为常规标的）",
+    keepOnWatchlist: "保留在关注列表（按 95% 买入上限继续跟踪）",
+    falsificationHoldingsOnlyNotice: "投资假说证伪熔断线仅对实盘持仓标的生效并推送告警。",
+    markAsHoldingToActivate: "标记为持仓即可激活证伪底线熔断监控",
+    sellOffBtn: "平仓卖出",
+    buyInBtn: "买入建仓",
+    daysUnit: "天",
   },
 
   hybrid: {
@@ -1493,6 +1562,29 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     accountingForensicsTitle: "会计法证审计 (Accounting Forensics)",
     bayesianWinProb: "贝叶斯收缩胜率 (Bayesian Win Prob)",
     correlationPenaltyFactor: "行业折减因子 (Correlation Penalty)",
+    // PL-721
+    bucketHolding: "持仓标的 (Holdings)",
+    bucketWatchlist: "关注列表 (Watchlist)",
+    bucketRegular: "常规标的 (Regular)",
+    bucketRegularOpp: "常规机会 (Opportunities)",
+    buyInPrice: "买入成本价 (Buy Price)",
+    buyInDate: "买入日期 (Buy Date)",
+    sellOffPrice: "平仓卖出价 (Sell Price)",
+    sellOffDate: "平仓日期 (Sell Date)",
+    realizedPnl: "平仓盈亏 (Realized P&L)",
+    holdingDuration: "持仓周期 (Holding Period)",
+    logHoldingTitle: "记入持仓 (Log Holding)",
+    logHoldingSubtitle: "启用证伪底线与止损监控 (Enable Falsification & Stop-Loss)",
+    sellHoldingTitle: "纪律平仓 (Disciplined Sell-Off)",
+    sellHoldingSubtitle: "记录实盘收益并归档决策日志 (Record Realized Return & Log Journal)",
+    postSellDestination: "平仓流转 (Post-Sell Destination)",
+    exitToRegular: "彻底离场 (Exit to Regular)",
+    keepOnWatchlist: "转入关注继续跟踪 (Keep on Watchlist)",
+    falsificationHoldingsOnlyNotice: "假说证伪熔断线仅对持仓标的生效 (Falsification active for holdings only)",
+    markAsHoldingToActivate: "标记为持仓即可激活证伪底线 (Mark as Holding to activate Falsification Kill-Switch)",
+    sellOffBtn: "平仓卖出 (Sell Off)",
+    buyInBtn: "买入建仓 (Buy In)",
+    daysUnit: "天 (days)",
   }
 };
 

@@ -598,3 +598,56 @@ export interface CentralBankSpeechStreamEvent {
   error?: string;
 }
 
+// PL-721: Three-Bucket Stock Lifecycle & Tiered Alert Types
+export type StockBucket = 'HOLDING' | 'WATCHLIST' | 'REGULAR';
+
+export interface StockTrackingItem {
+  id?: number;
+  symbol: string;
+  company_name: string;
+  bucket: StockBucket;
+  target_buy_price?: number;
+  target_sell_price?: number;
+  portfolio_allocation_pct: number;
+  buy_in_price?: number;
+  buy_in_date?: string;
+  shares_held?: number;
+  last_sell_price?: number;
+  last_sell_date?: string;
+  realized_pnl_pct?: number;
+  current_price?: number;
+  unrealized_pnl_pct?: number;
+  falsification_floor?: number;
+  batting_zone?: string;
+  trend_state?: string;
+}
+
+export interface SetBucketPayload {
+  symbol: string;
+  company_name?: string;
+  bucket: StockBucket;
+  buy_in_price?: number;
+  buy_in_date?: string;
+  shares_held?: number;
+  target_buy_price?: number;
+  target_sell_price?: number;
+  portfolio_allocation_pct?: number;
+}
+
+export interface SellHoldingPayload {
+  symbol: string;
+  sell_off_price: number;
+  sell_off_date: string;
+  post_sell_bucket: 'REGULAR' | 'WATCHLIST';
+  notes?: string;
+}
+
+export interface StockBucketStatusResponse {
+  symbol: string;
+  bucket: StockBucket;
+  is_holding: boolean;
+  is_watchlist: boolean;
+  data?: StockTrackingItem | null;
+}
+
+

@@ -5,16 +5,17 @@ import { ShieldAlert, Award, ArrowUpRight, Scale, Share2, AlertTriangle, BellRin
 import { ShareVerdictModal } from './ShareVerdictModal';
 import { StockData, PricingData, DebateData } from '../types';
 import { ProvenanceBadge } from './ProvenanceBadge';
-import { addWatchlistApi, runDebateApi } from '../api/client';
+import { addWatchlistApi, runDebateApi, fetchStockBucketStatusApi } from '../api/client';
 
 interface DebateArenaProps {
   debateData: DebateData | any;
   stock?: StockData | any;
   pricing?: PricingData | any;
   onRefreshDebate?: (forceRefresh?: boolean) => Promise<void> | void;
+  isHolding?: boolean;
 }
 
-export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pricing, onRefreshDebate }) => {
+export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pricing, onRefreshDebate, isHolding }) => {
   const { t, language } = useLanguage();
   const [localDebate, setLocalDebate] = useState<any>(null);
   const [isVerifyingFiling, setIsVerifyingFiling] = useState(false);
@@ -24,6 +25,20 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
   const [falsificationSent, setFalsificationSent] = useState(false);
   const [isSyncingWatchlist, setIsSyncingWatchlist] = useState(false);
   const [watchlistSynced, setWatchlistSynced] = useState(false);
+  const [isHoldingState, setIsHoldingState] = useState<boolean>(Boolean(isHolding));
+
+  useEffect(() => {
+    if (typeof isHolding === 'boolean') {
+      setIsHoldingState(isHolding);
+    } else {
+      const sym = stock?.symbol || debateData?.symbol;
+      if (sym) {
+        fetchStockBucketStatusApi(sym)
+          .then(res => setIsHoldingState(res.bucket === 'HOLDING'))
+          .catch(() => setIsHoldingState(false));
+      }
+    }
+  }, [isHolding, stock?.symbol, debateData?.symbol]);
 
   useEffect(() => {
     setLocalDebate(null);
@@ -281,6 +296,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
           const currency = cio?.mianji_framework?.soul_check?.threshold_currency || stock?.currency || 'USD';
           const falsificationCondition = debateData.falsification_trigger_condition || cio?.mianji_framework?.soul_check?.mandatory_falsification_trigger;
 
+          if (!isHoldingState) return null;
           if (!bottomFloor && !falsificationCondition) return null;
 
           return (

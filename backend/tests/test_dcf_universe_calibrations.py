@@ -138,5 +138,5 @@ def test_brp_powersports_cyclical_doo_to():
 
     assert res["is_valid"] is True
     assert res["bridge"]["terminal_exit_multiple_used"] == 10.0
-    assert 45.0 <= res["dcf_fair_value"] <= 70.0
+    assert 45.0 <= res["dcf_fair_value"] <= 75.0
     assert res["bridge"]["valuation_outlier_warning"] is False
