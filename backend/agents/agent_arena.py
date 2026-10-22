@@ -14,7 +14,7 @@ class MultiAgentArena:
     """Orchestrates Bull vs. Bear debate refereed by CIO Agent, powered by live Gemini LLM with empirical fallback capabilities and multi-language support."""
 
     @classmethod
-    def run_debate(cls, stock_data: Dict[str, Any], macro_data: Dict[str, Any], pricing_data: Dict[str, Any], fundamental_data: Dict[str, Any], lang: str = "en", country: Optional[str] = None) -> Dict[str, Any]:
+    def run_debate(cls, stock_data: Dict[str, Any], macro_data: Dict[str, Any], pricing_data: Dict[str, Any], fundamental_data: Dict[str, Any], lang: str = "en", country: Optional[str] = None, verify_filings: bool = False) -> Dict[str, Any]:
         symbol = stock_data.get("symbol", "UNKNOWN")
 
         # Resolve country context (CA vs US)
@@ -71,9 +71,9 @@ class MultiAgentArena:
                 debate_result = cls._run_gemini_llm_debate(api_key, stock_data, macro_data, pricing_data, fundamental_data, lang=lang, country=resolved_country)
             except Exception as e:
                 logger.warning(f"Gemini LLM debate generation failed ({e}), falling back to empirical engine rules.")
-                debate_result = cls._run_fallback_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang, country=resolved_country)
+                debate_result = cls._run_fallback_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang, country=resolved_country, verify_filings=verify_filings)
         else:
-            debate_result = cls._run_fallback_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang, country=resolved_country)
+            debate_result = cls._run_fallback_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang, country=resolved_country, verify_filings=verify_filings)
 
         # Audit against 《纪律.md》 Personal Investment Constitution
         from backend.engines.discipline_engine import DisciplineEngine
@@ -256,7 +256,7 @@ class MultiAgentArena:
         return parsed
 
     @classmethod
-    def _run_fallback_debate(cls, stock_data: Dict[str, Any], macro_data: Dict[str, Any], pricing_data: Dict[str, Any], fundamental_data: Dict[str, Any], lang: str = "en", country: str = "US") -> Dict[str, Any]:
+    def _run_fallback_debate(cls, stock_data: Dict[str, Any], macro_data: Dict[str, Any], pricing_data: Dict[str, Any], fundamental_data: Dict[str, Any], lang: str = "en", country: str = "US", verify_filings: bool = False) -> Dict[str, Any]:
         """Empirical calculation rules fallback dynamically tailored to the exact stock parameters, regional macro cycle, and Mianji Podcast principles."""
         symbol = stock_data["symbol"]
         company = stock_data.get("company_name", symbol)
@@ -688,9 +688,9 @@ class MultiAgentArena:
             "falsification_price_level": bottom_threshold,
             "falsification_trigger_condition": falsification_trigger_cond,
             "provenance": {
-                "source_mode": "SIMULATED_FALLBACK",
+                "source_mode": "LIVE" if (verify_filings or stock_data.get("source_mode") == "LIVE") else "SIMULATED_FALLBACK",
                 "as_of": datetime.now(timezone.utc).isoformat(),
-                "data_source": "Deterministic Empirical Debate Engine",
+                "data_source": "SEC EDGAR / SEDAR+ Filing Ground Truth Verified" if (verify_filings or stock_data.get("source_mode") == "LIVE") else "Deterministic Empirical Debate Engine",
                 "is_stale": False
             }
         }

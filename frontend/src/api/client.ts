@@ -34,9 +34,9 @@ export async function refreshRecommendationsApi(category?: string, offset: numbe
   return res.json();
 }
 
-export async function fetchStockAnalysis(symbol: string, lang: string = "en", signal?: AbortSignal): Promise<StockAnalysisResponse> {
+export async function fetchStockAnalysis(symbol: string, lang: string = "en", signal?: AbortSignal, forceRefresh: boolean = false): Promise<StockAnalysisResponse> {
   const normalizedSymbol = symbol.trim().toUpperCase();
-  const url = `${getApiBaseUrl()}/api/stock/${normalizedSymbol}?lang=${lang}`;
+  const url = `${getApiBaseUrl()}/api/stock/${normalizedSymbol}?lang=${lang}&force_refresh=${forceRefresh}`;
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Stock API failed: ${res.statusText}`);
   return res.json();
@@ -50,9 +50,9 @@ export async function fetchSecTextMining(symbol: string, lang: string = "en", si
   return res.json();
 }
 
-export async function runDebateApi(symbol: string, lang: string = "en", signal?: AbortSignal): Promise<any> {
+export async function runDebateApi(symbol: string, lang: string = "en", signal?: AbortSignal, forceRefresh: boolean = false): Promise<any> {
   const normalizedSymbol = symbol.trim().toUpperCase();
-  const url = `${getApiBaseUrl()}/api/debate/${normalizedSymbol}?lang=${lang}`;
+  const url = `${getApiBaseUrl()}/api/debate/${normalizedSymbol}?lang=${lang}&force_refresh=${forceRefresh}`;
   const res = await fetch(url, { method: 'POST', signal });
   if (!res.ok) throw new Error(`Debate API failed: ${res.statusText}`);
   return res.json();

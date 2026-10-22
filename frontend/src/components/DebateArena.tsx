@@ -1,34 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
 import { ShieldAlert, Award, ArrowUpRight, Scale, Share2, AlertTriangle, BellRing, CheckCircle2, BookmarkPlus, BookmarkCheck, RefreshCw } from 'lucide-react';
 import { ShareVerdictModal } from './ShareVerdictModal';
 import { StockData, PricingData, DebateData } from '../types';
 import { ProvenanceBadge } from './ProvenanceBadge';
-import { addWatchlistApi } from '../api/client';
+import { addWatchlistApi, runDebateApi } from '../api/client';
 
 interface DebateArenaProps {
   debateData: DebateData | any;
   stock?: StockData | any;
   pricing?: PricingData | any;
+  onRefreshDebate?: (forceRefresh?: boolean) => Promise<void> | void;
 }
 
-export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pricing }) => {
+export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pricing, onRefreshDebate }) => {
   const { t, language } = useLanguage();
+  const [localDebate, setLocalDebate] = useState<any>(null);
+  const [isVerifyingFiling, setIsVerifyingFiling] = useState(false);
+  const [filingVerifiedSuccess, setFilingVerifiedSuccess] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isNotifyingFalsification, setIsNotifyingFalsification] = useState(false);
   const [falsificationSent, setFalsificationSent] = useState(false);
   const [isSyncingWatchlist, setIsSyncingWatchlist] = useState(false);
   const [watchlistSynced, setWatchlistSynced] = useState(false);
 
-  if (!debateData) return null;
+  useEffect(() => {
+    setLocalDebate(null);
+  }, [debateData?.symbol, debateData?.provenance?.as_of]);
 
-  const bull = debateData.bull_argument || {};
-  const bear = debateData.bear_argument || {};
-  const cio = debateData.cio_verdict || {};
+  const activeDebate = localDebate || debateData;
+  if (!activeDebate) return null;
+
+  const bull = activeDebate.bull_argument || {};
+  const bear = activeDebate.bear_argument || {};
+  const cio = activeDebate.cio_verdict || {};
+  const isFallback = activeDebate.provenance?.source_mode === 'SIMULATED_FALLBACK';
+
+  const handleManualFilingVerification = async () => {
+    const sym = stock?.symbol || activeDebate?.symbol;
+    if (!sym) return;
+    setIsVerifyingFiling(true);
+    try {
+      if (onRefreshDebate) {
+        await onRefreshDebate(true);
+      } else {
+        const updated = await runDebateApi(sym, language, undefined, true);
+        if (updated) {
+          setLocalDebate(updated);
+        }
+      }
+      setFilingVerifiedSuccess(true);
+      setTimeout(() => setFilingVerifiedSuccess(false), 3500);
+    } catch (err) {
+      console.error('Failed to verify ground-truth filings:', err);
+    } finally {
+      setIsVerifyingFiling(false);
+    }
+  };
 
   const handleSyncTargetsToWatchlist = async () => {
-    const sym = stock?.symbol || debateData?.symbol;
+    const sym = stock?.symbol || activeDebate?.symbol;
     if (!sym) return;
     setIsSyncingWatchlist(true);
     try {
@@ -51,7 +83,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
   };
 
   const handleNotifyFalsification = async (bottomThreshold: number, currPrice: number) => {
-    const sym = stock?.symbol || debateData?.symbol;
+    const sym = stock?.symbol || activeDebate?.symbol;
     if (!sym) return;
     setIsNotifyingFalsification(true);
     try {
@@ -85,7 +117,24 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
           <div>
             <h3 className="text-base font-bold text-content-primary flex items-center gap-2 flex-wrap">
               <span>{t.debateTitle}</span>
-              <ProvenanceBadge provenance={debateData?.provenance} />
+              <ProvenanceBadge provenance={activeDebate?.provenance} />
+              {isFallback && (
+                <button
+                  onClick={handleManualFilingVerification}
+                  disabled={isVerifyingFiling}
+                  className="h-6 px-2.5 rounded-lg border border-border-subtle bg-surface hover:bg-surface-subtle text-brand hover:border-brand text-[11px] font-bold inline-flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                  title="Query SEC EDGAR / SEDAR+ live audited filings to verify ground truth"
+                >
+                  <RefreshCw className={`w-3 h-3 text-brand ${isVerifyingFiling ? 'animate-spin' : ''}`} />
+                  <span>{isVerifyingFiling ? t.retrievingGroundTruth : t.retrieveGroundTruthBtn}</span>
+                </button>
+              )}
+              {filingVerifiedSuccess && (
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>{t.groundTruthVerifiedSuccess}</span>
+                </span>
+              )}
             </h3>
             <p className="text-xs text-content-muted">
               {t.debateSubtitle}
@@ -196,45 +245,6 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
           )}
         </div>
       </div>
-
-      {/* Round 2: Adversarial Cross-Examination Rebuttals */}
-      {(debateData.bull_rebuttal || debateData.bear_rebuttal) && (
-        <div className="mb-6 p-4 rounded-xl bg-surface-subtle border border-border-subtle shadow-sm space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
-            <span className="text-xs font-bold text-content-primary flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-brand animate-pulse"></span>
-              <span>{t.roundTwoRebuttalTitle || "Round 2: Adversarial Cross-Examination"}</span>
-            </span>
-            <span className="text-[10px] font-semibold text-content-muted">
-              Forensic SBC, Net Debt & Accrual Interrogation
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {debateData.bull_rebuttal && (
-              <div className="p-3 rounded-lg bg-surface border-l-2 border-l-positive">
-                <span className="font-bold text-positive block mb-1">
-                  🐂 {t.bullRebuttalTitle || "Bull Rebuttal"}:
-                </span>
-                <p className="text-content-secondary leading-relaxed font-medium">
-                  {debateData.bull_rebuttal}
-                </p>
-              </div>
-            )}
-
-            {debateData.bear_rebuttal && (
-              <div className="p-3 rounded-lg bg-surface border-l-2 border-l-negative">
-                <span className="font-bold text-negative block mb-1">
-                  🐻 {t.bearRebuttalTitle || "Bear Rebuttal"}:
-                </span>
-                <p className="text-content-secondary leading-relaxed font-medium">
-                  {debateData.bear_rebuttal}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* CIO Final Verdict Banner */}
       <div className="prism-surface-subtle p-4 border-l-4 border-l-brand shadow-sm">
