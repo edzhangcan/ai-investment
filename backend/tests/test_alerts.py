@@ -34,7 +34,38 @@ def client_fixture(session: Session):
 
 def test_alert_engine_trigger_and_cooldown(session: Session):
     async def run_test():
-        # 1. Add item to watchlist with high target buy price ($300.0)
+        # 1. Add item to watchlist with target buy price above market (AAPL is WARM / Right-Side)
+        item = UserWatchlistDB(
+            symbol="AAPL",
+            company_name="Apple Inc.",
+            target_buy_price=400.0,
+            portfolio_allocation_pct=5.0
+        )
+        session.add(item)
+        session.commit()
+
+        # 2. Evaluate alerts (AAPL quote in buy zone AND Right-Side batting zone) -> Triggers
+        results = await alert_engine.evaluate_watchlist_alerts(session)
+        assert len(results) == 1
+        assert results[0]["symbol"] == "AAPL"
+        assert results[0]["alert_type"] == "BUY"
+        assert results[0]["batting_zone"] == "RIGHT_SIDE"
+
+        # 3. Verify alert log created in database
+        logs = session.exec(select(PriceAlertLogDB)).all()
+        assert len(logs) == 1
+        assert logs[0].symbol == "AAPL"
+
+        # 4. Immediate re-evaluation -> Cooldown anti-spam rule should prevent second duplicate trigger
+        re_results = await alert_engine.evaluate_watchlist_alerts(session)
+        assert len(re_results) == 0
+
+    asyncio.run(run_test())
+
+def test_buy_alert_suppressed_on_left_side_consolidation(session: Session):
+    """Verifies that buy alerts are suppressed when price is in buy zone but batting zone is left-side (FLAT/FREEZE)."""
+    async def run_test():
+        # NVDA is currently below 50D SMA (FLAT/Left-Side)
         item = UserWatchlistDB(
             symbol="NVDA",
             company_name="NVIDIA Corporation",
@@ -44,19 +75,10 @@ def test_alert_engine_trigger_and_cooldown(session: Session):
         session.add(item)
         session.commit()
 
-        # 2. Evaluate alerts (NVDA real quote ~$217 <= $300.0) -> Should trigger
+        # Even though target_buy_price ($300) > current price ($222), batting zone is LEFT_SIDE -> suppressed
         results = await alert_engine.evaluate_watchlist_alerts(session)
-        assert len(results) == 1
-        assert results[0]["symbol"] == "NVDA"
-
-        # 3. Verify alert log created in database
-        logs = session.exec(select(PriceAlertLogDB)).all()
-        assert len(logs) == 1
-        assert logs[0].symbol == "NVDA"
-
-        # 4. Immediate re-evaluation -> Cooldown anti-spam rule should prevent second duplicate trigger
-        re_results = await alert_engine.evaluate_watchlist_alerts(session)
-        assert len(re_results) == 0
+        buy_alerts = [r for r in results if r["alert_type"] == "BUY"]
+        assert len(buy_alerts) == 0
 
     asyncio.run(run_test())
 
@@ -178,5 +200,67 @@ def test_notify_falsification_endpoint(client: TestClient, session: Session):
     assert len(logs) == 1
     assert logs[0].status == "FALSIFICATION_TRIGGERED"
     assert "Falsification Triggered" in logs[0].message
+
+def test_evaluate_symbol_trend_temperature_and_batting_zone():
+    """Verifies that evaluate_symbol_trend_temperature accurately maps left-side vs right-side."""
+    from backend.services.alert_engine import PriceAlertEngine
+
+    # 1. Below 200D SMA -> FREEZE (Left-Side)
+    freeze_quote = {"current_price": 90.0, "fifty_day_sma": 95.0, "two_hundred_day_sma": 100.0}
+    res_freeze = PriceAlertEngine.evaluate_symbol_trend_temperature(freeze_quote)
+    assert res_freeze["state"] == "FREEZE"
+    assert res_freeze["hitting_zone"] == "LEFT_SIDE"
+    assert res_freeze["is_right_side"] is False
+
+    # 2. Above 50D SMA -> WARM (Right-Side Batting Zone)
+    warm_quote = {"current_price": 105.0, "fifty_day_sma": 102.0, "two_hundred_day_sma": 98.0}
+    res_warm = PriceAlertEngine.evaluate_symbol_trend_temperature(warm_quote)
+    assert res_warm["state"] in ["WARM", "HOT"]
+    assert res_warm["hitting_zone"] == "RIGHT_SIDE"
+    assert res_warm["is_right_side"] is True
+
+def test_push_notifier_bundled_buy_right_side_and_falsification_danger():
+    """Verifies push notifier bundled buy embed formatting with right-side batting zone and danger breach."""
+    from backend.engines.push_notifier import PushNotifier
+
+    # 1. Bundled Buy Alert with Right-Side Batting Zone confirmation
+    test_buy_stocks = [{
+        "symbol": "AAPL",
+        "company_name": "Apple Inc.",
+        "current_price": 230.0,
+        "target_buy_price": 240.0,
+        "discount_pct": 4.17,
+        "currency": "USD",
+        "trend_state": "WARM",
+        "batting_zone": "RIGHT_SIDE"
+    }]
+    # Dry run alert generation by calling send_bundled_buy_alert with mock webhook
+    res_buy = PushNotifier.send_bundled_buy_alert(
+        webhook_url="https://discord.com/api/webhooks/dummy/test",
+        buy_stocks=test_buy_stocks,
+        lang="zh"
+    )
+    # Invalid URL returns format error or network error, confirming method executes without exception
+    assert "status" in res_buy
+
+    # 2. Falsification Danger Alert triggered by floor breach
+    test_danger_stocks = [{
+        "symbol": "FCX",
+        "company_name": "Freeport-McMoRan",
+        "current_price": 42.0,
+        "falsification_floor": 46.0,
+        "breakdown_pct": 8.7,
+        "currency": "USD",
+        "risk_reason_zh": "跌破 200日均线离场底线 ($46.0)，假说证伪。",
+        "risk_reason_en": "Breached 200D MA exit floor ($46.0).",
+        "suggested_action": "🚨 强制机械离场 / 止损 (MANDATORY CUT-LOSS EXIT)"
+    }]
+    res_danger = PushNotifier.send_sell_danger_alert(
+        webhook_url="https://discord.com/api/webhooks/dummy/test",
+        sell_stocks=test_danger_stocks,
+        lang="en"
+    )
+    assert "status" in res_danger
+
 
 

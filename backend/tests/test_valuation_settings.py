@@ -149,11 +149,18 @@ def test_alert_engine_buy_and_sell_triggers(monkeypatch):
             # Mock market quote provider
             from backend.data_sources.data_provider import data_provider_manager
             
-            # Test Case A: Price is 190.0 (Below target_buy_price 200.0) -> BUY Trigger
+            # Test Case A: Price is 190.0 (Below target_buy_price 200.0) and in Right-Side Batting Zone -> BUY Trigger
             monkeypatch.setattr(
                 data_provider_manager,
                 "get_stock_quote",
-                lambda sym: {"symbol": sym, "current_price": 190.0, "is_valid": True, "currency": "USD"}
+                lambda sym: {
+                    "symbol": sym,
+                    "current_price": 190.0,
+                    "fifty_day_sma": 180.0,
+                    "two_hundred_day_sma": 170.0,
+                    "is_valid": True,
+                    "currency": "USD"
+                }
             )
             results_buy = await alert_engine.evaluate_watchlist_alerts(session)
             buy_alerts = [r for r in results_buy if r["symbol"] == test_sym and r["alert_type"] == "BUY"]
