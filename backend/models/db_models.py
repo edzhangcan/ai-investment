@@ -45,10 +45,19 @@ class UserWatchlistDB(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     symbol: str = Field(unique=True, index=True)
     company_name: str
+    bucket: str = Field(default="WATCHLIST", index=True)  # "HOLDING", "WATCHLIST", "REGULAR"
     target_buy_price: Optional[float] = None
     target_sell_price: Optional[float] = None
     portfolio_allocation_pct: float = 0.0
+    buy_in_price: Optional[float] = None
+    buy_in_date: Optional[str] = None
+    shares_held: Optional[float] = None
+    last_sell_price: Optional[float] = None
+    last_sell_date: Optional[str] = None
+    realized_pnl_pct: Optional[float] = None
     created_at: datetime = Field(default_factory=get_utc_now)
+    updated_at: datetime = Field(default_factory=get_utc_now)
+
 
 class DebateTranscriptDB(SQLModel, table=True):
     __tablename__ = "debate_transcripts"

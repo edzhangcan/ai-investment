@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Bell, X, Sparkles, RefreshCw, Trash2, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Bell, X, Sparkles, RefreshCw, Trash2, CheckCircle2, ArrowRight, Plus } from 'lucide-react';
 import {
   fetchAlertHistoryApi,
   deleteAlertHistoryItemApi,
   clearAllAlertHistoryApi,
-  triggerPriceAlertCheckApi
+  triggerPriceAlertCheckApi,
+  setStockBucketApi
 } from '../api/client';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -14,10 +15,112 @@ export interface AlertNotificationItem {
   company_name: string;
   current_price: number;
   target_buy_price: number;
+  status?: string;
   message?: string;
   triggered_at?: string;
   notification_channel?: string;
 }
+
+interface AlertBadgeConfig {
+  badgeText: string;
+  badgeClass: string;
+  priceLabel: string;
+  targetLabel: string;
+  isDiscovery?: boolean;
+}
+
+const getAlertConfig = (status: string | undefined, language: string): AlertBadgeConfig => {
+  switch (status) {
+    case 'REGULAR_DISCOVERY_TRIGGERED':
+      return {
+        badgeText:
+          language === 'zh'
+            ? '💎 价值发现 (常规)'
+            : language === 'hybrid'
+            ? '💎 价值发现 (Value Discovery)'
+            : '💎 Value Discovery (Regular)',
+        badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
+        priceLabel: language === 'zh' ? '现价' : 'Price',
+        targetLabel:
+          language === 'zh'
+            ? '≤ 90%买入上限'
+            : language === 'hybrid'
+            ? '≤ 90%上限 (Ceiling)'
+            : '≤ 90% Buy Ceiling',
+        isDiscovery: true,
+      };
+    case 'FALSIFICATION_TRIGGERED':
+      return {
+        badgeText:
+          language === 'zh'
+            ? '🚨 证伪红线破位 (持仓)'
+            : language === 'hybrid'
+            ? '🚨 证伪破位 (Falsification Breach)'
+            : '🚨 Falsification Breach (Holding)',
+        badgeClass: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30',
+        priceLabel: language === 'zh' ? '现价' : 'Price',
+        targetLabel:
+          language === 'zh'
+            ? '< 证伪底线'
+            : language === 'hybrid'
+            ? '< 证伪底线 (Exit Floor)'
+            : '< Exit Floor',
+      };
+    case 'STOP_LOSS_TRIGGERED':
+      return {
+        badgeText:
+          language === 'zh'
+            ? '⚠️ 纪律止损预警 (持仓)'
+            : language === 'hybrid'
+            ? '⚠️ 纪律止损 (Stop-Loss)'
+            : '⚠️ Stop-Loss (Holding)',
+        badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30',
+        priceLabel: language === 'zh' ? '现价' : 'Price',
+        targetLabel:
+          language === 'zh'
+            ? '< 止损底线'
+            : language === 'hybrid'
+            ? '< 止损底线 (Stop Floor)'
+            : '< Stop Floor',
+      };
+    case 'SELL_TRIGGERED':
+      return {
+        badgeText:
+          language === 'zh'
+            ? '💰 止盈目标达成 (持仓)'
+            : language === 'hybrid'
+            ? '💰 止盈目标 (Profit Target)'
+            : '💰 Profit Target (Holding)',
+        badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
+        priceLabel: language === 'zh' ? '现价' : 'Price',
+        targetLabel:
+          language === 'zh'
+            ? '≥ 止盈目标'
+            : language === 'hybrid'
+            ? '≥ 止盈目标 (Exit Target)'
+            : '≥ Exit Target',
+      };
+    case 'BUY_TRIGGERED':
+    case 'TRIGGERED':
+    default:
+      return {
+        badgeText:
+          language === 'zh'
+            ? '🎯 自选股买入信号'
+            : language === 'hybrid'
+            ? '🎯 自选买入 (Watchlist Buy-In)'
+            : '🎯 Watchlist Buy-In',
+        badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30',
+        priceLabel: language === 'zh' ? '现价' : 'Price',
+        targetLabel:
+          language === 'zh'
+            ? '≤ 95%买入上限'
+            : language === 'hybrid'
+            ? '≤ 95%目标价 (Target)'
+            : '≤ 95% Buy Ceiling',
+      };
+  }
+};
 
 interface NotificationCenterProps {
   onSelectTicker: (symbol: string) => void;
@@ -29,6 +132,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ onSelect
   const [alerts, setAlerts] = useState<AlertNotificationItem[]>([]);
   const [isChecking, setIsChecking] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [addingSymbols, setAddingSymbols] = useState<string[]>([]);
+  const [addedSymbols, setAddedSymbols] = useState<string[]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -108,6 +213,30 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ onSelect
     }
   };
 
+  const handleAddToWatchlist = async (e: React.MouseEvent, symbol: string, alertId?: number) => {
+    e.stopPropagation();
+    if (addingSymbols.includes(symbol) || addedSymbols.includes(symbol)) return;
+    setAddingSymbols((prev) => [...prev, symbol]);
+    try {
+      await setStockBucketApi({ symbol, bucket: 'WATCHLIST' });
+      setAddedSymbols((prev) => [...prev, symbol]);
+      if (alertId) {
+        setTimeout(async () => {
+          try {
+            await deleteAlertHistoryItemApi(alertId);
+            setAlerts((prev) => prev.filter((item) => item.id !== alertId));
+          } catch {
+            // best-effort cleanup
+          }
+        }, 1200);
+      }
+    } catch (err) {
+      console.warn('Failed to add to watchlist:', err);
+    } finally {
+      setAddingSymbols((prev) => prev.filter((s) => s !== symbol));
+    }
+  };
+
   const handleDeepDive = (symbol: string) => {
     setIsOpen(false);
     onSelectTicker(symbol);
@@ -151,7 +280,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ onSelect
 
       {/* Popover Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 md:w-[420px] bg-white dark:bg-slate-900 border border-border-subtle rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in-50 slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 md:w-[440px] bg-white dark:bg-slate-900 border border-border-subtle rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in-50 slide-in-from-top-2 duration-150">
           {/* Header Bar */}
           <div className="p-4 border-b border-border-subtle flex items-center justify-between gap-3 bg-surface-subtle">
             <div className="flex items-center gap-2">
@@ -226,66 +355,100 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ onSelect
                 </button>
               </div>
             ) : (
-              alerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="p-3.5 hover:bg-surface-subtle transition-colors group relative flex flex-col gap-2"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-content-primary tracking-tight">
-                        ${alert.symbol}
-                      </span>
-                      <span className="prism-badge-positive text-[10px] px-2 py-0.5 font-bold">
-                        {t.toastTargetHit}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      {alert.triggered_at && (
-                        <span className="text-[10px] text-content-muted">
-                          {formatTimestamp(alert.triggered_at)}
+              alerts.map((alert) => {
+                const config = getAlertConfig(alert.status, language);
+                return (
+                  <div
+                    key={alert.id}
+                    className="p-3.5 hover:bg-surface-subtle transition-colors group relative flex flex-col gap-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-black text-content-primary tracking-tight">
+                          ${alert.symbol}
                         </span>
-                      )}
-                      <button
-                        onClick={(e) => handleDeleteItem(e, alert.id)}
-                        className="p-1 text-content-muted hover:text-negative hover:bg-negative/10 rounded-md transition-colors cursor-pointer"
-                        title={t.dismissNotification}
-                        aria-label={t.dismissNotification}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${config.badgeClass}`}>
+                          {config.badgeText}
+                        </span>
+                      </div>
 
-                  <p className="text-[11px] text-content-secondary line-clamp-1 font-medium">
-                    {alert.company_name}
-                  </p>
-
-                  {/* Price & Target Trigger Information */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <div className="text-[11px] font-semibold text-content-muted flex items-center gap-1.5">
-                      <span>{t.toastEnteredBuyZone}</span>
-                      <span className="font-extrabold text-positive">
-                        ${Number(alert.current_price).toFixed(2)}
-                      </span>
-                      <span>{t.toastTargetLabel}</span>
-                      <span className="font-bold text-warning">
-                        ${Number(alert.target_buy_price).toFixed(2)}
-                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {alert.triggered_at && (
+                          <span className="text-[10px] text-content-muted">
+                            {formatTimestamp(alert.triggered_at)}
+                          </span>
+                        )}
+                        <button
+                          onClick={(e) => handleDeleteItem(e, alert.id)}
+                          className="p-1 text-content-muted hover:text-negative hover:bg-negative/10 rounded-md transition-colors cursor-pointer"
+                          title={t.dismissNotification}
+                          aria-label={t.dismissNotification}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
-                    <button
-                      onClick={() => handleDeepDive(alert.symbol)}
-                      className="px-2.5 py-1 bg-brand hover:opacity-90 text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-sm shrink-0"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>{t.viewDeepDive}</span>
-                      <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                    </button>
+                    <p className="text-[11px] text-content-secondary line-clamp-1 font-medium">
+                      {alert.company_name}
+                    </p>
+
+                    {/* Detailed Rationale Message */}
+                    {alert.message && (
+                      <div className="text-[11px] text-content-secondary bg-surface dark:bg-slate-800/80 p-2 rounded-lg border border-border-subtle/60 leading-relaxed font-normal">
+                        {alert.message}
+                      </div>
+                    )}
+
+                    {/* Price & Target Trigger Information */}
+                    <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                      <div className="text-[11px] font-semibold text-content-muted flex items-center gap-1.5 flex-wrap">
+                        <span>{config.priceLabel}:</span>
+                        <span className="font-extrabold text-content-primary">
+                          ${Number(alert.current_price).toFixed(2)}
+                        </span>
+                        <span className="text-content-muted/60">•</span>
+                        <span>{config.targetLabel}:</span>
+                        <span className="font-bold text-warning">
+                          ${Number(alert.target_buy_price).toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                        {config.isDiscovery && (
+                          <button
+                            onClick={(e) => handleAddToWatchlist(e, alert.symbol, alert.id)}
+                            disabled={addingSymbols.includes(alert.symbol) || addedSymbols.includes(alert.symbol)}
+                            className="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold rounded-lg text-[10px] transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                            title={language === 'zh' ? '移至自选股观察池' : 'Move to Watchlist'}
+                          >
+                            {addedSymbols.includes(alert.symbol) ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                <span>{language === 'zh' ? '已加入自选' : 'Added ✓'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="w-3 h-3" />
+                                <span>{language === 'zh' ? '+ 自选' : '+ Watchlist'}</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => handleDeepDive(alert.symbol)}
+                          className="px-2.5 py-1 bg-brand hover:opacity-90 text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-sm shrink-0"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          <span>{t.viewDeepDive}</span>
+                          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

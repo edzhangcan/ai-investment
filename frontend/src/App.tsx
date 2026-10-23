@@ -35,6 +35,7 @@ import { StartupLoadingOverlay } from './components/StartupLoadingOverlay';
 import { LanguageSelector } from './components/LanguageSelector';
 import { ThemeToggle } from './components/ThemeToggle';
 import { PrismLoopLogo } from './components/PrismLoopLogo';
+import { StockBucketBadge } from './components/StockBucketBadge';
 import { useLanguage } from './context/LanguageContext';
 import {
   fetchMacroDashboard,
@@ -43,8 +44,9 @@ import {
   fetchWatchlistApi,
   addWatchlistApi,
   deleteWatchlistApi,
+  setStockBucketApi,
 } from './api/client';
-import { MacroDashboardResponse, StockAnalysisResponse } from './types';
+import { MacroDashboardResponse, StockAnalysisResponse, StockBucket, StockTrackingItem } from './types';
 
 // Code Splitting & Lazy-Loaded Modals / Viewers
 const NavigationDrawer = lazy(() => import('./components/NavigationDrawer').then(m => ({ default: m.NavigationDrawer })));
@@ -73,6 +75,7 @@ export const App: React.FC = () => {
   const [isExportMemoModalOpen, setIsExportMemoModalOpen] = useState<boolean>(false);
   const [isSoulCheckOpen, setIsSoulCheckOpen] = useState<boolean>(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<Set<string>>(new Set());
+  const [stockBucketMap, setStockBucketMap] = useState<Record<string, StockTrackingItem>>({});
 
   const [macroCountry, setMacroCountry] = useState<'US' | 'CA'>('US');
   const [dashboardData, setDashboardData] = useState<MacroDashboardResponse | null>(null);
@@ -83,8 +86,17 @@ export const App: React.FC = () => {
 
   const fetchWatchlistSymbols = async () => {
     try {
-      const items = await fetchWatchlistApi();
-      const symSet = new Set<string>(items.map((it: any) => String(it.symbol).toUpperCase()));
+      const items = await fetchWatchlistApi('ALL');
+      const symSet = new Set<string>();
+      const map: Record<string, StockTrackingItem> = {};
+      items.forEach((it: StockTrackingItem) => {
+        const sym = String(it.symbol).toUpperCase();
+        map[sym] = it;
+        if (it.bucket === 'WATCHLIST' || it.bucket === 'HOLDING') {
+          symSet.add(sym);
+        }
+      });
+      setStockBucketMap(map);
       setWatchlistSymbols(symSet);
     } catch (e) {
       console.warn("Failed to fetch watchlist symbols:", e);
@@ -93,13 +105,15 @@ export const App: React.FC = () => {
 
   const toggleWatchlist = async (symbol: string, companyName?: string, targetBuyPrice?: number) => {
     try {
-      const isStarred = watchlistSymbols.has(symbol.toUpperCase());
+      const sym = symbol.toUpperCase();
+      const isStarred = watchlistSymbols.has(sym);
       if (isStarred) {
-        await deleteWatchlistApi(symbol);
+        await deleteWatchlistApi(sym);
       } else {
-        await addWatchlistApi({
-          symbol: symbol.toUpperCase(),
-          company_name: companyName || symbol,
+        await setStockBucketApi({
+          symbol: sym,
+          company_name: companyName || sym,
+          bucket: 'WATCHLIST',
           target_buy_price: targetBuyPrice,
           portfolio_allocation_pct: 3.0,
         });
@@ -506,21 +520,25 @@ export const App: React.FC = () => {
                           {stockData.stock.symbol} ({stockData.stock.market})
                         </span>
                         {(() => {
-                          const isCurrentStarred = stockData?.stock?.symbol ? watchlistSymbols.has(stockData.stock.symbol.toUpperCase()) : false;
+                          const sym = stockData?.stock?.symbol?.toUpperCase() || '';
+                          const trackingItem = stockBucketMap[sym];
+                          const currentBucket: StockBucket = trackingItem?.bucket || 'REGULAR';
+                          const currPrice = Number(stockData?.stock?.current_price ?? stockData?.pricing?.current_price ?? 0);
+
                           return (
-                            <div className="flex items-center gap-2 ml-2">
-                              <button
-                                onClick={() => toggleWatchlist(stockData.stock.symbol, stockData.stock.company_name, stockData.pricing.ideal_buy_range_max)}
-                                className={`h-8 px-3 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-1.5 cursor-pointer box-border ${
-                                  isCurrentStarred
-                                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/80 shadow-sm'
-                                    : 'bg-surface-subtle text-content-secondary border-border-subtle hover:border-warning hover:text-warning'
-                                }`}
-                                title={isCurrentStarred ? t.starred : t.addStar}
-                              >
-                                <Star className={`w-3.5 h-3.5 ${isCurrentStarred ? 'fill-warning text-warning' : 'text-content-muted'}`} />
-                                <span>{isCurrentStarred ? t.starred : t.addStar}</span>
-                              </button>
+                            <div className="flex items-center gap-2 ml-2 flex-wrap">
+                              <StockBucketBadge
+                                symbol={sym}
+                                companyName={stockData.stock.company_name}
+                                currentBucket={currentBucket}
+                                currentPrice={currPrice}
+                                buyInPrice={trackingItem?.buy_in_price ?? undefined}
+                                buyInDate={trackingItem?.buy_in_date ?? undefined}
+                                sharesHeld={trackingItem?.shares_held ?? undefined}
+                                onBucketChange={async () => {
+                                  await fetchWatchlistSymbols();
+                                }}
+                              />
 
                               <button
                                 onClick={() => setIsExportMemoModalOpen(true)}
@@ -707,6 +725,7 @@ export const App: React.FC = () => {
                     stock={stockData.stock}
                     pricing={stockData.pricing}
                     onRefreshDebate={(force) => loadStock(stockData.stock.symbol, force ?? true)}
+                    isHolding={stockBucketMap[stockData.stock.symbol.toUpperCase()]?.bucket === 'HOLDING'}
                   />
                   <SecTextMiningViewer
                     symbol={stockData.stock.symbol}
@@ -792,6 +811,7 @@ export const App: React.FC = () => {
             isOpen={isWatchlistOpen}
             onClose={() => setIsWatchlistOpen(false)}
             onSelectStock={(sym) => handleSelectRecommendedStock(sym)}
+            onWatchlistChange={fetchWatchlistSymbols}
           />
 
           {/* Portfolio Sizing Calculator Modal */}

@@ -23,8 +23,8 @@ from sqlalchemy import event, text
 from backend.config import settings
 
 # Step 1: Define SQLite File Path and Database URL
-DB_FILE = os.path.join(os.path.dirname(__file__), "investment_platform.db")
-DATABASE_URL = f"sqlite:///{DB_FILE}"
+DB_FILE = os.getenv("DB_FILE") or os.path.join(os.path.dirname(__file__), "investment_platform.db")
+DATABASE_URL = os.getenv("DATABASE_URL") or f"sqlite:///{DB_FILE}"
 
 # Step 2: Create SQLModel Engine Instance
 # check_same_thread=False allows FastAPI multi-threaded requests to use the same engine instance.
@@ -42,6 +42,14 @@ def ensure_schema_migrations() -> None:
     """
     migrations = [
         ("user_watchlists", "target_sell_price", "REAL"),
+        ("user_watchlists", "bucket", "TEXT DEFAULT 'WATCHLIST'"),
+        ("user_watchlists", "buy_in_price", "REAL"),
+        ("user_watchlists", "buy_in_date", "TEXT"),
+        ("user_watchlists", "shares_held", "REAL"),
+        ("user_watchlists", "last_sell_price", "REAL"),
+        ("user_watchlists", "last_sell_date", "TEXT"),
+        ("user_watchlists", "realized_pnl_pct", "REAL"),
+        ("user_watchlists", "updated_at", "TIMESTAMP"),
         ("recommendation_snapshots", "country", "TEXT DEFAULT 'US'"),
         ("debate_transcripts", "bull_rebuttal", "TEXT"),
         ("debate_transcripts", "bear_rebuttal", "TEXT"),
@@ -59,6 +67,11 @@ def ensure_schema_migrations() -> None:
                     conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"))
             except Exception:
                 pass
+        try:
+            # Backfill any null or empty bucket to WATCHLIST for existing data
+            conn.execute(text("UPDATE user_watchlists SET bucket = 'WATCHLIST' WHERE bucket IS NULL OR bucket = ''"))
+        except Exception:
+            pass
 
 def init_db():
     """

@@ -274,8 +274,10 @@ class DiscordNotifier:
                 from backend.database import engine
                 from backend.models.db_models import UserWatchlistDB
                 with Session(engine) as session:
-                    watchlist_items = session.exec(select(UserWatchlistDB)).all()
-                    for item in watchlist_items:
+                    holdings_items = session.exec(
+                        select(UserWatchlistDB).where(UserWatchlistDB.bucket == "HOLDING")
+                    ).all()
+                    for item in holdings_items:
                         s_data = DataProviderManager.get_stock_data(item.symbol)
                         if s_data.get("is_valid"):
                             curr_p = float(s_data.get("current_price", 0.0))

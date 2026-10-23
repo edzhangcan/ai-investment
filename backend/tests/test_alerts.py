@@ -32,7 +32,24 @@ def client_fixture(session: Session):
     yield client
     app.dependency_overrides.clear()
 
-def test_alert_engine_trigger_and_cooldown(session: Session):
+def test_alert_engine_trigger_and_cooldown(session: Session, monkeypatch):
+    from backend.data_sources.data_provider import data_provider_manager
+
+    fake_quote = {
+        "symbol": "AAPL",
+        "current_price": 280.0,
+        "fifty_day_sma": 270.0,
+        "two_hundred_day_sma": 260.0,
+        "ideal_buy_range_max": 300.0,
+        "currency": "USD"
+    }
+
+    async def fake_get_stock_quote_async(sym):
+        return fake_quote
+
+    monkeypatch.setattr(data_provider_manager, "get_stock_quote_async", fake_get_stock_quote_async)
+    monkeypatch.setattr(data_provider_manager, "get_stock_quote", lambda sym: fake_quote)
+
     async def run_test():
         # 1. Add item to watchlist with target buy price above market (AAPL is WARM / Right-Side)
         item = UserWatchlistDB(

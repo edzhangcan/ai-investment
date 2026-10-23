@@ -1506,6 +1506,10 @@ class DataProviderManager:
         """Convenience method returning stock data dictionary."""
         return self.get_stock_data(symbol)
 
+    async def get_stock_quote_async(self, symbol: str) -> Dict[str, Any]:
+        """Non-blocking async wrapper around get_stock_quote."""
+        return await asyncio.to_thread(self.get_stock_quote, symbol)
+
 data_provider_manager = DataProviderManager()
 
 async def get_stock_data_async(symbol: str, force_refresh: bool = False) -> Dict[str, Any]:
