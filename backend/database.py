@@ -23,8 +23,8 @@ from sqlalchemy import event, text
 from backend.config import settings
 
 # Step 1: Define SQLite File Path and Database URL
-DB_FILE = os.path.join(os.path.dirname(__file__), "investment_platform.db")
-DATABASE_URL = f"sqlite:///{DB_FILE}"
+DB_FILE = os.getenv("DB_FILE") or os.path.join(os.path.dirname(__file__), "investment_platform.db")
+DATABASE_URL = os.getenv("DATABASE_URL") or f"sqlite:///{DB_FILE}"
 
 # Step 2: Create SQLModel Engine Instance
 # check_same_thread=False allows FastAPI multi-threaded requests to use the same engine instance.

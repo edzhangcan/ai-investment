@@ -217,6 +217,10 @@ def test_regular_universe_discovery_alert_90_percent_threshold(session: Session,
                 "currency": "USD"
             }
 
+        async def fake_get_stock_quote_async(sym):
+            return fake_get_stock_quote(sym)
+
+        monkeypatch.setattr(data_provider_manager, "get_stock_quote_async", fake_get_stock_quote_async)
         monkeypatch.setattr(data_provider_manager, "get_stock_quote", fake_get_stock_quote)
 
         alerts = await alert_engine.evaluate_regular_universe_alerts(session)

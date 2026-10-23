@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Star, X, Trash2, Plus, Bell, ShieldCheck, RefreshCw, 
   Briefcase, TrendingUp, TrendingDown, ShieldAlert, Sparkles, CheckCircle2 
@@ -38,6 +38,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   const [activeTab, setActiveTab] = useState<'HOLDINGS' | 'WATCHLIST' | 'REGULAR'>('HOLDINGS');
   const [items, setItems] = useState<StockTrackingItem[]>([]);
   const [regularOpportunities, setRegularOpportunities] = useState<any[]>([]);
+  const [isFetchingOpps, setIsFetchingOpps] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
@@ -69,13 +70,17 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   };
 
   const fetchOpportunities = async () => {
+    setIsFetchingOpps(true);
     try {
       const res = await refreshRecommendationsApi("ALL", 0, "en", "US");
       const pool = res?.recommended_stocks || res?.overall_recommended_stocks || res?.recommendations || [];
       if (pool.length > 0) {
-        // Filter regular stocks with >= 10% discount to ideal buy zone ceiling
+        // Exclude stocks already tracked in HOLDING or WATCHLIST
+        const tracked = new Set(items.map((it) => it.symbol.toUpperCase().trim()));
         const opps = pool
           .filter((r: any) => {
+            const sym = (r.symbol || '').toUpperCase().trim();
+            if (!sym || tracked.has(sym)) return false;
             const ceiling = r.key_metrics?.ideal_buy_range_max || r.ideal_buy_range_max || 0;
             const price = r.current_price || 0;
             return ceiling > 0 && price > 0 && price <= (ceiling * 0.90);
@@ -94,6 +99,8 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
       }
     } catch (e) {
       console.debug("Failed to fetch regular opportunities:", e);
+    } finally {
+      setIsFetchingOpps(false);
     }
   };
 
@@ -109,6 +116,18 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
     }
   }, [isOpen, activeTab, regularOpportunities.length]);
 
+  // Set of all symbols already tracked in HOLDINGS or WATCHLIST
+  const trackedSymbols = useMemo(() => {
+    return new Set(items.map((it) => it.symbol.toUpperCase().trim()));
+  }, [items]);
+
+  // Deep value discoveries: strictly exclude any stock already tracked in HOLDINGS or WATCHLIST
+  const displayedOpportunities = useMemo(() => {
+    return regularOpportunities.filter(
+      (opp) => !trackedSymbols.has(opp.symbol.toUpperCase().trim())
+    );
+  }, [regularOpportunities, trackedSymbols]);
+
   const handleSyncTargets = async () => {
     setIsSyncing(true);
     try {
@@ -121,6 +140,26 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
       console.warn("Failed to sync watchlist targets:", e);
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleAddOpportunityToWatchlist = async (opp: any) => {
+    const sym = opp.symbol.toUpperCase().trim();
+    // Instantly remove from regularOpportunities state so it vanishes from discovery list
+    setRegularOpportunities((prev) =>
+      prev.filter((o) => o.symbol.toUpperCase().trim() !== sym)
+    );
+    try {
+      await setStockBucketApi({
+        symbol: opp.symbol,
+        company_name: opp.company_name,
+        bucket: 'WATCHLIST'
+      });
+      await fetchTrackedStocks();
+      if (onWatchlistChange) onWatchlistChange();
+      setActiveTab('WATCHLIST');
+    } catch (e) {
+      console.warn("Failed to add opportunity to watchlist:", e);
     }
   };
 
@@ -140,6 +179,10 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
     };
 
     try {
+      // If the added stock was in regular opportunities, remove it immediately
+      setRegularOpportunities((prev) =>
+        prev.filter((o) => o.symbol.toUpperCase().trim() !== sym)
+      );
       await setStockBucketApi(payload);
       await fetchTrackedStocks();
       setNewSymbol('');
@@ -657,12 +700,19 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                 </span>
               </div>
 
-              {regularOpportunities.length === 0 ? (
+              {isFetchingOpps ? (
+                <div className="prism-surface-subtle p-6 text-center text-xs text-content-muted rounded-xl flex items-center justify-center gap-2">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand" />
+                  <span>Scanning North American universe for deep value setups with right-side momentum...</span>
+                </div>
+              ) : displayedOpportunities.length === 0 ? (
                 <div className="prism-surface-subtle p-6 text-center text-xs text-content-muted rounded-xl">
-                  Scanning North American universe for deep value setups with right-side momentum...
+                  {regularOpportunities.length > 0
+                    ? 'All discovered deep value setups have been added to your Watchlist or Holdings.'
+                    : 'Scanning North American universe for deep value setups with right-side momentum...'}
                 </div>
               ) : (
-                regularOpportunities.map((opp) => (
+                displayedOpportunities.map((opp) => (
                   <div
                     key={opp.symbol}
                     className="prism-card p-3.5 hover:border-brand transition-all flex items-center justify-between rounded-xl border border-border-subtle bg-surface"
@@ -694,15 +744,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={async () => {
-                          await setStockBucketApi({
-                            symbol: opp.symbol,
-                            company_name: opp.company_name,
-                            bucket: 'WATCHLIST'
-                          });
-                          await fetchTrackedStocks();
-                          setActiveTab('WATCHLIST');
-                        }}
+                        onClick={() => handleAddOpportunityToWatchlist(opp)}
                         className="px-2 py-1 text-[11px] font-bold bg-warning/15 text-warning-dark dark:text-warning hover:bg-warning hover:text-white rounded-lg transition-all cursor-pointer"
                       >
                         + Watchlist

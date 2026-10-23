@@ -281,70 +281,85 @@ class PriceAlertEngine:
                     anchor_mode=anchor_mode
                 )
 
-                # Determine effective target buy price (Override -> Saved Target -> Default 95% of Buy Ceiling)
+                buy_ceiling = float(pricing_eval.get("ideal_buy_range_max") or 0.0)
+
+                # Determine effective target buy price:
+                # 1. Custom ticker override in settings
+                # 2. Saved target on watchlist item
+                # 3. Default: 95% of ideal buy zone ceiling
                 target_buy = override_data.get("target_buy")
                 if not target_buy or target_buy <= 0:
                     target_buy = item.target_buy_price
                 if not target_buy or target_buy <= 0:
-                    buy_ceiling = float(pricing_eval.get("ideal_buy_range_max") or 0.0)
-                    target_buy = round(buy_ceiling * 0.95, 2) if buy_ceiling > 0 else round(current_price * 0.95, 2)
+                    if buy_ceiling > 0:
+                        target_buy = round(buy_ceiling * 0.95, 2)
+                    else:
+                        continue  # No buy ceiling available, cannot establish buy zone
+
+                # If item had no target_buy_price saved in DB, persist the 95% default
+                if (not item.target_buy_price or item.target_buy_price <= 0) and buy_ceiling > 0:
+                    item.target_buy_price = round(buy_ceiling * 0.95, 2)
+                    session.add(item)
+                    session.commit()
 
                 # Evaluate Batting Zone & Trend Temperature
                 trend_eval = self.evaluate_symbol_trend_temperature(quote)
                 is_right_side = trend_eval.get("is_right_side", False)
                 trend_state = trend_eval.get("state", "FLAT")
 
-                # Evaluate Dual-Trigger: Price in Buy Zone AND Right-Side Batting Zone
-                if target_buy and target_buy > 0 and current_price <= target_buy:
-                    if is_right_side:
-                        recent_buy = session.exec(
-                            select(PriceAlertLogDB)
-                            .where(PriceAlertLogDB.symbol == item.symbol)
-                            .where(PriceAlertLogDB.status.in_(["TRIGGERED", "BUY_TRIGGERED"]))
-                            .where(PriceAlertLogDB.triggered_at >= cutoff)
-                        ).first()
+                # Condition 1: Must fall into buy zone (current_price <= target_buy AND current_price <= buy_ceiling if buy_ceiling > 0)
+                in_buy_zone = (current_price <= target_buy) and (buy_ceiling <= 0 or current_price <= buy_ceiling)
 
-                        if not recent_buy:
-                            log_entry = PriceAlertLogDB(
-                                symbol=item.symbol,
-                                company_name=item.company_name,
-                                current_price=current_price,
-                                target_buy_price=target_buy,
-                                notification_channel="IN_APP",
-                                status="BUY_TRIGGERED",
-                                message=f"Watchlist ${item.symbol} reached 95% target buy price (${current_price} <= ${target_buy}) with Right-Side Batting Zone ({trend_state})",
-                                triggered_at=get_utc_now()
-                            )
-                            session.add(log_entry)
-                            session.commit()
-                            session.refresh(log_entry)
+                # Condition 2: Must be on Right-Side of Batting Zone
+                if in_buy_zone and is_right_side:
+                    recent_buy = session.exec(
+                        select(PriceAlertLogDB)
+                        .where(PriceAlertLogDB.symbol == item.symbol)
+                        .where(PriceAlertLogDB.status.in_(["TRIGGERED", "BUY_TRIGGERED"]))
+                        .where(PriceAlertLogDB.triggered_at >= cutoff)
+                    ).first()
 
-                            dispatch_res = await dispatcher.dispatch_price_alert(
-                                symbol=item.symbol,
-                                company_name=item.company_name,
-                                current_price=current_price,
-                                target_buy_price=target_buy,
-                                session=session,
-                                alert_type="BUY"
-                            )
-
-                            triggered_results.append({
-                                "log_id": log_entry.id,
-                                "symbol": item.symbol,
-                                "company_name": item.company_name,
-                                "current_price": current_price,
-                                "target_price": target_buy,
-                                "batting_zone": "RIGHT_SIDE",
-                                "trend_state": trend_state,
-                                "alert_type": "BUY",
-                                "bucket": "WATCHLIST",
-                                "dispatch": dispatch_res
-                            })
-                    else:
-                        logger.info(
-                            f"[BUY ALERT SUPPRESSED] Watchlist ${item.symbol} is in buy zone (${current_price} <= ${target_buy}), "
-                            f"but batting zone is LEFT_SIDE ({trend_state}). Awaiting right-side reversal confirmation."
+                    if not recent_buy:
+                        log_entry = PriceAlertLogDB(
+                            symbol=item.symbol,
+                            company_name=item.company_name,
+                            current_price=current_price,
+                            target_buy_price=target_buy,
+                            notification_channel="IN_APP",
+                            status="BUY_TRIGGERED",
+                            message=f"Watchlist ${item.symbol} reached 95% target buy price (${current_price} <= ${target_buy}) with Right-Side Batting Zone ({trend_state})",
+                            triggered_at=get_utc_now()
                         )
+                        session.add(log_entry)
+                        session.commit()
+                        session.refresh(log_entry)
+
+                        dispatch_res = await dispatcher.dispatch_price_alert(
+                            symbol=item.symbol,
+                            company_name=item.company_name,
+                            current_price=current_price,
+                            target_buy_price=target_buy,
+                            session=session,
+                            alert_type="BUY"
+                        )
+
+                        triggered_results.append({
+                            "log_id": log_entry.id,
+                            "symbol": item.symbol,
+                            "company_name": item.company_name,
+                            "current_price": current_price,
+                            "target_price": target_buy,
+                            "batting_zone": "RIGHT_SIDE",
+                            "trend_state": trend_state,
+                            "alert_type": "BUY",
+                            "bucket": "WATCHLIST",
+                            "dispatch": dispatch_res
+                        })
+                elif in_buy_zone and not is_right_side:
+                    logger.info(
+                        f"[BUY ALERT SUPPRESSED] Watchlist ${item.symbol} is in buy zone (${current_price} <= ${target_buy}), "
+                        f"but batting zone is LEFT_SIDE ({trend_state}). Awaiting right-side reversal confirmation."
+                    )
 
             except Exception as e:
                 logger.error(f"Error checking watchlist alert for {item.symbol}: {e}")
@@ -361,67 +376,77 @@ class PriceAlertEngine:
         Dispatches DISCOVERY_BUY alert with suggestion to add stock to Watchlist.
         """
         triggered_results = []
-        from backend.models.db_models import RecommendationSnapshotDB
+        from backend.models.db_models import RecommendationSnapshotDB, ValuationAlertSettingsDB
         from backend.engines.pricing_engine import PricingEngine
 
-        tracked_symbols = {row.symbol.upper() for row in session.exec(select(UserWatchlistDB)).all()}
+        settings_rec = session.exec(select(ValuationAlertSettingsDB)).first()
+        custom_mos = settings_rec.global_mos_pct if settings_rec else None
+        anchor_mode = settings_rec.technical_anchor_mode if settings_rec else "adaptive_balanced"
+
+        tracked_symbols = {row.symbol.upper().strip() for row in session.exec(select(UserWatchlistDB)).all()}
         snapshots = session.exec(select(RecommendationSnapshotDB).where(RecommendationSnapshotDB.lang == "en")).all()
         if not snapshots:
             return triggered_results
 
         cutoff = get_utc_now() - timedelta(hours=COOLDOWN_HOURS)
 
+        # Collect candidate snapshots not in tracked holdings or watchlist
+        candidate_snaps: Dict[str, Any] = {}
         for snap in snapshots:
             sym = snap.symbol.upper().strip()
-            if sym in tracked_symbols:
-                continue
+            if sym not in tracked_symbols and sym not in candidate_snaps:
+                candidate_snaps[sym] = snap
 
+        candidate_symbols = list(candidate_snaps.keys())
+        if not candidate_symbols:
+            return triggered_results
+
+        # Retrieve live quotes for candidate regular stocks
+        quotes_list = await asyncio.gather(*[
+            data_provider_manager.get_stock_quote_async(s) for s in candidate_symbols
+        ], return_exceptions=True)
+        quotes_map = {
+            s: q for s, q in zip(candidate_symbols, quotes_list) if isinstance(q, dict) and q.get("current_price")
+        }
+
+        for sym, snap in candidate_snaps.items():
             try:
-                payload = json.loads(snap.financial_payload_json) if snap.financial_payload_json else {}
-                quote = None
-                with DataProviderManager._LOCK:
-                    if sym in DataProviderManager._CACHE:
-                        quote = DataProviderManager._CACHE[sym]
-                if not quote and sym in FALLBACK_STOCK_DATA:
-                    quote = FALLBACK_STOCK_DATA[sym]
-                if not quote and ("pytest" in sys.modules or os.getenv("TESTING") == "true"):
-                    try:
-                        quote = data_provider_manager.get_stock_quote(sym)
-                    except Exception:
-                        quote = None
+                quote = quotes_map.get(sym)
                 if not quote:
-                    key_metrics = payload.get("key_metrics", {})
-                    p_val = float(payload.get("current_price") or payload.get("price") or 0.0)
-                    sma200_val = float(key_metrics.get("two_hundred_day_sma") or p_val * 0.95)
-                    quote = {
-                        "symbol": sym,
-                        "company_name": snap.company_name,
-                        "current_price": p_val,
-                        "two_hundred_day_sma": sma200_val,
-                        "fifty_day_sma": round(sma200_val * 1.05, 2),
-                        "action_status": payload.get("action_status", "IN_BUY_ZONE")
-                    }
+                    with DataProviderManager._LOCK:
+                        quote = DataProviderManager._CACHE.get(sym)
+                if not quote:
+                    continue
 
-                current_price = float(quote.get("current_price") or payload.get("current_price") or payload.get("price") or 0.0)
+                current_price = float(quote.get("current_price") or 0.0)
                 if current_price <= 0:
                     continue
 
-                buy_ceiling = float(
-                    payload.get("key_metrics", {}).get("ideal_buy_range_max")
-                    or payload.get("ideal_buy_range_max")
-                    or quote.get("ideal_buy_range_max")
-                    or 0.0
+                # Recalculate live pricing to get real ideal buy zone ceiling
+                pricing_eval = PricingEngine.evaluate_pricing_and_entry_zone(
+                    quote,
+                    custom_mos_pct=custom_mos,
+                    anchor_mode=anchor_mode
                 )
+                buy_ceiling = float(pricing_eval.get("ideal_buy_range_max") or quote.get("ideal_buy_range_max") or 0.0)
+                if buy_ceiling <= 0:
+                    try:
+                        snap_payload = json.loads(snap.financial_payload_json) if snap and snap.financial_payload_json else {}
+                        buy_ceiling = float(snap_payload.get("ideal_buy_range_max") or 0.0)
+                    except Exception:
+                        pass
                 if buy_ceiling <= 0:
                     continue
 
+                # Rule 4: Target price is strictly 90% of ideal buy zone ceiling
                 regular_target = round(buy_ceiling * 0.90, 2)
 
+                # Batting zone must be on the right side (trend WARM or HOT)
                 trend_eval = self.evaluate_symbol_trend_temperature(quote)
                 is_right_side = trend_eval.get("is_right_side", False)
                 trend_state = trend_eval.get("state", "FLAT")
 
-                # Condition: Deep 10%+ discount below buy ceiling AND Right-Side Batting Zone
+                # Condition: current_price is 90% or lower than ideal buy zone ceiling AND right-side batting zone
                 if current_price <= regular_target and is_right_side:
                     recent_discovery = session.exec(
                         select(PriceAlertLogDB)
@@ -466,6 +491,11 @@ class PriceAlertEngine:
                             "bucket": "REGULAR",
                             "dispatch": dispatch_res
                         })
+                elif current_price <= regular_target and not is_right_side:
+                    logger.info(
+                        f"[REGULAR DISCOVERY SUPPRESSED] Stock ${sym} price ${current_price} <= ${regular_target}, "
+                        f"but batting zone is LEFT_SIDE ({trend_state}). Awaiting right-side reversal confirmation."
+                    )
 
             except Exception as e:
                 logger.error(f"Error evaluating regular universe alert for {sym}: {e}")
