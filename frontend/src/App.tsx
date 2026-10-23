@@ -63,9 +63,30 @@ const PreTradeSoulCheckModal = lazy(() => import('./components/PreTradeSoulCheck
 export const App: React.FC = () => {
   const { t, language } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState<'macro' | 'picks' | 'stock'>('macro');
-  const [ticker, setTicker] = useState<string>('NVDA');
-  const [searchInput, setSearchInput] = useState<string>('NVDA');
+  const [activeTab, setActiveTab] = useState<'macro' | 'picks' | 'stock'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'picks' || tab === 'stock' || tab === 'macro') return tab;
+    }
+    return 'macro';
+  });
+  const [ticker, setTicker] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('ticker');
+      if (t) return t.toUpperCase();
+    }
+    return 'NVDA';
+  });
+  const [searchInput, setSearchInput] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('ticker');
+      if (t) return t.toUpperCase();
+    }
+    return 'NVDA';
+  });
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState<boolean>(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
