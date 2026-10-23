@@ -9,8 +9,6 @@
 [![Theme](https://img.shields.io/badge/主题-明亮%20%2F%20暗黑-slate.svg)](#)
 [![Markets](https://img.shields.io/badge/市场-美股%20%26%20加股-amber.svg)](#)
 
-![Prism Loop Master Brand Architecture](docs/screenshots/prism-brand-architecture.jpg)
-
 Prism Loop 是一款面向美股与加股自主投资者的桌面级投研工作站。它在一个高响应的统一界面中，直连交易所实时行情、宏观周期指标、SEC 10-K 与 SEDAR+ 连续 5 年的年报文本差异、多智能体对抗辩论、央行决议与讲话实时流式分析、自由现金流（DCF）安全边际估值模型，以及持仓纪律管理。
 
 投资者无需翻阅上百页格式化的冗长年报，也不用依赖容易产生数字幻觉的大模型概括。Prism Loop 计算明确的买入价格区间，核验企业增长催化剂与营收结构，并在建仓前后严格执行防亏损纪律。

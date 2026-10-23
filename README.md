@@ -9,8 +9,6 @@
 [![Theme](https://img.shields.io/badge/theme-Light%20%2F%20Dark-slate.svg)](#)
 [![Markets](https://img.shields.io/badge/markets-US%20%26%20Canada-amber.svg)](#)
 
-![Prism Loop Master Brand Architecture](docs/screenshots/prism-brand-architecture.jpg)
-
 Prism Loop is a desktop-grade equity research workstation built for self-directed investors in US and Canadian markets. It integrates live exchange price feeds, macroeconomic indicators, 5-year SEC 10-K and SEDAR+ filing text diffs, multi-agent AI debates, real-time central bank speech streaming, discounted cash flow (DCF) valuation, and disciplined portfolio tracking into a single interface.
 
 Rather than reading hundreds of pages of boilerplate filings or relying on ungrounded AI summaries that invent financial metrics, investors use Prism Loop to compute mathematical buy zones, test bear theses, and enforce clear holding discipline before deploying capital.
