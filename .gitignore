@@ -26,7 +26,8 @@ Thumbs.db
 .idea/
 
 # Internal Documentation & Artifacts (Do Not Push)
-/docs/
+/docs/*
+!/docs/screenshots/
 
 # AI Agent Skills & Workspace Configurations (Do Not Push)
 /.agents/
