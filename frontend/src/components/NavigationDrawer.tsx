@@ -15,7 +15,8 @@ import {
   Moon,
   Globe,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Newspaper
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -32,8 +33,8 @@ interface NavigationDrawerProps {
   onOpenCalculator: () => void;
   onOpenCommandPalette: () => void;
   // Navigation tabs
-  activeTab: 'macro' | 'picks' | 'stock';
-  onSelectTab: (tab: 'macro' | 'picks' | 'stock') => void;
+  activeTab: 'macro' | 'news' | 'picks' | 'stock';
+  onSelectTab: (tab: 'macro' | 'news' | 'picks' | 'stock') => void;
   currentTicker: string;
   // Badges & Metrics
   watchlistCount: number;
@@ -358,7 +359,26 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                 </div>
               </div>
 
-              {/* Tab 2: Stock Picks */}
+              {/* Tab 2: News & Portfolio Analysis */}
+              <button
+                onClick={() => {
+                  onSelectTab('news');
+                  onClose();
+                }}
+                className={`p-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                  activeTab === 'news'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'bg-surface hover:bg-surface-subtle text-content-secondary hover:text-content-primary border border-border-subtle'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Newspaper className="w-4 h-4" />
+                  <span>2. {t.tabNewsPortfolio}</span>
+                </div>
+                {activeTab === 'news' && <ShieldCheck className="w-4 h-4" />}
+              </button>
+
+              {/* Tab 3: Stock Picks */}
               <button
                 onClick={() => {
                   onSelectTab('picks');
@@ -372,12 +392,12 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
-                  <span>2. {t.tabPicks}</span>
+                  <span>3. {t.tabPicks}</span>
                 </div>
                 {activeTab === 'picks' && <ShieldCheck className="w-4 h-4" />}
               </button>
 
-              {/* Tab 3: Deep-Dive */}
+              {/* Tab 4: Deep-Dive */}
               <button
                 onClick={() => {
                   onSelectTab('stock');
@@ -391,7 +411,7 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <LineChart className="w-4 h-4" />
-                  <span>3. {t.tabStock} (${currentTicker})</span>
+                  <span>4. {t.tabStock} (${currentTicker})</span>
                 </div>
                 {activeTab === 'stock' && <ShieldCheck className="w-4 h-4" />}
               </button>
