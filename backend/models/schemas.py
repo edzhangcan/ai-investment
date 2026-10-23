@@ -379,3 +379,94 @@ class CentralBankSpeechStreamEventSchema(BaseModel):
     market_implications: Optional[Dict[str, str]] = None
 
 
+# PL-722: News & Portfolio Analysis Schemas
+class PortfolioNewsItemSchema(BaseModel):
+    id: str
+    symbol: str
+    company_name: str = ""
+    market: Literal["US", "CA"] = "US"
+    bucket: Literal["HOLDING", "WATCHLIST", "MARKET"] = "MARKET"
+    title: str
+    summary: str
+    portfolio_impact_note: str
+    source: str
+    url: str = "https://finance.yahoo.com"
+    published_at: str
+    credibility_tier: str = "Tier-1 Institutional Media"
+    sentiment: Literal["BULLISH", "BEARISH", "NEUTRAL", "RISK_ALERT"] = "NEUTRAL"
+    relevance_score: float = 50.0
+
+class KeyInvestorPostSchema(BaseModel):
+    id: str
+    investor_name: str
+    institution: str
+    market: Literal["US", "CA", "NORTH_AMERICA"] = "US"
+    title: str
+    commentary: str
+    key_takeaway: str
+    related_symbols: List[str] = Field(default_factory=list)
+    matched_bucket: Literal["HOLDING", "WATCHLIST", "MARKET"] = "MARKET"
+    stance: Literal["BULLISH", "CAUTIOUS", "DEFENSIVE", "HIGH_CONVICTION"] = "HIGH_CONVICTION"
+    published_at: str
+    source_url: str = "https://www.sec.gov/edgar/searchedgar/companysearch"
+
+class TacticalAdviceItemSchema(BaseModel):
+    symbol: str
+    bucket: Literal["HOLDING", "WATCHLIST", "PORTFOLIO"] = "PORTFOLIO"
+    market: Literal["US", "CA"] = "US"
+    category: Literal["ACTION", "OPPORTUNITY", "RISK"] = "ACTION"
+    urgency: Literal["HIGH", "MEDIUM", "LOW"] = "MEDIUM"
+    headline: str
+    rationale: str
+    tactical_instruction: str
+    time_horizon: str = "Today & Tomorrow"
+    reference_price: Optional[float] = None
+    threshold_price: Optional[float] = None
+
+class DailyPortfolioBriefingSchema(BaseModel):
+    date_label: str
+    market_regime_context: str
+    executive_summary: str
+    action_advice: List[TacticalAdviceItemSchema] = Field(default_factory=list)
+    opportunities: List[TacticalAdviceItemSchema] = Field(default_factory=list)
+    risks: List[TacticalAdviceItemSchema] = Field(default_factory=list)
+
+class TrackedPositionPulseSchema(BaseModel):
+    symbol: str
+    company_name: str
+    market: Literal["US", "CA"] = "US"
+    currency: str = "USD"
+    bucket: Literal["HOLDING", "WATCHLIST"] = "WATCHLIST"
+    current_price: float = 0.0
+    buy_in_price: Optional[float] = None
+    target_buy_price: Optional[float] = None
+    falsification_floor: Optional[float] = None
+    unrealized_pnl_pct: Optional[float] = None
+    distance_to_target_pct: Optional[float] = None
+    distance_to_floor_pct: Optional[float] = None
+    portfolio_allocation_pct: float = 0.0
+    batting_zone: str = "RIGHT_SIDE"
+    trend_state: str = "WARM"
+    related_news_count: int = 0
+    latest_headline: Optional[str] = None
+    day_signal: Literal["HOLD_CORE", "SCALE_IN_READY", "DEFEND_FLOOR", "WATCH_PULLBACK", "TRIM_EXTENDED"] = "HOLD_CORE"
+
+class PortfolioSummaryMetaSchema(BaseModel):
+    holdings_count: int = 0
+    watchlist_count: int = 0
+    total_portfolio_value: float = 0.0
+    active_catalyst_count: int = 0
+    is_demo_portfolio: bool = False
+    holding_symbols: List[str] = Field(default_factory=list)
+    watchlist_symbols: List[str] = Field(default_factory=list)
+
+class PortfolioNewsAnalysisResponseSchema(BaseModel):
+    portfolio_summary: PortfolioSummaryMetaSchema
+    briefing: DailyPortfolioBriefingSchema
+    news_feed: List[PortfolioNewsItemSchema] = Field(default_factory=list)
+    investor_posts: List[KeyInvestorPostSchema] = Field(default_factory=list)
+    tracked_positions: List[TrackedPositionPulseSchema] = Field(default_factory=list)
+    provenance: DataProvenanceSchema
+
+
+
