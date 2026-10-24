@@ -687,6 +687,8 @@ export interface KeyInvestorPost {
   source_url: string;
 }
 
+export type ActionSignalTag = 'HOLD_CORE' | 'SCALE_IN_READY' | 'DEFEND_FLOOR' | 'WATCH_PULLBACK' | 'TRIM_EXTENDED';
+
 export interface TacticalAdviceItem {
   symbol: string;
   bucket: 'HOLDING' | 'WATCHLIST' | 'PORTFOLIO';
@@ -699,6 +701,10 @@ export interface TacticalAdviceItem {
   time_horizon: string;
   reference_price?: number | null;
   threshold_price?: number | null;
+  source_url?: string;
+  source_name?: string;
+  action_tag?: ActionSignalTag | null;
+  action_tag_explanation?: string | null;
 }
 
 export interface DailyPortfolioBriefing {
@@ -728,7 +734,10 @@ export interface TrackedPositionPulse {
   trend_state: string;
   related_news_count: number;
   latest_headline?: string | null;
-  day_signal: 'HOLD_CORE' | 'SCALE_IN_READY' | 'DEFEND_FLOOR' | 'WATCH_PULLBACK' | 'TRIM_EXTENDED';
+  latest_news_url?: string | null;
+  latest_news_source?: string | null;
+  day_signal: ActionSignalTag;
+  day_signal_explanation?: string;
 }
 
 export interface PortfolioSummaryMeta {

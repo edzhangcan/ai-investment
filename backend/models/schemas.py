@@ -422,6 +422,10 @@ class TacticalAdviceItemSchema(BaseModel):
     time_horizon: str = "Today & Tomorrow"
     reference_price: Optional[float] = None
     threshold_price: Optional[float] = None
+    source_url: str = "https://finance.yahoo.com"
+    source_name: str = "Financial Media"
+    action_tag: Optional[Literal["HOLD_CORE", "SCALE_IN_READY", "DEFEND_FLOOR", "WATCH_PULLBACK", "TRIM_EXTENDED"]] = None
+    action_tag_explanation: Optional[str] = None
 
 class DailyPortfolioBriefingSchema(BaseModel):
     date_label: str
@@ -449,7 +453,10 @@ class TrackedPositionPulseSchema(BaseModel):
     trend_state: str = "WARM"
     related_news_count: int = 0
     latest_headline: Optional[str] = None
+    latest_news_url: Optional[str] = None
+    latest_news_source: Optional[str] = None
     day_signal: Literal["HOLD_CORE", "SCALE_IN_READY", "DEFEND_FLOOR", "WATCH_PULLBACK", "TRIM_EXTENDED"] = "HOLD_CORE"
+    day_signal_explanation: str = ""
 
 class PortfolioSummaryMetaSchema(BaseModel):
     holdings_count: int = 0

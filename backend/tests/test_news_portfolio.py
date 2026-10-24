@@ -214,3 +214,32 @@ def test_english_content_invariant(client: TestClient, session: Session):
     first_investor = data["investor_posts"][0]
     assert len(first_investor["investor_name"]) > 2
     assert len(first_investor["commentary"]) > 10
+
+
+def test_briefing_items_have_source_urls_and_action_tag_explanations(client: TestClient, session: Session):
+    """
+    Requirement 7: Every item in Today & Tomorrow Executive Briefing (action_advice,
+    opportunities, risks) includes a clickable source_url and source_name, and
+    action tags include clear explanations.
+    """
+    res = client.get("/api/news-portfolio/analysis?market=ALL")
+    assert res.status_code == 200
+    data = res.json()
+
+    briefing = data["briefing"]
+    for col_key in ["action_advice", "opportunities", "risks"]:
+        items = briefing[col_key]
+        assert len(items) >= 1
+        for item in items:
+            assert item.get("source_url", "").startswith("http")
+            assert len(item.get("source_name", "")) > 2
+
+    for act in briefing["action_advice"]:
+        assert act.get("action_tag") in ["HOLD_CORE", "WATCH_PULLBACK", "DEFEND_FLOOR", "SCALE_IN_READY", "TRIM_EXTENDED"]
+        assert len(act.get("action_tag_explanation", "")) > 20
+
+    for pos in data["tracked_positions"]:
+        assert pos.get("day_signal") in ["HOLD_CORE", "WATCH_PULLBACK", "DEFEND_FLOOR", "SCALE_IN_READY", "TRIM_EXTENDED"]
+        assert len(pos.get("day_signal_explanation", "")) > 20
+        assert pos.get("latest_news_url", "").startswith("http")
+

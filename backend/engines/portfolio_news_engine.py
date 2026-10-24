@@ -38,6 +38,14 @@ DEFAULT_DEMO_WATCHLIST = ["RY.TO", "SHOP.TO", "CNQ.TO"]
 class PortfolioNewsEngine:
     """Aggregates, scores, and synthesizes news and key investor commentary for active portfolios."""
 
+    ACTION_TAG_EXPLANATIONS: Dict[str, str] = {
+        "HOLD_CORE": "Price trades safely above the 200D SMA x 0.97 falsification floor with intact business fundamentals. Hold core position without over-trading and let free cash flow compound.",
+        "DEFEND_FLOOR": "Critical Risk Guard: Price is within 3% of or has breached the 200D SMA x 0.97 falsification floor. Do not average down on the left side; prepare mechanical stop-loss exit if daily close breaks the floor.",
+        "WATCH_PULLBACK": "Watchlist target is trading above its 95% Ideal Buy Ceiling or remains in a Left-Side (Freeze/Flat) trend. Wait patiently for a pullback into the buy zone with Right-Side momentum confirmation.",
+        "SCALE_IN_READY": "Right-Side Entry Window Active: Price has pulled back to or below the 95% Buy Ceiling while confirming Right-Side (Warm/Hot) trend support. Eligible for a disciplined 2%–4% satellite entry.",
+        "TRIM_EXTENDED": "Position shows +25% or greater unrealized gains above cost basis. Protect open profits by trailing your stop-loss floor upward or trimming excess weight if allocation exceeds your 4% satellite cap.",
+    }
+
     @classmethod
     def analyze_portfolio_and_news(
         cls,
@@ -211,6 +219,8 @@ class PortfolioNewsEngine:
             rel_items = [n for n in scored_news if n["symbol"] == p["symbol"]]
             p["related_news_count"] = len(rel_items)
             p["latest_headline"] = rel_items[0]["title"] if rel_items else None
+            p["latest_news_url"] = rel_items[0]["url"] if rel_items else f"https://finance.yahoo.com/quote/{p['symbol']}/news"
+            p["latest_news_source"] = rel_items[0]["source"] if rel_items else "Yahoo Finance"
 
         # Step 4: Fetch Key Investor Commentary
         raw_investor_posts = NewsClient.fetch_key_investor_commentary(all_tracked_symbols, market=market_norm)
@@ -340,6 +350,8 @@ class PortfolioNewsEngine:
             else:
                 day_signal = "WATCH_PULLBACK"
 
+        day_signal_explanation = cls.ACTION_TAG_EXPLANATIONS.get(day_signal, "")
+
         return {
             "symbol": norm_sym,
             "company_name": item.company_name or cls._resolve_company_name(norm_sym),
@@ -358,7 +370,10 @@ class PortfolioNewsEngine:
             "trend_state": trend_state,
             "related_news_count": 0,
             "latest_headline": None,
+            "latest_news_url": f"https://finance.yahoo.com/quote/{norm_sym}/news",
+            "latest_news_source": "Yahoo Finance",
             "day_signal": day_signal,
+            "day_signal_explanation": day_signal_explanation,
             "total_value": total_value,
         }
 
@@ -384,6 +399,21 @@ class PortfolioNewsEngine:
             floor = pos.get("falsification_floor")
             target = pos.get("target_buy_price")
             pnl = pos.get("unrealized_pnl_pct")
+            day_sig = pos.get("day_signal", "HOLD_CORE")
+            sig_expl = cls.ACTION_TAG_EXPLANATIONS.get(day_sig, "")
+
+            # Resolve best matching news or investor disclosure source for this ticker
+            rel_news = next((n for n in news_feed if n["symbol"] == sym), None)
+            rel_inv = next((inv for inv in investor_posts if sym in inv.get("related_symbols", [])), None)
+            if rel_news:
+                act_source_url = rel_news["url"]
+                act_source_name = rel_news["source"]
+            elif rel_inv:
+                act_source_url = rel_inv["source_url"]
+                act_source_name = f"{rel_inv['investor_name']} ({rel_inv['institution']})"
+            else:
+                act_source_url = f"https://finance.yahoo.com/quote/{sym}/news"
+                act_source_name = f"{sym} Financial Disclosures"
 
             if bucket == "HOLDING":
                 if floor and curr_p <= floor * 1.03:
@@ -399,6 +429,10 @@ class PortfolioNewsEngine:
                         "time_horizon": "Today & Tomorrow",
                         "reference_price": curr_p,
                         "threshold_price": floor,
+                        "source_url": act_source_url,
+                        "source_name": act_source_name,
+                        "action_tag": day_sig,
+                        "action_tag_explanation": sig_expl,
                     })
                 elif pnl is not None and pnl >= 25.0:
                     action_advice.append({
@@ -413,6 +447,10 @@ class PortfolioNewsEngine:
                         "time_horizon": "Today & Tomorrow",
                         "reference_price": curr_p,
                         "threshold_price": floor,
+                        "source_url": act_source_url,
+                        "source_name": act_source_name,
+                        "action_tag": day_sig,
+                        "action_tag_explanation": sig_expl,
                     })
                 else:
                     action_advice.append({
@@ -427,6 +465,10 @@ class PortfolioNewsEngine:
                         "time_horizon": "Today & Tomorrow",
                         "reference_price": curr_p,
                         "threshold_price": floor,
+                        "source_url": act_source_url,
+                        "source_name": act_source_name,
+                        "action_tag": day_sig,
+                        "action_tag_explanation": sig_expl,
                     })
             elif bucket == "WATCHLIST":
                 if target and curr_p <= target and pos["batting_zone"] == "RIGHT_SIDE":
@@ -442,6 +484,10 @@ class PortfolioNewsEngine:
                         "time_horizon": "Today & Tomorrow",
                         "reference_price": curr_p,
                         "threshold_price": target,
+                        "source_url": act_source_url,
+                        "source_name": act_source_name,
+                        "action_tag": day_sig,
+                        "action_tag_explanation": sig_expl,
                     })
                 else:
                     dist_str = f"{pos.get('distance_to_target_pct', 0):+.1f}%"
@@ -457,6 +503,10 @@ class PortfolioNewsEngine:
                         "time_horizon": "Today & Tomorrow",
                         "reference_price": curr_p,
                         "threshold_price": target,
+                        "source_url": act_source_url,
+                        "source_name": act_source_name,
+                        "action_tag": day_sig,
+                        "action_tag_explanation": sig_expl,
                     })
 
         # 2. Opportunities Radar
@@ -474,6 +524,8 @@ class PortfolioNewsEngine:
                 "time_horizon": "Today & Tomorrow",
                 "reference_price": None,
                 "threshold_price": None,
+                "source_url": n["url"],
+                "source_name": n["source"],
             })
 
         # Augment opportunities with key investor stance
@@ -491,6 +543,8 @@ class PortfolioNewsEngine:
                 "time_horizon": "Multi-Week Outlook",
                 "reference_price": None,
                 "threshold_price": None,
+                "source_url": inv["source_url"],
+                "source_name": f"{inv['investor_name']} ({inv['institution']})",
             })
 
         # 3. Risks & Falsification Watchouts
@@ -508,6 +562,8 @@ class PortfolioNewsEngine:
                 "time_horizon": "Immediate",
                 "reference_price": None,
                 "threshold_price": None,
+                "source_url": n["url"],
+                "source_name": n["source"],
             })
 
         cautious_investors = [inv for inv in investor_posts if inv["stance"] in ["DEFENSIVE", "CAUTIOUS"]][:2]
@@ -524,6 +580,8 @@ class PortfolioNewsEngine:
                 "time_horizon": "Today & Tomorrow",
                 "reference_price": None,
                 "threshold_price": None,
+                "source_url": inv["source_url"],
+                "source_name": f"{inv['investor_name']} ({inv['institution']})",
             })
 
         # Build executive summary narrative
