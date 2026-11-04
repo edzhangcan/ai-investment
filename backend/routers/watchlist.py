@@ -77,35 +77,62 @@ class WatchlistResponseSchema(BaseModel):
     falsification_floor: Optional[float] = None
     batting_zone: Optional[str] = None
     trend_state: Optional[str] = None
+    dcf_fair_value: Optional[float] = None
+    ideal_buy_range_min: Optional[float] = None
+    ideal_buy_range_max: Optional[float] = None
+    action_status: Optional[str] = None
 
 
 def enrich_item_quote(
     item: UserWatchlistDB,
-    allow_network: bool = False,
+    allow_network: bool = True,
     holding_days_override: Optional[int] = None
 ) -> WatchlistResponseSchema:
-    """Helper to attach live quote, unrealized P&L, and trend telemetry to an item."""
+    """Helper to attach live quote, unrealized P&L, dynamic DCF, entry zone, and trend telemetry to an item."""
     from backend.data_sources.data_provider import DataProviderManager, FALLBACK_STOCK_DATA
+    from backend.engines.pricing_engine import PricingEngine
+    from backend.services.alert_engine import PriceAlertEngine
     norm = item.symbol.upper().strip()
-    quote = None
-    with DataProviderManager._LOCK:
-        if norm in DataProviderManager._CACHE:
-            quote = DataProviderManager._CACHE[norm]
+    stock_data = None
+    if allow_network:
+        try:
+            stock_data = DataProviderManager.get_stock_data(norm)
+        except Exception:
+            stock_data = None
 
-    if quote is None:
-        if norm in FALLBACK_STOCK_DATA:
-            quote = FALLBACK_STOCK_DATA[norm]
-        elif allow_network:
-            try:
-                quote = data_provider_manager.get_stock_quote(item.symbol)
-            except Exception:
-                quote = {}
-        else:
-            quote = {}
+    if not stock_data or not stock_data.get("is_valid", True):
+        with DataProviderManager._LOCK:
+            if norm in DataProviderManager._CACHE:
+                stock_data = DataProviderManager._CACHE[norm].copy()
 
+    if not stock_data and norm in FALLBACK_STOCK_DATA:
+        stock_data = FALLBACK_STOCK_DATA[norm].copy()
+
+    quote = stock_data or {}
     curr_price = float(quote.get("current_price") or 0.0)
     sma200 = float(quote.get("two_hundred_day_sma") or 0.0)
     floor = round(sma200 * 0.97, 2) if sma200 > 0 else None
+
+    # PL-723.4: Evaluate dynamic DCF and balanced buy zone
+    dcf_val = None
+    buy_min = None
+    buy_max = None
+    act_status = None
+    if quote and curr_price > 0:
+        try:
+            pricing = PricingEngine.evaluate_pricing_and_entry_zone(quote)
+            if pricing and pricing.get("is_valid", True):
+                dcf_val = pricing.get("dcf_fair_value")
+                buy_min = pricing.get("ideal_buy_range_min")
+                buy_max = pricing.get("ideal_buy_range_max")
+                act_status = pricing.get("action_status")
+        except Exception:
+            pass
+
+    # Dynamic target buy price: if not explicitly user-customized, align with balanced buy ceiling
+    effective_target_buy = item.target_buy_price
+    if effective_target_buy is None and buy_max is not None:
+        effective_target_buy = round(buy_max * 0.98, 2)
 
     unrealized_pnl = None
     total_value = None
@@ -144,7 +171,7 @@ def enrich_item_quote(
         symbol=item.symbol,
         company_name=item.company_name,
         bucket=item.bucket or "WATCHLIST",
-        target_buy_price=item.target_buy_price,
+        target_buy_price=effective_target_buy,
         target_sell_price=item.target_sell_price,
         portfolio_allocation_pct=item.portfolio_allocation_pct,
         buy_in_price=item.buy_in_price,
@@ -161,7 +188,11 @@ def enrich_item_quote(
         unrealized_pnl_pct=unrealized_pnl,
         falsification_floor=floor,
         batting_zone=batting_zone,
-        trend_state=trend_state
+        trend_state=trend_state,
+        dcf_fair_value=dcf_val,
+        ideal_buy_range_min=buy_min,
+        ideal_buy_range_max=buy_max,
+        action_status=act_status
     )
 
 
@@ -205,15 +236,19 @@ def get_watchlist(
     items = session.exec(query).all()
     portfolio_total_value = get_portfolio_total_value(session)
 
-    enriched_items = []
-    for it in items:
-        resp = enrich_item_quote(it, allow_network=False)
+    if not items:
+        return []
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(16, len(items))) as executor:
+        enriched_items = list(executor.map(lambda it: enrich_item_quote(it, allow_network=True), items))
+
+    for resp in enriched_items:
         if resp.bucket == "HOLDING":
             if portfolio_total_value > 0 and resp.total_value:
                 resp.portfolio_allocation_pct = round((resp.total_value / portfolio_total_value) * 100.0, 2)
             elif portfolio_total_value > 0 and (resp.total_value is None or resp.total_value == 0):
                 resp.portfolio_allocation_pct = 0.0
-        enriched_items.append(resp)
 
     return enriched_items
 

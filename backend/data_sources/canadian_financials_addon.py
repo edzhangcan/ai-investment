@@ -37,7 +37,8 @@ CANADIAN_ADDITIONAL_FINANCIALS: Dict[str, Dict[str, Any]] = {
     "CTC-A.TO": {"fcf": 820000000, "pe": 12.0, "name": "Canadian Tire Corporation", "roic": 0.10, "dividend_yield_pct": 4.8, "net_buyback_yield_pct": 1.5, "dilution_3y_pct": 0.0},
     "BIP-UN.TO": {"fcf": 2200000000, "pe": 28.0, "name": "Brookfield Infrastructure Partners", "roic": 0.11, "dividend_yield_pct": 4.8, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.8},
     "BEP-UN.TO": {"fcf": 1400000000, "pe": 34.0, "name": "Brookfield Renewable Partners", "roic": 0.08, "dividend_yield_pct": 5.2, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 2.2},
-    "WTE.TO": {"fcf": 950000000, "pe": 14.8, "name": "West Fraser Timber Co. Ltd.", "roic": 0.14, "dividend_yield_pct": 1.4, "net_buyback_yield_pct": 4.5, "dilution_3y_pct": -3.5},
+    "WTE.TO": {"fcf": 140000000, "pe": 18.2, "name": "Westshore Terminals Investment Corp.", "roic": 0.16, "dividend_yield_pct": 5.2, "net_buyback_yield_pct": 1.0, "dilution_3y_pct": -0.5},
+    "WFG.TO": {"fcf": 950000000, "pe": 14.8, "name": "West Fraser Timber Co. Ltd.", "roic": 0.14, "dividend_yield_pct": 1.4, "net_buyback_yield_pct": 4.5, "dilution_3y_pct": -3.5},
     "CFP.TO": {"fcf": 280000000, "pe": 18.0, "name": "Canfor Corporation", "roic": 0.09, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 1.8, "dilution_3y_pct": -1.0},
 
     # Gold Nuggets & Niche Compounders
