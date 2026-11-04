@@ -670,6 +670,8 @@ export interface PortfolioNewsItem {
   credibility_tier: string;
   sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'RISK_ALERT';
   relevance_score: number;
+  age_days?: number;
+  is_recent?: boolean;
 }
 
 export interface KeyInvestorPost {
@@ -685,6 +687,8 @@ export interface KeyInvestorPost {
   stance: 'BULLISH' | 'CAUTIOUS' | 'DEFENSIVE' | 'HIGH_CONVICTION';
   published_at: string;
   source_url: string;
+  age_days?: number;
+  is_recent?: boolean;
 }
 
 export type ActionSignalTag = 'HOLD_CORE' | 'SCALE_IN_READY' | 'DEFEND_FLOOR' | 'WATCH_PULLBACK' | 'TRIM_EXTENDED';

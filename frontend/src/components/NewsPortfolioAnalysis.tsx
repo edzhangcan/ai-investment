@@ -18,7 +18,9 @@ import {
   UserCheck,
   Activity,
   Info,
-  HelpCircle
+  HelpCircle,
+  Clock,
+  X
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { ProvenanceBadge } from './ProvenanceBadge';
@@ -107,8 +109,21 @@ export const NewsPortfolioAnalysis: React.FC<NewsPortfolioAnalysisProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSignalGuidePinned, setIsSignalGuidePinned] = useState<boolean>(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsSignalGuidePinned(false);
+      }
+    };
+    if (isSignalGuidePinned) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSignalGuidePinned]);
 
   const loadAnalysis = async (market: 'ALL' | 'US' | 'CA' = marketFilter, forceRefresh: boolean = false) => {
     if (abortControllerRef.current) {
@@ -334,16 +349,77 @@ export const NewsPortfolioAnalysis: React.FC<NewsPortfolioAnalysisProps> = ({
           {/* TIER 1: Today & Tomorrow Tactical Executive Briefing */}
           <div className="bg-surface border border-border-subtle rounded-2xl p-5 md:p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-border-subtle">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Compass className="w-4 h-4 text-amber-500" />
                 <h3 className="text-base md:text-lg font-black text-content-primary">
                   {t.briefingTitle}
                 </h3>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-[10px] font-bold">
+                  <Clock className="w-3 h-3" />
+                  <span>Recent Window: Past 1 Month (≤30D)</span>
+                </span>
               </div>
-              <div className="flex items-center gap-2 text-[11px] font-bold text-content-muted">
+              <div className="flex items-center gap-2.5 flex-wrap text-[11px] font-bold text-content-muted">
                 <span>{data.briefing.date_label}</span>
                 <span>•</span>
                 <span className="text-amber-600 dark:text-amber-400">{data.briefing.market_regime_context}</span>
+
+                {/* Hover-to-Display Signal Tags Guide Modal Trigger */}
+                <div className="relative group/sigguide">
+                  <button
+                    type="button"
+                    onClick={() => setIsSignalGuidePinned(true)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-surface border border-border-subtle hover:border-amber-500/50 text-[11px] font-black text-content-primary hover:text-amber-500 transition-all cursor-help shadow-2xs"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Signal Tags Guide</span>
+                  </button>
+
+                  {/* 100% Solid Hover Modal Overlay (Zero Bleed-Through) */}
+                  <div
+                    role="dialog"
+                    aria-label="Key Action Signal Tags Reference Guide"
+                    className="hidden group-hover/sigguide:block group-focus-within/sigguide:block absolute right-0 top-full mt-2 w-[320px] sm:w-[480px] lg:w-[600px] p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl z-50 text-left"
+                  >
+                    <div className="flex items-center justify-between gap-2 pb-2.5 mb-3 border-b border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <HelpCircle className="w-4 h-4 text-amber-500" />
+                        <span className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                          Key Action Signal Tags Guide (Execution Discipline)
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                        Hover or Click to Pin
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {(['HOLD_CORE', 'WATCH_PULLBACK', 'DEFEND_FLOOR', 'SCALE_IN_READY', 'TRIM_EXTENDED'] as ActionSignalTag[]).map((tagKey) => {
+                        const meta = ACTION_SIGNAL_META[tagKey];
+                        return (
+                          <div
+                            key={tagKey}
+                            className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 flex flex-col gap-1"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${meta.badgeClass}`}>
+                                {meta.label}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-900 dark:text-slate-100 truncate">
+                                {meta.shortTitle}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug font-normal">
+                              {meta.explanation}
+                            </p>
+                            <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-slate-400">
+                              {meta.ruleFormula}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -403,12 +479,39 @@ export const NewsPortfolioAnalysis: React.FC<NewsPortfolioAnalysisProps> = ({
                                 <ArrowUpRight className="w-3 h-3" />
                               </button>
                               {act.action_tag && (
-                                <span
-                                  title={act.action_tag_explanation || sigMeta.explanation}
-                                  className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 ${sigMeta.badgeClass}`}
+                                <div
+                                  className="relative group/acttag"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsSignalGuidePinned(true);
+                                  }}
                                 >
-                                  <span>{sigMeta.label}</span>
-                                </span>
+                                  <span
+                                    tabIndex={0}
+                                    className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 cursor-help ${sigMeta.badgeClass}`}
+                                  >
+                                    <span>{sigMeta.label}</span>
+                                    <Info className="w-2.5 h-2.5 opacity-80" />
+                                  </span>
+
+                                  {/* 100% Solid Hover Modal Popover (Zero Bleed-Through) */}
+                                  <div className="hidden group-hover/acttag:block group-focus-within/acttag:block absolute left-0 top-full mt-1.5 w-60 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl z-40 text-left pointer-events-none">
+                                    <div className="flex items-center justify-between gap-1.5 pb-1.5 mb-1.5 border-b border-slate-200 dark:border-slate-800">
+                                      <span className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase">
+                                        {sigMeta.label}
+                                      </span>
+                                      <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 truncate">
+                                        {sigMeta.shortTitle}
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed mb-1.5 font-normal">
+                                      {act.action_tag_explanation || sigMeta.explanation}
+                                    </p>
+                                    <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-slate-400 block">
+                                      {sigMeta.ruleFormula}
+                                    </span>
+                                  </div>
+                                </div>
                               )}
                             </div>
                             <span
@@ -610,42 +713,6 @@ export const NewsPortfolioAnalysis: React.FC<NewsPortfolioAnalysisProps> = ({
                     })
                   )}
                 </div>
-              </div>
-            </div>
-
-            {/* Key Action Signal Tags Reference Guide */}
-            <div className="mt-5 pt-4 border-t border-border-subtle">
-              <div className="flex items-center gap-2 mb-3">
-                <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-xs font-black text-content-primary uppercase tracking-wider">
-                  Key Action Signal Tags Guide (Execution Discipline Definitions)
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {(['HOLD_CORE', 'WATCH_PULLBACK', 'DEFEND_FLOOR', 'SCALE_IN_READY', 'TRIM_EXTENDED'] as ActionSignalTag[]).map((tagKey) => {
-                  const meta = ACTION_SIGNAL_META[tagKey];
-                  return (
-                    <div
-                      key={tagKey}
-                      className="p-2.5 rounded-xl bg-surface-subtle border border-border-subtle flex flex-col gap-1"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${meta.badgeClass}`}>
-                          {meta.label}
-                        </span>
-                        <span className="text-[10px] font-bold text-content-primary truncate">
-                          {meta.shortTitle}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-content-secondary leading-snug">
-                        {meta.explanation}
-                      </p>
-                      <span className="text-[9px] font-mono font-bold text-content-muted">
-                        {meta.ruleFormula}
-                      </span>
-                    </div>
-                  );
-                })}
               </div>
             </div>
           </div>
@@ -925,8 +992,11 @@ export const NewsPortfolioAnalysis: React.FC<NewsPortfolioAnalysisProps> = ({
                             </span>
                           </div>
 
-                          {/* Action Signal Tag with 100% Solid Hover Popover Explanation */}
-                          <div className="relative group/sig">
+                          {/* Action Signal Tag with 100% Solid Hover Modal Explanation */}
+                          <div
+                            className="relative group/sig"
+                            onClick={() => setIsSignalGuidePinned(true)}
+                          >
                             <span
                               tabIndex={0}
                               className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 cursor-help ${sigMeta.badgeClass}`}
@@ -935,8 +1005,8 @@ export const NewsPortfolioAnalysis: React.FC<NewsPortfolioAnalysisProps> = ({
                               <Info className="w-2.5 h-2.5 opacity-80" />
                             </span>
 
-                            {/* 100% Solid Tooltip Card (Zero Bleed-Through) */}
-                            <div className="hidden group-hover/sig:block group-focus-within/sig:block absolute right-0 top-full mt-1.5 w-64 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-xl z-30 text-left">
+                            {/* 100% Solid Hover Modal Card (Zero Bleed-Through) */}
+                            <div className="hidden group-hover/sig:block group-focus-within/sig:block absolute right-0 top-full mt-1.5 w-64 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl z-30 text-left pointer-events-none">
                               <div className="flex items-center justify-between gap-1.5 pb-1.5 mb-1.5 border-b border-slate-200 dark:border-slate-800">
                                 <span className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase">
                                   {sigMeta.label}
@@ -953,12 +1023,6 @@ export const NewsPortfolioAnalysis: React.FC<NewsPortfolioAnalysisProps> = ({
                               </span>
                             </div>
                           </div>
-                        </div>
-
-                        {/* Inline Action Signal Explanation Box */}
-                        <div className="p-2 rounded-lg bg-surface border border-border-subtle text-[10px] text-content-secondary leading-snug">
-                          <span className="font-bold text-content-primary">{sigMeta.shortTitle}: </span>
-                          <span>{sigExplanation}</span>
                         </div>
 
                         {/* Prices & Telemetry */}
@@ -1037,6 +1101,73 @@ export const NewsPortfolioAnalysis: React.FC<NewsPortfolioAnalysisProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Pinned Interactive Signal Tags Reference Guide Modal Dialog */}
+          {isSignalGuidePinned && (
+            <div
+              className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+              onClick={() => setIsSignalGuidePinned(false)}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Key Action Signal Tags Guide"
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-2xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 md:p-7 text-left opacity-100"
+              >
+                <div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-amber-500/15 text-amber-500">
+                      <HelpCircle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm md:text-base font-black text-slate-900 dark:text-slate-100">
+                        Key Action Signal Tags Guide
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Execution discipline definitions and quantitative trigger formulas
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSignalGuidePinned(false)}
+                    aria-label="Close Signal Tags Guide Modal"
+                    className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(['HOLD_CORE', 'WATCH_PULLBACK', 'DEFEND_FLOOR', 'SCALE_IN_READY', 'TRIM_EXTENDED'] as ActionSignalTag[]).map((tagKey) => {
+                    const meta = ACTION_SIGNAL_META[tagKey];
+                    return (
+                      <div
+                        key={tagKey}
+                        className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-col gap-1.5"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${meta.badgeClass}`}>
+                            {meta.label}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate">
+                            {meta.shortTitle}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                          {meta.explanation}
+                        </p>
+                        <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/80 dark:border-slate-700/80">
+                          {meta.ruleFormula}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

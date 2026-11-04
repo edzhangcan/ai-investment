@@ -395,6 +395,8 @@ class PortfolioNewsItemSchema(BaseModel):
     credibility_tier: str = "Tier-1 Institutional Media"
     sentiment: Literal["BULLISH", "BEARISH", "NEUTRAL", "RISK_ALERT"] = "NEUTRAL"
     relevance_score: float = 50.0
+    age_days: Optional[int] = None
+    is_recent: Optional[bool] = True
 
 class KeyInvestorPostSchema(BaseModel):
     id: str
@@ -409,6 +411,8 @@ class KeyInvestorPostSchema(BaseModel):
     stance: Literal["BULLISH", "CAUTIOUS", "DEFENSIVE", "HIGH_CONVICTION"] = "HIGH_CONVICTION"
     published_at: str
     source_url: str = "https://www.sec.gov/edgar/searchedgar/companysearch"
+    age_days: Optional[int] = None
+    is_recent: Optional[bool] = True
 
 class TacticalAdviceItemSchema(BaseModel):
     symbol: str

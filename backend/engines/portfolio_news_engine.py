@@ -23,7 +23,13 @@ from backend.models.schemas import (
     DataProvenanceSchema,
 )
 from backend.routers.watchlist import enrich_item_quote, get_portfolio_total_value
-from backend.data_sources.news_client import NewsClient
+from backend.data_sources.news_client import (
+    NewsClient,
+    calculate_news_age_days,
+    MAX_NEWS_SCAN_DAYS,
+    MAX_NEWS_RETENTION_DAYS,
+    MAX_RECOMMENDATION_NEWS_DAYS,
+)
 from backend.data_sources.data_provider import data_provider_manager, FALLBACK_STOCK_DATA, DataProviderManager
 from backend.engines.pricing_engine import PricingEngine
 from backend.services.alert_engine import PriceAlertEngine
@@ -138,7 +144,7 @@ class PortfolioNewsEngine:
         scored_news: List[Dict[str, Any]] = []
         news_id_counter = 1
 
-        # 3A: Add stock-specific news
+        # 3A: Add stock-specific news (only scan articles within past 1 month; strictly reject > 3 months)
         for sym, items in raw_news_dict.items():
             sym_market = "CA" if (sym.endswith(".TO") or sym.endswith(".V")) else "US"
             if market_norm != "ALL" and sym_market != market_norm:
@@ -148,6 +154,15 @@ class PortfolioNewsEngine:
             matching_pos = next((p for p in tracked_positions if p["symbol"] == sym), None)
 
             for item in items:
+                pub_at = item.get("published_at", "Recent")
+                age_days = item.get("age_days") if item.get("age_days") is not None else calculate_news_age_days(pub_at, now_utc)
+                if age_days > MAX_NEWS_RETENTION_DAYS:
+                    # Hard Gate: Do not include info older than 3 months (90 days)
+                    continue
+                if age_days > MAX_NEWS_SCAN_DAYS:
+                    # Scan Gate: Only scan news and articles recent within past 1 month (30 days)
+                    continue
+
                 sentiment = cls._classify_sentiment(item.get("title", "") + " " + item.get("summary", ""))
                 relevance = cls._calculate_relevance(bucket, item.get("credibility_tier", ""), sentiment)
                 impact_note = cls._build_impact_note(sym, bucket, matching_pos, item, sentiment)
@@ -163,16 +178,22 @@ class PortfolioNewsEngine:
                     "portfolio_impact_note": impact_note,
                     "source": item.get("source", "Financial Media"),
                     "url": item.get("url", "https://finance.yahoo.com"),
-                    "published_at": item.get("published_at", "Recent"),
+                    "published_at": pub_at,
                     "credibility_tier": item.get("credibility_tier", "Tier-2 Financial Media"),
                     "sentiment": sentiment,
                     "relevance_score": relevance,
+                    "age_days": age_days,
+                    "is_recent": (age_days <= MAX_NEWS_SCAN_DAYS),
                 })
                 news_id_counter += 1
 
-        # 3B: Add macro benchmark policy news
+        # 3B: Add macro benchmark policy news (only scan articles within past 1 month; reject > 3 months)
         if market_norm in ["ALL", "US"]:
             for item in macro_news_us:
+                pub_at = item.get("published_at", "Recent")
+                age_days = item.get("age_days") if item.get("age_days") is not None else calculate_news_age_days(pub_at, now_utc)
+                if age_days > MAX_NEWS_RETENTION_DAYS or age_days > MAX_NEWS_SCAN_DAYS:
+                    continue
                 scored_news.append({
                     "id": f"news-macro-us-{news_id_counter}",
                     "symbol": "SPY / US",
@@ -184,15 +205,21 @@ class PortfolioNewsEngine:
                     "portfolio_impact_note": "Federal Reserve monetary policy and inflation dynamics set the baseline discount rate (WACC) for all US equity valuations.",
                     "source": item.get("source", "Federal Reserve / BLS"),
                     "url": item.get("url", "https://www.federalreserve.gov"),
-                    "published_at": item.get("published_at", "Recent"),
+                    "published_at": pub_at,
                     "credibility_tier": item.get("credibility_tier", "Tier-1 Official Central Bank"),
                     "sentiment": cls._classify_sentiment(item.get("title", "")),
                     "relevance_score": 55.0,
+                    "age_days": age_days,
+                    "is_recent": (age_days <= MAX_NEWS_SCAN_DAYS),
                 })
                 news_id_counter += 1
 
         if market_norm in ["ALL", "CA"]:
             for item in macro_news_ca:
+                pub_at = item.get("published_at", "Recent")
+                age_days = item.get("age_days") if item.get("age_days") is not None else calculate_news_age_days(pub_at, now_utc)
+                if age_days > MAX_NEWS_RETENTION_DAYS or age_days > MAX_NEWS_SCAN_DAYS:
+                    continue
                 scored_news.append({
                     "id": f"news-macro-ca-{news_id_counter}",
                     "symbol": "TSX / CA",
@@ -204,10 +231,12 @@ class PortfolioNewsEngine:
                     "portfolio_impact_note": "Bank of Canada monetary easing cycle creates multiple re-rating tailwinds and lower borrowing costs for Canadian dividend compounders.",
                     "source": item.get("source", "Bank of Canada / StatCan"),
                     "url": item.get("url", "https://www.bankofcanada.ca"),
-                    "published_at": item.get("published_at", "Recent"),
+                    "published_at": pub_at,
                     "credibility_tier": item.get("credibility_tier", "Tier-1 Official Central Bank"),
                     "sentiment": cls._classify_sentiment(item.get("title", "")),
                     "relevance_score": 55.0,
+                    "age_days": age_days,
+                    "is_recent": (age_days <= MAX_NEWS_SCAN_DAYS),
                 })
                 news_id_counter += 1
 
@@ -222,11 +251,16 @@ class PortfolioNewsEngine:
             p["latest_news_url"] = rel_items[0]["url"] if rel_items else f"https://finance.yahoo.com/quote/{p['symbol']}/news"
             p["latest_news_source"] = rel_items[0]["source"] if rel_items else "Yahoo Finance"
 
-        # Step 4: Fetch Key Investor Commentary
+        # Step 4: Fetch Key Investor Commentary (only scan within past 1 month; reject > 3 months)
         raw_investor_posts = NewsClient.fetch_key_investor_commentary(all_tracked_symbols, market=market_norm)
         processed_investor_posts: List[Dict[str, Any]] = []
 
         for p in raw_investor_posts:
+            pub_at = p.get("published_at", "Recent")
+            age_days = p.get("age_days") if p.get("age_days") is not None else calculate_news_age_days(pub_at, now_utc)
+            if age_days > MAX_NEWS_RETENTION_DAYS or age_days > MAX_NEWS_SCAN_DAYS:
+                continue
+
             rel_syms = p.get("related_symbols", [])
             matched_bucket = "MARKET"
             if any(s in holding_symbols for s in rel_syms):
@@ -245,8 +279,10 @@ class PortfolioNewsEngine:
                 "related_symbols": rel_syms,
                 "matched_bucket": matched_bucket,
                 "stance": p.get("stance", "HIGH_CONVICTION"),
-                "published_at": p.get("published_at", "Recent"),
+                "published_at": pub_at,
                 "source_url": p.get("source_url", "https://www.sec.gov"),
+                "age_days": age_days,
+                "is_recent": (age_days <= MAX_NEWS_SCAN_DAYS),
             })
 
         # Step 5: Synthesize Daily & Tomorrow Tactical Briefing
@@ -378,6 +414,14 @@ class PortfolioNewsEngine:
         }
 
     @classmethod
+    def _is_eligible_for_recommendation(cls, item_dict: Dict[str, Any]) -> bool:
+        """Returns True only if the news or commentary item is within the 1-month recommendation cutoff."""
+        age = item_dict.get("age_days")
+        if age is None:
+            age = calculate_news_age_days(item_dict.get("published_at", "Recent"))
+        return age <= MAX_RECOMMENDATION_NEWS_DAYS
+
+    @classmethod
     def _synthesize_daily_briefing(
         cls,
         date_label: str,
@@ -391,6 +435,10 @@ class PortfolioNewsEngine:
         opportunities: List[Dict[str, Any]] = []
         risks: List[Dict[str, Any]] = []
 
+        # Strict Recommendation Gate: Never base recommendations on news/commentary older than 1 month (30 days)
+        eligible_news = [n for n in news_feed if cls._is_eligible_for_recommendation(n)]
+        eligible_investors = [inv for inv in investor_posts if cls._is_eligible_for_recommendation(inv)]
+
         # 1. Action Advice from Tracked Positions
         for pos in tracked_positions:
             sym = pos["symbol"]
@@ -402,9 +450,9 @@ class PortfolioNewsEngine:
             day_sig = pos.get("day_signal", "HOLD_CORE")
             sig_expl = cls.ACTION_TAG_EXPLANATIONS.get(day_sig, "")
 
-            # Resolve best matching news or investor disclosure source for this ticker
-            rel_news = next((n for n in news_feed if n["symbol"] == sym), None)
-            rel_inv = next((inv for inv in investor_posts if sym in inv.get("related_symbols", [])), None)
+            # Resolve best matching recent news (<= 1 month) or investor disclosure source for this ticker
+            rel_news = next((n for n in eligible_news if n["symbol"] == sym), None)
+            rel_inv = next((inv for inv in eligible_investors if sym in inv.get("related_symbols", [])), None)
             if rel_news:
                 act_source_url = rel_news["url"]
                 act_source_name = rel_news["source"]
@@ -509,8 +557,8 @@ class PortfolioNewsEngine:
                         "action_tag_explanation": sig_expl,
                     })
 
-        # 2. Opportunities Radar
-        bullish_news = [n for n in news_feed if n["sentiment"] == "BULLISH"][:3]
+        # 2. Opportunities Radar (Strictly derived from news/commentary <= 1 month old)
+        bullish_news = [n for n in eligible_news if n["sentiment"] == "BULLISH"][:3]
         for n in bullish_news:
             opportunities.append({
                 "symbol": n["symbol"],
@@ -528,8 +576,8 @@ class PortfolioNewsEngine:
                 "source_name": n["source"],
             })
 
-        # Augment opportunities with key investor stance
-        bullish_investors = [inv for inv in investor_posts if inv["stance"] in ["BULLISH", "HIGH_CONVICTION"]][:2]
+        # Augment opportunities with key investor stance (<= 1 month old)
+        bullish_investors = [inv for inv in eligible_investors if inv["stance"] in ["BULLISH", "HIGH_CONVICTION"]][:2]
         for inv in bullish_investors:
             opportunities.append({
                 "symbol": ", ".join(inv["related_symbols"][:3]) or "NORTH_AMERICA",
@@ -547,8 +595,8 @@ class PortfolioNewsEngine:
                 "source_name": f"{inv['investor_name']} ({inv['institution']})",
             })
 
-        # 3. Risks & Falsification Watchouts
-        bearish_news = [n for n in news_feed if n["sentiment"] in ["BEARISH", "RISK_ALERT"]][:3]
+        # 3. Risks & Falsification Watchouts (Strictly derived from news/commentary <= 1 month old)
+        bearish_news = [n for n in eligible_news if n["sentiment"] in ["BEARISH", "RISK_ALERT"]][:3]
         for n in bearish_news:
             risks.append({
                 "symbol": n["symbol"],
@@ -566,7 +614,7 @@ class PortfolioNewsEngine:
                 "source_name": n["source"],
             })
 
-        cautious_investors = [inv for inv in investor_posts if inv["stance"] in ["DEFENSIVE", "CAUTIOUS"]][:2]
+        cautious_investors = [inv for inv in eligible_investors if inv["stance"] in ["DEFENSIVE", "CAUTIOUS"]][:2]
         for inv in cautious_investors:
             risks.append({
                 "symbol": ", ".join(inv["related_symbols"][:3]) or "MACRO",
