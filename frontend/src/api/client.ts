@@ -6,7 +6,8 @@ import {
   StockTrackingItem,
   SetBucketPayload,
   SellHoldingPayload,
-  StockBucketStatusResponse
+  StockBucketStatusResponse,
+  PortfolioNewsAnalysisResponse
 } from '../types';
 
 export const getApiBaseUrl = () => {
@@ -299,5 +300,17 @@ export async function fetchCentralBankSpeeches(country?: 'US' | 'CA', signal?: A
 export function getSpeechStreamUrl(speechId: string, speed: number = 1.0, lang: string = 'en'): string {
   return `${getApiBaseUrl()}/api/macro/speech/${speechId}/stream?speed=${speed}&lang=${lang}`;
 }
+
+export async function fetchPortfolioNewsAnalysis(
+  market: 'ALL' | 'US' | 'CA' = 'ALL',
+  forceRefresh: boolean = false,
+  signal?: AbortSignal
+): Promise<PortfolioNewsAnalysisResponse> {
+  const url = `${getApiBaseUrl()}/api/news-portfolio/analysis?market=${market}&force_refresh=${forceRefresh}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`Fetch portfolio news analysis failed: ${res.statusText}`);
+  return res.json();
+}
+
 
 

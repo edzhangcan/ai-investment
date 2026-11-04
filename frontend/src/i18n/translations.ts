@@ -7,6 +7,7 @@ export interface Translations {
   searchPlaceholder: string;
   searchButton: string;
   tabMacro: string;
+  tabNewsPortfolio: string;
   tabPicks: string;
   tabStock: string;
   plainTalkOn: string;
@@ -36,6 +37,22 @@ export interface Translations {
   exportMemoPrintPdf: string;
   exportMemoCopied: string;
   exportMemoCopy: string;
+
+  // PL-722: News & Portfolio Intelligence
+  newsPortfolioTitle: string;
+  newsPortfolioSubtitle: string;
+  briefingTitle: string;
+  actionAdviceTitle: string;
+  opportunitiesTitle: string;
+  risksTitle: string;
+  credibleNewsStreamTitle: string;
+  trackedPulseTitle: string;
+  filterAll: string;
+  filterHoldings: string;
+  filterWatchlist: string;
+  filterKeyInvestors: string;
+  refreshIntelligence: string;
+  demoPortfolioBanner: string;
 
   // Startup Loading Screen
   loadingSubtitle: string;
@@ -414,6 +431,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     searchPlaceholder: "Search US & Canadian Stocks ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "Analyze Ticker",
     tabMacro: "Macro Dashboard",
+    tabNewsPortfolio: "News & Portfolio Analysis",
     tabPicks: "Stock Picks",
     tabStock: "Single Stock Deep-Dive",
     plainTalkOn: "PlainTalk Mode: ON",
@@ -443,6 +461,22 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     exportMemoPrintPdf: "Print / Save PDF",
     exportMemoCopied: "Copied!",
     exportMemoCopy: "Copy",
+
+    // PL-722: News & Portfolio Intelligence
+    newsPortfolioTitle: "News & Portfolio Intelligence",
+    newsPortfolioSubtitle: "Daily US & Canadian market news, key institutional investor commentary, and tactical portfolio guidance focused on your Holdings and Watchlist.",
+    briefingTitle: "Today & Tomorrow Executive Briefing",
+    actionAdviceTitle: "Action Advice (Today / Tomorrow)",
+    opportunitiesTitle: "Opportunities & Catalysts",
+    risksTitle: "Risks & Falsification Watchouts",
+    credibleNewsStreamTitle: "Credible News & Key Investor Stream",
+    trackedPulseTitle: "Tracked Holdings & Watchlist Pulse",
+    filterAll: "All Feed",
+    filterHoldings: "Holdings Focus",
+    filterWatchlist: "Watchlist Focus",
+    filterKeyInvestors: "Key Investors",
+    refreshIntelligence: "Refresh Intelligence",
+    demoPortfolioBanner: "Demo Bellwether Mode: You currently have 0 stocks in Holdings or Watchlist. Showing analysis for core US & CA bellwethers (NVDA, MSFT, COST, RY.TO, SHOP.TO, CNQ.TO). Mark any stock as Holding or Watchlist to personalize this module.",
 
     loadingSubtitle: "Initializing real-time market intelligence systems...",
     loadingStep1: "Connecting to Federal Reserve (FRED) & Bank of Canada Economic Data...",
@@ -807,6 +841,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     searchPlaceholder: "搜索美股与加拿大股票 ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "深度剖析标的",
     tabMacro: "宏观周期看板",
+    tabNewsPortfolio: "资讯与持仓研判",
     tabPicks: "精选股票池",
     tabStock: "个股深度研报",
     plainTalkOn: "通俗白话模式: 开",
@@ -836,6 +871,22 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     exportMemoPrintPdf: "打印 / 保存为 PDF",
     exportMemoCopied: "已复制！",
     exportMemoCopy: "复制源码",
+
+    // PL-722: News & Portfolio Intelligence
+    newsPortfolioTitle: "持仓资讯与今日/明日战术研判",
+    newsPortfolioSubtitle: "聚合美加市场权威财经资讯与顶级投资人观点，聚焦您的持仓与关注列表，提供今明两日操作建议、机会与风险预警。",
+    briefingTitle: "今明两日持仓战术简报",
+    actionAdviceTitle: "操作建议 (今明两日)",
+    opportunitiesTitle: "潜在机会与催化剂",
+    risksTitle: "风险预警与证伪监控",
+    credibleNewsStreamTitle: "权威财经资讯与大佬观点流",
+    trackedPulseTitle: "持仓与关注标的脉搏",
+    filterAll: "全部动态",
+    filterHoldings: "仅看持仓",
+    filterWatchlist: "仅看关注",
+    filterKeyInvestors: "投资大佬观点",
+    refreshIntelligence: "刷新研判资讯",
+    demoPortfolioBanner: "演示风向标模式：您当前暂无持仓或关注标的，当前展示美加核心风向标组合 (NVDA, MSFT, COST, RY.TO, SHOP.TO, CNQ.TO) 的实时资讯与研判。将任意股票加入持仓或关注即可定制专属研判。",
 
     loadingSubtitle: "正在初始化实时市场情报系统...",
     loadingStep1: "正在连接美联储 (FRED) 与加拿大央行宏观数据...",
@@ -1200,6 +1251,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     searchPlaceholder: "搜索美股与加拿大股票 ($NVDA, $AAPL, $SHOP.TO, $TD.TO)...",
     searchButton: "深度剖析标的",
     tabMacro: "宏观周期看板 (Macro Dashboard)",
+    tabNewsPortfolio: "资讯与持仓研判 (News & Portfolio)",
     tabPicks: "精选股票池 (Stock Picks)",
     tabStock: "个股深度研报 (Stock Deep-Dive)",
     plainTalkOn: "通俗白话模式: 开",
@@ -1229,6 +1281,22 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     exportMemoPrintPdf: "打印 / 保存 PDF (Print / PDF)",
     exportMemoCopied: "已复制 (Copied!)",
     exportMemoCopy: "复制 (Copy)",
+
+    // PL-722: News & Portfolio Intelligence
+    newsPortfolioTitle: "持仓资讯与战术研判 (News & Portfolio Intelligence)",
+    newsPortfolioSubtitle: "聚合美加权威资讯与顶级投资人观点 (US/CA News & Superinvestor Stream)，聚焦持仓与关注标的，提供今明两日战术指引。",
+    briefingTitle: "今明两日战术简报 (Daily & Tomorrow Briefing)",
+    actionAdviceTitle: "操作建议 (Action Advice)",
+    opportunitiesTitle: "潜在机会 (Opportunities)",
+    risksTitle: "风险预警 (Risks & Watchouts)",
+    credibleNewsStreamTitle: "权威资讯与大佬观点 (News & Key Investors)",
+    trackedPulseTitle: "持仓与关注脉搏 (Portfolio Pulse)",
+    filterAll: "全部 (All)",
+    filterHoldings: "持仓 (Holdings)",
+    filterWatchlist: "关注 (Watchlist)",
+    filterKeyInvestors: "投资大佬 (Key Investors)",
+    refreshIntelligence: "刷新研判 (Refresh)",
+    demoPortfolioBanner: "演示风向标模式 (Demo Bellwether Mode)：暂无持仓或关注标的，当前展示美加核心风向标 (NVDA, MSFT, COST, RY.TO, SHOP.TO, CNQ.TO) 的资讯与研判。将任意标的设为持仓或关注即可定制。",
 
     loadingSubtitle: "正在初始化市场情报系统 (Initializing Market Intelligence)...",
     loadingStep1: "正在连接美联储 FRED & 央行数据 (Connecting Macro Data)...",

@@ -654,4 +654,114 @@ export interface StockBucketStatusResponse {
   data?: StockTrackingItem | null;
 }
 
+// PL-722: News & Portfolio Intelligence Types
+export interface PortfolioNewsItem {
+  id: string;
+  symbol: string;
+  company_name: string;
+  market: 'US' | 'CA';
+  bucket: 'HOLDING' | 'WATCHLIST' | 'MARKET';
+  title: string;
+  summary: string;
+  portfolio_impact_note: string;
+  source: string;
+  url: string;
+  published_at: string;
+  credibility_tier: string;
+  sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'RISK_ALERT';
+  relevance_score: number;
+  age_days?: number;
+  is_recent?: boolean;
+}
+
+export interface KeyInvestorPost {
+  id: string;
+  investor_name: string;
+  institution: string;
+  market: 'US' | 'CA' | 'NORTH_AMERICA';
+  title: string;
+  commentary: string;
+  key_takeaway: string;
+  related_symbols: string[];
+  matched_bucket: 'HOLDING' | 'WATCHLIST' | 'MARKET';
+  stance: 'BULLISH' | 'CAUTIOUS' | 'DEFENSIVE' | 'HIGH_CONVICTION';
+  published_at: string;
+  source_url: string;
+  age_days?: number;
+  is_recent?: boolean;
+}
+
+export type ActionSignalTag = 'HOLD_CORE' | 'SCALE_IN_READY' | 'DEFEND_FLOOR' | 'WATCH_PULLBACK' | 'TRIM_EXTENDED';
+
+export interface TacticalAdviceItem {
+  symbol: string;
+  bucket: 'HOLDING' | 'WATCHLIST' | 'PORTFOLIO';
+  market: 'US' | 'CA';
+  category: 'ACTION' | 'OPPORTUNITY' | 'RISK';
+  urgency: 'HIGH' | 'MEDIUM' | 'LOW';
+  headline: string;
+  rationale: string;
+  tactical_instruction: string;
+  time_horizon: string;
+  reference_price?: number | null;
+  threshold_price?: number | null;
+  source_url?: string;
+  source_name?: string;
+  action_tag?: ActionSignalTag | null;
+  action_tag_explanation?: string | null;
+}
+
+export interface DailyPortfolioBriefing {
+  date_label: string;
+  market_regime_context: string;
+  executive_summary: string;
+  action_advice: TacticalAdviceItem[];
+  opportunities: TacticalAdviceItem[];
+  risks: TacticalAdviceItem[];
+}
+
+export interface TrackedPositionPulse {
+  symbol: string;
+  company_name: string;
+  market: 'US' | 'CA';
+  currency: string;
+  bucket: 'HOLDING' | 'WATCHLIST';
+  current_price: number;
+  buy_in_price?: number | null;
+  target_buy_price?: number | null;
+  falsification_floor?: number | null;
+  unrealized_pnl_pct?: number | null;
+  distance_to_target_pct?: number | null;
+  distance_to_floor_pct?: number | null;
+  portfolio_allocation_pct: number;
+  batting_zone: string;
+  trend_state: string;
+  related_news_count: number;
+  latest_headline?: string | null;
+  latest_news_url?: string | null;
+  latest_news_source?: string | null;
+  day_signal: ActionSignalTag;
+  day_signal_explanation?: string;
+}
+
+export interface PortfolioSummaryMeta {
+  holdings_count: number;
+  watchlist_count: number;
+  total_portfolio_value: number;
+  active_catalyst_count: number;
+  is_demo_portfolio: boolean;
+  holding_symbols: string[];
+  watchlist_symbols: string[];
+}
+
+export interface PortfolioNewsAnalysisResponse {
+  portfolio_summary: PortfolioSummaryMeta;
+  briefing: DailyPortfolioBriefing;
+  news_feed: PortfolioNewsItem[];
+  investor_posts: KeyInvestorPost[];
+  tracked_positions: TrackedPositionPulse[];
+  provenance: DataProvenance;
+}
+
+
 

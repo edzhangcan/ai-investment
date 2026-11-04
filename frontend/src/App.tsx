@@ -22,9 +22,11 @@ import {
   ArrowLeft,
   ChevronRight,
   Compass,
-  Menu
+  Menu,
+  Newspaper
 } from 'lucide-react';
 import { MacroDashboard } from './components/MacroDashboard';
+import { NewsPortfolioAnalysis } from './components/NewsPortfolioAnalysis';
 import { RecommendedStocksGrid } from './components/RecommendedStocksGrid';
 import { PricingChart } from './components/PricingChart';
 import { DebateArena } from './components/DebateArena';
@@ -63,11 +65,11 @@ const PreTradeSoulCheckModal = lazy(() => import('./components/PreTradeSoulCheck
 export const App: React.FC = () => {
   const { t, language } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState<'macro' | 'picks' | 'stock'>(() => {
+  const [activeTab, setActiveTab] = useState<'macro' | 'news' | 'picks' | 'stock'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
-      if (tab === 'picks' || tab === 'stock' || tab === 'macro') return tab;
+      if (tab === 'news' || tab === 'picks' || tab === 'stock' || tab === 'macro') return tab;
     }
     return 'macro';
   });
@@ -330,7 +332,20 @@ export const App: React.FC = () => {
               <span className="text-[11px] font-bold opacity-90">({macroCountry === 'CA' ? '🇨🇦 CA' : '🇺🇸 US'})</span>
             </button>
 
-            {/* Tab 2: Stock Picks (Emerald Green Signature) */}
+            {/* Tab 2: News & Portfolio Analysis (Amber Gold Signature) */}
+            <button
+              onClick={() => setActiveTab('news')}
+              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
+                activeTab === 'news'
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-md ring-2 ring-amber-400/40 border border-amber-600'
+                  : 'bg-surface-subtle text-content-secondary hover:text-amber-600 hover:bg-surface border border-border-subtle'
+              }`}
+            >
+              <Newspaper className="w-4 h-4" />
+              <span>2. {t.tabNewsPortfolio}</span>
+            </button>
+
+            {/* Tab 3: Stock Picks (Emerald Green Signature) */}
             <button
               onClick={() => setActiveTab('picks')}
               className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
@@ -340,10 +355,10 @@ export const App: React.FC = () => {
               }`}
             >
               <Sparkles className="w-4 h-4" />
-              <span>2. {t.tabPicks}</span>
+              <span>3. {t.tabPicks}</span>
             </button>
 
-            {/* Tab 3: Single Stock Deep-Dive (Indigo Signature) */}
+            {/* Tab 4: Single Stock Deep-Dive (Indigo Signature) */}
             <button
               onClick={() => setActiveTab('stock')}
               className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
@@ -353,7 +368,7 @@ export const App: React.FC = () => {
               }`}
             >
               <LineChart className="w-4 h-4" />
-              <span>3. {t.tabStock} (${ticker})</span>
+              <span>4. {t.tabStock} (${ticker})</span>
             </button>
           </div>
         </div>
@@ -429,7 +444,16 @@ export const App: React.FC = () => {
           )
         )}
 
-        {/* TAB 2: STOCK PICKS (RECOMMENDED STOCKS GRID) */}
+        {/* TAB 2: NEWS & PORTFOLIO ANALYSIS */}
+        {activeTab === 'news' && (
+          <NewsPortfolioAnalysis
+            onSelectTicker={handleSelectRecommendedStock}
+            onOpenWatchlistDrawer={() => setIsWatchlistOpen(true)}
+            watchlistCount={watchlistSymbols.size}
+          />
+        )}
+
+        {/* TAB 3: STOCK PICKS (RECOMMENDED STOCKS GRID) */}
         {activeTab === 'picks' && (
           loadingDashboard ? (
             <div className="flex flex-col items-center justify-center py-20 text-content-muted gap-3">
@@ -489,7 +513,7 @@ export const App: React.FC = () => {
           )
         )}
 
-        {/* TAB 3: SINGLE STOCK DEEP-DIVE ANALYSIS */}
+        {/* TAB 4: SINGLE STOCK DEEP-DIVE ANALYSIS */}
         {activeTab === 'stock' && (
           loadingStock ? (
             <div className="flex flex-col items-center justify-center py-20 text-content-muted gap-3">
