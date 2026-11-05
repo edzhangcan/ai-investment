@@ -1243,32 +1243,30 @@ class PricingEngine:
 
         pullback_support = max(two_hundred_sma * 1.02, fifty_sma * 0.985)
 
-        # PL-723.5: 4-Regime Balanced Fundamental-Technical Synthesis (Moving-Goalpost Eliminated)
+        # PL-723.5 / Tightened Balanced Buy Zone (8% - 12% Actionable Execution Corridor)
         if anchor_mode == "strict_200d":
             ideal_buy_max = round(min(dcf_target, two_hundred_sma * 1.02), 2)
         elif dcf_target >= price:
             # Regime 1: Fundamentally Undervalued (Price <= DCF Target)
             # The stock trades below its balanced intrinsic value target!
-            # Immediate IN_BUY_ZONE qualification without moving-goalpost lockout.
-            ideal_buy_max = round(min(dcf_fair_value * 0.98, max(dcf_target, price * 1.03)), 2)
+            # Immediate IN_BUY_ZONE qualification: accumulate within +4% buffer above spot, capped at dcf_target
+            ideal_buy_max = round(min(dcf_target, max(price * 1.04, min(pullback_support, price * 1.05))), 2)
         elif price <= dcf_fair_value * 1.12:
             # Regime 2: Fair-Value Consolidation (Price between DCF Target and +12% Fair Value)
-            support_band = max(pullback_support, price * 0.96)
-            ideal_buy_max = round(max(dcf_target, min(dcf_fair_value * 1.02, support_band)), 2)
+            support_band = max(pullback_support, price * 0.98)
+            ideal_buy_max = round(min(dcf_fair_value * 1.02, max(dcf_target, support_band, price * 1.02)), 2)
         elif (price <= two_hundred_sma * 1.06) or (is_compounder and price <= fifty_sma * 1.02):
             # Regime 3: Technical Support Consolidation near 200D/50D SMA
             # Consolidating at major institutional moving average cost-basis
-            ideal_buy_max = round(max(two_hundred_sma * 1.025, fifty_sma * 0.985), 2)
+            ideal_buy_max = round(min(price * 1.04, max(two_hundred_sma * 1.025, fifty_sma * 0.985)), 2)
         else:
             # Regime 4: Growth / Quality Premium (Price > DCF * 1.12)
             # Balanced 35% fundamental / 65% technical support blend
             blended_ceiling = 0.35 * dcf_target + 0.65 * max(fifty_sma * 0.96, two_hundred_sma * 1.02)
-            ideal_buy_max = round(max(blended_ceiling, min(two_hundred_sma * 1.02, price * 0.88)), 2)
+            ideal_buy_max = round(min(price * 0.95, max(blended_ceiling, price * 0.88)), 2)
 
-        # Floor is set at 10-15% discount to ceiling, with support near 200D SMA floor
-        ideal_buy_min = round(min(ideal_buy_max * 0.88, two_hundred_sma * 0.90), 2)
-        if ideal_buy_min >= ideal_buy_max:
-            ideal_buy_min = round(ideal_buy_max * 0.88, 2)
+        # Floor is strictly set at 10% discount to ceiling for a crisp 11% execution bracket (eliminates blowout chasm)
+        ideal_buy_min = round(ideal_buy_max * 0.90, 2)
 
         # Profit-taking / Sell alert bracket
         ideal_sell_range_min = round(max(dcf_fair_value * 1.10, price * 1.15), 2)

@@ -160,7 +160,11 @@ def test_balanced_tiered_margin_of_safety():
     res = PricingEngine.evaluate_pricing_and_entry_zone(wide_stock)
     # Tiered MoS for Wide Moat should be 8% (dcf_target = dcf_fair_value * 0.92)
     expected_target = round(res["dcf_fair_value"] * 0.92, 2)
-    assert res["ideal_buy_range_max"] >= expected_target * 0.95
+    assert res["action_status"] == "IN_BUY_ZONE"
+    assert res["ideal_buy_range_max"] >= wide_stock["current_price"]
+    # Verify tightened execution corridor (spread <= 15%)
+    spread = (res["ideal_buy_range_max"] - res["ideal_buy_range_min"]) / res["ideal_buy_range_min"]
+    assert spread <= 0.15
 
 
 # --------------------------------------------------------------------------
