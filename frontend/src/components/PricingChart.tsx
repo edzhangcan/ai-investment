@@ -378,12 +378,42 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, stockDa
         </div>
       )}
 
-      {/* Action Advice Callout */}
-      <div className="prism-surface-subtle p-3 mb-4 flex items-center gap-3 text-xs text-content-secondary shadow-sm">
-        <CheckCircle2 className="w-5 h-5 text-positive shrink-0" />
-        <div>
-          <span className="font-bold text-positive">{pricingData.action_status}: </span>
-          {pricingData.timing_advice}
+      {/* Action Advice Callout with PL-725 Batting Zone Telemetry */}
+      <div className={`p-3 mb-4 flex items-start sm:items-center gap-3 text-xs shadow-sm rounded-xl border ${
+        pricingData.action_status.includes('LEFT_SIDE') || pricingData.action_status.includes('左侧')
+          ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200'
+          : pricingData.action_status.includes('BUY_ZONE') || pricingData.action_status.includes('买入区间')
+          ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+          : 'prism-surface-subtle border-border-subtle text-content-secondary'
+      }`}>
+        {pricingData.action_status.includes('LEFT_SIDE') || pricingData.action_status.includes('左侧') ? (
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+        ) : (
+          <CheckCircle2 className="w-5 h-5 text-positive shrink-0 mt-0.5 sm:mt-0" />
+        )}
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+            <span className="font-bold">{pricingData.action_status}</span>
+            {pricingData.batting_zone && (
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                pricingData.batting_zone === 'RIGHT_SIDE'
+                  ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                  : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+              }`}>
+                {pricingData.batting_zone === 'RIGHT_SIDE'
+                  ? (language === 'zh' ? '右侧击球区' : 'Right-Side Batting Zone')
+                  : (language === 'zh' ? '左侧观察' : 'Left-Side Watch')}
+              </span>
+            )}
+            {pricingData.ret_5d_pct !== undefined && pricingData.ret_5d_pct !== 0 && (
+              <span className={`font-mono text-[10px] font-semibold ${
+                pricingData.ret_5d_pct >= 0 ? 'text-positive' : 'text-negative'
+              }`}>
+                5D: {pricingData.ret_5d_pct > 0 ? `+${pricingData.ret_5d_pct.toFixed(1)}%` : `${pricingData.ret_5d_pct.toFixed(1)}%`}
+              </span>
+            )}
+          </div>
+          <div>{pricingData.timing_advice}</div>
         </div>
       </div>
 

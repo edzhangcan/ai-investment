@@ -1241,31 +1241,60 @@ class PricingEngine:
             (roic >= 0.12 and ("Narrow" in str(moat_rating) or "窄" in str(moat_rating)))
         )
 
-        pullback_support = max(two_hundred_sma * 1.02, fifty_sma * 0.985)
+        # PL-725.1 & PL-725.2: Trend temperature & Batting zone momentum diagnostics
+        try:
+            from backend.services.alert_engine import PriceAlertEngine
+            trend_eval = PriceAlertEngine.evaluate_symbol_trend_temperature(stock_data)
+        except Exception:
+            trend_eval = {
+                "symbol": symbol,
+                "state": "WARM" if price >= two_hundred_sma else "FLAT",
+                "hitting_zone": "RIGHT_SIDE" if price >= two_hundred_sma else "LEFT_SIDE_WATCH",
+                "is_right_side": (price >= two_hundred_sma),
+                "is_recently_falling": False,
+                "ret_5d_pct": 0.0,
+                "ret_20d_pct": 0.0
+            }
 
-        # PL-723.5 / Tightened Balanced Buy Zone (8% - 12% Actionable Execution Corridor)
+        trend_state = str(trend_eval.get("state") or "FLAT").upper()
+        batting_zone = str(trend_eval.get("hitting_zone") or ("RIGHT_SIDE" if trend_state in ["WARM", "HOT"] else "LEFT_SIDE_WATCH")).upper()
+        is_right_side = bool(trend_eval.get("is_right_side", batting_zone == "RIGHT_SIDE"))
+        is_recently_falling = bool(trend_eval.get("is_recently_falling", False))
+        ret_5d_pct = float(trend_eval.get("ret_5d_pct") or 0.0)
+        ret_20d_pct = float(trend_eval.get("ret_20d_pct") or 0.0)
+
+        pullback_support = max(two_hundred_sma * 1.015, fifty_sma * 0.985)
+
+        # PL-725.2: Disciplined Corridor without Price-Chasing Inflators
         if anchor_mode == "strict_200d":
-            ideal_buy_max = round(min(dcf_target, two_hundred_sma * 1.02), 2)
+            ideal_buy_max = round(min(dcf_target, two_hundred_sma * 1.015), 2)
         elif dcf_target >= price:
             # Regime 1: Fundamentally Undervalued (Price <= DCF Target)
-            # The stock trades below its balanced intrinsic value target!
-            # Immediate IN_BUY_ZONE qualification: accumulate within +4% buffer above spot, capped at dcf_target
-            ideal_buy_max = round(min(dcf_target, max(price * 1.04, min(pullback_support, price * 1.05))), 2)
+            # If stock is extended well above moving averages, require pullbacks near moving averages.
+            # Do NOT chase extended prices with price * 1.04.
+            if fifty_sma > 0 and two_hundred_sma > 0 and (price > fifty_sma * 1.03 and price > two_hundred_sma * 1.06):
+                ideal_buy_max = round(min(dcf_target, max(fifty_sma * 1.005, two_hundred_sma * 1.03)), 2)
+            else:
+                ideal_buy_max = round(min(dcf_target, max(price * 1.015, min(pullback_support, price * 1.02))), 2)
         elif price <= dcf_fair_value * 1.12:
             # Regime 2: Fair-Value Consolidation (Price between DCF Target and +12% Fair Value)
-            support_band = max(pullback_support, price * 0.98)
-            ideal_buy_max = round(min(dcf_fair_value * 1.02, max(dcf_target, support_band, price * 1.02)), 2)
-        elif (price <= two_hundred_sma * 1.06) or (is_compounder and price <= fifty_sma * 1.02):
+            if price > dcf_fair_value:
+                # Trading slightly above fair value: ceiling must demand a discount below spot
+                ideal_buy_max = round(min(dcf_fair_value * 1.01, max(dcf_target, pullback_support)), 2)
+            else:
+                ideal_buy_max = round(min(dcf_fair_value * 0.98, max(dcf_target, min(pullback_support, dcf_fair_value * 0.96))), 2)
+        elif (price <= two_hundred_sma * 1.06) or (is_compounder and price <= fifty_sma * 1.03):
             # Regime 3: Technical Support Consolidation near 200D/50D SMA
-            # Consolidating at major institutional moving average cost-basis
-            ideal_buy_max = round(min(price * 1.04, max(two_hundred_sma * 1.025, fifty_sma * 0.985)), 2)
+            # Consolidating at major institutional moving average cost-basis: anchor strictly to support
+            support_level = max(two_hundred_sma * 1.015, fifty_sma * 0.985)
+            ideal_buy_max = round(min(price * 1.02, support_level), 2)
         else:
-            # Regime 4: Growth / Quality Premium (Price > DCF * 1.12)
-            # Balanced 35% fundamental / 65% technical support blend
-            blended_ceiling = 0.35 * dcf_target + 0.65 * max(fifty_sma * 0.96, two_hundred_sma * 1.02)
-            ideal_buy_max = round(min(price * 0.95, max(blended_ceiling, price * 0.88)), 2)
+            # Regime 4: Growth / Quality Premium or Extended
+            # Demands a real pullback towards conservative DCF target or moving average support
+            blended_ceiling = 0.40 * dcf_target + 0.60 * min(fifty_sma * 0.98, two_hundred_sma * 1.02)
+            ideal_buy_max = round(min(price * 0.96, max(dcf_target, blended_ceiling)), 2)
 
-        # Floor is strictly set at 10% discount to ceiling for a crisp 11% execution bracket (eliminates blowout chasm)
+        # Floor is strictly set at 10% discount to ceiling for a crisp 10% execution corridor
         ideal_buy_min = round(ideal_buy_max * 0.90, 2)
 
         # Profit-taking / Sell alert bracket
@@ -1273,16 +1302,33 @@ class PricingEngine:
         ideal_sell_range_max = round(max(dcf_fair_value * 1.25, price * 1.30), 2)
 
         # Base action status and advice based on price vs buy bracket / DCF
+        is_falling_knife = (
+            ret_5d_pct <= -2.5 or
+            (is_recently_falling and ret_5d_pct < -1.0) or
+            (trend_state == "FREEZE" and (ret_5d_pct < -1.0 or (two_hundred_sma > 0 and price < two_hundred_sma * 0.90)))
+        )
+
         if price <= ideal_buy_max:
-            if lang == "en":
-                action_status = "IN_BUY_ZONE"
-                advice = f"Current price ${price} {currency} is within safe buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency}) with a strong Margin of Safety."
-            elif lang == "zh":
-                action_status = "处于理想买入区间"
-                advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具备充沛的安全边际。"
+            if is_falling_knife:
+                if lang == "en":
+                    action_status = "LEFT_SIDE_WATCH"
+                    advice = f"Price ${price} {currency} is in valuation buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency}), but is in a Left-Side falling trend ({trend_state}, 5D: {ret_5d_pct:+.1f}%). Await right-side trend stabilization before deploying capital."
+                elif lang == "zh":
+                    action_status = "左侧观察期"
+                    advice = f"当前股价 ${price} {currency} 进入估值买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，但处于左侧下跌/探底趋势中（{trend_state}，5日: {ret_5d_pct:+.1f}%）。建议保持耐心，等待右侧企稳信号再行建仓。"
+                else:
+                    action_status = "左侧观察期 (LEFT_SIDE_WATCH)"
+                    advice = f"当前股价 ${price} {currency} 进入买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，但处于左侧下跌趋势（{trend_state}，5D: {ret_5d_pct:+.1f}%）。建议等待右侧企稳确认再建仓。"
             else:
-                action_status = "处于理想买入区间 (IN_BUY_ZONE)"
-                advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具 Safe Buy Bracket 保护。"
+                if lang == "en":
+                    action_status = "IN_BUY_ZONE"
+                    advice = f"Current price ${price} {currency} is within safe buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency}) with confirmed Right-Side trend."
+                elif lang == "zh":
+                    action_status = "处于理想买入区间"
+                    advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具备充沛的安全边际与右侧技术支撑。"
+                else:
+                    action_status = "处于理想买入区间 (IN_BUY_ZONE)"
+                    advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具 Safe Buy Bracket 与右侧支撑保护。"
         elif price <= dcf_fair_value or price <= two_hundred_sma * 1.05:
             # Fairly valued below DCF or consolidating at 200D SMA support: NEVER label OVEREXTENDED
             if price <= dcf_fair_value * 1.15:
@@ -1392,6 +1438,13 @@ class PricingEngine:
             "action_status": action_status,
             "timing_advice": advice,
             "rsi_14": stock_data.get("rsi_14", 54.0),
+            "trend_temperature": trend_state,
+            "batting_zone": batting_zone,
+            "is_right_side": is_right_side,
+            "is_recently_falling": is_recently_falling,
+            "ret_5d_pct": ret_5d_pct,
+            "ret_20d_pct": ret_20d_pct,
+            "trend_eval": trend_eval,
             "reverse_dcf": reverse_dcf,
             "taxonomy": taxonomy_result,
             "total_shareholder_yield_pct": taxonomy_result.get("total_shareholder_yield_pct", 0.0),
