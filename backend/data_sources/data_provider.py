@@ -886,6 +886,59 @@ EMPIRICAL_TAXONOMY_METRICS: Dict[str, Dict[str, float]] = {
     "CELH": {"roic": 0.22, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.5},
     "DOL.TO": {"roic": 0.28, "dividend_yield_pct": 0.3, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": -5.0},
     "QBR-B.TO": {"roic": 0.16, "dividend_yield_pct": 2.8, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": 0.0},
+    # PL-723.1: Institutional ROIC registry for Wide Moat / Rule-of-40 compounders
+    "AVGO": {"roic": 0.22, "dividend_yield_pct": 1.5, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": 1.5},
+    "ORCL": {"roic": 0.21, "dividend_yield_pct": 1.2, "net_buyback_yield_pct": 1.0, "dilution_3y_pct": 0.5},
+    "CRM": {"roic": 0.19, "dividend_yield_pct": 0.5, "net_buyback_yield_pct": 1.8, "dilution_3y_pct": -1.0},
+    "NOW": {"roic": 0.22, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 1.0},
+    "ADBE": {"roic": 0.26, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": -1.8},
+    "ASML": {"roic": 0.38, "dividend_yield_pct": 0.8, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": -0.5},
+    "TSM": {"roic": 0.28, "dividend_yield_pct": 1.2, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.0},
+    "PANW": {"roic": 0.18, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 1.2},
+    "SNPS": {"roic": 0.19, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 1.0, "dilution_3y_pct": 0.2},
+    "CDNS": {"roic": 0.24, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 1.0, "dilution_3y_pct": 0.2},
+    "AXON": {"roic": 0.18, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.5},
+    "PLTR": {"roic": 0.22, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 2.0},
+    "NET": {"roic": 0.18, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 2.2},
+    "ARM": {"roic": 0.25, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.2},
+    "AMD": {"roic": 0.19, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": 0.5},
+    "MPWR": {"roic": 0.24, "dividend_yield_pct": 0.9, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.2},
+    "POWI": {"roic": 0.15, "dividend_yield_pct": 1.8, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": 0.2},
+    "INTU": {"roic": 0.21, "dividend_yield_pct": 0.6, "net_buyback_yield_pct": 1.5, "dilution_3y_pct": 0.2},
+    "ANET": {"roic": 0.32, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.8},
+    "KLAC": {"roic": 0.38, "dividend_yield_pct": 0.8, "net_buyback_yield_pct": 2.0, "dilution_3y_pct": -1.5},
+    "LRCX": {"roic": 0.34, "dividend_yield_pct": 1.1, "net_buyback_yield_pct": 2.5, "dilution_3y_pct": -2.0},
+    "AMAT": {"roic": 0.32, "dividend_yield_pct": 0.9, "net_buyback_yield_pct": 2.2, "dilution_3y_pct": -1.8},
+    "LLY": {"roic": 0.28, "dividend_yield_pct": 0.7, "net_buyback_yield_pct": 0.2, "dilution_3y_pct": 0.2},
+    "UNH": {"roic": 0.2, "dividend_yield_pct": 1.4, "net_buyback_yield_pct": 1.5, "dilution_3y_pct": -0.5},
+    "JNJ": {"roic": 0.18, "dividend_yield_pct": 3.0, "net_buyback_yield_pct": 1.0, "dilution_3y_pct": -0.2},
+    "ISRG": {"roic": 0.2, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.8},
+    "SYK": {"roic": 0.18, "dividend_yield_pct": 0.9, "net_buyback_yield_pct": 0.2, "dilution_3y_pct": 0.3},
+    "ABT": {"roic": 0.18, "dividend_yield_pct": 1.9, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": -0.2},
+    "TMO": {"roic": 0.16, "dividend_yield_pct": 0.3, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": -0.5},
+    "DHR": {"roic": 0.16, "dividend_yield_pct": 0.4, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.1},
+    "WCN.TO": {"roic": 0.16, "dividend_yield_pct": 0.7, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.2},
+    "WM": {"roic": 0.17, "dividend_yield_pct": 1.4, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": -0.5},
+    "RSG": {"roic": 0.16, "dividend_yield_pct": 1.2, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": -0.2},
+    "WSP.TO": {"roic": 0.15, "dividend_yield_pct": 0.6, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.5},
+    "TRI.TO": {"roic": 0.16, "dividend_yield_pct": 1.2, "net_buyback_yield_pct": 1.5, "dilution_3y_pct": -1.0},
+    "CAT": {"roic": 0.25, "dividend_yield_pct": 1.4, "net_buyback_yield_pct": 3.0, "dilution_3y_pct": -2.5},
+    "GE": {"roic": 0.18, "dividend_yield_pct": 0.6, "net_buyback_yield_pct": 1.5, "dilution_3y_pct": -0.8},
+    "HON": {"roic": 0.18, "dividend_yield_pct": 2.1, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": -0.5},
+    "UNP": {"roic": 0.17, "dividend_yield_pct": 2.2, "net_buyback_yield_pct": 1.8, "dilution_3y_pct": -1.5},
+    "SPGI": {"roic": 0.3, "dividend_yield_pct": 0.7, "net_buyback_yield_pct": 1.8, "dilution_3y_pct": -1.0},
+    "MCO": {"roic": 0.35, "dividend_yield_pct": 0.8, "net_buyback_yield_pct": 1.5, "dilution_3y_pct": -0.8},
+    "BLK": {"roic": 0.16, "dividend_yield_pct": 2.1, "net_buyback_yield_pct": 1.0, "dilution_3y_pct": -0.2},
+    "WMT": {"roic": 0.18, "dividend_yield_pct": 1.1, "net_buyback_yield_pct": 1.2, "dilution_3y_pct": -0.5},
+    "HD": {"roic": 0.38, "dividend_yield_pct": 2.3, "net_buyback_yield_pct": 1.5, "dilution_3y_pct": -1.0},
+    "PG": {"roic": 0.25, "dividend_yield_pct": 2.4, "net_buyback_yield_pct": 1.5, "dilution_3y_pct": -1.0},
+    "MCD": {"roic": 0.3, "dividend_yield_pct": 2.2, "net_buyback_yield_pct": 1.8, "dilution_3y_pct": -1.2},
+    "NFLX": {"roic": 0.26, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 1.8, "dilution_3y_pct": -1.0},
+    "FNV.TO": {"roic": 0.16, "dividend_yield_pct": 1.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.2},
+    "WPM.TO": {"roic": 0.17, "dividend_yield_pct": 1.2, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 0.1},
+    "BRK-B": {"roic": 0.14, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 1.5, "dilution_3y_pct": -0.8},
+    "WING": {"roic": 0.35, "dividend_yield_pct": 0.6, "net_buyback_yield_pct": 0.5, "dilution_3y_pct": 0.5},
+    "TSLA": {"roic": 0.18, "dividend_yield_pct": 0.0, "net_buyback_yield_pct": 0.0, "dilution_3y_pct": 1.8},
     # Grains (Cyclical / Value / High-yield cash cows)
     "KO": {"roic": 0.16, "dividend_yield_pct": 3.1, "net_buyback_yield_pct": 0.8, "dilution_3y_pct": -0.5},
     "PEP": {"roic": 0.17, "dividend_yield_pct": 3.0, "net_buyback_yield_pct": 0.6, "dilution_3y_pct": -0.4},
@@ -1379,8 +1432,24 @@ class DataProviderManager:
 
         roic = stock.get("roic")
         if roic is None or float(roic) == 0.0:
+            # PL-723.1: Derive ROIC before falling back to a flat default. A blanket 0.16
+            # default short-circuited the ROE fallback in PricingEngine and erased Wide Moat
+            # exit multiples / Fortress WACC credits for ~95% of live quotes.
             fcf_val = stock.get("free_cash_flow") or 0
-            roic = metrics.get("roic", 0.16 if fcf_val > 0 else 0.0)
+            roe_raw = stock.get("return_on_equity")
+            if "roic" in metrics:
+                roic = float(metrics["roic"])
+            elif roe_raw is not None and float(roe_raw) > 0:
+                # ROIC ~= ROE x equity weight of invested capital (de-levers buyback-inflated ROE)
+                debt_val = float(stock.get("total_debt") or 0.0)
+                cash_val = float(stock.get("total_cash") or 0.0)
+                mcap_val = float(stock.get("market_cap") or 0.0)
+                net_debt = max(0.0, debt_val - cash_val)
+                total_cap = mcap_val + net_debt
+                eq_weight = (mcap_val / total_cap) if total_cap > 0 else 0.85
+                roic = round(min(0.65, max(0.04, float(roe_raw) * min(1.0, max(0.35, eq_weight)))), 3)
+            else:
+                roic = 0.16 if fcf_val > 0 else 0.0
 
         dilution = stock.get("dilution_3y_pct")
         if dilution is None:
@@ -1395,6 +1464,11 @@ class DataProviderManager:
         # Institutional balance sheet & cash flow metrics fallback guarantees
         fcf = stock.get("free_cash_flow") or 0.0
         rev = stock.get("total_revenue") or 10_000_000_000.0
+        sym_check = (stock.get("symbol") or "").upper()
+        # Royalty streaming leaders (WPM, FNV) legitimately have >50% FCF margins. For all others, cap at 45% of rev.
+        if rev > 0 and fcf > rev * 0.48 and sym_check not in {"WPM.TO", "WPM", "FNV.TO", "FNV"}:
+            fcf = round(rev * 0.35, 2)
+            stock["free_cash_flow"] = fcf
 
         if stock.get("operating_cash_flow") is None:
             stock["operating_cash_flow"] = round(fcf * 1.15 if fcf > 0 else rev * 0.15, 2)

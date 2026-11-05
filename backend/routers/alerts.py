@@ -28,11 +28,37 @@ class PriceAlertLogResponseSchema(BaseModel):
 
 @router.get("/history", response_model=List[PriceAlertLogResponseSchema])
 def get_alert_history(session: Session = Depends(get_session)):
-    """Returns past triggered price alert history records."""
+    """Returns past triggered price alert history records enriched with real-time quotes and dynamic targets."""
     logs = session.exec(
         select(PriceAlertLogDB).order_by(PriceAlertLogDB.triggered_at.desc())
     ).all()
-    return logs
+    if not logs:
+        return []
+
+    from backend.data_sources.data_provider import DataProviderManager
+    from backend.models.db_models import UserWatchlistDB
+
+    watchlist_map = {w.symbol.upper(): w for w in session.exec(select(UserWatchlistDB)).all()}
+    enriched = []
+    for log in logs:
+        sym = log.symbol.upper()
+        stock_data = DataProviderManager.get_stock_data(sym) if sym else None
+        curr_p = float(stock_data.get("current_price")) if (stock_data and stock_data.get("current_price")) else float(log.current_price)
+        w_item = watchlist_map.get(sym)
+        target_p = float(w_item.target_buy_price) if (w_item and w_item.target_buy_price) else float(log.target_buy_price)
+
+        enriched.append(PriceAlertLogResponseSchema(
+            id=log.id,
+            symbol=log.symbol,
+            company_name=log.company_name,
+            current_price=round(curr_p, 2),
+            target_buy_price=round(target_p, 2),
+            notification_channel=log.notification_channel,
+            status=log.status,
+            message=log.message,
+            triggered_at=log.triggered_at
+        ))
+    return enriched
 
 @router.post("/trigger-check")
 async def trigger_price_alert_check(session: Session = Depends(get_session)):

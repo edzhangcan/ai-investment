@@ -71,6 +71,16 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
   const startIndex = (safePage - 1) * PAGE_SIZE;
   const currentDisplayPool = activePool.slice(startIndex, startIndex + PAGE_SIZE);
 
+  // PL-723.3: Periodic real-time price & DCF polling every 60 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!isRefreshing && onRefreshRecommendations) {
+        onRefreshRecommendations(activeCategory, startIndex);
+      }
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [activeCategory, startIndex, isRefreshing, onRefreshRecommendations]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -523,9 +533,9 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
               <div className="pt-3.5 border-t border-border-subtle flex items-center justify-between text-xs">
                 <span className="text-xs font-bold text-content-muted group-hover/card:text-brand transition-colors flex items-center gap-1.5">
                   <span>{t.drillDownAnalysis}</span>
-                  {rec.key_metrics?.dcf_fair_value && (
+                  {(rec.dcf_fair_value ?? rec.key_metrics?.dcf_fair_value) && (
                     <span className="text-content-secondary font-medium ml-1">
-                      (DCF Fair: ${rec.key_metrics.dcf_fair_value})
+                      (DCF Fair: ${rec.dcf_fair_value ?? rec.key_metrics?.dcf_fair_value})
                     </span>
                   )}
                 </span>

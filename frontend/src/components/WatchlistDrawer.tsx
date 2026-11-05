@@ -104,9 +104,14 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
     }
   };
 
+  // PL-723.4: Real-time price & target sync polling every 30 seconds while drawer is open
   useEffect(() => {
     if (isOpen) {
       fetchTrackedStocks();
+      const timer = setInterval(() => {
+        fetchTrackedStocks();
+      }, 30000);
+      return () => clearInterval(timer);
     }
   }, [isOpen]);
 
@@ -652,7 +657,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                         )}
                       </div>
                       <div className="text-xs text-content-muted">{item.company_name}</div>
-                      <div className="flex items-center gap-3 text-[11px] mt-1">
+                      <div className="flex items-center gap-3 text-[11px] mt-1 flex-wrap">
                         <span className="text-positive flex items-center gap-1 font-semibold">
                           <Bell className="w-3 h-3 text-warning" />
                           Target: ${item.target_buy_price || '--'}
@@ -660,6 +665,11 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                         <span className="text-content-muted">
                           Curr: ${item.current_price?.toFixed(2) || '--'}
                         </span>
+                        {item.dcf_fair_value && (
+                          <span className="text-content-muted text-[10px]">
+                            (DCF: ${item.dcf_fair_value.toFixed(2)})
+                          </span>
+                        )}
                       </div>
                     </div>
 

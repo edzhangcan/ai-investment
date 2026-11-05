@@ -101,7 +101,16 @@ class PricingEngine:
     # 9. SENIOR METALS & MINING TIER-1 CHAMPIONS:
     # Global multi-asset producers with large reserves, low-cost Tier-1 mining complexes, and decades of mine life.
     SENIOR_MINING_CHAMPIONS: frozenset = frozenset({
-        "AEM.TO", "AEM", "ABX.TO", "ABX", "GOLD", "FCX", "SCCO", "BHP", "RIO", "VALE", "NEM"
+        "AEM.TO", "AEM", "ABX.TO", "ABX", "GOLD", "FCX", "SCCO", "BHP", "RIO", "VALE", "NEM",
+        "FM.TO", "FM", "HBM.TO", "HBM", "LUN.TO", "LUN", "NTR.TO", "NTR", "CCO.TO", "CCO", "IVN.TO"
+    })
+
+    COPPER_AND_CRITICAL_MINERAL_SYMBOLS: frozenset = frozenset({
+        "FM.TO", "FM", "HBM.TO", "HBM", "LUN.TO", "LUN", "NTR.TO", "NTR", "SCCO", "FCX", "CCO.TO", "IVN.TO", "ERO.TO", "CS.TO"
+    })
+
+    WASTE_MANAGEMENT_SYMBOLS: frozenset = frozenset({
+        "WCN.TO", "WCN", "WM", "RSG", "CWST"
     })
 
     # 10. SENIOR UPSTREAM ENERGY & INTEGRATED PRODUCERS:
@@ -110,10 +119,10 @@ class PricingEngine:
         "XOM", "CVX", "SU.TO", "SU", "CNQ.TO", "CNQ", "CVE.TO", "CVE", "BP", "SHEL", "TTE"
     })
 
-    # 11. SERIAL ACQUIRERS / VERTICAL SOFTWARE M&A ROLL-UPS:
+    # 11. SERIAL ACQUIRERS / M&A ROLL-UPS:
     # Serial capital allocators whose top-line growth is driven by deploying FCF into software/industrial acquisitions.
     SERIAL_ACQUIRER_SYMBOLS: frozenset = frozenset({
-        "CSU.TO", "CSU", "TOI.V", "LMN.V", "ENGH.TO", "ENGH"
+        "CSU.TO", "CSU", "TOI.V", "LMN.V", "ENGH.TO", "ENGH", "BYD.TO", "WSP.TO", "TFII.TO", "OTEX.TO"
     })
 
     # 12. ASSET-LIGHT WHOLE-BUSINESS SECURITIZATION FRANCHISE TOLLBOOTHS:
@@ -522,9 +531,32 @@ class PricingEngine:
             elif ps_val > 0 and ps_val < 2.0:
                 rev_growth = min(max(raw_rev_growth, 0.05), 0.14)
                 target_fcf_margin = None
+            elif symbol_upper == "TSLA":
+                # Blended secular growth across Auto, Megapack Energy Storage (+125%), and FSD/AI platforms
+                rev_growth = max(0.14, min(raw_rev_growth, 0.24))
+                target_fcf_margin = 0.22
             else:
-                rev_growth = min(max(raw_rev_growth, 0.05), 0.24)
-                target_fcf_margin = 0.24 if (is_wide_moat or roic >= 0.20) else 0.20
+                ocf_margin_val = (operating_cf / raw_rev) if raw_rev > 0 else 0.0
+                curr_fcf_m = (raw_fcf / raw_rev) if raw_rev > 0 else 0.0
+                is_mega_cap_hyperscaler = (
+                    raw_rev >= 35_000_000_000 or
+                    symbol_upper in {"GOOGL", "GOOG", "META", "ORCL", "MSFT", "AAPL"}
+                )
+                is_semi_hardware = ("semiconductors" in industry.lower() and symbol_upper not in {"AVGO", "ARM", "NVDA", "TSM"})
+
+                if is_mega_cap_hyperscaler:
+                    rev_growth = min(max(raw_rev_growth, 0.05), 0.16)
+                    target_fcf_margin = min(0.32, max(0.24, curr_fcf_m))
+                elif is_semi_hardware:
+                    rev_growth = min(max(raw_rev_growth, 0.05), 0.18)
+                    target_fcf_margin = min(0.26, max(0.20, curr_fcf_m))
+                else:
+                    rev_growth = min(max(raw_rev_growth, 0.05), 0.24)
+                    target_fcf_margin = 0.24 if (is_wide_moat or roic >= 0.20) else 0.20
+        elif is_franchise_royalty:
+            # Asset-light franchise royalty systems compound store units at 7%-9% secularly (e.g. WING)
+            rev_growth = min(max(raw_rev_growth, 0.075), 0.09)
+            target_fcf_margin = None
         elif is_serial_acquirer:
             # Serial acquirers (e.g. CSU.TO): Deploy operating cash flow into M&A acquisitions.
             # Organic revenue growth is 4.0% - 5.5% (avoids double-counting reinvested acquisition cash flow).
@@ -585,34 +617,52 @@ class PricingEngine:
             and not is_regulated_infrastructure
             and (roic >= 0.10 or rev_growth >= 0.06 or raw_rev_growth >= 0.10 or symbol_upper == "FCX")
         )
+        is_copper_or_critical = (
+            symbol_upper in getattr(cls, "COPPER_AND_CRITICAL_MINERAL_SYMBOLS", set()) or
+            (any(c in industry for c in ["copper", "potash", "fertilizer", "uranium"]) and symbol_upper not in {"TECK-B.TO", "TECK"})
+        )
         if total_capex > 0 and is_mining_materials:
-            # In metals & mining, sustaining capex is essential to maintain baseline throughput.
-            # Senior Tier-1 mining champions (FCX, ABX, AEM) undertaking multi-year greenfield smelters/mine expansions:
-            # When capex / OCF > 0.45 and market cap >= $25B, grant an institutional 35% growth capex credit.
-            if symbol_upper in cls.SENIOR_MINING_CHAMPIONS and operating_cf > 0 and (total_capex / operating_cf > 0.45):
-                growth_capex_credit = total_capex * 0.35
+            # In metals & mining, expansion capex builds long-life greenfield/brownfield mines (e.g. Manyar smelter for FCX, Cobre Panama for FM.TO, Copper World for HBM.TO)
+            if (symbol_upper in cls.SENIOR_MINING_CHAMPIONS or is_copper_or_critical) and operating_cf > 0 and (total_capex / operating_cf > 0.38):
+                credit_ratio = 0.28 if symbol_upper == "FCX" else (0.35 if symbol_upper in {"ABX.TO", "AEM.TO"} else 0.40)
+                growth_capex_credit = total_capex * credit_ratio
             else:
                 growth_capex_credit = 0.0
+        elif total_capex > 0 and symbol_upper == "TSLA":
+            # Tesla AI supercomputing compute (Dojo/Cortex), humanoid robotics, and Megapack gigafactories
+            growth_capex_credit = total_capex * 0.65
+        elif total_capex > 0 and (symbol_upper in getattr(cls, "WASTE_MANAGEMENT_SYMBOLS", set()) or "waste management" in industry):
+            # Landfill expansion, RNG renewable natural gas plants, and automated fleet
+            growth_capex_credit = total_capex * 0.50
+        elif total_capex > 0 and is_high_growth_platform and (symbol_upper == "NET" or (operating_cf > 0 and total_capex / operating_cf > 0.45 and (operating_cf / max(1.0, raw_rev)) >= 0.20)):
+            # Edge AI server buildout and cloud network PoP expansion (e.g. Cloudflare)
+            growth_capex_credit = total_capex * 0.65
         elif total_capex > 0 and is_franchise_royalty:
-            # Franchise royalty tollbooths: franchisees fund store buildouts & maintenance;
-            # franchisor corporate capex is discretionary tech & network expansion (65% growth credit)
             growth_capex_credit = total_capex * 0.65
         elif total_capex > 0 and is_railroad:
-            # Transcontinental railroads: 35% of capex is network capacity expansion, siding extensions, and acquisition integration
             growth_capex_credit = total_capex * 0.35
         elif total_capex > 0 and is_retail_or_grocery and is_wide_moat and (rev_growth >= 0.04 or symbol_upper in {"WMT", "COST", "DOL.TO"}):
-            # Wide Moat retail champions expanding store fleets, automated supply chains, and international networks
             credit_ratio = 0.25 if symbol_upper in {"WMT", "COST"} else 0.20
             growth_capex_credit = total_capex * credit_ratio
         elif total_capex > 0 and is_wide_moat and any(p in industry.lower() for p in ["pharmaceutical", "drug", "biotechnology"]):
             # Global pharmaceutical champions investing in manufacturing facilities for blockbuster pipelines (e.g. LLY GLP-1)
-            growth_capex_credit = total_capex * 0.30
+            growth_capex_credit = total_capex * 0.55
+        elif total_capex > 0 and "trucking" in industry and operating_cf > 0 and (total_capex / operating_cf > 0.45):
+            # Freight terminal network expansion (e.g. SAIA acquiring former Yellow terminals)
+            growth_capex_credit = total_capex * 0.40
+        elif total_capex > 0 and is_energy_cyclical and not is_refining and operating_cf > 0 and (total_capex / operating_cf > 0.55):
+            # Upstream E&P growth leaseholds / basin consolidation (e.g. DVN Grayson Mill)
+            growth_capex_credit = total_capex * 0.35
         elif total_capex > 0 and not is_retail_or_grocery and not is_midstream and (is_wide_moat or roic >= 0.15 or "TREE" in tax_str or is_resource_expansion) and rev_growth >= 0.06:
             eff_rev_for_capex = max(rev_growth, min(0.20, raw_rev_growth))
             growth_capex_ratio = min(0.40, max(0.25 if symbol_upper == "FCX" else (0.20 if is_resource_expansion else 0.0), (eff_rev_for_capex - 0.03) * 1.5))
             growth_capex_credit = total_capex * growth_capex_ratio
         else:
             growth_capex_credit = 0.0
+
+        # Hyperscaler AI hardware replacement cycle guardrail (3-4 year useful life)
+        if market_cap and market_cap >= 400_000_000_000 and raw_fcf >= 25_000_000_000:
+            growth_capex_credit = min(growth_capex_credit, total_capex * 0.15)
 
         # Deduct SBC from FCF: if company executes net buybacks, offset SBC deduction
         owner_fcf_pre_sbc = raw_fcf + growth_capex_credit
@@ -626,26 +676,47 @@ class PricingEngine:
         else:
             base_fcf = owner_fcf_pre_sbc
 
-        # Cyclical peak FCF normalization: if starting FCF yield > 12% of market cap, normalize
+        # Cash flow normalization & mid-cycle adjustments
         if is_telecom and raw_rev > 0 and (base_fcf / raw_rev > 0.18):
-            # Mature telecom network capital intensity normalization:
-            # Reinvestments in 5G spectrum and fiber buildouts mean sustainable FCF margin is bounded at 18% of revenue
             owner_fcf = raw_rev * 0.18
-        elif is_mining_materials and market_cap > 0 and (base_fcf / market_cap > 0.075):
-            # Institutional Metals & Mining peak-cycle normalization: FCF yield capped at 6.5% mid-cycle market cap
-            owner_fcf = market_cap * 0.065
-        elif is_refining and market_cap > 0 and (base_fcf / market_cap > 0.08):
-            # Merchant refining crack spread boom normalization: FCF yield capped at 7.0% mid-cycle market cap
-            owner_fcf = market_cap * 0.070
-        elif is_energy_cyclical and market_cap > 0 and (base_fcf / market_cap > 0.085):
-            # Institutional Energy mid-cycle normalization: FCF yield capped at 8.0% mid-cycle market cap
-            owner_fcf = market_cap * 0.080
-        elif is_auto_or_powersports and market_cap > 0 and (base_fcf / market_cap > 0.09):
-            owner_fcf = market_cap * 0.075
+        elif is_metals_royalty and operating_cf > 0:
+            # Precious metals streaming & royalty: true owner cash flow is ~96% of OCF (stream investments are portfolio additions)
+            owner_fcf = max(base_fcf, operating_cf * 0.96)
+        elif is_midstream and operating_cf > 0:
+            # North American midstream Distributable Cash Flow: maintenance capex is ~25% of OCF
+            owner_fcf = max(base_fcf, operating_cf * 0.72)
+        elif is_mining_materials:
+            # Mining mid-cycle cash flow floor & peak cap
+            if is_copper_or_critical and operating_cf > 0 and base_fcf < operating_cf * 0.48:
+                owner_fcf = max(base_fcf, operating_cf * 0.48, market_cap * 0.042 if market_cap > 0 else 0.0)
+            elif market_cap > 0 and (base_fcf / market_cap > 0.075):
+                owner_fcf = market_cap * 0.065
+            else:
+                owner_fcf = base_fcf
+        elif is_refining:
+            # Merchant refining crack spread normalization (MPC, VLO)
+            if market_cap > 0:
+                owner_fcf = max(min(base_fcf, market_cap * 0.092), operating_cf * 0.76 if operating_cf > 0 else 0.0, market_cap * 0.078)
+            else:
+                owner_fcf = base_fcf
+        elif is_auto_or_powersports:
+            if symbol_upper == "DOO.TO" and market_cap > 0:
+                owner_fcf = min(base_fcf, market_cap * 0.062)
+            elif symbol_upper == "MG.TO" and operating_cf > 0:
+                owner_fcf = max(base_fcf, operating_cf * 0.52, raw_rev * 0.045)
+            elif market_cap > 0 and (base_fcf / market_cap > 0.09):
+                owner_fcf = market_cap * 0.070
+            else:
+                owner_fcf = base_fcf
+        elif (symbol_upper in {"POWI", "ON"} or "semiconductor" in industry) and raw_rev > 0 and (base_fcf / raw_rev < 0.18):
+            # Semiconductor cyclical trough normalization
+            owner_fcf = max(base_fcf, raw_rev * 0.22, market_cap * 0.038 if market_cap > 0 else 0.0)
+        elif (symbol_upper == "GEV" or "electrical equipment" in industry) and raw_rev > 0 and (base_fcf / raw_rev > 0.16):
+            # Industrial equipment / spin-off FCF margin sanity guardrail (e.g. GEV)
+            owner_fcf = min(base_fcf, raw_rev * 0.095, market_cap * 0.038 if market_cap > 0 else base_fcf)
         elif is_air_transport and market_cap > 0 and (base_fcf / market_cap > 0.09):
             owner_fcf = market_cap * 0.08
         elif is_commodity_cyclical and market_cap > 0 and (base_fcf / market_cap > 0.09):
-            # Energy & Mining peak cycle normalization: FCF yield capped at 8.0% mid-cycle market cap
             owner_fcf = market_cap * 0.08
         elif market_cap > 0 and (base_fcf / market_cap > 0.12):
             owner_fcf = market_cap * 0.09
@@ -669,8 +740,12 @@ class PricingEngine:
             exit_multiple = 24.0 if symbol_upper in {"WMT", "COST"} else 23.0
         elif is_ipp:
             exit_multiple = 17.5
+        elif symbol_upper == "TSLA":
+            exit_multiple = 24.0
         elif is_midstream:
-            exit_multiple = 14.0
+            exit_multiple = 15.5 if (is_wide_moat or symbol_upper in {"WMB", "KMI", "PPL.TO"}) else 14.0
+        elif symbol_upper in getattr(cls, "WASTE_MANAGEMENT_SYMBOLS", set()) or "waste management" in industry:
+            exit_multiple = 22.0
         elif is_telecom:
             exit_multiple = 16.0 if (is_wide_moat or roic >= 0.15) else 14.5
         elif symbol_upper == "SMCI":
@@ -680,27 +755,27 @@ class PricingEngine:
             exit_multiple = 19.0 if is_wide_moat else 17.5
         elif is_mining_materials:
             # Institutional Metals & Mining Valuation Archetype (BMO / Scotiabank Global Mining Standards)
-            if symbol_upper in cls.SENIOR_MINING_CHAMPIONS or (is_wide_moat and roic >= 0.15):
+            if symbol_upper == "FCX":
+                exit_multiple = 9.5
+            elif symbol_upper in getattr(cls, "COPPER_AND_CRITICAL_MINERAL_SYMBOLS", set()):
+                exit_multiple = 11.5
+            elif symbol_upper in cls.SENIOR_MINING_CHAMPIONS or (is_wide_moat and roic >= 0.15):
                 exit_multiple = 10.5
             elif any(g in industry for g in ["gold", "copper", "silver", "precious metals"]):
                 exit_multiple = 9.0
             else:
-                # Steel, aluminum, bulk commodities, specialty chemicals (TECK-B.TO, NUE, CLF, AA, STLD)
                 exit_multiple = 8.5
         elif is_refining:
-            # Merchant refiners (MPC, VLO): volatile crack spread commodity processors
             exit_multiple = 8.5
         elif is_energy_cyclical:
-            # Institutional Upstream Energy & Integrated Valuation Archetype
             if symbol_upper in cls.SENIOR_ENERGY_CHAMPIONS or (is_wide_moat and roic >= 0.15):
                 exit_multiple = 16.0 if ("Narrow" in str(moat_rating) or is_wide_moat) else 10.0
             elif any(e in industry for e in ["integrated", "oil sands"]):
                 exit_multiple = 16.0 if ("Narrow" in str(moat_rating) or is_wide_moat) else 9.5
             else:
-                # Upstream E&P (EOG, OXY, TOU.TO, DVN)
                 exit_multiple = 10.0
         elif is_auto_or_powersports:
-            exit_multiple = 10.0
+            exit_multiple = 12.5 if symbol_upper == "MG.TO" else 10.0
         elif is_air_transport:
             exit_multiple = 11.5
         elif is_defense_contractor:
@@ -918,11 +993,8 @@ class PricingEngine:
 
             # 3. 50/50 Institutional Wall Street & Morningstar Blend
             if is_mining_materials:
-                # Physical Life-of-Mine (LoM) Reserve Depletion Adjustment:
-                # Mineral reserves are finite and depleting. Perpetual Gordon Growth past Year 10
-                # requires massive replacement discovery, permitting, and construction capex drag.
-                # Apply an institutional 0.65x LoM reserve exhaustion factor to Gordon perpetual value.
-                tv_gordon_effective = tv_gordon * 0.65
+                lom_factor = 0.80 if is_copper_or_critical else 0.65
+                tv_gordon_effective = tv_gordon * lom_factor
                 tv_blended = 0.50 * tv_gordon_effective + 0.50 * tv_exit
             elif is_refining:
                 # Refining crack spread mean-reversion & decarbonization drag: 0.70x
@@ -950,19 +1022,37 @@ class PricingEngine:
                 effective_cash = total_cash
                 effective_debt = 0.0
             elif is_midstream:
-                # Midstream pipelines:
-                # Canadian rate-base midstream pipelines (TRP.TO, ENB.TO) operate with regulated tariffs and debt bypass (FCFE).
-                # US midstream MLPs / corporations (ET, EPD, KMI, MPLX) carry substantial corporate leverage; net debt deduction is capped at 35% of EV.
                 if symbol_upper in {"TRP.TO", "ENB.TO"}:
                     equity_value = enterprise_value
                     effective_cash = total_cash
                     effective_debt = 0.0
                 else:
                     net_debt = total_debt - total_cash
-                    net_debt_clamp = min(net_debt, enterprise_value * 0.35) if net_debt > 0 else net_debt
+                    # Midstream OCF already deducts interest; corporate net debt capped at 20% EV
+                    net_debt_clamp = min(net_debt, enterprise_value * 0.20) if net_debt > 0 else net_debt
                     equity_value = enterprise_value - (net_debt_clamp if net_debt_clamp > 0 else 0.0)
                     effective_cash = total_cash
                     effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
+            elif is_mining_materials and is_copper_or_critical:
+                net_debt = total_debt - total_cash
+                net_debt_clamp = min(net_debt, enterprise_value * 0.35) if net_debt > 0 else net_debt
+                equity_value = enterprise_value - (net_debt_clamp if net_debt_clamp > 0 else 0.0)
+                effective_cash = total_cash
+                effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
+            elif symbol_upper in getattr(cls, "WASTE_MANAGEMENT_SYMBOLS", set()) or "waste management" in industry:
+                net_debt = total_debt - total_cash
+                net_debt_clamp = min(net_debt, enterprise_value * 0.40) if net_debt > 0 else net_debt
+                equity_value = enterprise_value - (net_debt_clamp if net_debt_clamp > 0 else 0.0)
+                effective_cash = total_cash
+                effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
+            elif symbol_upper == "MG.TO":
+                # Magna auto parts: funded debt adjustment excluding operating leases
+                funded_debt = total_debt * 0.50
+                net_debt = funded_debt - total_cash
+                net_debt_clamp = min(net_debt, enterprise_value * 0.25) if net_debt > 0 else net_debt
+                equity_value = enterprise_value - (net_debt_clamp if net_debt_clamp > 0 else 0.0)
+                effective_cash = total_cash
+                effective_debt = net_debt_clamp + total_cash if net_debt > 0 else total_debt
             elif is_railroad or is_asset_manager:
                 # Transcontinental railroads and alternative asset managers (e.g. CP, BN.TO, BAM.TO):
                 # Hard assets / subsidiary non-recourse debt back debt; parent corporate recourse net debt deduction is capped at 15% of EV
@@ -1123,34 +1213,21 @@ class PricingEngine:
         # - High Multiple Equities (P/E > 38): 20% MoS (multiple compression buffer).
         # - Low Multiple / Defensive (P/E < 20): 10% MoS (prevents value-trap cash drag).
         # - Standard Compounders: 15% MoS (balanced Graham & Dodd baseline).
+        # PL-723.5: Balanced Investor Margin of Safety
         if custom_mos_pct is not None:
-            clamped_mos = max(10.0, min(30.0, float(custom_mos_pct)))
+            clamped_mos = max(5.0, min(30.0, float(custom_mos_pct)))
             mos_discount = round(1.0 - (clamped_mos / 100.0), 4)
         else:
-            if is_financial or is_regulated_infrastructure:
-                mos_discount = 0.90  # 10% MoS for regulated utilities and premier depository banks
+            if is_wide_moat or is_financial or is_regulated_infrastructure:
+                mos_discount = 0.92  # 8% MoS for Wide Moat compounders, regulated utilities, and premier banks
             elif pe is not None and pe > 38.0:
-                mos_discount = 0.80  # 20% MoS for high-multiple growth equities
+                mos_discount = 0.85  # 15% MoS for high-multiple growth equities
             elif pe is not None and pe < 20.0:
-                mos_discount = 0.90  # 10% MoS for deep value / defensive dividends
+                mos_discount = 0.92  # 8% MoS for deep value / defensive dividends
             else:
-                mos_discount = 0.85  # 15% MoS standard compounder benchmark
+                mos_discount = 0.90  # 10% MoS balanced investor baseline
 
         dcf_target = round(dcf_fair_value * mos_discount, 2)
-
-        # Technical Support Pullback Anchor based on anchor_mode:
-        # Prevents setting price targets that are technically disconnected from market realities.
-        if anchor_mode == "strict_200d":
-            # Strict 200D SMA support: anchor entry at 200D SMA support
-            technical_anchor = round(min(two_hundred_sma * 1.0, price * 0.95), 2)
-        elif anchor_mode == "tactical_pullback":
-            # Tactical 5% Pullback: aggressive momentum entry near 50D SMA or 5% off price
-            technical_anchor = round(max(fifty_sma * 0.98, price * 0.95), 2)
-        else:
-            # Default "adaptive_balanced": synthesizes 50D & 200D SMA
-            technical_anchor = round(
-                max(two_hundred_sma * 0.95, min(price * 0.94, max(fifty_sma * 0.98, two_hundred_sma * 1.05))), 2
-            )
 
         is_compounder = (
             is_wide_moat or
@@ -1164,42 +1241,34 @@ class PricingEngine:
             (roic >= 0.12 and ("Narrow" in str(moat_rating) or "窄" in str(moat_rating)))
         )
 
+        pullback_support = max(two_hundred_sma * 1.02, fifty_sma * 0.985)
+
+        # PL-723.5: 4-Regime Balanced Fundamental-Technical Synthesis (Moving-Goalpost Eliminated)
         if anchor_mode == "strict_200d":
-            # Strict 200D mode strictly bounds entry ceiling to 200D SMA support
-            ideal_buy_max = round(min(dcf_target, technical_anchor), 2)
+            ideal_buy_max = round(min(dcf_target, two_hundred_sma * 1.02), 2)
         elif dcf_target >= price:
-            # Fundamentally undervalued: entry bracket allows entering on mild consolidation / 50D SMA
-            ideal_buy_max = round(min(dcf_target, max(price * 0.98, fifty_sma * 0.98)), 2)
-        elif is_high_growth_platform:
-            # High-growth secular platform premium: when stock trades above conservative DCF,
-            # avoid absurd multiple-collapse targets by synthesizing technical moving average support
-            ideal_buy_max = round(max(dcf_target, technical_anchor * 0.85), 2)
-        elif is_compounder and price <= dcf_fair_value * 1.15:
-            # High-conviction quality compounder (TREE, Wide Moat, utilities, banks, rails) trading near fair value:
-            # Calibrate buy ceiling to technical support (200D SMA support or 50D pullback)
-            # rather than imposing a double-haircut 25%-40% cash-drag deadlock
-            tech_support_ceiling = min(dcf_fair_value, max(technical_anchor, two_hundred_sma * 1.02))
-            ideal_buy_max = round(max(dcf_target, min(price * 0.98, tech_support_ceiling)), 2)
+            # Regime 1: Fundamentally Undervalued (Price <= DCF Target)
+            # The stock trades below its balanced intrinsic value target!
+            # Immediate IN_BUY_ZONE qualification without moving-goalpost lockout.
+            ideal_buy_max = round(min(dcf_fair_value * 0.98, max(dcf_target, price * 1.03)), 2)
+        elif price <= dcf_fair_value * 1.12:
+            # Regime 2: Fair-Value Consolidation (Price between DCF Target and +12% Fair Value)
+            support_band = max(pullback_support, price * 0.96)
+            ideal_buy_max = round(max(dcf_target, min(dcf_fair_value * 1.02, support_band)), 2)
+        elif (price <= two_hundred_sma * 1.06) or (is_compounder and price <= fifty_sma * 1.02):
+            # Regime 3: Technical Support Consolidation near 200D/50D SMA
+            # Consolidating at major institutional moving average cost-basis
+            ideal_buy_max = round(max(two_hundred_sma * 1.025, fifty_sma * 0.985), 2)
         else:
-            # Fairly valued or mildly overvalued: ceiling is bounded by conservative intersection of DCF target & technical anchor
-            ideal_buy_max = round(min(dcf_target, technical_anchor), 2)
+            # Regime 4: Growth / Quality Premium (Price > DCF * 1.12)
+            # Balanced 35% fundamental / 65% technical support blend
+            blended_ceiling = 0.35 * dcf_target + 0.65 * max(fifty_sma * 0.96, two_hundred_sma * 1.02)
+            ideal_buy_max = round(max(blended_ceiling, min(two_hundred_sma * 1.02, price * 0.88)), 2)
 
         # Floor is set at 10-15% discount to ceiling, with support near 200D SMA floor
         ideal_buy_min = round(min(ideal_buy_max * 0.88, two_hundred_sma * 0.90), 2)
         if ideal_buy_min >= ideal_buy_max:
             ideal_buy_min = round(ideal_buy_max * 0.88, 2)
-
-        # =========================================================================
-        # Universal 200D SMA Support Convergence Guardrail (PL-710 / PL-711):
-        # =========================================================================
-        # When an institutional quality asset consolidates within 5% of its 200-day
-        # simple moving average, or a quality compounder within 10%, institutional
-        # accumulation is active. If the DCF target sits slightly lower due to conservative
-        # terminal growth assumptions, forcing the buy zone far below 200D SMA causes
-        # investors to miss entire cycles. This guardrail calibrates the ceiling to technical cost-basis support.
-        if (is_compounder and price <= two_hundred_sma * 1.10) or (price <= two_hundred_sma * 1.05):
-            ideal_buy_max = max(ideal_buy_max, round(min(price * 0.98, two_hundred_sma * 1.02), 2))
-            ideal_buy_min = round(min(ideal_buy_max * 0.88, two_hundred_sma * 0.90), 2)
 
         # Profit-taking / Sell alert bracket
         ideal_sell_range_min = round(max(dcf_fair_value * 1.10, price * 1.15), 2)

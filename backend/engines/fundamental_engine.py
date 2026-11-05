@@ -265,7 +265,19 @@ class FundamentalEngine:
             return ("Broad ETF / Index Basket" if lang == "en" else "指数基金/分散组合"), ["Diversified Asset Basket"], []
 
         # 2. Wide Moat: Secular Technology, Payment Networks & Global Compounders
-        wide_tech_and_platforms = ["AAPL", "MSFT", "NVDA", "CSU.TO", "SHOP.TO", "CRWD", "CELH", "GOOGL", "AMZN", "META", "V", "MA", "KO"]
+        wide_tech_and_platforms = [
+            "AAPL", "MSFT", "NVDA", "CSU.TO", "SHOP.TO", "CRWD", "CELH", "GOOGL", "AMZN", "META", "V", "MA", "KO",
+            # PL-723.1: Institutional Wide Moat registry expansion (switching costs, IP, network effects)
+            "AVGO", "ORCL", "CRM", "NOW", "ADBE", "ASML", "TSM", "PANW", "SNPS", "CDNS", "AXON", "PLTR",
+            "NET", "ARM", "AMD", "MPWR", "INTU", "ANET", "KLAC", "LRCX", "AMAT", "NFLX",
+            "SPGI", "MCO", "TRI.TO",
+            # Healthcare / GLP-1 / MedTech franchises (patents, regulatory approvals, installed base)
+            "LLY", "UNH", "JNJ", "ISRG", "SYK", "ABT", "TMO", "DHR",
+            # Consumer staples & brand franchises
+            "PG", "PEP", "HD", "MCD",
+        ]
+        # PL-723.1: Efficient-scale monopolies (landfill permits, royalty portfolios, engineering scale)
+        wide_efficient_scale = ["WCN.TO", "WM", "RSG", "WSP.TO", "CAT", "GE", "HON", "FNV.TO", "WPM.TO", "BRK-B"]
         # Wide Moat: North American Transcontinental Rail Duopolies (Irreplaceable Right-of-Way, High Replacement Cost)
         wide_rails = ["CP.TO", "CNR.TO", "UNP", "CSX", "NSC"]
         # Wide Moat: Canadian Big 6 Banking Oligopoly & Premier Global Financial Leaders (Protected Charters, Core Deposit Moat)
@@ -300,6 +312,14 @@ class FundamentalEngine:
                 { "factor_name": "Core Deposit Advantage" if lang == "en" else "核心存款优势 (Core Deposit Advantage)", "score": 9.2, "status": "Strong Moat" },
                 { "factor_name": "Switching Costs" if lang == "en" else "转换成本 (Switching Costs)", "score": 8.8, "status": "Strong Moat" },
                 { "factor_name": "Efficient Scale" if lang == "en" else "有效规模 (Efficient Scale)", "score": 8.5, "status": "Strong Moat" }
+            ]
+        elif symbol in wide_efficient_scale:
+            rating = "Wide Moat" if lang == "en" else ("宽护城河" if lang == "zh" else "宽护城河 (Wide Moat)")
+            sources = ["Efficient Scale", "Cost Advantage", "Regulatory Permits"] if lang == "en" else ["有效规模利基", "规模成本优势", "特许与许可壁垒"]
+            scores = [
+                { "factor_name": "Efficient Scale" if lang == "en" else "有效规模 (Efficient Scale)", "score": 9.3, "status": "Strong Moat" },
+                { "factor_name": "Cost Advantage" if lang == "en" else "成本优势 (Cost Advantage)", "score": 8.9, "status": "Strong Moat" },
+                { "factor_name": "Regulatory Permits" if lang == "en" else "特许许可 (Regulatory Permits)", "score": 9.0, "status": "Strong Moat" }
             ]
         elif symbol in wide_retail:
             rating = "Wide Moat" if lang == "en" else ("宽护城河" if lang == "zh" else "宽护城河 (Wide Moat)")

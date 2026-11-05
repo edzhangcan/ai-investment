@@ -352,6 +352,9 @@ export interface StockRecommendation {
   };
   downside_risk_summary: string;
   action_status: string;
+  dcf_fair_value?: number;
+  ideal_buy_range_min?: number;
+  ideal_buy_range_max?: number;
   taxonomy?: TaxonomyResult;
   taxonomy_badge?: string;
 }
@@ -623,6 +626,10 @@ export interface StockTrackingItem {
   falsification_floor?: number;
   batting_zone?: string;
   trend_state?: string;
+  dcf_fair_value?: number;
+  ideal_buy_range_min?: number;
+  ideal_buy_range_max?: number;
+  action_status?: string;
 }
 
 export interface SetBucketPayload {

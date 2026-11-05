@@ -113,11 +113,70 @@ for s in CA_GOLD_SYMBOLS:
 
 _SNAPSHOT_LAST_UPDATE: Dict[str, float] = {}
 _SNAPSHOT_TTL_SECONDS = 7200  # 2 hours
+_LIVE_HYDRATION_TTL_SECONDS = 120  # 2 minutes live price hydration cache (PL-723.3)
 _MEM_RECOMMENDATION_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 class RecommendationEngine:
     """Macro-driven stock recommendation engine with multi-jurisdiction US & CA separation."""
+
+    @classmethod
+    def _hydrate_live_pricing_for_stocks(
+        cls,
+        stocks: List[Dict[str, Any]],
+        lang: str = "en"
+    ) -> List[Dict[str, Any]]:
+        """
+        PL-723.3: Hydrate candidate stock cards with live real-time quotes,
+        dynamic DCF fair value, and calibrated balanced buy zones.
+        Uses ThreadPoolExecutor to hydrate all stocks concurrently in < 250ms.
+        """
+        if not stocks:
+            return stocks
+
+        def _hydrate_single(stk: Dict[str, Any]) -> Dict[str, Any]:
+            sym = stk.get("symbol")
+            if not sym:
+                return stk
+            try:
+                stock_data = DataProviderManager.get_stock_data(sym)
+                if not stock_data or not stock_data.get("is_valid", True):
+                    return stk
+
+                pricing = PricingEngine.evaluate_pricing_and_entry_zone(stock_data, lang=lang)
+                if not pricing or not pricing.get("is_valid", True):
+                    return stk
+
+                hydrated = stk.copy()
+                hydrated["current_price"] = stock_data.get("current_price", stk.get("current_price"))
+                hydrated["currency"] = stock_data.get("currency", stk.get("currency"))
+                hydrated["dcf_fair_value"] = pricing.get("dcf_fair_value", stk.get("dcf_fair_value"))
+                hydrated["ideal_buy_range_min"] = pricing.get("ideal_buy_range_min", stk.get("ideal_buy_range_min"))
+                hydrated["ideal_buy_range_max"] = pricing.get("ideal_buy_range_max", stk.get("ideal_buy_range_max"))
+                hydrated["action_status"] = pricing.get("action_status", stk.get("action_status"))
+                hydrated["timing_advice"] = pricing.get("timing_advice", stk.get("timing_advice"))
+                if "valuation_score" in pricing:
+                    hydrated["valuation_score"] = pricing["valuation_score"]
+                if "bridge" in pricing:
+                    hydrated["bridge"] = pricing["bridge"]
+                if "key_metrics" in hydrated and isinstance(hydrated["key_metrics"], dict):
+                    hydrated["key_metrics"]["dcf_fair_value"] = pricing.get("dcf_fair_value")
+                    hydrated["key_metrics"]["ideal_buy_range_min"] = pricing.get("ideal_buy_range_min")
+                    hydrated["key_metrics"]["ideal_buy_range_max"] = pricing.get("ideal_buy_range_max")
+                    hydrated["key_metrics"]["ideal_buy_range"] = f"${pricing.get('ideal_buy_range_min')} - ${pricing.get('ideal_buy_range_max')}"
+                if "two_hundred_day_sma" in stock_data:
+                    hydrated["two_hundred_day_sma"] = stock_data["two_hundred_day_sma"]
+                if "fifty_day_sma" in stock_data:
+                    hydrated["fifty_day_sma"] = stock_data["fifty_day_sma"]
+                return hydrated
+            except Exception as ex:
+                logger.debug(f"Failed to hydrate live pricing for {sym}: {ex}")
+                return stk
+
+        with ThreadPoolExecutor(max_workers=min(16, len(stocks))) as executor:
+            hydrated_list = list(executor.map(_hydrate_single, stocks))
+
+        return hydrated_list
 
     @classmethod
     def get_stock_info(cls, symbol: str, lang: str = "en") -> Dict[str, Any]:
@@ -357,8 +416,11 @@ class RecommendationEngine:
             country = "US"
 
         cache_key = f"{country}_{lang}"
+        now = time.time()
+        last_update = _SNAPSHOT_LAST_UPDATE.get(cache_key, 0)
+        is_cache_fresh = (now - last_update < _LIVE_HYDRATION_TTL_SECONDS)
 
-        if not force_refresh and cache_key in _MEM_RECOMMENDATION_CACHE:
+        if not force_refresh and is_cache_fresh and cache_key in _MEM_RECOMMENDATION_CACHE:
             return _MEM_RECOMMENDATION_CACHE[cache_key]
 
         macro_summary = MacroEngine.analyze_macro_environment(lang=lang, country=country)
@@ -388,6 +450,11 @@ class RecommendationEngine:
                         gold_stocks.append(payload)
 
                 if sector_stocks or overall_stocks:
+                    # PL-723.3: Hydrate picks with live real-time quote, DCF, and entry zone
+                    sector_stocks = cls._hydrate_live_pricing_for_stocks(sector_stocks, lang=lang)
+                    overall_stocks = cls._hydrate_live_pricing_for_stocks(overall_stocks, lang=lang)
+                    gold_stocks = cls._hydrate_live_pricing_for_stocks(gold_stocks, lang=lang)
+
                     res = {
                         "country": country,
                         "macro_context": {
@@ -404,6 +471,7 @@ class RecommendationEngine:
                         "recommended_stocks": overall_stocks
                     }
                     _MEM_RECOMMENDATION_CACHE[cache_key] = res
+                    _SNAPSHOT_LAST_UPDATE[cache_key] = time.time()
                     if country == "US":
                         _MEM_RECOMMENDATION_CACHE[lang] = res
                     return res

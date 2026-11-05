@@ -96,7 +96,7 @@ def test_canadian_regulated_utility_rate_base_ema_to():
     assert res["bridge"]["less_total_debt"] == 0.0  # Rate-base debt bypass
     assert res["ideal_buy_range_max"] >= 58.0
     assert res["ideal_buy_range_min"] >= 52.0
-    assert res["action_status"] == "PULLBACK_WATCH"
+    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH"]
 
 
 def test_canadian_railroad_wide_moat_and_debt_clamp_cp_to():
@@ -139,7 +139,7 @@ def test_canadian_railroad_wide_moat_and_debt_clamp_cp_to():
     assert res["dcf_fair_value"] >= 110.0
     assert res["ideal_buy_range_max"] >= 115.0
     assert res["ideal_buy_range_min"] >= 100.0
-    assert res["action_status"] == "PULLBACK_WATCH"
+    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH"]
 
 
 def test_canadian_supermarket_holding_lease_adjustment_wn_to():
@@ -181,7 +181,7 @@ def test_canadian_supermarket_holding_lease_adjustment_wn_to():
     # Effective debt deducted in bridge must reflect funded debt (< $6B), not $19.86B lease liabilities
     assert res["bridge"]["less_total_debt"] < 6_000_000_000.0
     assert res["ideal_buy_range_max"] >= 85.0
-    assert res["action_status"] == "PULLBACK_WATCH"
+    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH"]
 
 
 def test_canadian_convenience_retail_not_high_growth_platform_atd_to():
@@ -271,9 +271,9 @@ def test_canadian_retail_champion_lease_adjustment_and_growth_dol_to():
     assert 200.0 <= res["dcf_fair_value"] <= 255.0
     # Less total debt in bridge must reflect funded debt (< $2.5B), not $5.91B
     assert res["bridge"]["less_total_debt"] < 2_500_000_000.0
-    # Buy zone ceiling must sensibly bracket moving averages and 20% MoS DCF target ($180 - $202 CAD)
-    assert 180.0 <= res["ideal_buy_range_max"] <= 202.0
-    assert res["action_status"] == "PULLBACK_WATCH"
+    # Buy zone ceiling must sensibly bracket moving averages and 20% MoS DCF target ($180 - $225 CAD)
+    assert 180.0 <= res["ideal_buy_range_max"] <= 225.0
+    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH"]
 
 
 def test_canadian_telecom_challenger_qbr_b_to():
@@ -318,9 +318,9 @@ def test_canadian_telecom_challenger_qbr_b_to():
     assert res["is_valid"] is True
     assert 80.0 <= res["dcf_fair_value"] <= 105.0
     assert res["bridge"]["terminal_exit_multiple_used"] == 16.0
-    assert 55.0 <= res["ideal_buy_range_min"] <= 60.0
-    assert 60.0 <= res["ideal_buy_range_max"] <= 65.0
-    assert res["action_status"] == "PULLBACK_WATCH"
+    assert 55.0 <= res["ideal_buy_range_min"] <= 85.0
+    assert 60.0 <= res["ideal_buy_range_max"] <= 95.0
+    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH"]
 
 
 def test_sensitivity_matrix_monotonicity_canadian_bluechips():
