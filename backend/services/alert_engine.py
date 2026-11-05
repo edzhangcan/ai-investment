@@ -566,22 +566,31 @@ class PriceAlertEngine:
         }
 
     @classmethod
-    def compute_trend_temperature(cls, df_ohlcv: Any) -> Dict[str, Any]:
+    def compute_trend_temperature(cls, df_ohlcv: Any, current_price: Optional[float] = None) -> Dict[str, Any]:
         """
         Computes 4-state Trend Temperature: FREEZE (冻), FLAT (平), WARM (温), HOT (热).
-        Grounded in volatility-normalized trend Z-score:
+        Grounded in multi-horizon momentum (5D, 10D, 20D) and volatility-normalized trend Z-score:
+          sma_20 = 20-day moving average of close
           sma_50 = 50-day moving average of close
           sma_200 = 200-day moving average of close
+          ret_5d = (close[-1] / close[-6]) - 1.0
+          ret_10d = (close[-1] / close[-11]) - 1.0
           ret_20d = (close[-1] / close[-21]) - 1.0
           vol_20d = close.pct_change().tail(20).std() * sqrt(252)
           z_trend = ret_20d / max(0.005, vol_20d / sqrt(12))
           vol_ratio = volume.tail(5).mean() / max(1.0, volume.tail(20).mean())
 
-        Mapping:
-          FREEZE (冻): close < sma_200 and z_trend < -0.8
-          HOT (热): close > sma_50 and z_trend >= 1.2
-          WARM (温): close > sma_50 and 0.3 <= z_trend < 1.2 and vol_ratio >= 1.0
-          FLAT (平): Otherwise.
+        PL-725 Short-Term Roll-Over / Falling Knife Guard:
+          is_recently_falling = (ret_5d < -0.008) or (ret_10d < -0.012) or (ret_20d < 0.0) or (curr_close < sma_20 * 0.995)
+
+        State Mapping:
+          FREEZE (冻): curr_close < sma_200 and (z_trend < -0.4 or ret_20d < -0.025 or curr_close < sma_50)
+          HOT (热): not is_recently_falling and curr_close > sma_50 and z_trend >= 1.2 and ret_5d >= 0.0
+          WARM (温): not is_recently_falling and ret_5d >= -0.003 and ret_20d > 0.0 and (
+                     (curr_close > sma_50 and z_trend >= 0.25) or
+                     (curr_close >= sma_200 and curr_close >= sma_20 and ret_5d >= 0.01)
+          )
+          FLAT (平): Otherwise (consolidation or left-side pullback).
         """
         import pandas as pd
         import numpy as np
@@ -591,10 +600,16 @@ class PriceAlertEngine:
                 "state": "FLAT",
                 "state_label_en": "FLAT (Consolidation)",
                 "state_label_zh": "平（震荡整理）",
+                "hitting_zone": "LEFT_SIDE",
+                "is_right_side": False,
+                "is_recently_falling": False,
                 "z_trend": 0.0,
+                "ret_5d_pct": 0.0,
+                "ret_10d_pct": 0.0,
                 "ret_20d_pct": 0.0,
                 "vol_20d_pct": 0.0,
                 "vol_ratio": 1.0,
+                "sma_20": 0.0,
                 "sma_50": 0.0,
                 "sma_200": 0.0,
                 "transition": "NONE"
@@ -602,24 +617,28 @@ class PriceAlertEngine:
 
         # Normalize column names
         close_col = "Close" if "Close" in df_ohlcv.columns else ("close" if "close" in df_ohlcv.columns else df_ohlcv.columns[0])
-        close_series = df_ohlcv[close_col].dropna()
+        close_series = df_ohlcv[close_col].dropna().astype(float).copy()
 
         vol_col = "Volume" if "Volume" in df_ohlcv.columns else ("volume" if "volume" in df_ohlcv.columns else None)
-        vol_series = df_ohlcv[vol_col].dropna() if vol_col else pd.Series([1000000.0] * len(close_series), index=close_series.index)
+        vol_series = df_ohlcv[vol_col].dropna().astype(float) if vol_col else pd.Series([1000000.0] * len(close_series), index=close_series.index)
+
+        if current_price is not None and float(current_price) > 0 and len(close_series) > 0:
+            close_series.iloc[-1] = float(current_price)
 
         curr_close = float(close_series.iloc[-1])
-        sma_50 = float(close_series.rolling(min(50, len(close_series))).mean().iloc[-1])
-        sma_200 = float(close_series.rolling(min(200, len(close_series))).mean().iloc[-1])
+        n_pts = len(close_series)
+        sma_20 = float(close_series.rolling(min(20, n_pts)).mean().iloc[-1])
+        sma_50 = float(close_series.rolling(min(50, n_pts)).mean().iloc[-1])
+        sma_200 = float(close_series.rolling(min(200, n_pts)).mean().iloc[-1])
 
-        lookback = min(20, len(close_series) - 1)
-        if lookback >= 5:
-            ret_20d = float((curr_close / close_series.iloc[-(lookback + 1)]) - 1.0)
-            daily_returns = close_series.pct_change().dropna().tail(lookback)
-            daily_std = float(daily_returns.std()) if len(daily_returns) > 1 else 0.015
-            vol_20d = daily_std * (252.0 ** 0.5)
-        else:
-            ret_20d = 0.0
-            vol_20d = 0.20
+        # Multi-horizon returns
+        ret_5d = float((curr_close / close_series.iloc[-min(6, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
+        ret_10d = float((curr_close / close_series.iloc[-min(11, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
+        ret_20d = float((curr_close / close_series.iloc[-min(21, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
+
+        daily_returns = close_series.pct_change().dropna().tail(min(20, max(2, n_pts - 1)))
+        daily_std = float(daily_returns.std()) if len(daily_returns) > 1 else 0.015
+        vol_20d = daily_std * (252.0 ** 0.5)
 
         # Volatility-normalized Z score
         z_trend = round(ret_20d / max(0.005, vol_20d / (12.0 ** 0.5)), 2)
@@ -629,16 +648,27 @@ class PriceAlertEngine:
         vol_20d_mean = float(vol_series.tail(min(20, len(vol_series))).mean()) if len(vol_series) > 0 else 1.0
         vol_ratio = round(vol_5d_mean / max(1.0, vol_20d_mean), 2)
 
+        # PL-725: Short-Term Roll-Over / Falling Knife Guard
+        is_recently_falling = bool(
+            (ret_5d < -0.008) or
+            (ret_10d < -0.012) or
+            (ret_20d < 0.0) or
+            (curr_close < sma_20 * 0.995)
+        )
+
         # State mapping
-        if curr_close < sma_200 and z_trend < -0.8:
+        if curr_close < sma_200 and (z_trend < -0.4 or ret_20d < -0.025 or curr_close < sma_50):
             state = "FREEZE"
             label_en = "FREEZE (Blood Chips Left-Side)"
             label_zh = "冻（血筹区：左侧勿抄底）"
-        elif curr_close > sma_50 and z_trend >= 1.2:
+        elif not is_recently_falling and curr_close > sma_50 and z_trend >= 1.2 and ret_5d >= 0.0:
             state = "HOT"
             label_en = "HOT (Fat-Tail Momentum)"
             label_zh = "热（肥尾主升浪）"
-        elif curr_close > sma_50 and 0.3 <= z_trend < 1.2 and vol_ratio >= 1.0:
+        elif not is_recently_falling and ret_5d >= -0.003 and ret_20d > 0.0 and (
+            (curr_close > sma_50 and z_trend >= 0.25) or
+            (curr_close >= sma_200 and curr_close >= sma_20 and ret_5d >= 0.01)
+        ):
             state = "WARM"
             label_en = "WARM (Right-Side Batting Zone)"
             label_zh = "温（温转热右侧击球区）"
@@ -647,14 +677,22 @@ class PriceAlertEngine:
             label_en = "FLAT (Consolidation)"
             label_zh = "平（震荡整理）"
 
+        hitting_zone = "RIGHT_SIDE" if state in ["WARM", "HOT"] else "LEFT_SIDE"
+
         return {
             "state": state,
             "state_label_en": label_en,
             "state_label_zh": label_zh,
+            "hitting_zone": hitting_zone,
+            "is_right_side": hitting_zone == "RIGHT_SIDE",
+            "is_recently_falling": is_recently_falling,
             "z_trend": z_trend,
+            "ret_5d_pct": round(ret_5d * 100.0, 2),
+            "ret_10d_pct": round(ret_10d * 100.0, 2),
             "ret_20d_pct": round(ret_20d * 100.0, 2),
             "vol_20d_pct": round(vol_20d * 100.0, 2),
             "vol_ratio": vol_ratio,
+            "sma_20": round(sma_20, 2),
             "sma_50": round(sma_50, 2),
             "sma_200": round(sma_200, 2),
             "transition": "NONE"
@@ -664,9 +702,9 @@ class PriceAlertEngine:
     def evaluate_symbol_trend_temperature(cls, quote: Dict[str, Any]) -> Dict[str, Any]:
         """
         Evaluates trend temperature and batting zone for a given stock quote.
-        Uses historical_series if available to compute volatility-normalized Z-score,
-        otherwise falls back to 50D/200D SMA relationships.
-        Returns dict with: state, hitting_zone ("RIGHT_SIDE" | "LEFT_SIDE"), is_right_side, label_en, label_zh.
+        Uses historical_series if available to compute multi-horizon momentum and volatility Z-score,
+        otherwise falls back to moving-average relationships.
+        PL-725: Strictly prevents falling prices from being marked RIGHT_SIDE.
         """
         import pandas as pd
         curr = float(quote.get("current_price") or 0.0)
@@ -674,38 +712,28 @@ class PriceAlertEngine:
         sma200 = float(quote.get("two_hundred_day_sma") or 0.0)
 
         hist = quote.get("historical_series")
-        state = "FLAT"
         if hist and isinstance(hist, list) and len(hist) >= 5:
             try:
                 df = pd.DataFrame(hist)
-                trend_res = cls.compute_trend_temperature(df)
-                state = trend_res.get("state", "FLAT")
+                trend_res = cls.compute_trend_temperature(df, current_price=curr)
                 if sma50 <= 0:
                     sma50 = float(trend_res.get("sma_50") or 0.0)
                 if sma200 <= 0:
                     sma200 = float(trend_res.get("sma_200") or 0.0)
+                return trend_res
             except Exception:
-                state = "FLAT"
+                pass
 
-        # Determine Right-Side vs Left-Side Batting Zone:
-        # 1. State is HOT or WARM -> RIGHT_SIDE
-        # 2. Or price is trading above both 50D and 200D moving averages -> WARM (Right-Side Batting Zone)
-        # 3. Or price is decisively below 200D SMA or 50D SMA -> LEFT_SIDE (Falling knife / Left-Side watch)
-        if state in ["WARM", "HOT"]:
-            hitting_zone = "RIGHT_SIDE"
-            is_right_side = True
-        elif curr > 0 and sma50 > 0 and sma200 > 0 and curr >= sma50 and curr >= sma200:
-            state = "WARM"
-            hitting_zone = "RIGHT_SIDE"
-            is_right_side = True
-        elif curr > 0 and sma50 > 0 and curr >= sma50:
-            state = "WARM"
-            hitting_zone = "RIGHT_SIDE"
-            is_right_side = True
-        elif curr > 0 and sma200 > 0 and curr < sma200 * 0.98:
+        # Fallback when historical_series is not available:
+        # A stock is WARM (RIGHT_SIDE) only if holding around or above 50D & 200D SMA support.
+        if curr > 0 and sma200 > 0 and curr < sma200 * 0.94:
             state = "FREEZE"
             hitting_zone = "LEFT_SIDE"
             is_right_side = False
+        elif curr > 0 and sma50 > 0 and sma200 > 0 and curr >= sma50 * 0.98 and curr >= sma200 * 0.96:
+            state = "WARM"
+            hitting_zone = "RIGHT_SIDE"
+            is_right_side = True
         else:
             state = "FLAT"
             hitting_zone = "LEFT_SIDE"
@@ -719,7 +747,16 @@ class PriceAlertEngine:
             "hitting_zone": hitting_zone,
             "is_right_side": is_right_side,
             "state_label_en": label_en,
-            "state_label_zh": label_zh
+            "state_label_zh": label_zh,
+            "ret_5d_pct": 0.0,
+            "ret_10d_pct": 0.0,
+            "ret_20d_pct": 0.0,
+            "z_trend": 0.0,
+            "is_recently_falling": False,
+            "sma_20": round(sma50, 2),
+            "sma_50": round(sma50, 2),
+            "sma_200": round(sma200, 2),
+            "transition": "NONE"
         }
 
 alert_engine = PriceAlertEngine()

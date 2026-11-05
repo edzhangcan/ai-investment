@@ -448,9 +448,26 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
                               >
                                 {item.symbol}
                               </span>
-                              <span className="text-[10px] text-content-muted truncate max-w-[160px] block">
-                                {item.company_name}
-                              </span>
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <span className="text-[10px] text-content-muted truncate max-w-[140px] block">
+                                  {item.company_name}
+                                </span>
+                                {item.readiness_status === 'BUY_READY' && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800" title={item.execution_advice}>
+                                    {language === 'zh' ? '右侧买点' : 'BUY READY'}
+                                  </span>
+                                )}
+                                {item.readiness_status === 'LEFT_SIDE_AWAIT' && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800" title={item.execution_advice}>
+                                    {language === 'zh' ? '左侧探底' : 'LEFT-SIDE'}
+                                  </span>
+                                )}
+                                {item.readiness_status === 'WAIT_PULLBACK' && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700" title={item.execution_advice}>
+                                    {language === 'zh' ? '等待回调' : 'PULLBACK'}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>

@@ -235,6 +235,12 @@ export interface PricingData {
   action_status: string;
   timing_advice: string;
   rsi_14: number;
+  trend_temperature?: string;
+  batting_zone?: string;
+  is_right_side?: boolean;
+  is_recently_falling?: boolean;
+  ret_5d_pct?: number;
+  ret_20d_pct?: number;
   reverse_dcf?: ReverseDcfResult;
   taxonomy?: TaxonomyResult;
   total_shareholder_yield_pct?: number;
@@ -474,6 +480,12 @@ export interface PositionBreakdownItem {
   executable_shares: number;
   is_ca: boolean;
   allocation_tier?: string;
+  action_status?: string;
+  batting_zone?: string;
+  readiness_status?: 'BUY_READY' | 'WAIT_PULLBACK' | 'LEFT_SIDE_AWAIT' | string;
+  execution_advice?: string;
+  ideal_buy_range_min?: number | null;
+  ideal_buy_range_max?: number | null;
 }
 
 export interface PortfolioCalculateResponse {

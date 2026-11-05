@@ -12,6 +12,7 @@ import pandas as pd
 
 from backend.data_sources.data_provider import DataProviderManager
 from backend.engines.recommendation_engine import RecommendationEngine
+from backend.engines.pricing_engine import PricingEngine
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +178,11 @@ class PortfolioEngine:
                     "actual_allocated_amount": actual_dollar,
                     "executable_shares": shares,
                     "is_ca": etf["symbol"].endswith(".TO") or etf.get("market") == "CA",
-                    "allocation_tier": "CORE_SAA"
+                    "allocation_tier": "CORE_SAA",
+                    "action_status": "CORE_BETA",
+                    "batting_zone": "RIGHT_SIDE",
+                    "readiness_status": "BUY_READY",
+                    "execution_advice": "DCA beta allocation" if lang == "en" else "定投核心指数底仓"
                 })
 
             # 2. Satellite TAA Allocations (20% pool, max 4% finite bet cap per stock)
@@ -197,6 +202,26 @@ class PortfolioEngine:
                 actual_weight = round((actual_allocated / cash_balance) * 100.0, 2) if cash_balance > 0 else 0.0
                 total_allocated_dollars += actual_allocated
 
+                pricing_eval = {}
+                try:
+                    pricing_eval = PricingEngine.evaluate_pricing_and_entry_zone(stock_data, lang=lang)
+                except Exception:
+                    pass
+
+                action_st = pricing_eval.get("action_status", "PULLBACK_WATCH")
+                b_zone = pricing_eval.get("batting_zone", "RIGHT_SIDE")
+                buy_max_val = pricing_eval.get("ideal_buy_range_max")
+
+                if action_st == "IN_BUY_ZONE" and b_zone == "RIGHT_SIDE":
+                    readiness = "BUY_READY"
+                    exec_note = "Immediate buy bracket execution." if lang == "en" else "处于右侧买入区间，可按计划分批买入。"
+                elif action_st in ["LEFT_SIDE_WATCH", "左侧观察期"] or b_zone != "RIGHT_SIDE":
+                    readiness = "LEFT_SIDE_AWAIT"
+                    exec_note = f"Left-side momentum; await right-side turn. Target bracket ceiling: ${buy_max_val or curr_price}." if lang == "en" else f"左侧探底中，暂勿建仓。待右侧企稳，参考上限 ${buy_max_val or curr_price}。"
+                else:
+                    readiness = "WAIT_PULLBACK"
+                    exec_note = f"Place limit order near buy ceiling ${buy_max_val or curr_price}." if lang == "en" else f"等待回调，建议在 ${buy_max_val or curr_price} 附近挂限价单。"
+
                 position_breakdown.append({
                     "symbol": symbol,
                     "company_name": f"{comp_name} [Satellite TAA]",
@@ -209,7 +234,13 @@ class PortfolioEngine:
                     "actual_allocated_amount": actual_allocated,
                     "executable_shares": share_count,
                     "is_ca": symbol.endswith(".TO"),
-                    "allocation_tier": "SATELLITE_TAA"
+                    "allocation_tier": "SATELLITE_TAA",
+                    "action_status": action_st,
+                    "batting_zone": b_zone,
+                    "readiness_status": readiness,
+                    "execution_advice": exec_note,
+                    "ideal_buy_range_min": pricing_eval.get("ideal_buy_range_min"),
+                    "ideal_buy_range_max": buy_max_val
                 })
 
             strategy_summary = (
@@ -237,6 +268,26 @@ class PortfolioEngine:
 
                 total_allocated_dollars += actual_allocated_dollars
 
+                pricing_eval = {}
+                try:
+                    pricing_eval = PricingEngine.evaluate_pricing_and_entry_zone(stock_data, lang=lang)
+                except Exception:
+                    pass
+
+                action_st = pricing_eval.get("action_status", "PULLBACK_WATCH")
+                b_zone = pricing_eval.get("batting_zone", "RIGHT_SIDE")
+                buy_max_val = pricing_eval.get("ideal_buy_range_max")
+
+                if action_st == "IN_BUY_ZONE" and b_zone == "RIGHT_SIDE":
+                    readiness = "BUY_READY"
+                    exec_note = "Immediate buy bracket execution." if lang == "en" else "处于右侧买入区间，可按计划分批买入。"
+                elif action_st in ["LEFT_SIDE_WATCH", "左侧观察期"] or b_zone != "RIGHT_SIDE":
+                    readiness = "LEFT_SIDE_AWAIT"
+                    exec_note = f"Left-side momentum; await right-side turn. Target bracket ceiling: ${buy_max_val or curr_price}." if lang == "en" else f"左侧探底中，暂勿建仓。待右侧企稳，参考上限 ${buy_max_val or curr_price}。"
+                else:
+                    readiness = "WAIT_PULLBACK"
+                    exec_note = f"Place limit order near buy ceiling ${buy_max_val or curr_price}." if lang == "en" else f"等待回调，建议在 ${buy_max_val or curr_price} 附近挂限价单。"
+
                 position_breakdown.append({
                     "symbol": symbol,
                     "company_name": comp_name,
@@ -249,7 +300,13 @@ class PortfolioEngine:
                     "actual_allocated_amount": actual_allocated_dollars,
                     "executable_shares": share_count,
                     "is_ca": symbol.endswith(".TO"),
-                    "allocation_tier": "STANDARD"
+                    "allocation_tier": "STANDARD",
+                    "action_status": action_st,
+                    "batting_zone": b_zone,
+                    "readiness_status": readiness,
+                    "execution_advice": exec_note,
+                    "ideal_buy_range_min": pricing_eval.get("ideal_buy_range_min"),
+                    "ideal_buy_range_max": buy_max_val
                 })
 
             strategy_summary = (
