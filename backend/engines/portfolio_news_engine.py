@@ -336,17 +336,31 @@ class PortfolioNewsEngine:
         with DataProviderManager._LOCK:
             if norm_sym in DataProviderManager._CACHE:
                 quote = DataProviderManager._CACHE[norm_sym]
-        if not quote and norm_sym in FALLBACK_STOCK_DATA:
-            quote = FALLBACK_STOCK_DATA[norm_sym]
         if not quote:
             try:
                 quote = data_provider_manager.get_stock_quote(norm_sym)
             except Exception:
-                quote = {}
+                quote = None
+        if not quote and norm_sym in FALLBACK_STOCK_DATA:
+            quote = FALLBACK_STOCK_DATA[norm_sym]
+        if not quote:
+            quote = {}
 
         curr_p = float(quote.get("current_price") or item.buy_in_price or cls._resolve_baseline_price(norm_sym))
+        sma50 = float(quote.get("fifty_day_sma") or (curr_p * 0.98))
         sma200 = float(quote.get("two_hundred_day_sma") or (curr_p * 0.95))
-        falsification_floor = round(sma200 * 0.97, 2) if sma200 > 0 else None
+        buy_p = float(item.buy_in_price) if item.buy_in_price else None
+
+        adaptive_falsification = PriceAlertEngine.compute_adaptive_falsification_floor(
+            current_price=curr_p,
+            sma_50=sma50,
+            sma_200=sma200,
+            buy_in_price=buy_p,
+            atr_14=float(quote.get("atr_14") or 0.0),
+            rsi_14=float(quote.get("rsi_14") or 0.0),
+            vol_ratio=float(quote.get("vol_ratio_5d_20d") or 1.0)
+        )
+        falsification_floor = adaptive_falsification["falsification_floor"]
 
         trend_eval = PriceAlertEngine.evaluate_symbol_trend_temperature(quote) if quote else {}
         batting_zone = trend_eval.get("hitting_zone", "RIGHT_SIDE")

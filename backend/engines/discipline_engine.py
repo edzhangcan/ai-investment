@@ -46,10 +46,12 @@ class DisciplineEngine:
     def audit_trade(
         cls,
         stock_data: Dict[str, Any],
-        pricing_data: Dict[str, Any],
+        pricing_data: Optional[Dict[str, Any]] = None,
         position_data: Optional[Dict[str, Any]] = None,
         trend_temperature: Optional[str] = None,
-        lang: str = "en"
+        lang: str = "en",
+        regime_data: Optional[Dict[str, Any]] = None,
+        action: str = "BUY"
     ) -> Dict[str, Any]:
         """
         Audits a proposed trade against the Constitution.
@@ -62,6 +64,7 @@ class DisciplineEngine:
         veto_reasons_en: List[str] = []
         veto_reasons_zh: List[str] = []
 
+        pricing_data = pricing_data or {}
         position_data = position_data or {}
         taxonomy_info = stock_data.get("taxonomy") or pricing_data.get("taxonomy") or {}
         taxonomy = taxonomy_info.get("taxonomy") if isinstance(taxonomy_info, dict) else str(taxonomy_info)
@@ -109,6 +112,57 @@ class DisciplineEngine:
             )
             veto_reasons_zh.append(
                 f"景气度陷阱否决：触发景气度见顶预警（{reason}），高增速无法外推，估值存在大幅压缩风险。"
+            )
+
+        # 5. PL-726.4.2 Rule 5: No buying left-side falling knives below 20D & 50D SMA
+        curr_p = float(stock_data.get("current_price") or pricing_data.get("current_price") or 0.0)
+        sma20 = float(stock_data.get("twenty_day_sma") or pricing_data.get("twenty_day_sma") or 0.0)
+        sma50 = float(stock_data.get("fifty_day_sma") or pricing_data.get("fifty_day_sma") or 0.0)
+        ret_5d = float(pricing_data.get("ret_5d_pct") or stock_data.get("ret_5d_pct") or 0.0)
+        action_st = str(pricing_data.get("action_status") or stock_data.get("action_status") or "")
+        vol_dist = bool(stock_data.get("is_high_volume_distribution") or pricing_data.get("is_high_volume_distribution") or False)
+        vol_ratio = float(stock_data.get("vol_ratio_5d_20d") or pricing_data.get("vol_ratio") or 1.0)
+
+        is_right_side_flag = bool(pricing_data.get("is_right_side") or stock_data.get("is_right_side") or False)
+        rs_path = str(pricing_data.get("right_side_path") or stock_data.get("right_side_path") or "NONE").upper()
+
+        if is_right_side_flag and rs_path in ("TREND_CONTINUATION", "SUPPORT_BOUNCE", "BOTTOM_REVERSAL") and action_st in ("IN_BUY_ZONE", "处于理想买入区间", "处于理想买入区间 (IN_BUY_ZONE)"):
+            is_left_knife_violation = False
+        else:
+            is_left_knife_violation = (
+                action_st in ["LEFT_SIDE_WATCH", "左侧观察期", "左侧观察期 (LEFT_SIDE_WATCH)"] or
+                (curr_p > 0 and sma20 > 0 and sma50 > 0 and curr_p < sma20 and curr_p < sma50 and (ret_5d < 0.0 or vol_ratio >= 1.25 or vol_dist))
+            )
+        if action == "BUY" and is_left_knife_violation:
+            veto_reasons_en.append(
+                f"Falling Knife Veto: Buying prohibited while stock is below 20D (${sma20:.2f}) and 50D (${sma50:.2f}) SMA with negative momentum (5D: {ret_5d:+.1f}%) or in Left-Side Watch."
+            )
+            veto_reasons_zh.append(
+                f"左侧飞刀否决：股价处于 20日均线（${sma20:.2f}）与 50日均线（${sma50:.2f}）下方且处于下跌趋势/左侧观察期（5日: {ret_5d:+.1f}%），严禁抄底建仓。"
+            )
+
+        # 6. PL-726.4.2 Rule 6: Pre-Earnings Binary Blackout Window Veto (<= 7 calendar days)
+        days_to_earn = stock_data.get("days_to_earnings")
+        is_earn_blackout = bool(stock_data.get("is_earnings_blackout", False))
+        if action == "BUY" and (is_earn_blackout or (days_to_earn is not None and 0 <= int(days_to_earn) <= 7)):
+            d_str = f"{days_to_earn} days" if days_to_earn is not None else "<= 7 days"
+            veto_reasons_en.append(
+                f"Earnings Blackout Veto: New buy prohibited within {d_str} of quarterly earnings release (binary gap risk)."
+            )
+            veto_reasons_zh.append(
+                f"财报黑窗期否决：距离季度财报披露仅剩 {d_str}，存在业绩二元跳空风险，严禁新建仓位。"
+            )
+
+        # 7. PL-726.4.2 Rule 7: Sector / Commodity Tape Headwind Veto (driver 5D <= -5.0%)
+        driver_ret_5d = float((regime_data or {}).get("driver_ret_5d_pct") or stock_data.get("driver_ret_5d_pct") or 0.0)
+        driver_sym = str((regime_data or {}).get("driver_symbol") or stock_data.get("driver_symbol") or "")
+        is_headwind = bool((regime_data or {}).get("is_sector_headwind") or stock_data.get("is_sector_headwind") or (driver_ret_5d <= -5.0))
+        if action == "BUY" and (driver_ret_5d <= -5.0 or (is_headwind and driver_sym)):
+            veto_reasons_en.append(
+                f"Sector/Commodity Tape Headwind Veto: Primary benchmark driver {driver_sym} is in severe selloff ({driver_ret_5d:+.1f}% 5D <= -5.0%)."
+            )
+            veto_reasons_zh.append(
+                f"板块商品逆风否决：核心驱动标的 {driver_sym} 遭遇严重抛售（5日: {driver_ret_5d:+.1f}% <= -5.0%），严禁逆势开仓。"
             )
 
         is_compliant = len(veto_reasons_en) == 0

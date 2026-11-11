@@ -985,6 +985,275 @@ class DataProviderManager:
     _CACHE_TTL_SECONDS = 180  # 3 minutes maximum cache lifetime (well below 5m requirement)
     _LOCK = threading.Lock()
 
+    _REGIME_TAPE_CACHE: Dict[str, Dict[str, Any]] = {}
+    _REGIME_TAPE_TIMESTAMPS: Dict[str, float] = {}
+    _REGIME_TAPE_TTL_SECONDS = 300  # 5 minutes
+
+    SECTOR_DRIVER_MAP: Dict[str, str] = {
+        # Energy E&P / Oilfield
+        "WCP.TO": "CL=F", "CNQ.TO": "CL=F", "SU.TO": "CL=F", "TOU.TO": "CL=F", "IMO.TO": "CL=F", "CVE.TO": "CL=F",
+        "XOM": "CL=F", "CVX": "CL=F", "COP": "CL=F", "EOG": "CL=F", "SLB": "CL=F", "HAL": "CL=F",
+        # Semis & Hardware
+        "NVDA": "SOXX", "AMD": "SOXX", "AVGO": "SOXX", "TSM": "SOXX", "ASML": "SOXX", "ARM": "SOXX",
+        "MU": "SOXX", "QCOM": "SOXX", "TXN": "SOXX", "AMAT": "SOXX", "LRCX": "SOXX", "KLAC": "SOXX",
+        "MPWR": "SOXX", "ON": "SOXX", "POWI": "SOXX", "CLS.TO": "SOXX",
+        # Enterprise Software & Cloud
+        "ORCL": "IGV", "MSFT": "IGV", "CRM": "IGV", "NOW": "IGV", "ADBE": "IGV", "INTU": "IGV",
+        "PANW": "IGV", "CRWD": "IGV", "SNOW": "IGV", "DDOG": "IGV", "NET": "IGV", "PLTR": "IGV",
+        "SHOP.TO": "IGV", "CSU.TO": "IGV", "OTEX.TO": "IGV",
+        # Gold & Precious Metals
+        "ABX.TO": "GC=F", "AEM.TO": "GC=F", "K.TO": "GC=F", "WPM.TO": "GC=F", "FNV.TO": "GC=F",
+        "AGI.TO": "GC=F", "OR.TO": "GC=F", "NEM": "GC=F",
+    }
+
+    @staticmethod
+    def _compute_realtime_technicals_from_series(
+        historical_series: List[Dict[str, Any]],
+        current_price: float,
+        fifty_day_sma: float
+    ) -> Dict[str, Any]:
+        """
+        Computes authentic Wilder's RSI(14), 20D SMA, ATR(14), 5D/20D volume ratio,
+        10D up/down volume ratio, and 50D SMA 5-day slope.
+        """
+        default_res = {
+            "twenty_day_sma": round(current_price, 2) if current_price else 0.0,
+            "ema_10": round(current_price or fifty_day_sma or 0.0, 2),
+            "ret_3d_pct": 0.0,
+            "low_10d": round(current_price or 0.0, 2),
+            "rsi_14": 54.0,
+            "rsi_3d_delta": 0.0,
+            "atr_14": round(max(current_price or 1.0, 1.0) * 0.022, 2),
+            "atr_14_pct": 2.2,
+            "vol_ratio_5d_20d": 1.0,
+            "up_down_vol_ratio_10d": 1.0,
+            "sma_50_slope_5d_pct": 0.0
+        }
+        if not historical_series:
+            return default_res
+
+        closes = [float(x["close"]) for x in historical_series if x.get("close") is not None and float(x["close"]) > 0]
+        vols = [float(x.get("volume") or 0.0) for x in historical_series if x.get("close") is not None and float(x["close"]) > 0]
+
+        if not closes:
+            return default_res
+
+        # twenty_day_sma & ema_10
+        if len(closes) >= 20:
+            twenty_day_sma = round(sum(closes[-20:]) / 20.0, 2)
+        else:
+            twenty_day_sma = round(sum(closes) / len(closes), 2)
+
+        ema_val = closes[0]
+        alpha_10 = 2.0 / 11.0
+        for c_val in closes[1:]:
+            ema_val = (c_val - ema_val) * alpha_10 + ema_val
+        ema_10 = round(ema_val, 2)
+
+        # 3-day return (%) and 10-day swing low
+        ret_3d_pct = round(((closes[-1] / closes[-min(4, len(closes))]) - 1.0) * 100.0, 2) if len(closes) >= 2 and closes[-min(4, len(closes))] > 0 else 0.0
+        low_10d = round(min(closes[-min(10, len(closes)):]), 2)
+
+        # Wilder's 14-day RSI
+        if len(closes) >= 15:
+            deltas = [closes[i] - closes[i - 1] for i in range(1, len(closes))]
+            avg_gain = sum(max(d, 0.0) for d in deltas[:14]) / 14.0
+            avg_loss = sum(max(-d, 0.0) for d in deltas[:14]) / 14.0
+            for d in deltas[14:]:
+                avg_gain = (avg_gain * 13.0 + max(d, 0.0)) / 14.0
+                avg_loss = (avg_loss * 13.0 + max(-d, 0.0)) / 14.0
+            if avg_loss == 0.0:
+                rsi_14 = 100.0
+            else:
+                rs = avg_gain / avg_loss
+                rsi_14 = round(100.0 - (100.0 / (1.0 + rs)), 2)
+
+            if len(closes) >= 18:
+                deltas_prev = [closes[i] - closes[i - 1] for i in range(1, len(closes) - 3)]
+                avg_gain_p = sum(max(d, 0.0) for d in deltas_prev[:14]) / 14.0
+                avg_loss_p = sum(max(-d, 0.0) for d in deltas_prev[:14]) / 14.0
+                for d in deltas_prev[14:]:
+                    avg_gain_p = (avg_gain_p * 13.0 + max(d, 0.0)) / 14.0
+                    avg_loss_p = (avg_loss_p * 13.0 + max(-d, 0.0)) / 14.0
+                if avg_loss_p == 0.0:
+                    rsi_prev = 100.0
+                else:
+                    rs_p = avg_gain_p / avg_loss_p
+                    rsi_prev = round(100.0 - (100.0 / (1.0 + rs_p)), 2)
+                rsi_3d_delta = round(rsi_14 - rsi_prev, 2)
+            else:
+                rsi_3d_delta = 0.0
+        else:
+            rsi_14 = 54.0
+            rsi_3d_delta = 0.0
+
+        # 14-day ATR
+        trs = []
+        for i in range(1, len(historical_series)):
+            curr_bar = historical_series[i]
+            prev_bar = historical_series[i - 1]
+            c_prev = float(prev_bar.get("close") or 0.0)
+            h_curr = curr_bar.get("high")
+            l_curr = curr_bar.get("low")
+            c_curr = float(curr_bar.get("close") or 0.0)
+            if h_curr is not None and l_curr is not None and float(h_curr) > 0 and float(l_curr) > 0 and c_prev > 0:
+                tr = max(float(h_curr) - float(l_curr), abs(float(h_curr) - c_prev), abs(float(l_curr) - c_prev))
+            elif c_curr > 0 and c_prev > 0:
+                tr = abs(c_curr - c_prev) * 1.35
+            else:
+                tr = 0.0
+            if tr > 0:
+                trs.append(tr)
+
+        if trs:
+            recent_trs = trs[-14:]
+            atr_14 = round(sum(recent_trs) / len(recent_trs), 2)
+        else:
+            atr_14 = round((current_price or 1.0) * 0.022, 2)
+
+        atr_14_pct = round((atr_14 / current_price) * 100.0, 2) if current_price and current_price > 0 else 2.2
+
+        # 5D / 20D Volume Ratio & 10D Up/Down Volume Ratio
+        if len(vols) >= 20 and sum(vols[-20:]) > 0:
+            vol_5d = sum(vols[-5:]) / 5.0
+            vol_20d = sum(vols[-20:]) / 20.0
+            vol_ratio_5d_20d = round(vol_5d / vol_20d, 2) if vol_20d > 0 else 1.0
+        else:
+            vol_ratio_5d_20d = 1.0
+
+        if len(closes) >= 11 and len(vols) >= 11:
+            up_vol = 0.0
+            down_vol = 0.0
+            for i in range(-10, 0):
+                if closes[i] >= closes[i - 1]:
+                    up_vol += vols[i]
+                else:
+                    down_vol += vols[i]
+            up_down_vol_ratio_10d = round(up_vol / max(down_vol, 1.0), 2)
+        else:
+            up_down_vol_ratio_10d = 1.0
+
+        # 50D SMA 5-Day Slope
+        if len(closes) >= 55:
+            sma50_now = sum(closes[-50:]) / 50.0
+            sma50_5d_ago = sum(closes[-55:-5]) / 50.0
+            sma_50_slope_5d_pct = round(((sma50_now - sma50_5d_ago) / sma50_5d_ago) * 100.0, 3) if sma50_5d_ago > 0 else 0.0
+        else:
+            sma_50_slope_5d_pct = 0.0
+
+        return {
+            "twenty_day_sma": twenty_day_sma,
+            "ema_10": ema_10,
+            "ret_3d_pct": ret_3d_pct,
+            "low_10d": low_10d,
+            "rsi_14": rsi_14,
+            "rsi_3d_delta": rsi_3d_delta,
+            "atr_14": atr_14,
+            "atr_14_pct": atr_14_pct,
+            "vol_ratio_5d_20d": vol_ratio_5d_20d,
+            "up_down_vol_ratio_10d": up_down_vol_ratio_10d,
+            "sma_50_slope_5d_pct": sma_50_slope_5d_pct
+        }
+
+    @classmethod
+    def get_regime_and_sector_tape(cls, symbol: str, sector: str = "", industry: str = "") -> Dict[str, Any]:
+        """
+        Extracts real-time market regime (^VIX level, 5D RoC) and sector/commodity driver tape
+        (5D return for CL=F, SOXX, IGV, GC=F, XLE, SPY, XIU.TO).
+        Cached with a 300s TTL.
+        """
+        norm_sym = symbol.upper().strip()
+        cache_key = f"{norm_sym}_{sector}_{industry}"
+        now_ts = time.time()
+        with cls._LOCK:
+            if cache_key in cls._REGIME_TAPE_CACHE:
+                cached_time = cls._REGIME_TAPE_TIMESTAMPS.get(cache_key, 0)
+                if now_ts - cached_time < cls._REGIME_TAPE_TTL_SECONDS:
+                    return cls._REGIME_TAPE_CACHE[cache_key].copy()
+
+        # Resolve driver symbol
+        driver_symbol = cls.SECTOR_DRIVER_MAP.get(norm_sym)
+        if not driver_symbol:
+            sec_upper = (sector or "").upper()
+            ind_upper = (industry or "").upper()
+            if any(k in sec_upper or k in ind_upper for k in ["ENERGY", "OIL", "GAS", "PETROLEUM"]):
+                driver_symbol = "CL=F"
+            elif any(k in sec_upper or k in ind_upper for k in ["SEMICONDUCTOR", "CHIP"]):
+                driver_symbol = "SOXX"
+            elif any(k in sec_upper or k in ind_upper for k in ["SOFTWARE", "CLOUD", "SAAS", "INFORMATION TECHNOLOGY"]):
+                driver_symbol = "IGV"
+            elif any(k in sec_upper or k in ind_upper for k in ["GOLD", "PRECIOUS"]):
+                driver_symbol = "GC=F"
+            elif norm_sym.endswith(".TO") or norm_sym.endswith(".V"):
+                driver_symbol = "XIU.TO"
+            else:
+                driver_symbol = "SPY"
+
+        vix_level = 18.0
+        vix_5d_roc_pct = 0.0
+        driver_ret_5d_pct = 0.0
+
+        def _fetch_fast_5d_ret(ticker_sym: str) -> Optional[float]:
+            import urllib.request
+            import urllib.parse
+            import json
+            try:
+                encoded = urllib.parse.quote(ticker_sym)
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded}?interval=1d&range=1mo"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=3) as resp:
+                    c_data = json.loads(resp.read().decode())
+                    res = c_data.get("chart", {}).get("result", [{}])[0]
+                    closes = res.get("indicators", {}).get("quote", [{}])[0].get("close", [])
+                    valid_c = [float(c) for c in closes if c is not None and float(c) > 0]
+                    if len(valid_c) >= 6:
+                        return round(((valid_c[-1] - valid_c[-6]) / valid_c[-6]) * 100.0, 2)
+            except Exception:
+                pass
+            return None
+
+        # Fetch ^VIX
+        try:
+            import urllib.request
+            import json
+            v_url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1mo"
+            v_req = urllib.request.Request(v_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(v_req, timeout=3) as v_resp:
+                v_data = json.loads(v_resp.read().decode())
+                v_res = v_data.get("chart", {}).get("result", [{}])[0]
+                v_closes = v_res.get("indicators", {}).get("quote", [{}])[0].get("close", [])
+                valid_vc = [float(c) for c in v_closes if c is not None and float(c) > 0]
+                if valid_vc:
+                    vix_level = round(valid_vc[-1], 2)
+                    if len(valid_vc) >= 6:
+                        vix_5d_roc_pct = round(((valid_vc[-1] - valid_vc[-6]) / valid_vc[-6]) * 100.0, 2)
+        except Exception as ve:
+            logger.debug(f"^VIX lookup skipped: {ve}")
+
+        # Fetch driver symbol
+        d_ret = _fetch_fast_5d_ret(driver_symbol)
+        if d_ret is not None:
+            driver_ret_5d_pct = d_ret
+
+        is_high_vix_regime = bool(vix_level >= 22.0 or vix_5d_roc_pct >= 20.0)
+        is_sector_headwind = bool(driver_ret_5d_pct <= -5.0)
+
+        tape_res = {
+            "symbol": norm_sym,
+            "vix_level": vix_level,
+            "vix_5d_roc_pct": vix_5d_roc_pct,
+            "is_high_vix_regime": is_high_vix_regime,
+            "driver_symbol": driver_symbol,
+            "driver_ret_5d_pct": driver_ret_5d_pct,
+            "is_sector_headwind": is_sector_headwind
+        }
+
+        with cls._LOCK:
+            cls._REGIME_TAPE_CACHE[cache_key] = tape_res
+            cls._REGIME_TAPE_TIMESTAMPS[cache_key] = now_ts
+
+        return tape_res
+
     @classmethod
     def get_stock_data(cls, symbol: str, force_refresh: bool = False) -> Dict[str, Any]:
         if not symbol or len(symbol.strip()) == 0:
@@ -1077,6 +1346,8 @@ class DataProviderManager:
                             c_quotes = c_res.get("indicators", {}).get("quote", [{}])[0]
                             raw_closes = c_quotes.get("close", [])
                             raw_volumes = c_quotes.get("volume", [])
+                            raw_highs = c_quotes.get("high", [])
+                            raw_lows = c_quotes.get("low", [])
                             raw_timestamps = c_res.get("timestamp", [])
 
                             c_closes = [c for c in raw_closes if c is not None]
@@ -1105,13 +1376,17 @@ class DataProviderManager:
 
                                 # Build historical daily closes and volumes
                                 series_list = []
-                                for ts, c, v in zip(raw_timestamps, raw_closes, raw_volumes):
+                                for idx, (ts, c, v) in enumerate(zip(raw_timestamps, raw_closes, raw_volumes)):
                                     if c is not None and ts:
                                         dt_str = datetime.fromtimestamp(ts, tz=timezone.utc).strftime('%Y-%m-%d')
+                                        h_val = raw_highs[idx] if idx < len(raw_highs) and raw_highs[idx] is not None else None
+                                        l_val = raw_lows[idx] if idx < len(raw_lows) and raw_lows[idx] is not None else None
                                         series_list.append({
                                             "date": dt_str,
                                             "close": round(float(c), 2),
-                                            "volume": float(v) if v is not None else None
+                                            "volume": float(v) if v is not None else None,
+                                            "high": round(float(h_val), 2) if h_val is not None else None,
+                                            "low": round(float(l_val), 2) if l_val is not None else None,
                                         })
                                 if series_list:
                                     hist_series = series_list
@@ -1183,6 +1458,12 @@ class DataProviderManager:
                     else:
                         info = {}
 
+                    fcf_decay_warning = False
+                    live_reported_fcf = None
+                    fcf_decay_ratio = 1.0
+                    next_earnings_date = None
+                    days_to_earnings = None
+                    is_earnings_blackout = False
                     total_debt = None
                     total_cash = None
                     sbc = None
@@ -1219,29 +1500,70 @@ class DataProviderManager:
                             except Exception:
                                 pass
 
+                        fcf_decay_warning = False
+                        live_reported_fcf = None
+                        fcf_decay_ratio = 1.0
+
                         live_fcf = info.get("freeCashflow")
-                        if live_fcf and float(live_fcf) != 0:
-                            live_fcf_f = float(live_fcf)
-                            if free_cash_flow and free_cash_flow > 0:
-                                ratio = live_fcf_f / free_cash_flow
-                                # 1. Normal year-over-year variation range (0.85x to 1.50x)
-                                is_normal_range = (0.85 <= ratio <= 1.50)
-                                # 2. Verified expansion: higher than historical baseline, but corroborated by live operating cash flow
-                                is_corroborated_growth = (
-                                    ratio > 1.50 and
-                                    live_ocf is not None and
-                                    live_ocf > 0 and
-                                    0.25 <= (live_fcf_f / live_ocf) <= 1.05
-                                )
-                                if is_normal_range or is_corroborated_growth:
-                                    free_cash_flow = live_fcf_f
-                                else:
-                                    logger.info(
-                                        f"Preserving audited 10-K/SEDAR annual FCF baseline ${free_cash_flow/1e9:.2f}B "
-                                        f"for '{normalized_symbol}' (live yfinance FCF ${live_fcf_f/1e9:.2f}B discarded due to ratio={ratio:.2f})"
+                        if live_fcf is not None and str(live_fcf).strip() != "":
+                            try:
+                                live_fcf_f = float(live_fcf)
+                                live_reported_fcf = live_fcf_f
+                                if free_cash_flow and free_cash_flow > 0:
+                                    ratio = live_fcf_f / float(free_cash_flow)
+                                    fcf_decay_ratio = round(ratio, 3)
+                                    # 1. Normal year-over-year variation range (0.85x to 1.50x)
+                                    is_normal_range = (0.85 <= ratio <= 1.50)
+                                    # 2. Verified expansion: higher than historical baseline, but corroborated by live operating cash flow
+                                    is_corroborated_growth = (
+                                        ratio > 1.50 and
+                                        live_ocf is not None and
+                                        live_ocf > 0 and
+                                        0.25 <= (live_fcf_f / live_ocf) <= 1.15
                                     )
-                            else:
-                                free_cash_flow = live_fcf_f
+                                    if is_normal_range or is_corroborated_growth:
+                                        free_cash_flow = live_fcf_f
+                                    elif live_fcf_f < float(free_cash_flow) * 0.85:
+                                        # Port / export marine terminal expansion capex (e.g. WTE Berth 5 potash terminal expansion)
+                                        if normalized_symbol in ("WTE.TO", "WTE"):
+                                            logger.info(
+                                                f"Preserving audited SEDAR baseline annual FCF ${free_cash_flow/1e9:.2f}B for '{normalized_symbol}' "
+                                                f"(live yfinance FCF ${live_fcf_f/1e9:.2f}B reflects Berth 5 potash expansion capex)"
+                                            )
+                                        else:
+                                            fcf_decay_warning = True
+                                            if live_fcf_f <= 0:
+                                                free_cash_flow = round(float(free_cash_flow) * 0.65, 2)
+                                            else:
+                                                free_cash_flow = round(0.50 * live_fcf_f + 0.50 * float(free_cash_flow), 2)
+                                            logger.info(
+                                                f"FCF decay warning for '{normalized_symbol}': live FCF ${live_fcf_f/1e9:.2f}B vs baseline ${free_cash_flow/1e9:.2f}B (ratio={ratio:.2f})"
+                                            )
+                                    else:
+                                        logger.info(
+                                            f"Preserving audited 10-K/SEDAR annual FCF baseline ${free_cash_flow/1e9:.2f}B "
+                                            f"for '{normalized_symbol}' (live yfinance FCF ${live_fcf_f/1e9:.2f}B discarded due to ratio={ratio:.2f})"
+                                        )
+                                else:
+                                    free_cash_flow = live_fcf_f
+                            except Exception:
+                                pass
+
+                        # Earnings blackout window detection
+                        next_earnings_date = None
+                        days_to_earnings = None
+                        is_earnings_blackout = False
+                        raw_earn_ts = info.get("earningsTimestamp") or info.get("earningsTimestampStart") or info.get("earningsTimestampEnd")
+                        if raw_earn_ts:
+                            try:
+                                earn_dt = datetime.fromtimestamp(float(raw_earn_ts), tz=timezone.utc)
+                                next_earnings_date = earn_dt.strftime("%Y-%m-%d")
+                                today_utc = datetime.now(timezone.utc).date()
+                                days_to_earnings = (earn_dt.date() - today_utc).days
+                                if -1 <= days_to_earnings <= 7:
+                                    is_earnings_blackout = True
+                            except Exception as ee:
+                                logger.debug(f"Failed parsing earnings timestamp for {normalized_symbol}: {ee}")
                         if info.get("totalRevenue"):
                             total_revenue = float(info.get("totalRevenue"))
                         if info.get("revenueGrowth"):
@@ -1284,6 +1606,12 @@ class DataProviderManager:
 
                     logger.info(f"Successfully fetched live real-time market data for '{normalized_symbol}' ({cand}): Price=${current_p} {resolved_currency}")
 
+                    tech_eval = cls._compute_realtime_technicals_from_series(
+                        historical_series=hist_series or [],
+                        current_price=current_p,
+                        fifty_day_sma=sma_50
+                    )
+
                     stock_result = {
                         "is_valid": True,
                         "symbol": normalized_symbol,
@@ -1295,6 +1623,23 @@ class DataProviderManager:
                         "previous_close": p_close,
                         "fifty_day_sma": sma_50,
                         "two_hundred_day_sma": sma_200,
+                        "twenty_day_sma": tech_eval["twenty_day_sma"],
+                        "ema_10": tech_eval["ema_10"],
+                        "ret_3d_pct": tech_eval["ret_3d_pct"],
+                        "low_10d": tech_eval["low_10d"],
+                        "rsi_14": tech_eval["rsi_14"],
+                        "rsi_3d_delta": tech_eval["rsi_3d_delta"],
+                        "atr_14": tech_eval["atr_14"],
+                        "atr_14_pct": tech_eval["atr_14_pct"],
+                        "vol_ratio_5d_20d": tech_eval["vol_ratio_5d_20d"],
+                        "up_down_vol_ratio_10d": tech_eval["up_down_vol_ratio_10d"],
+                        "sma_50_slope_5d_pct": tech_eval["sma_50_slope_5d_pct"],
+                        "fcf_decay_warning": fcf_decay_warning,
+                        "live_reported_fcf": live_reported_fcf,
+                        "fcf_decay_ratio": fcf_decay_ratio,
+                        "next_earnings_date": next_earnings_date,
+                        "days_to_earnings": days_to_earnings,
+                        "is_earnings_blackout": is_earnings_blackout,
                         "pe_ratio": pe_ratio,
                         "ps_ratio": ps_ratio,
                         "ev_ebitda": ev_ebitda,
@@ -1323,7 +1668,6 @@ class DataProviderManager:
                         "price_to_book": ptb_val,
                         "source_mode": "LIVE",
                         "warning_banner": None,
-                        "rsi_14": 54.0,
                         "source": f"Real-Time Market Exchange ({cand})"
                     }
 
@@ -1567,6 +1911,26 @@ class DataProviderManager:
 
         if not stock.get("fetched_at"):
             stock["fetched_at"] = datetime.now(timezone.utc).isoformat()
+
+        # PL-726.1: Ensure leading technicals and FCF decay telemetry are present on all dicts
+        c_p = float(stock.get("current_price") or 0.0)
+        sma50_val = float(stock.get("fifty_day_sma") or c_p)
+        techs = cls._compute_realtime_technicals_from_series(stock.get("historical_series") or [], c_p, sma50_val)
+        for k, v in techs.items():
+            if k not in stock or stock[k] is None:
+                stock[k] = v
+        if "fcf_decay_warning" not in stock:
+            stock["fcf_decay_warning"] = False
+        if "live_reported_fcf" not in stock:
+            stock["live_reported_fcf"] = None
+        if "fcf_decay_ratio" not in stock:
+            stock["fcf_decay_ratio"] = 1.0
+        if "next_earnings_date" not in stock:
+            stock["next_earnings_date"] = None
+        if "days_to_earnings" not in stock:
+            stock["days_to_earnings"] = None
+        if "is_earnings_blackout" not in stock:
+            stock["is_earnings_blackout"] = False
 
         return stock
 

@@ -1,3 +1,14 @@
+---
+block_counter_trend_averaging_down: true
+block_vegetable_left_side: true
+block_single_stock_above_max_pct: true
+block_prosperity_trap: true
+block_below_20d_50d_falling_knife: true
+block_earnings_blackout_window: true
+earnings_blackout_days: 7
+block_sector_commodity_headwind: true
+sector_driver_max_5d_drop_pct: -5.0
+---
 # 纪律.md (Personal Investment Constitution for Prism Loop)
 
 > "不是『我』在做投资，是这份『纪律.md』在做投资。我本人可以有表达欲、可以情绪化，但交易动作完全交给纪律执行。" — 投资宪法准则
@@ -41,4 +52,7 @@
   - block_counter_trend_averaging_down: true
   - block_missing_stop_loss_on_satellite: true
   - block_single_stock_above_max_pct: true
+  - block_below_20d_50d_falling_knife: true
+  - block_earnings_blackout_window: true
+  - block_sector_commodity_headwind: true
   - min_portfolio_effective_uncorrelated_bets: 5

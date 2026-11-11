@@ -82,7 +82,11 @@ class MultiAgentArena:
             debate_result["cio_verdict"]["discipline_audit"] = audit
             if not audit["is_compliant"]:
                 veto_str = "; ".join(audit["veto_reasons_zh"] if lang == "zh" else audit["veto_reasons"])
-                debate_result["cio_verdict"]["verdict"] = "DISCIPLINE_BLOCKED / 纪律否决"
+                prior_verdict = str(debate_result["cio_verdict"].get("verdict", ""))
+                if "WATCH" in prior_verdict or "LEFT_SIDE" in prior_verdict or "左侧" in prior_verdict:
+                    debate_result["cio_verdict"]["verdict"] = f"{prior_verdict} (DISCIPLINE_BLOCKED / 纪律否决)"
+                else:
+                    debate_result["cio_verdict"]["verdict"] = "DISCIPLINE_BLOCKED / 纪律否决"
                 debate_result["cio_verdict"]["position_sizing_advice"] = f"0% Allocation — Blocked by 《纪律.md》: {veto_str}"
                 debate_result["cio_verdict"]["judge_summary"] = f"[{audit['summary']}] {debate_result['cio_verdict'].get('judge_summary', '')}"
 
@@ -210,8 +214,20 @@ class MultiAgentArena:
 
         price_val = float(stock_data.get("current_price", 0.0))
         two_hundred_sma_val = float(pricing_data.get("two_hundred_day_sma", price_val))
+        fifty_sma_val = float(pricing_data.get("fifty_day_sma", price_val))
         curr_val = stock_data.get("currency", "USD")
-        bottom_thresh = round(two_hundred_sma_val * 0.97, 2) if two_hundred_sma_val > 0 else round(price_val * 0.95, 2)
+
+        # PL-726.5.1: Compute adaptive falsification floor
+        from backend.services.alert_engine import PriceAlertEngine
+        adaptive_eval = PriceAlertEngine.compute_adaptive_falsification_floor(
+            current_price=price_val,
+            sma_50=fifty_sma_val,
+            sma_200=two_hundred_sma_val,
+            buy_in_price=float(stock_data.get("buy_in_price")) if stock_data.get("buy_in_price") else None,
+            atr_14=float(stock_data.get("atr_14") or 0.0),
+            rsi_14=float(stock_data.get("rsi_14") or 0.0)
+        )
+        bottom_thresh = adaptive_eval["falsification_floor"]
 
         # Ensure quantified falsification parameters exist in parsed verdict
         cio_verdict = parsed.get("cio_verdict", {})
@@ -299,11 +315,25 @@ class MultiAgentArena:
         is_prosperity_trap = reverse_dcf.get("is_prosperity_trap", False)
         trap_reason = reverse_dcf.get("prosperity_trap_reason", "")
 
-        trend_temp = (stock_data.get("trend_temperature") or pricing_data.get("trend_temperature") or ("WARM" if is_above_200 else "FLAT")).upper()
+        # PL-725.3: Consume trend_temperature and batting_zone directly from pricing_data (multi-horizon momentum guarded)
+        trend_temp = str(
+            pricing_data.get("trend_temperature") or 
+            stock_data.get("trend_temperature") or 
+            ("WARM" if (is_above_200 and not pricing_data.get("is_recently_falling")) else "FLAT")
+        ).upper()
         if trend_temp not in ["FREEZE", "FLAT", "WARM", "HOT"]:
-            trend_temp = "WARM" if is_above_200 else "FLAT"
+            trend_temp = "WARM" if (is_above_200 and not pricing_data.get("is_recently_falling")) else "FLAT"
 
-        hitting_zone = "RIGHT_SIDE" if trend_temp in ["WARM", "HOT"] else "LEFT_SIDE_WATCH"
+        hitting_zone = str(
+            pricing_data.get("batting_zone") or 
+            stock_data.get("batting_zone") or 
+            ("RIGHT_SIDE" if trend_temp in ["WARM", "HOT"] else "LEFT_SIDE_WATCH")
+        ).upper()
+        right_side_path = str(
+            pricing_data.get("right_side_path") or
+            stock_data.get("right_side_path") or
+            ("TREND_CONTINUATION" if hitting_zone == "RIGHT_SIDE" else "NONE")
+        ).upper()
 
         # 3. Formulate Regional Macro Bull & Bear Points
         if is_ca:
@@ -523,26 +553,53 @@ class MultiAgentArena:
                 f"综合多空审议，{company} ({symbol}) 触发 Prosperity Trap 景气度陷阱预警（{trap_reason or '终局增速见顶'}）。"
                 f"逆向DCF隐含天花板倍数达 {ceiling_mult}x，估值存在大幅压缩风险，投委会决定 Pass 暂不建仓。"
             )
-        elif has_buy_bracket and price <= buy_max:
+        elif str(pricing_data.get("action_status") or "") in ["LEFT_SIDE_WATCH", "左侧观察期", "左侧观察期 (LEFT_SIDE_WATCH)"] or (has_buy_bracket and price <= buy_max and hitting_zone != "RIGHT_SIDE"):
+            # PL-725.3: Dual-Gated Guardrail — In buy bracket but Left-Side momentum (0% immediate allocation)
+            verdict = "WATCH / AWAIT RIGHT-SIDE REVERSAL" if lang == "en" else ("左侧观察 (等待企稳)" if lang == "zh" else "左侧观察 (LEFT_SIDE - Await Turn)")
+            position_size = "0% Immediate Allocation: Stock is in value buy bracket, but trend is Left-Side falling. Await right-side trend stabilization before deploying capital." if lang == "en" else "0% 即时仓位（处于估值买入区间，但属于左侧下跌趋势，等待右侧企稳确认再行建仓）。"
+            ret_5d_display = f"{pricing_data.get('ret_5d_pct', 0.0):+.1f}%"
+            rationale_zh = (
+                f"综合多空审议，{company} ({symbol}) 当前实时股价 ${price} {curr} 已进入估值买入区间 (${buy_min} - ${buy_max} {curr})，"
+                f"但近期价格动量处于左侧探底/下跌形态（量价温度: {trend_temp}，5日涨跌幅: {ret_5d_display}）。"
+                f"投委会恪守双重闸门铁律：基本面安全边际充足，但左侧禁止盲目接飞刀。建议预设价格预警于 ${buy_max} {curr}，保持 0% 仓位观望，等待右侧企稳信号再行建仓。"
+            )
+            rationale_en = (
+                f"Synthesizing the debate, {company} (${price} {curr}) is trading in the valuation buy bracket (${buy_min} - ${buy_max} {curr}), "
+                f"but technical momentum is in a Left-Side falling pattern (Trend: {trend_temp}, 5D Return: {ret_5d_display}). "
+                f"The CIO committee enforces dual-gated discipline: fundamental valuation is attractive, but left-side knife-catching is strictly barred. "
+                f"Maintain 0% immediate allocation; wait for confirmed Right-Side stabilization before deploying capital."
+            )
+            rationale_hy = (
+                f"综合多空审议，{company} 实时价格 ${price} {curr} 进入估值区间 (${buy_min} - ${buy_max} {curr})，"
+                f"但处于左侧下跌/探底形态（{trend_temp}，5D: {ret_5d_display}）。投委会执行 Dual-Gated 纪律：0% 即时仓位，等待右侧企稳信号确认再行介入。"
+            )
+        elif has_buy_bracket and price <= buy_max and hitting_zone == "RIGHT_SIDE":
+            # Dual-Gated Qualification: BOTH Fundamental Gate AND Momentum Gate satisfied!
             verdict = "ACCUMULATE IN BRACKETS" if lang == "en" else ("建议买入 (分批建仓)" if lang == "zh" else "建议买入 (BUY - Accumulate)")
             if taxonomy == "TREE":
-                position_size = "80/20 Core SAA: Allocate 3% - 5% core compounding weight." if lang == "en" else "80/20 哑铃策略：配置 3% - 5% 核心 SAA 种树复利仓位。"
+                if right_side_path in ("SUPPORT_BOUNCE", "BOTTOM_REVERSAL"):
+                    position_size = "80/20 Core SAA (Right-Side Pivot): Deploy 1.5% - 2.5% pilot tranche now; scale to 3% - 5% core compounding weight on trend continuation." if lang == "en" else "80/20 哑铃策略（右侧拐点初现）：先行建立 1.5% - 2.5% 试仓底仓，趋势延续确认后加满至 3% - 5% 核心复利仓位。"
+                else:
+                    position_size = "80/20 Core SAA: Allocate 3% - 5% core compounding weight." if lang == "en" else "80/20 哑铃策略：配置 3% - 5% 核心 SAA 种树复利仓位。"
             elif taxonomy == "GRAIN":
-                position_size = "80/20 Core/Satellite: Allocate 2% - 4% cyclical/dividend value position." if lang == "en" else "春播秋收策略：配置 2% - 4% 种粮周期高股息仓位，估值达到上限及时收割。"
+                if right_side_path in ("SUPPORT_BOUNCE", "BOTTOM_REVERSAL"):
+                    position_size = "80/20 Core/Satellite (Right-Side Pivot): Deploy 1.5% - 2.0% pilot tranche now; scale to 2% - 4% cyclical/dividend value position." if lang == "en" else "春播秋收策略（右侧拐点初现）：先行建立 1.5% - 2.0% 试仓底仓，后续加至 2% - 4% 种粮周期高股息仓位。"
+                else:
+                    position_size = "80/20 Core/Satellite: Allocate 2% - 4% cyclical/dividend value position." if lang == "en" else "春播秋收策略：配置 2% - 4% 种粮周期高股息仓位，估值达到上限及时收割。"
             else:
                 position_size = "Satellite TAA: Max 2% trial position with right-side trend & hard stop." if lang == "en" else "种菜股卫星仓位：试仓上限 2%，严格依托右侧温度与 -7% 硬止损。"
 
             rationale_zh = (
                 f"综合多空审议，{company} ({symbol}) 当前实时股价 ${price} {curr} 稳居理想买入区间 (${buy_min} - ${buy_max} {curr}) 内，风险收益比达 {rr_ratio}:1。"
-                f"公司具备 {moat} 竞争壁垒与 {fcf_quality}，当前价位相比 DCF 固有价值 (${dcf_fair_value} {curr}) 具备充沛安全边际，投委会建议按纪律分批建仓吸纳。"
+                f"公司具备 {moat} 竞争壁垒与 {fcf_quality}，量价处于右侧击球区（{trend_temp}），投委会建议按纪律分批建仓吸纳。"
             )
             rationale_en = (
                 f"Synthesizing the debate, {company} (${price} {curr}) is trading favorably within the safe buy bracket (${buy_min} - ${buy_max} {curr}) with an attractive {rr_ratio}:1 Risk-Reward ratio. "
-                f"Backed by {moat} and {fcf_quality}, entry at current levels provides adequate margin of safety towards fair value (${dcf_fair_value} {curr})."
+                f"Backed by {moat} and {fcf_quality}, entry at current levels is confirmed by Right-Side trend momentum ({trend_temp})."
             )
             rationale_hy = (
                 f"综合多空研报，{company} 实时价格 ${price} {curr} 稳居安全买入区间 (${buy_min} - ${buy_max} {curr})，Risk-Reward 为 {rr_ratio}:1。"
-                f"依托 {moat} 护城河与 {fcf_quality}，当前估值相比 DCF 目标价 (${dcf_fair_value} {curr}) 安全边际充足，投委会建议按纪律分批建仓。"
+                f"依托 {moat} 护城河与 {fcf_quality}，当前价位具备右侧支撑 ({trend_temp})，投委会建议按纪律分批建仓。"
             )
         elif not has_buy_bracket:
             verdict = "TREND_ONLY_NO_DCF" if lang == "en" else ("仅限趋势交易" if lang == "zh" else "仅限趋势 (TREND_ONLY)")

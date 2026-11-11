@@ -110,8 +110,21 @@ def enrich_item_quote(
 
     quote = stock_data or {}
     curr_price = float(quote.get("current_price") or 0.0)
+    sma50 = float(quote.get("fifty_day_sma") or 0.0)
     sma200 = float(quote.get("two_hundred_day_sma") or 0.0)
-    floor = round(sma200 * 0.97, 2) if sma200 > 0 else None
+
+    # PL-726.5.1: Compute adaptive falsification floor
+    from backend.services.alert_engine import PriceAlertEngine
+    adaptive_eval = PriceAlertEngine.compute_adaptive_falsification_floor(
+        current_price=curr_price,
+        sma_50=sma50,
+        sma_200=sma200,
+        buy_in_price=float(item.buy_in_price) if item.buy_in_price else None,
+        atr_14=float(quote.get("atr_14") or 0.0),
+        rsi_14=float(quote.get("rsi_14") or 0.0),
+        vol_ratio=float(quote.get("vol_ratio_5d_20d") or 1.0)
+    )
+    floor = adaptive_eval["falsification_floor"]
 
     # PL-723.4: Evaluate dynamic DCF and balanced buy zone
     dcf_val = None
