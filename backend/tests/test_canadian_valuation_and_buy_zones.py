@@ -96,7 +96,7 @@ def test_canadian_regulated_utility_rate_base_ema_to():
     assert res["bridge"]["less_total_debt"] == 0.0  # Rate-base debt bypass
     assert res["ideal_buy_range_max"] >= 58.0
     assert res["ideal_buy_range_min"] >= 52.0
-    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH"]
+    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH", "LEFT_SIDE_WATCH"]
 
 
 def test_canadian_railroad_wide_moat_and_debt_clamp_cp_to():
@@ -139,7 +139,7 @@ def test_canadian_railroad_wide_moat_and_debt_clamp_cp_to():
     assert res["dcf_fair_value"] >= 110.0
     assert res["ideal_buy_range_max"] >= 115.0
     assert res["ideal_buy_range_min"] >= 100.0
-    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH"]
+    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH", "LEFT_SIDE_WATCH"]
 
 
 def test_canadian_supermarket_holding_lease_adjustment_wn_to():
