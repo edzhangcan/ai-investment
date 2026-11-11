@@ -9,7 +9,7 @@ import asyncio
 import logging
 import json
 from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from sqlmodel import Session, select
 
 from backend.models.db_models import UserWatchlistDB, PriceAlertLogDB, ValuationAlertSettingsDB, get_utc_now

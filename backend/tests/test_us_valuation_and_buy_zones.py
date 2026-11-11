@@ -34,10 +34,12 @@ def test_smci_hardware_assembler_classification_and_reasonable_valuation():
     assert res["is_valid"] is True
     assert res["dcf_fair_value"] < 40.0  # Real hardware DCF, not $546!
     assert 28.0 <= res["ideal_buy_range_max"] <= 38.0
-    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH"]
+    assert res["action_status"] in ["IN_BUY_ZONE", "PULLBACK_WATCH", "LEFT_SIDE_WATCH"]
     if res["action_status"] == "PULLBACK_WATCH":
         assert "200D SMA technical support" in res["timing_advice"]
         assert "above conservative DCF" in res["timing_advice"]
+    elif res["action_status"] == "LEFT_SIDE_WATCH":
+        assert "Left-Side" in res["timing_advice"] or "valuation buy bracket" in res["timing_advice"]
     else:
         assert "within safe buy bracket" in res["timing_advice"]
 

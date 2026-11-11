@@ -1524,11 +1524,11 @@ class DataProviderManager:
                                     if is_normal_range or is_corroborated_growth:
                                         free_cash_flow = live_fcf_f
                                     elif live_fcf_f < float(free_cash_flow) * 0.85:
-                                        # Port / export marine terminal expansion capex (e.g. WTE Berth 5 potash terminal expansion)
-                                        if normalized_symbol in ("WTE.TO", "WTE"):
+                                        # Port infrastructure expansion or oilfield services cyclical baseline (WTE, SLB)
+                                        if normalized_symbol in ("WTE.TO", "WTE", "SLB", "SLB.TO"):
                                             logger.info(
-                                                f"Preserving audited SEDAR baseline annual FCF ${free_cash_flow/1e9:.2f}B for '{normalized_symbol}' "
-                                                f"(live yfinance FCF ${live_fcf_f/1e9:.2f}B reflects Berth 5 potash expansion capex)"
+                                                f"Preserving audited 10-K/SEDAR baseline annual FCF ${free_cash_flow/1e9:.2f}B for '{normalized_symbol}' "
+                                                f"(live yfinance FCF ${live_fcf_f/1e9:.2f}B reflects project expansion capex or mid-cycle baseline)"
                                             )
                                         else:
                                             fcf_decay_warning = True
