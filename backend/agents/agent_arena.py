@@ -82,7 +82,11 @@ class MultiAgentArena:
             debate_result["cio_verdict"]["discipline_audit"] = audit
             if not audit["is_compliant"]:
                 veto_str = "; ".join(audit["veto_reasons_zh"] if lang == "zh" else audit["veto_reasons"])
-                debate_result["cio_verdict"]["verdict"] = "DISCIPLINE_BLOCKED / 纪律否决"
+                prior_verdict = str(debate_result["cio_verdict"].get("verdict", ""))
+                if "WATCH" in prior_verdict or "LEFT_SIDE" in prior_verdict or "左侧" in prior_verdict:
+                    debate_result["cio_verdict"]["verdict"] = f"{prior_verdict} (DISCIPLINE_BLOCKED / 纪律否决)"
+                else:
+                    debate_result["cio_verdict"]["verdict"] = "DISCIPLINE_BLOCKED / 纪律否决"
                 debate_result["cio_verdict"]["position_sizing_advice"] = f"0% Allocation — Blocked by 《纪律.md》: {veto_str}"
                 debate_result["cio_verdict"]["judge_summary"] = f"[{audit['summary']}] {debate_result['cio_verdict'].get('judge_summary', '')}"
 
@@ -210,8 +214,20 @@ class MultiAgentArena:
 
         price_val = float(stock_data.get("current_price", 0.0))
         two_hundred_sma_val = float(pricing_data.get("two_hundred_day_sma", price_val))
+        fifty_sma_val = float(pricing_data.get("fifty_day_sma", price_val))
         curr_val = stock_data.get("currency", "USD")
-        bottom_thresh = round(two_hundred_sma_val * 0.97, 2) if two_hundred_sma_val > 0 else round(price_val * 0.95, 2)
+
+        # PL-726.5.1: Compute adaptive falsification floor
+        from backend.services.alert_engine import PriceAlertEngine
+        adaptive_eval = PriceAlertEngine.compute_adaptive_falsification_floor(
+            current_price=price_val,
+            sma_50=fifty_sma_val,
+            sma_200=two_hundred_sma_val,
+            buy_in_price=float(stock_data.get("buy_in_price")) if stock_data.get("buy_in_price") else None,
+            atr_14=float(stock_data.get("atr_14") or 0.0),
+            rsi_14=float(stock_data.get("rsi_14") or 0.0)
+        )
+        bottom_thresh = adaptive_eval["falsification_floor"]
 
         # Ensure quantified falsification parameters exist in parsed verdict
         cio_verdict = parsed.get("cio_verdict", {})
@@ -312,6 +328,11 @@ class MultiAgentArena:
             pricing_data.get("batting_zone") or 
             stock_data.get("batting_zone") or 
             ("RIGHT_SIDE" if trend_temp in ["WARM", "HOT"] else "LEFT_SIDE_WATCH")
+        ).upper()
+        right_side_path = str(
+            pricing_data.get("right_side_path") or
+            stock_data.get("right_side_path") or
+            ("TREND_CONTINUATION" if hitting_zone == "RIGHT_SIDE" else "NONE")
         ).upper()
 
         # 3. Formulate Regional Macro Bull & Bear Points
@@ -556,9 +577,15 @@ class MultiAgentArena:
             # Dual-Gated Qualification: BOTH Fundamental Gate AND Momentum Gate satisfied!
             verdict = "ACCUMULATE IN BRACKETS" if lang == "en" else ("建议买入 (分批建仓)" if lang == "zh" else "建议买入 (BUY - Accumulate)")
             if taxonomy == "TREE":
-                position_size = "80/20 Core SAA: Allocate 3% - 5% core compounding weight." if lang == "en" else "80/20 哑铃策略：配置 3% - 5% 核心 SAA 种树复利仓位。"
+                if right_side_path in ("SUPPORT_BOUNCE", "BOTTOM_REVERSAL"):
+                    position_size = "80/20 Core SAA (Right-Side Pivot): Deploy 1.5% - 2.5% pilot tranche now; scale to 3% - 5% core compounding weight on trend continuation." if lang == "en" else "80/20 哑铃策略（右侧拐点初现）：先行建立 1.5% - 2.5% 试仓底仓，趋势延续确认后加满至 3% - 5% 核心复利仓位。"
+                else:
+                    position_size = "80/20 Core SAA: Allocate 3% - 5% core compounding weight." if lang == "en" else "80/20 哑铃策略：配置 3% - 5% 核心 SAA 种树复利仓位。"
             elif taxonomy == "GRAIN":
-                position_size = "80/20 Core/Satellite: Allocate 2% - 4% cyclical/dividend value position." if lang == "en" else "春播秋收策略：配置 2% - 4% 种粮周期高股息仓位，估值达到上限及时收割。"
+                if right_side_path in ("SUPPORT_BOUNCE", "BOTTOM_REVERSAL"):
+                    position_size = "80/20 Core/Satellite (Right-Side Pivot): Deploy 1.5% - 2.0% pilot tranche now; scale to 2% - 4% cyclical/dividend value position." if lang == "en" else "春播秋收策略（右侧拐点初现）：先行建立 1.5% - 2.0% 试仓底仓，后续加至 2% - 4% 种粮周期高股息仓位。"
+                else:
+                    position_size = "80/20 Core/Satellite: Allocate 2% - 4% cyclical/dividend value position." if lang == "en" else "春播秋收策略：配置 2% - 4% 种粮周期高股息仓位，估值达到上限及时收割。"
             else:
                 position_size = "Satellite TAA: Max 2% trial position with right-side trend & hard stop." if lang == "en" else "种菜股卫星仓位：试仓上限 2%，严格依托右侧温度与 -7% 硬止损。"
 

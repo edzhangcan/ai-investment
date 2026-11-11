@@ -78,9 +78,17 @@ class PriceAlertEngine:
 
                 # A. Evaluate Thesis Falsification Kill-Switch Floor Breach (Holdings Only)
                 two_hundred_sma = float(pricing_eval.get("two_hundred_day_sma") or quote.get("two_hundred_day_sma") or 0.0)
-                bottom_threshold = round(two_hundred_sma * 0.97, 2) if two_hundred_sma > 0 else 0.0
-                if override_data.get("falsification_floor"):
-                    bottom_threshold = float(override_data["falsification_floor"])
+                fifty_sma = float(pricing_eval.get("fifty_day_sma") or quote.get("fifty_day_sma") or 0.0)
+                adaptive_falsification = self.compute_adaptive_falsification_floor(
+                    current_price=current_price,
+                    sma_50=fifty_sma,
+                    sma_200=two_hundred_sma,
+                    buy_in_price=float(item.buy_in_price) if item.buy_in_price else None,
+                    atr_14=float(quote.get("atr_14") or 0.0),
+                    rsi_14=float(quote.get("rsi_14") or 0.0),
+                    vol_ratio=float(quote.get("vol_ratio_5d_20d") or trend_eval.get("vol_ratio") or 1.0)
+                )
+                bottom_threshold = float(override_data.get("falsification_floor") or adaptive_falsification["falsification_floor"])
 
                 if bottom_threshold > 0 and current_price < bottom_threshold:
                     recent_falsification = session.exec(
@@ -566,31 +574,95 @@ class PriceAlertEngine:
         }
 
     @classmethod
-    def compute_trend_temperature(cls, df_ohlcv: Any, current_price: Optional[float] = None) -> Dict[str, Any]:
+    def compute_adaptive_falsification_floor(
+        cls,
+        current_price: float,
+        sma_50: float,
+        sma_200: float,
+        buy_in_price: Optional[float] = None,
+        atr_14: Optional[float] = None,
+        rsi_14: Optional[float] = None,
+        vol_ratio: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        PL-726.5.1: Adaptive Thesis Falsification Floor & Two-Tier Exit Alerts.
+        Eliminates the Day-0 Falsification Paradox when buy_in_price < 200D SMA.
+        """
+        eff_atr = float(atr_14) if (atr_14 and float(atr_14) > 0) else round(max(current_price or 1.0, 1.0) * 0.022, 2)
+        has_entry = (buy_in_price is not None and float(buy_in_price) > 0)
+        buy_p = float(buy_in_price) if has_entry else None
+
+        # Case A: Contrarian / Deep-Value entry below 200D SMA
+        if has_entry and sma_200 > 0 and buy_p < sma_200 * 0.985:
+            # Anchor to disciplined -7% or 2.0x ATR below cost basis, NEVER above cost basis
+            falsification_floor = round(max(buy_p * 0.93, buy_p - 2.0 * eff_atr), 2)
+            floor_type = "COST_BASIS_ATR_STOP"
+        # Case B: Trend entry above 200D SMA or unspecified entry
+        elif sma_200 > 0:
+            structural_200d_floor = round(sma_200 * 0.97, 2)
+            if has_entry:
+                cost_stop = round(max(buy_p * 0.92, buy_p - 2.5 * eff_atr), 2)
+                falsification_floor = round(max(structural_200d_floor, min(cost_stop, buy_p * 0.95)), 2)
+            else:
+                falsification_floor = structural_200d_floor
+            floor_type = "STRUCTURAL_200D_STOP"
+        else:
+            falsification_floor = round(max(0.01, (buy_p * 0.93 if has_entry else current_price * 0.90)), 2)
+            floor_type = "TRAILING_PCT_STOP"
+
+        # Tier-1 Early 50D SMA Breakdown Trim
+        early_trim_level = round(sma_50 - 1.0 * eff_atr, 2) if (sma_50 and sma_50 > 0) else None
+        is_early_trim_breach = bool(
+            early_trim_level and
+            current_price < early_trim_level and
+            current_price > falsification_floor and
+            (vol_ratio is None or float(vol_ratio) >= 1.15)
+        )
+
+        # Oversold Capitulation Bounce Guard (RSI < 30)
+        is_oversold_bounce_guard = bool(rsi_14 is not None and float(rsi_14) < 30.0)
+        oversold_guidance = (
+            "RSI(14) is deeply oversold (<30); avoid market-selling into an intraday panic flush—stage trims into a 10D/20D EMA reflex bounce unless the hard closing stop is broken."
+            if is_oversold_bounce_guard else ""
+        )
+
+        return {
+            "falsification_floor": falsification_floor,
+            "floor_type": floor_type,
+            "early_trim_level": early_trim_level,
+            "is_early_trim_breach": is_early_trim_breach,
+            "is_oversold_bounce_guard": is_oversold_bounce_guard,
+            "oversold_guidance": oversold_guidance
+        }
+
+    @staticmethod
+    def _compute_wilder_rsi_from_list(closes_list: List[float]) -> float:
+        if len(closes_list) < 15:
+            return 54.0
+        deltas = [closes_list[i] - closes_list[i - 1] for i in range(1, len(closes_list))]
+        avg_gain = sum(max(d, 0.0) for d in deltas[:14]) / 14.0
+        avg_loss = sum(max(-d, 0.0) for d in deltas[:14]) / 14.0
+        for d in deltas[14:]:
+            avg_gain = (avg_gain * 13.0 + max(d, 0.0)) / 14.0
+            avg_loss = (avg_loss * 13.0 + max(-d, 0.0)) / 14.0
+        if avg_loss == 0.0:
+            return 100.0
+        rs = avg_gain / avg_loss
+        return round(100.0 - (100.0 / (1.0 + rs)), 2)
+
+    @classmethod
+    def compute_trend_temperature(
+        cls,
+        df_ohlcv: Any,
+        current_price: Optional[float] = None,
+        _compute_transition: bool = True
+    ) -> Dict[str, Any]:
         """
         Computes 4-state Trend Temperature: FREEZE (冻), FLAT (平), WARM (温), HOT (热).
-        Grounded in multi-horizon momentum (5D, 10D, 20D) and volatility-normalized trend Z-score:
-          sma_20 = 20-day moving average of close
-          sma_50 = 50-day moving average of close
-          sma_200 = 200-day moving average of close
-          ret_5d = (close[-1] / close[-6]) - 1.0
-          ret_10d = (close[-1] / close[-11]) - 1.0
-          ret_20d = (close[-1] / close[-21]) - 1.0
-          vol_20d = close.pct_change().tail(20).std() * sqrt(252)
-          z_trend = ret_20d / max(0.005, vol_20d / sqrt(12))
-          vol_ratio = volume.tail(5).mean() / max(1.0, volume.tail(20).mean())
-
-        PL-725 Short-Term Roll-Over / Falling Knife Guard:
-          is_recently_falling = (ret_5d < -0.008) or (ret_10d < -0.012) or (ret_20d < 0.0) or (curr_close < sma_20 * 0.995)
-
-        State Mapping:
-          FREEZE (冻): curr_close < sma_200 and (z_trend < -0.4 or ret_20d < -0.025 or curr_close < sma_50)
-          HOT (热): not is_recently_falling and curr_close > sma_50 and z_trend >= 1.2 and ret_5d >= 0.0
-          WARM (温): not is_recently_falling and ret_5d >= -0.003 and ret_20d > 0.0 and (
-                     (curr_close > sma_50 and z_trend >= 0.25) or
-                     (curr_close >= sma_200 and curr_close >= sma_20 and ret_5d >= 0.01)
-          )
-          FLAT (平): Otherwise (consolidation or left-side pullback).
+        Grounded in multi-horizon momentum (3D, 5D, 10D, 20D), volatility Z-score, and 3-Path Right-Side Engine:
+          Path A: TREND_CONTINUATION (primary uptrend continuation)
+          Path B: SUPPORT_BOUNCE (healthy pullback bounce holding 50D/200D SMA support)
+          Path C: BOTTOM_REVERSAL (pocket pivot reclaiming 20D SMA)
         """
         import pandas as pd
         import numpy as np
@@ -603,7 +675,9 @@ class PriceAlertEngine:
                 "hitting_zone": "LEFT_SIDE",
                 "is_right_side": False,
                 "is_recently_falling": False,
+                "right_side_path": "NONE",
                 "z_trend": 0.0,
+                "ret_3d_pct": 0.0,
                 "ret_5d_pct": 0.0,
                 "ret_10d_pct": 0.0,
                 "ret_20d_pct": 0.0,
@@ -612,7 +686,18 @@ class PriceAlertEngine:
                 "sma_20": 0.0,
                 "sma_50": 0.0,
                 "sma_200": 0.0,
-                "transition": "NONE"
+                "ema_10": 0.0,
+                "low_10d": 0.0,
+                "rsi_14": 54.0,
+                "rsi_3d_delta": 0.0,
+                "atr_14": 0.0,
+                "up_down_vol_ratio_10d": 1.0,
+                "is_high_volume_distribution": False,
+                "has_recent_3d_shock": False,
+                "is_post_shock_unsettled": False,
+                "sma_50_slope_5d_pct": 0.0,
+                "transition": "NONE",
+                "is_fresh_right_side_pivot": False
             }
 
         # Normalize column names
@@ -632,9 +717,42 @@ class PriceAlertEngine:
         sma_200 = float(close_series.rolling(min(200, n_pts)).mean().iloc[-1])
 
         # Multi-horizon returns
+        ret_3d = float((curr_close / close_series.iloc[-min(4, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
         ret_5d = float((curr_close / close_series.iloc[-min(6, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
         ret_10d = float((curr_close / close_series.iloc[-min(11, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
         ret_20d = float((curr_close / close_series.iloc[-min(21, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
+
+        ema_10 = float(close_series.ewm(span=min(10, max(2, n_pts)), adjust=False).mean().iloc[-1])
+        low_10d = float(close_series.tail(min(10, n_pts)).min())
+
+        closes_list = close_series.tolist()
+        vols_list = vol_series.tolist()
+        rsi_14 = cls._compute_wilder_rsi_from_list(closes_list)
+        rsi_14_prev = cls._compute_wilder_rsi_from_list(closes_list[:-3]) if len(closes_list) >= 18 else rsi_14
+        rsi_3d_delta = round(rsi_14 - rsi_14_prev, 2)
+
+        # 14-day ATR approximation from series
+        high_col = "High" if "High" in df_ohlcv.columns else ("high" if "high" in df_ohlcv.columns else None)
+        low_col = "Low" if "Low" in df_ohlcv.columns else ("low" if "low" in df_ohlcv.columns else None)
+        if high_col and low_col:
+            high_s = df_ohlcv[high_col].dropna().astype(float)
+            low_s = df_ohlcv[low_col].dropna().astype(float)
+            tr_s = (high_s - low_s).abs().tail(min(14, len(high_s)))
+            atr_14 = float(tr_s.mean()) if len(tr_s) > 0 and float(tr_s.mean()) > 0 else round(curr_close * 0.022, 2)
+        else:
+            diffs = close_series.diff().abs().dropna().tail(min(14, max(1, n_pts - 1)))
+            atr_14 = float(diffs.mean() * 1.35) if len(diffs) > 0 and float(diffs.mean()) > 0 else round(curr_close * 0.022, 2)
+
+        # 10D Up vs Down volume ratio
+        if len(closes_list) >= 11 and len(vols_list) >= 11:
+            up_vol = sum(vols_list[i] for i in range(-10, 0) if closes_list[i] >= closes_list[i - 1])
+            down_vol = sum(vols_list[i] for i in range(-10, 0) if closes_list[i] < closes_list[i - 1])
+            if down_vol <= 0.0:
+                up_down_vol_ratio_10d = 2.0 if up_vol > 0 else 1.0
+            else:
+                up_down_vol_ratio_10d = round(up_vol / down_vol, 2)
+        else:
+            up_down_vol_ratio_10d = 1.0
 
         daily_returns = close_series.pct_change().dropna().tail(min(20, max(2, n_pts - 1)))
         daily_std = float(daily_returns.std()) if len(daily_returns) > 1 else 0.015
@@ -648,36 +766,157 @@ class PriceAlertEngine:
         vol_20d_mean = float(vol_series.tail(min(20, len(vol_series))).mean()) if len(vol_series) > 0 else 1.0
         vol_ratio = round(vol_5d_mean / max(1.0, vol_20d_mean), 2)
 
-        # PL-725: Short-Term Roll-Over / Falling Knife Guard
-        is_recently_falling = bool(
+        # PL-726.3.1: 50D SMA 5-day slope and volume distribution veto
+        if n_pts >= 55:
+            sma50_prev = float(close_series.iloc[-55:-5].mean())
+            sma_50_slope_5d_pct = round(((sma_50 - sma50_prev) / sma50_prev) * 100.0, 3) if sma50_prev > 0 else 0.0
+        else:
+            sma_50_slope_5d_pct = 0.0
+
+        is_high_volume_distribution = bool(vol_ratio >= 1.25 and (ret_5d < -0.015 or ret_10d < -0.025))
+
+        # PL-726.3.2: 3-Day Post-Shock Stabilization Rule
+        recent_daily_rets = [
+            (float(close_series.iloc[-k]) - float(close_series.iloc[-k - 1])) / float(close_series.iloc[-k - 1])
+            for k in range(1, min(4, n_pts))
+            if float(close_series.iloc[-k - 1]) > 0
+        ]
+        has_recent_3d_shock = any(r <= -0.035 for r in recent_daily_rets)
+        is_post_shock_unsettled = bool(has_recent_3d_shock and (curr_close < sma_20 or ret_5d < 0.0))
+
+        # PL-727.2: Anti-Knife Pre-Filter: Must pass before ANY Right-Side path can activate
+        last_1d_ret = float((curr_close - close_series.iloc[-2]) / close_series.iloc[-2]) if n_pts >= 2 and float(close_series.iloc[-2]) > 0 else 0.0
+        anti_knife_passed = bool(
+            not is_high_volume_distribution and
+            not is_post_shock_unsettled and
+            ret_5d >= -0.005 and
+            last_1d_ret >= -0.008
+        )
+
+        # Base short-term roll-over check for Path A (Primary Trend Continuation)
+        base_falling_guard = bool(
             (ret_5d < -0.008) or
             (ret_10d < -0.012) or
             (ret_20d < 0.0) or
-            (curr_close < sma_20 * 0.995)
+            (curr_close < sma_20 * 0.995) or
+            is_high_volume_distribution or
+            is_post_shock_unsettled
         )
 
-        # State mapping
-        if curr_close < sma_200 and (z_trend < -0.4 or ret_20d < -0.025 or curr_close < sma_50):
-            state = "FREEZE"
-            label_en = "FREEZE (Blood Chips Left-Side)"
-            label_zh = "冻（血筹区：左侧勿抄底）"
-        elif not is_recently_falling and curr_close > sma_50 and z_trend >= 1.2 and ret_5d >= 0.0:
+        # Path A: Primary Uptrend Continuation (TREND_CONTINUATION)
+        is_path_a_hot = bool(
+            not base_falling_guard and
+            curr_close > sma_50 and
+            z_trend >= 1.2 and
+            ret_5d >= 0.0
+        )
+        is_path_a_warm = bool(
+            not base_falling_guard and
+            ret_5d >= -0.003 and
+            ret_20d > 0.0 and (
+                (curr_close > sma_50 and z_trend >= 0.25) or
+                (curr_close >= sma_200 and curr_close >= sma_20 and ret_5d >= 0.01)
+            )
+        )
+
+        # Path B: Pullback Bounce off 50D / 200D SMA Structural Support (SUPPORT_BOUNCE)
+        # Solves the Catch-22 where a healthy pullback has ret_20d < 0 or curr_close < sma_20
+        is_macro_uptrend_intact = bool(
+            sma_50 > 0 and sma_200 > 0 and
+            sma_50 >= sma_200 * 0.98 and
+            curr_close >= sma_200 * 0.985 and
+            ret_20d >= -0.085
+        )
+        is_testing_structural_ma = bool(
+            (sma_50 * 0.97 <= curr_close <= sma_50 * 1.035) or
+            (sma_200 * 0.985 <= curr_close <= sma_200 * 1.04)
+        )
+        is_turn_confirmed = bool(
+            anti_knife_passed and
+            ret_3d >= 0.008 and
+            ret_5d >= 0.002 and
+            (curr_close >= ema_10 * 0.998 or curr_close >= low_10d + 0.8 * atr_14) and
+            35.0 <= rsi_14 <= 66.0 and
+            rsi_3d_delta >= 0.0 and
+            up_down_vol_ratio_10d >= 0.95
+        )
+        is_path_b_support_bounce = bool(
+            is_macro_uptrend_intact and
+            is_testing_structural_ma and
+            is_turn_confirmed
+        )
+
+        # Path C: Bottom Reversal / Pocket Pivot Reclaiming 20D SMA (BOTTOM_REVERSAL)
+        is_path_c_bottom_reversal = bool(
+            anti_knife_passed and
+            sma_20 > 0 and
+            curr_close > sma_20 * 1.005 and
+            ema_10 >= sma_20 * 0.998 and
+            ret_5d >= 0.015 and
+            ret_10d >= 0.008 and
+            curr_close >= low_10d + 1.2 * atr_14 and
+            up_down_vol_ratio_10d >= 1.15 and
+            45.0 <= rsi_14 <= 70.0 and
+            rsi_3d_delta > 0.0
+        )
+
+        if is_path_a_hot:
             state = "HOT"
+            right_side_path = "TREND_CONTINUATION"
+            is_recently_falling = False
             label_en = "HOT (Fat-Tail Momentum)"
             label_zh = "热（肥尾主升浪）"
-        elif not is_recently_falling and ret_5d >= -0.003 and ret_20d > 0.0 and (
-            (curr_close > sma_50 and z_trend >= 0.25) or
-            (curr_close >= sma_200 and curr_close >= sma_20 and ret_5d >= 0.01)
-        ):
+        elif is_path_a_warm:
             state = "WARM"
+            right_side_path = "TREND_CONTINUATION"
+            is_recently_falling = False
             label_en = "WARM (Right-Side Batting Zone)"
             label_zh = "温（温转热右侧击球区）"
+        elif is_path_b_support_bounce:
+            state = "WARM"
+            right_side_path = "SUPPORT_BOUNCE"
+            is_recently_falling = False
+            label_en = "WARM (Right-Side Support Bounce)"
+            label_zh = "温（均线支撑右侧反弹拐点）"
+        elif is_path_c_bottom_reversal:
+            state = "WARM"
+            right_side_path = "BOTTOM_REVERSAL"
+            is_recently_falling = False
+            label_en = "WARM (Right-Side Bottom Reversal)"
+            label_zh = "温（底部站上20日线右侧拐点）"
+        elif curr_close < sma_200 and (z_trend < -0.4 or ret_20d < -0.025 or curr_close < sma_50):
+            state = "FREEZE"
+            right_side_path = "NONE"
+            is_recently_falling = base_falling_guard
+            label_en = "FREEZE (Blood Chips Left-Side)"
+            label_zh = "冻（血筹区：左侧勿抄底）"
         else:
             state = "FLAT"
+            right_side_path = "NONE"
+            is_recently_falling = base_falling_guard
             label_en = "FLAT (Consolidation)"
             label_zh = "平（震荡整理）"
 
         hitting_zone = "RIGHT_SIDE" if state in ["WARM", "HOT"] else "LEFT_SIDE"
+
+        # 5-Day State Transition Detection
+        transition = "NONE"
+        if _compute_transition and n_pts >= 15:
+            df_prev = df_ohlcv.iloc[:-5]
+            if len(df_prev) >= 5:
+                prev_eval = cls.compute_trend_temperature(df_prev, current_price=None, _compute_transition=False)
+                prev_state = str(prev_eval.get("state") or "FLAT")
+                if prev_state in ("FREEZE", "FLAT") and state in ("WARM", "HOT"):
+                    transition = f"{prev_state}_TO_{state}"
+                elif prev_state == "WARM" and state == "HOT":
+                    transition = "WARM_TO_HOT"
+                elif prev_state in ("WARM", "HOT") and state in ("FLAT", "FREEZE"):
+                    transition = f"{prev_state}_TO_{state}"
+
+        is_fresh_right_side_pivot = bool(
+            transition in ("FLAT_TO_WARM", "FREEZE_TO_WARM", "FLAT_TO_HOT", "FREEZE_TO_HOT") or
+            right_side_path in ("SUPPORT_BOUNCE", "BOTTOM_REVERSAL")
+        )
 
         return {
             "state": state,
@@ -686,7 +925,9 @@ class PriceAlertEngine:
             "hitting_zone": hitting_zone,
             "is_right_side": hitting_zone == "RIGHT_SIDE",
             "is_recently_falling": is_recently_falling,
+            "right_side_path": right_side_path,
             "z_trend": z_trend,
+            "ret_3d_pct": round(ret_3d * 100.0, 2),
             "ret_5d_pct": round(ret_5d * 100.0, 2),
             "ret_10d_pct": round(ret_10d * 100.0, 2),
             "ret_20d_pct": round(ret_20d * 100.0, 2),
@@ -695,7 +936,18 @@ class PriceAlertEngine:
             "sma_20": round(sma_20, 2),
             "sma_50": round(sma_50, 2),
             "sma_200": round(sma_200, 2),
-            "transition": "NONE"
+            "ema_10": round(ema_10, 2),
+            "low_10d": round(low_10d, 2),
+            "rsi_14": rsi_14,
+            "rsi_3d_delta": rsi_3d_delta,
+            "atr_14": round(atr_14, 2),
+            "up_down_vol_ratio_10d": up_down_vol_ratio_10d,
+            "is_high_volume_distribution": is_high_volume_distribution,
+            "has_recent_3d_shock": has_recent_3d_shock,
+            "is_post_shock_unsettled": is_post_shock_unsettled,
+            "sma_50_slope_5d_pct": sma_50_slope_5d_pct,
+            "transition": transition,
+            "is_fresh_right_side_pivot": is_fresh_right_side_pivot
         }
 
     @classmethod
@@ -748,6 +1000,8 @@ class PriceAlertEngine:
             "is_right_side": is_right_side,
             "state_label_en": label_en,
             "state_label_zh": label_zh,
+            "right_side_path": "TREND_CONTINUATION" if is_right_side else "NONE",
+            "ret_3d_pct": 0.0,
             "ret_5d_pct": 0.0,
             "ret_10d_pct": 0.0,
             "ret_20d_pct": 0.0,
@@ -756,7 +1010,18 @@ class PriceAlertEngine:
             "sma_20": round(sma50, 2),
             "sma_50": round(sma50, 2),
             "sma_200": round(sma200, 2),
-            "transition": "NONE"
+            "ema_10": round(sma50, 2),
+            "low_10d": round(curr, 2),
+            "rsi_14": 50.0,
+            "rsi_3d_delta": 0.0,
+            "atr_14": round(curr * 0.022, 2) if curr > 0 else 0.0,
+            "up_down_vol_ratio_10d": 1.0,
+            "is_high_volume_distribution": False,
+            "has_recent_3d_shock": False,
+            "is_post_shock_unsettled": False,
+            "sma_50_slope_5d_pct": 0.0,
+            "transition": "NONE",
+            "is_fresh_right_side_pivot": False
         }
 
 alert_engine = PriceAlertEngine()

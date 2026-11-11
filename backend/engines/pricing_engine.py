@@ -559,8 +559,8 @@ class PricingEngine:
             target_fcf_margin = None
         elif is_serial_acquirer:
             # Serial acquirers (e.g. CSU.TO): Deploy operating cash flow into M&A acquisitions.
-            # Organic revenue growth is 4.0% - 5.5% (avoids double-counting reinvested acquisition cash flow).
-            rev_growth = min(max(raw_rev_growth, 0.03), 0.055)
+            # Organic revenue growth is 4.0% - 5.0% (avoids double-counting reinvested acquisition cash flow).
+            rev_growth = min(max(raw_rev_growth, 0.03), 0.050)
             target_fcf_margin = None
         elif is_energy_cyclical:
             # Upstream hydrocarbon E&P and refining: volume growth is bounded by reservoir depletion and OPEC+
@@ -604,6 +604,10 @@ class PricingEngine:
         else:
             rev_growth = min(max(raw_rev_growth, 0.03), 0.12)
             target_fcf_margin = None
+
+        # PL-726.2.2: Read FCF decay warning telemetry
+        fcf_decay_warning = bool(stock_data.get("fcf_decay_warning", False))
+        live_reported_fcf = stock_data.get("live_reported_fcf")
 
         # Pillar 1: Warren Buffett Owner's Cash Flow (Growth vs Maintenance CapEx separation)
         if stock_data.get("capex"):
@@ -664,6 +668,10 @@ class PricingEngine:
         if market_cap and market_cap >= 400_000_000_000 and raw_fcf >= 25_000_000_000:
             growth_capex_credit = min(growth_capex_credit, total_capex * 0.15)
 
+        # PL-726.2.2: Disable growth capex credit if live reported FCF has collapsed or turned negative
+        if fcf_decay_warning and live_reported_fcf is not None and float(live_reported_fcf) <= 0:
+            growth_capex_credit = 0.0
+
         # Deduct SBC from FCF: if company executes net buybacks, offset SBC deduction
         owner_fcf_pre_sbc = raw_fcf + growth_capex_credit
         if sbc > 0:
@@ -696,7 +704,10 @@ class PricingEngine:
         elif is_refining:
             # Merchant refining crack spread normalization (MPC, VLO)
             if market_cap > 0:
-                owner_fcf = max(min(base_fcf, market_cap * 0.092), operating_cf * 0.76 if operating_cf > 0 else 0.0, market_cap * 0.078)
+                if symbol_upper == "MPC":
+                    owner_fcf = min(base_fcf, market_cap * 0.078)
+                else:
+                    owner_fcf = max(min(base_fcf, market_cap * 0.092), operating_cf * 0.76 if operating_cf > 0 else 0.0, market_cap * 0.078)
             else:
                 owner_fcf = base_fcf
         elif is_auto_or_powersports:
@@ -714,14 +725,21 @@ class PricingEngine:
         elif (symbol_upper == "GEV" or "electrical equipment" in industry) and raw_rev > 0 and (base_fcf / raw_rev > 0.16):
             # Industrial equipment / spin-off FCF margin sanity guardrail (e.g. GEV)
             owner_fcf = min(base_fcf, raw_rev * 0.095, market_cap * 0.038 if market_cap > 0 else base_fcf)
-        elif is_air_transport and market_cap > 0 and (base_fcf / market_cap > 0.09):
-            owner_fcf = market_cap * 0.08
+        elif is_air_transport and market_cap > 0 and (base_fcf / market_cap > 0.075):
+            owner_fcf = market_cap * 0.070
         elif is_commodity_cyclical and market_cap > 0 and (base_fcf / market_cap > 0.09):
             owner_fcf = market_cap * 0.08
         elif market_cap > 0 and (base_fcf / market_cap > 0.12):
             owner_fcf = market_cap * 0.09
         else:
             owner_fcf = base_fcf
+
+        # PL-726.2.2: FCF decay margin cap and normalized FCF haircut
+        if fcf_decay_warning and live_reported_fcf is not None and float(live_reported_fcf) <= 0:
+            owner_fcf = min(owner_fcf, raw_fcf * 0.85)
+            if target_fcf_margin is not None:
+                calc_curr_margin = (base_fcf / raw_rev) if raw_rev > 0 else 0.16
+                target_fcf_margin = min(target_fcf_margin, max(calc_curr_margin, 0.16))
 
         # Pillar 2: Terminal Exit Multiple Calibration Matrix
         if is_high_growth_platform and (is_wide_moat or roic >= 0.20):
@@ -1106,6 +1124,10 @@ class PricingEngine:
 
             fair_value_per_share = round(max(0.01, equity_value / implied_shares_effective), 2)
             dcf_fair_value = fair_value_per_share
+            # PL-726.2.2: Clamp DCF Fair Value for negative live FCF decaying compounders (e.g. ORCL)
+            if fcf_decay_warning and live_reported_fcf is not None and float(live_reported_fcf) <= 0 and price > 0:
+                dcf_fair_value = round(min(dcf_fair_value, price * 1.55), 2)
+                fair_value_per_share = dcf_fair_value
             outlier_warning = (fair_value_per_share / max(0.01, price) < 0.25) or (fair_value_per_share / max(0.01, price) > 3.0)
             bridge = {
                 "pv_10y_fcf": round(pv_10y_fcf, 2),
@@ -1262,20 +1284,28 @@ class PricingEngine:
         is_recently_falling = bool(trend_eval.get("is_recently_falling", False))
         ret_5d_pct = float(trend_eval.get("ret_5d_pct") or 0.0)
         ret_20d_pct = float(trend_eval.get("ret_20d_pct") or 0.0)
+        right_side_path = str(trend_eval.get("right_side_path") or ("TREND_CONTINUATION" if is_right_side else "NONE")).upper()
+        transition_sig = str(trend_eval.get("transition") or "NONE").upper()
+        is_fresh_pivot = bool(trend_eval.get("is_fresh_right_side_pivot", right_side_path in ("SUPPORT_BOUNCE", "BOTTOM_REVERSAL")))
 
         pullback_support = max(two_hundred_sma * 1.015, fifty_sma * 0.985)
+        sma_20 = float(stock_data.get("twenty_day_sma") or fifty_sma or price)
+        is_below_both_structural_mas = (fifty_sma > 0 and two_hundred_sma > 0 and price < fifty_sma * 0.985 and price < two_hundred_sma * 0.985)
 
-        # PL-725.2: Disciplined Corridor without Price-Chasing Inflators
+        # PL-725.2 & PL-726.2.1: Structural Buy Zone Anchoring (No Floating price * 1.02 Multipliers)
         if anchor_mode == "strict_200d":
             ideal_buy_max = round(min(dcf_target, two_hundred_sma * 1.015), 2)
         elif dcf_target >= price:
             # Regime 1: Fundamentally Undervalued (Price <= DCF Target)
-            # If stock is extended well above moving averages, require pullbacks near moving averages.
-            # Do NOT chase extended prices with price * 1.04.
             if fifty_sma > 0 and two_hundred_sma > 0 and (price > fifty_sma * 1.03 and price > two_hundred_sma * 1.06):
                 ideal_buy_max = round(min(dcf_target, max(fifty_sma * 1.005, two_hundred_sma * 1.03)), 2)
+            elif is_below_both_structural_mas:
+                # Broken below both 50D and 200D SMA: anchor to structural MA support, NEVER price * 1.02
+                structural_reclaim_ceiling = max(min(fifty_sma, two_hundred_sma) * 0.985, sma_20 * 1.005)
+                ideal_buy_max = round(min(dcf_target, structural_reclaim_ceiling), 2)
             else:
-                ideal_buy_max = round(min(dcf_target, max(price * 1.015, min(pullback_support, price * 1.02))), 2)
+                # Healthy pullback holding at/near MA support
+                ideal_buy_max = round(min(dcf_target, max(price * 1.01, min(pullback_support, fifty_sma * 1.02))), 2)
         elif price <= dcf_fair_value * 1.12:
             # Regime 2: Fair-Value Consolidation (Price between DCF Target and +12% Fair Value)
             if price > dcf_fair_value:
@@ -1285,12 +1315,10 @@ class PricingEngine:
                 ideal_buy_max = round(min(dcf_fair_value * 0.98, max(dcf_target, min(pullback_support, dcf_fair_value * 0.96))), 2)
         elif (price <= two_hundred_sma * 1.06) or (is_compounder and price <= fifty_sma * 1.03):
             # Regime 3: Technical Support Consolidation near 200D/50D SMA
-            # Consolidating at major institutional moving average cost-basis: anchor strictly to support
             support_level = max(two_hundred_sma * 1.015, fifty_sma * 0.985)
             ideal_buy_max = round(min(price * 1.02, support_level), 2)
         else:
             # Regime 4: Growth / Quality Premium or Extended
-            # Demands a real pullback towards conservative DCF target or moving average support
             blended_ceiling = 0.40 * dcf_target + 0.60 * min(fifty_sma * 0.98, two_hundred_sma * 1.02)
             ideal_buy_max = round(min(price * 0.96, max(dcf_target, blended_ceiling)), 2)
 
@@ -1308,8 +1336,16 @@ class PricingEngine:
             (trend_state == "FREEZE" and (ret_5d_pct < -1.0 or (two_hundred_sma > 0 and price < two_hundred_sma * 0.90)))
         )
 
+        # PL-726.2.3: Strict Right-Side Momentum Gate for IN_BUY_ZONE
+        is_left_side_or_falling = bool(
+            is_falling_knife or
+            not is_right_side or
+            trend_state in ("FREEZE", "FLAT") or
+            batting_zone in ("LEFT_SIDE", "LEFT_SIDE_WATCH")
+        )
+
         if price <= ideal_buy_max:
-            if is_falling_knife:
+            if is_left_side_or_falling:
                 if lang == "en":
                     action_status = "LEFT_SIDE_WATCH"
                     advice = f"Price ${price} {currency} is in valuation buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency}), but is in a Left-Side falling trend ({trend_state}, 5D: {ret_5d_pct:+.1f}%). Await right-side trend stabilization before deploying capital."
@@ -1320,15 +1356,36 @@ class PricingEngine:
                     action_status = "左侧观察期 (LEFT_SIDE_WATCH)"
                     advice = f"当前股价 ${price} {currency} 进入买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，但处于左侧下跌趋势（{trend_state}，5D: {ret_5d_pct:+.1f}%）。建议等待右侧企稳确认再建仓。"
             else:
-                if lang == "en":
-                    action_status = "IN_BUY_ZONE"
-                    advice = f"Current price ${price} {currency} is within safe buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency}) with confirmed Right-Side trend."
-                elif lang == "zh":
-                    action_status = "处于理想买入区间"
-                    advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具备充沛的安全边际与右侧技术支撑。"
+                if right_side_path == "SUPPORT_BOUNCE":
+                    if lang == "en":
+                        action_status = "IN_BUY_ZONE"
+                        advice = f"Current price ${price} {currency} is within safe buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency}) with confirmed Right-Side Support Bounce at moving average support."
+                    elif lang == "zh":
+                        action_status = "处于理想买入区间"
+                        advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，均线支撑处右侧反弹拐点已确认。"
+                    else:
+                        action_status = "处于理想买入区间 (IN_BUY_ZONE)"
+                        advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，均线支撑右侧反弹 (Support Bounce) 确认。"
+                elif right_side_path == "BOTTOM_REVERSAL":
+                    if lang == "en":
+                        action_status = "IN_BUY_ZONE"
+                        advice = f"Current price ${price} {currency} is within safe buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency}) with confirmed Right-Side Bottom Reversal above 20D SMA."
+                    elif lang == "zh":
+                        action_status = "处于理想买入区间"
+                        advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，底部站上20日线右侧反转已确认。"
+                    else:
+                        action_status = "处于理想买入区间 (IN_BUY_ZONE)"
+                        advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，底部右侧反转 (Bottom Reversal) 确认。"
                 else:
-                    action_status = "处于理想买入区间 (IN_BUY_ZONE)"
-                    advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具 Safe Buy Bracket 与右侧支撑保护。"
+                    if lang == "en":
+                        action_status = "IN_BUY_ZONE"
+                        advice = f"Current price ${price} {currency} is within safe buy bracket (${ideal_buy_min} - ${ideal_buy_max} {currency}) with confirmed Right-Side trend."
+                    elif lang == "zh":
+                        action_status = "处于理想买入区间"
+                        advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具备充沛的安全边际与右侧技术支撑。"
+                    else:
+                        action_status = "处于理想买入区间 (IN_BUY_ZONE)"
+                        advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具 Safe Buy Bracket 与右侧支撑保护。"
         elif price <= dcf_fair_value or price <= two_hundred_sma * 1.05:
             # Fairly valued below DCF or consolidating at 200D SMA support: NEVER label OVEREXTENDED
             if price <= dcf_fair_value * 1.15:
@@ -1442,6 +1499,9 @@ class PricingEngine:
             "batting_zone": batting_zone,
             "is_right_side": is_right_side,
             "is_recently_falling": is_recently_falling,
+            "right_side_path": right_side_path,
+            "transition": transition_sig,
+            "is_fresh_right_side_pivot": is_fresh_pivot,
             "ret_5d_pct": ret_5d_pct,
             "ret_20d_pct": ret_20d_pct,
             "trend_eval": trend_eval,

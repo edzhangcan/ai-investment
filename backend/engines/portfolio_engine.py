@@ -115,7 +115,8 @@ class PortfolioEngine:
         base_currency: Optional[str] = None,
         macro_regime: str = "NEUTRAL",
         selected_symbols: Optional[List[str]] = None,
-        lang: str = "en"
+        lang: str = "en",
+        macro_data: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Executes position sizing calculations for given capital, base currency, and risk profile.
@@ -149,10 +150,17 @@ class PortfolioEngine:
         position_breakdown = []
         total_allocated_dollars = 0.0
 
+        # PL-726.4.3: VIX Volatility Regime Position Sizing Haircut
+        vix_val = float((macro_data or {}).get("vix_level") or 18.0)
+        vix_roc_val = float((macro_data or {}).get("vix_5d_roc_pct") or 0.0)
+        is_high_vix = bool(vix_val >= 22.0 or vix_roc_val >= 20.0)
+        if is_high_vix:
+            max_stock_pct = min(max_stock_pct, 2.5)
+
         if is_barbell:
             # 80/20 Barbell: 80% Core Beta Anchors + 20% Satellite (2%-4% cap each)
             core_saa_pct = profile_params.get("core_saa_alloc_pct", 80.0)
-            satellite_pool_pct = profile_params.get("satellite_taa_alloc_pct", 20.0)
+            satellite_pool_pct = (profile_params.get("satellite_taa_alloc_pct", 20.0) * 0.50) if is_high_vix else profile_params.get("satellite_taa_alloc_pct", 20.0)
             core_template = get_core_saa_template(base_currency=eff_currency, macro_regime=macro_regime)
 
             # 1. Core SAA Allocations (80%)
@@ -360,7 +368,10 @@ class PortfolioEngine:
         max_cap_pct: float = 4.0,
         conviction_score: Optional[float] = None,
         same_sector_count: int = 0,
-        is_fallback_data: bool = False
+        is_fallback_data: bool = False,
+        macro_data: Optional[Dict[str, Any]] = None,
+        vix_level: Optional[float] = None,
+        vix_5d_roc_pct: Optional[float] = None
     ) -> Dict[str, Any]:
         """
         Calculates Fractional Kelly position sizing with Bayesian win probability shrinkage,
@@ -387,6 +398,14 @@ class PortfolioEngine:
         f_star = p - (q / b)
         f_fraction = f_star * kelly_fraction
 
+        # PL-726.4.3: VIX Volatility Regime Position Sizing Haircut
+        vix_eff = float((macro_data or {}).get("vix_level") or (vix_level if vix_level is not None else 18.0))
+        vix_roc_eff = float((macro_data or {}).get("vix_5d_roc_pct") or (vix_5d_roc_pct if vix_5d_roc_pct is not None else 0.0))
+        is_high_vix = bool(vix_eff >= 22.0 or vix_roc_eff >= 20.0)
+        if is_high_vix:
+            max_cap_pct = min(max_cap_pct, 2.5)
+            f_fraction *= 0.50
+
         # Sector correlation penalty factor: 1.0 / (1.0 + 0.25 * same_sector_count)
         if same_sector_count > 0:
             penalty = round(1.0 / (1.0 + 0.25 * same_sector_count), 3)
@@ -407,7 +426,9 @@ class PortfolioEngine:
             "full_kelly_pct": round(f_star * 100.0, 2),
             "quarter_kelly_pct": round(f_fraction * 100.0, 2),
             "recommended_weight_pct": recommended_weight,
-            "is_positive_edge": f_star > 0
+            "is_positive_edge": f_star > 0,
+            "is_high_vix_regime": is_high_vix,
+            "vix_level": vix_eff
         }
 
     @classmethod
