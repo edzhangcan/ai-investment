@@ -393,7 +393,7 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, stockDa
         )}
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
-            <span className="font-bold">{pricingData.action_status}</span>
+            <span className="font-bold">{pricingData.action_status ? pricingData.action_status.replace(/[-_]/g, ' ') : ''}</span>
             {pricingData.batting_zone && (
               <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
                 pricingData.batting_zone === 'RIGHT_SIDE'
@@ -401,8 +401,33 @@ export const PricingChart: React.FC<PricingChartProps> = ({ pricingData, stockDa
                   : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
               }`}>
                 {pricingData.batting_zone === 'RIGHT_SIDE'
-                  ? (language === 'zh' ? '右侧击球区' : 'Right-Side Batting Zone')
-                  : (language === 'zh' ? '左侧观察' : 'Left-Side Watch')}
+                  ? (language === 'zh' ? '🎯 右侧击球区' : '🎯 Right Side')
+                  : (language === 'zh' ? '👀 左侧观察' : '👀 Left Side')}
+              </span>
+            )}
+            {pricingData.trend_temperature && (
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                pricingData.trend_temperature === 'HOT'
+                  ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                  : pricingData.trend_temperature === 'WARM'
+                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                  : pricingData.trend_temperature === 'FREEZE'
+                  ? 'bg-cyan-100 dark:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+              }`}>
+                {pricingData.trend_temperature === 'FREEZE' ? '❄️ FREEZE' :
+                 pricingData.trend_temperature === 'WARM' ? '⚡ WARM' :
+                 pricingData.trend_temperature === 'HOT' ? '🔥 HOT' : '⚖️ FLAT'}
+              </span>
+            )}
+            {pricingData.timing_path && pricingData.timing_path !== 'N/A' && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface border border-border-subtle text-content-secondary">
+                {pricingData.timing_path.replace(/[-_]/g, ' ')}
+              </span>
+            )}
+            {pricingData.pilot_tranche_size && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand/10 text-brand border border-brand/20">
+                Pilot: {pricingData.pilot_tranche_size}
               </span>
             )}
             {pricingData.ret_5d_pct !== undefined && pricingData.ret_5d_pct !== 0 && (

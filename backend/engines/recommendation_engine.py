@@ -155,6 +155,10 @@ class RecommendationEngine:
                 hydrated["ideal_buy_range_max"] = pricing.get("ideal_buy_range_max", stk.get("ideal_buy_range_max"))
                 hydrated["action_status"] = pricing.get("action_status", stk.get("action_status"))
                 hydrated["timing_advice"] = pricing.get("timing_advice", stk.get("timing_advice"))
+                hydrated["batting_zone"] = pricing.get("batting_zone", stk.get("batting_zone"))
+                hydrated["trend_temperature"] = pricing.get("trend_temperature", stk.get("trend_temperature"))
+                hydrated["timing_path"] = pricing.get("timing_path", stk.get("timing_path"))
+                hydrated["pilot_tranche_size"] = pricing.get("pilot_tranche_size", stk.get("pilot_tranche_size"))
                 if "valuation_score" in pricing:
                     hydrated["valuation_score"] = pricing["valuation_score"]
                 if "bridge" in pricing:
@@ -314,6 +318,10 @@ class RecommendationEngine:
                          else f"Support floor anchored at Buy Range Min (${pricing.get('ideal_buy_range_min', 90.0)} {stock_raw.get('currency', 'USD')}); 200D SMA (${pricing.get('two_hundred_day_sma', 100.0)} {stock_raw.get('currency', 'USD')}) acts as overhead resistance."))
                     ),
                     "action_status": pricing.get("action_status", "IN_BUY_ZONE"),
+                    "batting_zone": pricing.get("batting_zone", "RIGHT_SIDE"),
+                    "trend_temperature": pricing.get("trend_temperature", "WARM"),
+                    "timing_path": pricing.get("timing_path"),
+                    "pilot_tranche_size": pricing.get("pilot_tranche_size"),
                     "taxonomy": fundamental.get("taxonomy") or pricing.get("taxonomy"),
                     "taxonomy_badge": (
                         (fundamental.get("taxonomy") or pricing.get("taxonomy", {})).get("badge_zh")

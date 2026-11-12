@@ -32,7 +32,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   onSelectStock,
   onWatchlistChange,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const selectStockHandler = onSelectStock || onSelectTicker || (() => {});
 
   const [activeTab, setActiveTab] = useState<'HOLDINGS' | 'WATCHLIST' | 'REGULAR'>('HOLDINGS');
@@ -652,7 +652,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                         </span>
                         {item.batting_zone === 'RIGHT_SIDE' && (
                           <span className="text-[10px] text-positive font-bold flex items-center gap-0.5">
-                            🎯 右侧
+                            {language === 'zh' ? '🎯 右侧' : '🎯 Right Side'}
                           </span>
                         )}
                       </div>

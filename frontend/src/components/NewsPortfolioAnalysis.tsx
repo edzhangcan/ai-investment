@@ -59,8 +59,8 @@ export const ACTION_SIGNAL_META: Record<
     badgeClass:
       'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30',
     explanation:
-      'Watchlist target is trading above its 95% Ideal Buy Ceiling or remains in a Left-Side (Freeze/Flat) trend. Do not chase green days; wait patiently for a pullback into the buy zone with Right-Side stabilization.',
-    ruleFormula: 'Rule: Price > 95% Buy Ceiling OR Trend = Left-Side (Freeze/Flat)',
+      'Watchlist target is trading above its 95% Ideal Buy Ceiling or remains in a Left Side (Freeze/Flat) trend. Do not chase green days; wait patiently for a pullback into the buy zone with Right Side stabilization.',
+    ruleFormula: 'Rule: Price > 95% Buy Ceiling OR Trend = Left Side (Freeze/Flat)',
   },
   DEFEND_FLOOR: {
     label: 'DEFEND FLOOR',
@@ -73,11 +73,11 @@ export const ACTION_SIGNAL_META: Record<
   },
   SCALE_IN_READY: {
     label: 'SCALE IN READY',
-    shortTitle: 'Right-Side Entry Window Active',
+    shortTitle: 'Right Side Entry Window Active',
     badgeClass:
       'bg-emerald-600 text-white border border-emerald-700',
     explanation:
-      'Watchlist target has pulled back to or below its 95% Buy Ceiling while confirming Right-Side (Warm/Hot) trend momentum. Eligible for a disciplined 2%–4% satellite entry after Pre-Trade Soul Check.',
+      'Watchlist target has pulled back to or below its 95% Buy Ceiling while confirming Right Side (Warm/Hot) trend momentum. Eligible for a disciplined 2%–4% satellite entry after Pre-Trade Soul Check.',
     ruleFormula: 'Rule: Price ≤ 95% Buy Ceiling AND Batting Zone = RIGHT_SIDE',
   },
   TRIM_EXTENDED: {

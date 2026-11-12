@@ -459,7 +459,7 @@ export const PortfolioCalculator: React.FC<PortfolioCalculatorProps> = ({
                                 )}
                                 {item.readiness_status === 'LEFT_SIDE_AWAIT' && (
                                   <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800" title={item.execution_advice}>
-                                    {language === 'zh' ? '左侧探底' : 'LEFT-SIDE'}
+                                    {language === 'zh' ? '左侧探底' : 'LEFT SIDE'}
                                   </span>
                                 )}
                                 {item.readiness_status === 'WAIT_PULLBACK' && (

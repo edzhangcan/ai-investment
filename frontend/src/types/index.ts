@@ -358,6 +358,10 @@ export interface StockRecommendation {
   };
   downside_risk_summary: string;
   action_status: string;
+  batting_zone?: string;
+  trend_temperature?: string;
+  timing_path?: string;
+  pilot_tranche_size?: string;
   dcf_fair_value?: number;
   ideal_buy_range_min?: number;
   ideal_buy_range_max?: number;

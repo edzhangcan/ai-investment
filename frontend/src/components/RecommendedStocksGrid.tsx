@@ -1,8 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StockRecommendation, CategorizedRecommendationsPayload } from '../types';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
-import { Sparkles, Award, Coins, Compass, Star, ChevronLeft, ChevronRight, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Sparkles, Award, Coins, Compass, Star, ChevronLeft, ChevronRight, RefreshCw, ArrowLeft, Filter } from 'lucide-react';
+
+// Helper to cleanly format action statuses and batting zone tags without any dashes or underscores in English
+export const formatStatusTag = (status?: string, lang: string = 'en'): string => {
+  if (!status) return '';
+  if (lang === 'zh') {
+    if (status === 'IN_BUY_ZONE') return '买入区间';
+    if (status === 'LEFT_SIDE_WATCH') return '左侧观察';
+    if (status === 'PULLBACK_WATCH') return '回调观察';
+    if (status === 'GROWTH_PREMIUM') return '成长溢价';
+    if (status === 'OVEREXTENDED') return '估值偏高';
+    if (status === 'RIGHT_SIDE') return '右侧击球区';
+    if (status === 'LEFT_SIDE') return '左侧观察';
+    if (status === 'TREND_CONTINUATION') return '趋势延续';
+    if (status === 'SUPPORT_BOUNCE') return '均线支撑反弹';
+    if (status === 'BOTTOM_REVERSAL') return '底部反转突破';
+  }
+  // English: strictly remove all dashes and underscores
+  return status.replace(/[-_]/g, ' ').trim();
+};
 
 interface RecommendedStocksGridProps {
   recommendations: CategorizedRecommendationsPayload | StockRecommendation[];
@@ -29,6 +48,7 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 }) => {
   const { t, language } = useLanguage();
   const [activeCategory, setActiveCategory] = useState<'SECTOR' | 'OVERALL' | 'GOLD'>('SECTOR');
+  const [activeZoneFilter, setActiveZoneFilter] = useState<string>('ALL');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -59,17 +79,106 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
 
   const activePool = getActivePool();
 
-  // Reset to page 1 when switching market or category
+  // Batting zone & action status counts for active pool
+  const zoneCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      ALL: activePool.length,
+      IN_BUY_ZONE: 0,
+      LEFT_SIDE_WATCH: 0,
+      PULLBACK_WATCH: 0,
+      GROWTH_PREMIUM: 0,
+      OVEREXTENDED: 0,
+      RIGHT_SIDE: 0,
+      LEFT_SIDE: 0,
+    };
+    activePool.forEach((r) => {
+      if (r.batting_zone === 'RIGHT_SIDE') counts.RIGHT_SIDE += 1;
+      if (r.batting_zone === 'LEFT_SIDE') counts.LEFT_SIDE += 1;
+      const status = r.action_status;
+      if (status) {
+        counts[status] = (counts[status] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [activePool]);
+
+  // Standard filter options list (order: ALL, specific action statuses, then high-level zones)
+  const filterOptions = useMemo(() => {
+    const list: { key: string; label: string; count: number }[] = [
+      {
+        key: 'ALL',
+        label: language === 'zh' ? '全部' : 'All',
+        count: zoneCounts.ALL,
+      },
+      {
+        key: 'IN_BUY_ZONE',
+        label: language === 'zh' ? '买入区间' : 'IN BUY ZONE',
+        count: zoneCounts.IN_BUY_ZONE || 0,
+      },
+      {
+        key: 'LEFT_SIDE_WATCH',
+        label: language === 'zh' ? '左侧观察' : 'LEFT SIDE WATCH',
+        count: zoneCounts.LEFT_SIDE_WATCH || 0,
+      },
+      {
+        key: 'PULLBACK_WATCH',
+        label: language === 'zh' ? '回调观察' : 'PULLBACK WATCH',
+        count: zoneCounts.PULLBACK_WATCH || 0,
+      },
+      {
+        key: 'GROWTH_PREMIUM',
+        label: language === 'zh' ? '成长溢价' : 'GROWTH PREMIUM',
+        count: zoneCounts.GROWTH_PREMIUM || 0,
+      },
+      {
+        key: 'OVEREXTENDED',
+        label: language === 'zh' ? '估值偏高' : 'OVEREXTENDED',
+        count: zoneCounts.OVEREXTENDED || 0,
+      },
+      {
+        key: 'RIGHT_SIDE',
+        label: language === 'zh' ? '🎯 右侧击球区' : '🎯 Right Side',
+        count: zoneCounts.RIGHT_SIDE || 0,
+      },
+      {
+        key: 'LEFT_SIDE',
+        label: language === 'zh' ? '👀 左侧区域' : '👀 Left Side',
+        count: zoneCounts.LEFT_SIDE || 0,
+      },
+    ];
+
+    return list.filter((opt) => opt.key === 'ALL' || opt.count > 0);
+  }, [zoneCounts, language]);
+
+  // Reset to page 1 when switching market, category, or filter
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeCountry, activeCategory]);
+  }, [activeCountry, activeCategory, activeZoneFilter]);
+
+  // Reset filter when switching category or country if current filter has 0 items
+  useEffect(() => {
+    if (activeZoneFilter !== 'ALL' && (zoneCounts[activeZoneFilter] || 0) === 0) {
+      setActiveZoneFilter('ALL');
+    }
+  }, [activeCategory, activeCountry, zoneCounts, activeZoneFilter]);
+
+  const filteredPool = useMemo(() => {
+    if (activeZoneFilter === 'ALL') return activePool;
+    if (activeZoneFilter === 'RIGHT_SIDE') {
+      return activePool.filter((r) => r.batting_zone === 'RIGHT_SIDE');
+    }
+    if (activeZoneFilter === 'LEFT_SIDE') {
+      return activePool.filter((r) => r.batting_zone === 'LEFT_SIDE');
+    }
+    return activePool.filter((r) => r.action_status === activeZoneFilter);
+  }, [activePool, activeZoneFilter]);
 
   // Page size is 16 stocks (2x8 grid layout)
   const PAGE_SIZE = 16;
-  const totalPages = Math.max(1, Math.ceil(activePool.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredPool.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(1, currentPage), totalPages);
   const startIndex = (safePage - 1) * PAGE_SIZE;
-  const currentDisplayPool = activePool.slice(startIndex, startIndex + PAGE_SIZE);
+  const currentDisplayPool = filteredPool.slice(startIndex, startIndex + PAGE_SIZE);
 
   // PL-723.3: Periodic real-time price & DCF polling every 60 seconds
   useEffect(() => {
@@ -194,11 +303,11 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
             <span className="text-xs text-content-muted font-bold bg-surface-subtle px-3 py-1.5 rounded-xl border border-border-subtle shadow-sm whitespace-nowrap">
               {totalPages > 1
                 ? (language === 'zh'
-                    ? `第 ${safePage} / ${totalPages} 页 (共 ${activePool.length} 标的)`
-                    : `Page ${safePage} of ${totalPages} (${activePool.length} Pool)`)
+                    ? `第 ${safePage} / ${totalPages} 页 (共 ${filteredPool.length} 标的)`
+                    : `Page ${safePage} of ${totalPages} (${filteredPool.length} Pool)`)
                 : (language === 'zh'
-                    ? `全部 ${activePool.length} 标的 (单页全览)`
-                    : `All ${activePool.length} Pool (Single Page)`)}
+                    ? `全部 ${filteredPool.length} 标的 (单页全览)`
+                    : `All ${filteredPool.length} Pool (Single Page)`)}
             </span>
           </div>
         </div>
@@ -355,6 +464,43 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
         </div>
       </div>
 
+      {/* Quick Filter: Batting Zone & Action Status Selector */}
+      <div 
+        className="flex items-center gap-2 p-2.5 bg-surface border border-border-subtle rounded-2xl overflow-x-auto scrollbar-none shadow-2xs"
+        role="group"
+        aria-label="Batting Zone Quick Filters"
+      >
+        <div className="flex items-center gap-1.5 text-xs font-black text-content-muted px-2 shrink-0">
+          <Filter className="w-3.5 h-3.5 text-brand" />
+          <span>{language === 'zh' ? '击球区筛选:' : 'Filter Batting Zone:'}</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
+          {filterOptions.map((opt) => {
+            const isActive = activeZoneFilter === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setActiveZoneFilter(opt.key)}
+                className={`h-7 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 shrink-0 ${
+                  isActive
+                    ? 'bg-brand text-white shadow-sm ring-2 ring-brand/30'
+                    : 'bg-surface-subtle border border-border-subtle text-content-secondary hover:text-content-primary hover:bg-surface'
+                }`}
+              >
+                <span>{opt.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-surface border border-border-subtle text-content-muted'
+                }`}>
+                  {opt.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 2-Column x 8-Row (2x8) Wider Stock Cards Grid (Up to 16 Stocks) */}
       <div 
         id="recommended-stocks-grid-panel"
@@ -362,7 +508,27 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
         aria-label="Stock Recommendation Grid"
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
-        {currentDisplayPool.map((rec) => {
+        {currentDisplayPool.length === 0 ? (
+          <div className="prism-card p-12 text-center col-span-full border border-dashed border-border-subtle rounded-2xl">
+            <Filter className="w-8 h-8 text-content-muted mx-auto mb-2 opacity-60" />
+            <h4 className="text-sm font-bold text-content-primary mb-1">
+              {language === 'zh' ? '当前筛选下无匹配标的' : 'No Stocks Match Selected Filter'}
+            </h4>
+            <p className="text-xs text-content-muted mb-4">
+              {language === 'zh'
+                ? `在当前板块中未找到处于「${formatStatusTag(activeZoneFilter, language)}」状态的标的。`
+                : `No tickers currently in "${formatStatusTag(activeZoneFilter, language)}" status within this category.`}
+            </p>
+            <button
+              type="button"
+              onClick={() => setActiveZoneFilter('ALL')}
+              className="px-3.5 py-1.5 bg-brand hover:bg-brand-hover text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+            >
+              {language === 'zh' ? '重置为全部标的' : 'Reset to All Stocks'}
+            </button>
+          </div>
+        ) : (
+          currentDisplayPool.map((rec) => {
           const isCa = rec.symbol.endsWith('.TO');
           const flag = isCa ? '🇨🇦' : '🇺🇸';
           const isStarred = watchlistSymbols.has(rec.symbol.toUpperCase());
@@ -414,6 +580,36 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                         {rec.macro_alignment_tag}
                       </span>
                     )}
+
+                    {/* Batting Zone Pill */}
+                    {rec.batting_zone && (
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                        rec.batting_zone === 'RIGHT_SIDE'
+                          ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                      }`}>
+                        {rec.batting_zone === 'RIGHT_SIDE'
+                          ? (language === 'zh' ? '🎯 右侧击球区' : '🎯 Right Side')
+                          : (language === 'zh' ? '👀 左侧观察' : '👀 Left Side')}
+                      </span>
+                    )}
+
+                    {/* Trend Temperature Badge (FREEZE / WARM / FLAT / HOT) */}
+                    {rec.trend_temperature && (
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                        rec.trend_temperature === 'HOT'
+                          ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                          : rec.trend_temperature === 'WARM'
+                          ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                          : rec.trend_temperature === 'FREEZE'
+                          ? 'bg-cyan-100 dark:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                      }`}>
+                        {rec.trend_temperature === 'FREEZE' ? '❄️ FREEZE' :
+                         rec.trend_temperature === 'WARM' ? '⚡ WARM' :
+                         rec.trend_temperature === 'HOT' ? '🔥 HOT' : '⚖️ FLAT'}
+                      </span>
+                    )}
                   </div>
 
                   <button
@@ -445,6 +641,31 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
                       <h3 className="text-base sm:text-lg font-black text-content-primary group-hover/card:text-brand transition-colors line-clamp-1 tracking-tight">
                         {rec.company_name}
                       </h3>
+                      {rec.action_status && (
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                            rec.action_status.includes('BUY_ZONE')
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                              : rec.action_status.includes('LEFT_SIDE')
+                              ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                              : rec.action_status.includes('PULLBACK')
+                              ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-800'
+                              : 'bg-surface-subtle text-content-muted border-border-subtle'
+                          }`}>
+                            {formatStatusTag(rec.action_status, language)}
+                          </span>
+                          {rec.timing_path && rec.timing_path !== 'N/A' && (
+                            <span className="text-[10px] font-semibold text-content-muted">
+                              • {formatStatusTag(rec.timing_path, language)}
+                            </span>
+                          )}
+                          {rec.pilot_tranche_size && (
+                            <span className="text-[10px] font-bold text-brand bg-brand/10 px-1.5 py-0.2 rounded">
+                              Pilot {rec.pilot_tranche_size}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2.5 shrink-0">
                       <div className="text-right">
@@ -545,7 +766,8 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
               </div>
             </div>
           );
-        })}
+        })
+      )}
       </div>
 
       {/* Bottom Pagination Bar for US (hidden when totalPages <= 1, e.g. CA) */}
@@ -553,8 +775,8 @@ export const RecommendedStocksGrid: React.FC<RecommendedStocksGridProps> = ({
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border-subtle">
           <span className="text-xs text-content-muted font-medium">
             {language === 'zh'
-              ? `第 ${safePage} / ${totalPages} 页 · 显示第 ${startIndex + 1}-${Math.min(startIndex + PAGE_SIZE, activePool.length)} 支标的 (共 ${activePool.length} 支)`
-              : `Page ${safePage} of ${totalPages} · Showing ${startIndex + 1}-${Math.min(startIndex + PAGE_SIZE, activePool.length)} of ${activePool.length} Tickers`}
+              ? `第 ${safePage} / ${totalPages} 页 · 显示第 ${startIndex + 1}-${Math.min(startIndex + PAGE_SIZE, filteredPool.length)} 支标的 (共 ${filteredPool.length} 支)`
+              : `Page ${safePage} of ${totalPages} · Showing ${startIndex + 1}-${Math.min(startIndex + PAGE_SIZE, filteredPool.length)} of ${filteredPool.length} Tickers`}
           </span>
           <div className="flex items-center gap-2">
             <button
