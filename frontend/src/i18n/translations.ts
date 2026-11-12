@@ -791,7 +791,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     trendTempFlat: "➖ Flat (Consolidation)",
     trendTempWarm: "🌤️ Warm (Right Side Entry)",
     trendTempHot: "🔥 Hot (Fat-Tail Momentum)",
-    disciplineBlocked: "Blocked by 纪律.md Constitution",
+    disciplineBlocked: "Blocked by Discipline",
     soulCheckTitle: "Pre-Trade Four Soul Questions & Bayesian Prior",
     logScaleLabel: "Log Scale",
     linearScaleLabel: "Linear Scale",
@@ -1201,7 +1201,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     trendTempFlat: "➖ 平（震荡整理）",
     trendTempWarm: "🌤️ 温（温转热右侧击球区）",
     trendTempHot: "🔥 热（肥尾主升浪）",
-    disciplineBlocked: "《纪律.md》一票否决",
+    disciplineBlocked: "纪律原则一票否决",
     soulCheckTitle: "投资灵魂四问与贝叶斯先验记录",
     logScaleLabel: "对数坐标",
     linearScaleLabel: "普通坐标",
@@ -1611,7 +1611,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     trendTempFlat: "➖ 平 Flat (震荡整理)",
     trendTempWarm: "🌤️ 温 Warm (右侧击球区)",
     trendTempHot: "🔥 热 Hot (肥尾主升浪)",
-    disciplineBlocked: "《纪律.md》一票否决 (Discipline Blocked)",
+    disciplineBlocked: "纪律原则否决 (Discipline Blocked)",
     soulCheckTitle: "投资灵魂四问与先验 (Soul Check & Prior)",
     logScaleLabel: "对数坐标 (Log)",
     linearScaleLabel: "线性坐标 (Linear)",
@@ -1669,7 +1669,7 @@ export const METHODOLOGY_I18N_PATCH = {
     trend_temp_flat: "➖ Flat (Consolidation)",
     trend_temp_warm: "🌤️ Warm (Right Side Entry)",
     trend_temp_hot: "🔥 Hot (Fat-Tail Momentum)",
-    discipline_blocked: "Blocked by 纪律.md Constitution",
+    discipline_blocked: "Blocked by Discipline",
     soul_check_title: "Pre-Trade Four Soul Questions & Bayesian Prior"
   },
   zh: {
@@ -1684,7 +1684,7 @@ export const METHODOLOGY_I18N_PATCH = {
     trend_temp_flat: "➖ 平（震荡整理）",
     trend_temp_warm: "🌤️ 温（温转热右侧击球区）",
     trend_temp_hot: "🔥 热（肥尾主升浪）",
-    discipline_blocked: "《纪律.md》一票否决",
+    discipline_blocked: "纪律原则一票否决",
     soul_check_title: "投资灵魂四问与贝叶斯先验记录"
   }
 };

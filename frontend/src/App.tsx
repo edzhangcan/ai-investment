@@ -771,6 +771,7 @@ export const App: React.FC = () => {
                     pricing={stockData.pricing}
                     onRefreshDebate={(force) => loadStock(stockData.stock.symbol, force ?? true)}
                     isHolding={stockBucketMap[stockData.stock.symbol.toUpperCase()]?.bucket === 'HOLDING'}
+                    buyInPrice={stockBucketMap[stockData.stock.symbol.toUpperCase()]?.buy_in_price}
                   />
                   <SecTextMiningViewer
                     symbol={stockData.stock.symbol}

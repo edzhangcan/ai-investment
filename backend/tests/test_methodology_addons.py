@@ -4,7 +4,7 @@ Covers:
 - Phase 1: Stock Taxonomy (Tree/Grain/Vegetable), Reverse-DCF Implied Narrative Ceiling, & Prosperity Trap
 - Phase 2: Efficient Frontier, 80/20 Barbell Kelly Sizing, & Liability Stress Test
 - Phase 3: High-Resolution Live Backtester & Calmar Analytics
-- Phase 4: 纪律.md Engine, 4-State Trend Temperature (冻/平/温/热), & Bayesian Soul Check
+- Phase 4: Discipline Engine (纪律原则), 4-State Trend Temperature (冻/平/温/热), & Bayesian Soul Check
 - Phase 5: Big Picture Macro (AIAE, Modified Buffett) & 4-Layer Gold Board
 """
 
@@ -258,7 +258,7 @@ def test_portfolio_router_endpoints():
     assert res_ls.json()["runway_months"] > 0
 
 # ==========================================
-# Phase 4 Tests: 纪律.md Engine, Trend Temperature & Decision Journal
+# Phase 4 Tests: Discipline Engine (纪律原则), Trend Temperature & Decision Journal
 # ==========================================
 
 def test_discipline_engine_four_horsemen_blocks():

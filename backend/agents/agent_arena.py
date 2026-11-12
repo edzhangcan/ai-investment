@@ -75,20 +75,30 @@ class MultiAgentArena:
         else:
             debate_result = cls._run_fallback_debate(stock_data, macro_data, pricing_data, fundamental_data, lang=lang, country=resolved_country, verify_filings=verify_filings)
 
-        # Audit against 《纪律.md》 Personal Investment Constitution
+        # Audit against Discipline Guardrails (纪律原则)
         from backend.engines.discipline_engine import DisciplineEngine
         audit = DisciplineEngine.audit_trade(stock_data, pricing_data, lang=lang)
         if debate_result and "cio_verdict" in debate_result:
             debate_result["cio_verdict"]["discipline_audit"] = audit
             if not audit["is_compliant"]:
-                veto_str = "; ".join(audit["veto_reasons_zh"] if lang == "zh" else audit["veto_reasons"])
+                reasons = audit["veto_reasons_zh"] if lang == "zh" else audit["veto_reasons"]
+                sep = "：" if lang == "zh" else ":"
+                short_veto = reasons[0].split(sep)[0].strip() if reasons else ("违反纪律原则" if lang == "zh" else "Rule Veto")
                 prior_verdict = str(debate_result["cio_verdict"].get("verdict", ""))
                 if "WATCH" in prior_verdict or "LEFT_SIDE" in prior_verdict or "左侧" in prior_verdict:
-                    debate_result["cio_verdict"]["verdict"] = f"{prior_verdict} (DISCIPLINE_BLOCKED / 纪律否决)"
+                    debate_result["cio_verdict"]["verdict"] = f"{prior_verdict} (DISCIPLINE_BLOCKED)"
                 else:
-                    debate_result["cio_verdict"]["verdict"] = "DISCIPLINE_BLOCKED / 纪律否决"
-                debate_result["cio_verdict"]["position_sizing_advice"] = f"0% Allocation — Blocked by 《纪律.md》: {veto_str}"
-                debate_result["cio_verdict"]["judge_summary"] = f"[{audit['summary']}] {debate_result['cio_verdict'].get('judge_summary', '')}"
+                    debate_result["cio_verdict"]["verdict"] = (
+                        "DISCIPLINE_BLOCKED (纪律原则否决)" if lang != "en" else "DISCIPLINE_BLOCKED"
+                    )
+                debate_result["cio_verdict"]["position_sizing_advice"] = (
+                    f"0% 仓位 — 纪律原则否决（{short_veto}）"
+                    if lang == "zh" else
+                    f"0% Allocation — Blocked by Discipline ({short_veto})"
+                )
+                existing_summary = str(debate_result["cio_verdict"].get("judge_summary", "")).strip()
+                if not any(tok in existing_summary for tok in ["左侧", "Left-Side", "陷阱", "Prosperity Trap", "纪律", "Discipline"]):
+                    debate_result["cio_verdict"]["judge_summary"] = f"[{short_veto}] {existing_summary}"
 
         return debate_result
 
@@ -118,10 +128,11 @@ class MultiAgentArena:
             "   - bear_rebuttal: Bear Agent directly attacks Bull's thesis by interrogating Stock-Based Compensation (SBC) dilution ($X/share), Net Debt drag, and any forensic accrual flags to demonstrate optical valuation distortion.\n"
             "   - bull_rebuttal: Bull Agent directly refutes Bear's critique by defending unit economics, cash reinvestment ROIC, balance sheet resilience, and why margin of safety protects against cyclical normalization.\n"
             "4. CIO Agent (Judge): Impartial referee enforcing empirical evidence, Risk-Reward ratio, numerical falsification price level, and institutional investment discipline (pre-trade soul check & prior framework):\n"
-            "   - judge_summary: Decisive executive investment conclusion synthesizing Bull and Bear arguments, valuation margin of safety, and recommended entry price. STRICTLY DO NOT repeat generic checklist text or static boilerplate here as it is rendered separately below.\n"
-            "   - falsification_price_level: Exact numerical price level (float) representing a decisive -3% breach below 200D SMA support or value floor.\n"
+            "   - judge_summary: MAX 2 concise sentences (<=35 words EN / <=60 chars ZH) covering ONLY valuation vs buy zone, momentum gate, and action. NEVER repeat company name, P/E, moat, or Risk-Reward ratio shown in badges.\n"
+            "   - position_sizing_advice: MAX 12 words (e.g., '1.5%-2.5% Pilot -> 3%-5% Core SAA' or '0% Allocation - Await Right-Side Pivot').\n"
+            "   - falsification_price_level: Exact numerical price level (float) representing the adaptive stop floor.\n"
             "   - falsification_trigger_condition: Specific condition string detailing when the thesis is invalid and position must be liquidated.\n"
-            "   - mianji_framework.taxonomy_diagnosis: Analyze THIS specific stock's business engine, FCF conversion ($X), ROIC (X%), and cyclicality to diagnose why it belongs to 🌲 Tree (compounder), 🌾 Grain (cyclical/dividend value), or 🥬 Vegetable (trend-only satellite). Avoid generic boilerplate; evaluate the real business.\n"
+            "   - mianji_framework.taxonomy_diagnosis: MAX 1 metric-dense sentence (<=25 words) citing FCF ($X), ROIC (X%), and allocation tier (🌲 Tree / 🌾 Grain / 🥬 Vegetable).\n"
             "   - Pre-trade Soul Check (投前灵魂四问): Check FOMO emotional urgency (eliminate anxiety), verify Trend Temperature (regime FREEZE/FLAT/WARM/HOT, favoring right-side entry over left-side knife-catching), penetrate narrative with Reverse-DCF 10Y ceiling multiple and Prosperity Trap warnings, cap Bayesian prior confidence at <= 95% (never 100% certainty, respect unknown), and establish a mandatory pre-set falsification exit trigger with a quantified bottom threshold.\n"
             "   - Position Sizing & Barbell: Core SAA (80% Tree/Grain) vs Satellite TAA (20% Vegetable). Anti-ruin rule: strictly block counter-trend averaging down.\n"
             "   - Qualified Holder Mindset (只做合格持有人): '不是人在做投资，是纪律在做投资。'\n\n"
@@ -217,39 +228,40 @@ class MultiAgentArena:
         fifty_sma_val = float(pricing_data.get("fifty_day_sma", price_val))
         curr_val = stock_data.get("currency", "USD")
 
-        # PL-726.5.1: Compute adaptive falsification floor
-        from backend.services.alert_engine import PriceAlertEngine
-        adaptive_eval = PriceAlertEngine.compute_adaptive_falsification_floor(
-            current_price=price_val,
-            sma_50=fifty_sma_val,
-            sma_200=two_hundred_sma_val,
-            buy_in_price=float(stock_data.get("buy_in_price")) if stock_data.get("buy_in_price") else None,
-            atr_14=float(stock_data.get("atr_14") or 0.0),
-            rsi_14=float(stock_data.get("rsi_14") or 0.0)
+        # PL-726.5.1 / PL-730.1.2: Deterministic adaptive falsification floor (cost-basis-aware below 200D SMA)
+        adaptive = cls._resolve_adaptive_falsification(
+            price=price_val,
+            fifty_sma=fifty_sma_val,
+            two_hundred_sma=two_hundred_sma_val,
+            curr=curr_val,
+            stock_data=stock_data,
+            pricing_data=pricing_data
         )
-        bottom_thresh = adaptive_eval["falsification_floor"]
+        bottom_thresh = adaptive["bottom_threshold"]
+        floor_type = adaptive["floor_type"]
+        buy_in_val = adaptive["buy_in_price"]
+        is_falsified_val = adaptive["is_falsified"]
+        default_cond = adaptive["falsification_zh"] if lang != "en" else adaptive["falsification_en"]
 
-        # Ensure quantified falsification parameters exist in parsed verdict
-        cio_verdict = parsed.get("cio_verdict", {})
-        mianji_framework = cio_verdict.get("mianji_framework", {})
-        if "soul_check" in mianji_framework:
-            sc = mianji_framework["soul_check"]
-            if "bottom_threshold" not in sc or not sc["bottom_threshold"]:
-                sc["bottom_threshold"] = bottom_thresh
-            if "is_falsified" not in sc:
-                sc["is_falsified"] = bool(price_val < float(sc["bottom_threshold"]))
-            if "threshold_currency" not in sc:
-                sc["threshold_currency"] = curr_val
+        # Sync deterministic floor & falsification state onto CIO verdict & soul_check
+        cio_verdict = parsed.setdefault("cio_verdict", {})
+        cio_verdict["bottom_fishing_threshold"] = bottom_thresh
+        cio_verdict["is_falsified"] = is_falsified_val
+        cio_verdict["floor_type"] = floor_type
+        mianji_framework = cio_verdict.setdefault("mianji_framework", {})
+        sc = mianji_framework.setdefault("soul_check", {})
+        sc["bottom_threshold"] = bottom_thresh
+        sc["is_falsified"] = is_falsified_val
+        sc["floor_type"] = floor_type
+        if buy_in_val is not None:
+            sc["buy_in_price"] = buy_in_val
+        sc.setdefault("threshold_currency", curr_val)
+        if floor_type in ("COST_BASIS_ATR_STOP", "RECOVERY_SUPPORT_STOP") or not sc.get("mandatory_falsification_trigger"):
+            sc["mandatory_falsification_trigger"] = default_cond
 
-        # Populate top-level fields for US-07 institutional schema compliance
-        if not parsed.get("falsification_price_level"):
-            parsed["falsification_price_level"] = bottom_thresh
-        if not parsed.get("falsification_trigger_condition"):
-            sc = cio_verdict.get("mianji_framework", {}).get("soul_check", {})
-            parsed["falsification_trigger_condition"] = sc.get(
-                "mandatory_falsification_trigger",
-                f"Decisive break below ${bottom_thresh} {curr_val} (-3.0% under 200D MA), or quarterly FCF turning negative"
-            )
+        parsed["falsification_price_level"] = bottom_thresh
+        if floor_type in ("COST_BASIS_ATR_STOP", "RECOVERY_SUPPORT_STOP") or not parsed.get("falsification_trigger_condition"):
+            parsed["falsification_trigger_condition"] = sc.get("mandatory_falsification_trigger", default_cond)
 
         if not parsed.get("bull_rebuttal"):
             parsed["bull_rebuttal"] = (
@@ -270,6 +282,66 @@ class MultiAgentArena:
         }
 
         return parsed
+
+    @staticmethod
+    def _resolve_adaptive_falsification(
+        price: float,
+        fifty_sma: float,
+        two_hundred_sma: float,
+        curr: str,
+        stock_data: Dict[str, Any],
+        pricing_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Computes adaptive falsification floor and tailored exit descriptions.
+        Anchors below cost basis / ATR support when purchased or trading below 200D SMA.
+        """
+        from backend.services.alert_engine import PriceAlertEngine
+
+        raw_buy_in = stock_data.get("buy_in_price")
+        buy_in_val = float(raw_buy_in) if raw_buy_in is not None and float(raw_buy_in) > 0 else None
+        adaptive_eval = PriceAlertEngine.compute_adaptive_falsification_floor(
+            current_price=float(price),
+            sma_50=float(fifty_sma or 0.0),
+            sma_200=float(two_hundred_sma or 0.0),
+            buy_in_price=buy_in_val,
+            atr_14=float(stock_data.get("atr_14") or pricing_data.get("atr_14") or 0.0),
+            rsi_14=float(stock_data.get("rsi_14") or pricing_data.get("rsi_14") or 0.0)
+        )
+        bottom_threshold = float(adaptive_eval["falsification_floor"])
+        floor_type = str(adaptive_eval.get("floor_type", "STRUCTURAL_200D_STOP"))
+        is_falsified = bool(price < bottom_threshold)
+
+        if floor_type == "COST_BASIS_ATR_STOP" and buy_in_val is not None:
+            falsification_zh = (
+                f"成本止损底线 ${bottom_threshold:.2f} {curr}（基于买入成本 ${buy_in_val:.2f} 下方 -8% / 2x ATR；因建仓低于200日均线 ${two_hundred_sma}，不适用均线止损），或季度FCF转负"
+            )
+            falsification_en = (
+                f"Cost-basis stop at ${bottom_threshold:.2f} {curr} (-8% / 2x ATR below buy-in ${buy_in_val:.2f}; 200D MA ${two_hundred_sma} bypassed as entry was below 200D), or quarterly FCF turning negative"
+            )
+        elif floor_type == "RECOVERY_SUPPORT_STOP":
+            falsification_zh = (
+                f"波幅支撑底线 ${bottom_threshold:.2f} {curr}（处于200日均线 ${two_hundred_sma} 下方修复期，按 -8% / 2x ATR 设定防守位），或季度FCF转负"
+            )
+            falsification_en = (
+                f"Downside ATR support stop at ${bottom_threshold:.2f} {curr} (-8% / 2x ATR below-200D MA ${two_hundred_sma} recovery guard), or quarterly FCF turning negative"
+            )
+        else:
+            falsification_zh = (
+                f"有效跌破趋势止损底线 ${bottom_threshold:.2f} {curr}（200日均线 ${two_hundred_sma} 下方 -3.0% 且连续3日无法收复），或季度自由现金流转负"
+            )
+            falsification_en = (
+                f"Decisive break below structural floor ${bottom_threshold:.2f} {curr} (-3.0% under 200D MA ${two_hundred_sma} for 3 sessions), or quarterly FCF turning negative"
+            )
+
+        return {
+            "bottom_threshold": bottom_threshold,
+            "floor_type": floor_type,
+            "buy_in_price": buy_in_val,
+            "is_falsified": is_falsified,
+            "falsification_zh": falsification_zh,
+            "falsification_en": falsification_en,
+        }
 
     @classmethod
     def _run_fallback_debate(cls, stock_data: Dict[str, Any], macro_data: Dict[str, Any], pricing_data: Dict[str, Any], fundamental_data: Dict[str, Any], lang: str = "en", country: str = "US", verify_filings: bool = False) -> Dict[str, Any]:
@@ -474,12 +546,22 @@ class MultiAgentArena:
 
         prior_confidence = 70 if (has_buy_bracket and price <= buy_max) else 45
         
-        # Quantify the decisive break below 200D MA: -3.0% buffer floor
-        bottom_threshold = round(two_hundred_sma * 0.97, 2) if two_hundred_sma > 0 else round(price * 0.95, 2)
-        is_falsified = bool(price < bottom_threshold)
-
-        falsification_zh = f"有效跌破底线阈值 ${bottom_threshold} {curr}（200日均线 ${two_hundred_sma} 下方 -3.0% 且连续3日无法收复），或季度自由现金流质量转负"
-        falsification_en = f"Decisive break below bottom threshold ${bottom_threshold} {curr} (-3.0% buffer under 200D MA ${two_hundred_sma} for 3 sessions), or quarterly FCF turning negative"
+        # PL-730.1.2: Adaptive falsification floor (cost-basis-aware when purchased below 200D SMA)
+        fifty_sma_val = float(pricing_data.get("fifty_day_sma") or price)
+        adaptive = cls._resolve_adaptive_falsification(
+            price=float(price),
+            fifty_sma=fifty_sma_val,
+            two_hundred_sma=float(two_hundred_sma or 0.0),
+            curr=curr,
+            stock_data=stock_data,
+            pricing_data=pricing_data
+        )
+        bottom_threshold = adaptive["bottom_threshold"]
+        floor_type = adaptive["floor_type"]
+        buy_in_val = adaptive["buy_in_price"]
+        is_falsified = adaptive["is_falsified"]
+        falsification_zh = adaptive["falsification_zh"]
+        falsification_en = adaptive["falsification_en"]
 
         # Extract concrete stock fundamentals for genuine asset diagnosis
         fcf_val = stock_data.get("free_cash_flow") or fundamental_data.get("free_cash_flow") or 0
@@ -498,159 +580,76 @@ class MultiAgentArena:
         roic_display = f"{round(float(roic_val) * 100, 1)}%"
 
         if taxonomy == "TREE":
-            diagnosis_zh = (
-                f"{company} 判定为【种树资产】：公司具备 {moat} 竞争壁垒，ROIC 达 {roic_display}，年化自由现金流规模达 {fcf_display} {curr} 且股权未见恶性稀释（3年稀释率 {dilution_val}%）。"
-                f"其长期内在价值由内生自由现金流的持续复利驱动，而非单纯依赖宏观景气度周期。适合合格持有人以 80% 核心底仓跨周期持有，不因短期估值波动轻易被震荡洗出。"
-            )
-            diagnosis_en = (
-                f"{company} diagnosed as [Tree Asset]: Possesses {moat} with ROIC of {roic_display}, robust annual FCF of {fcf_display} {curr}, and disciplined share count ({dilution_val}% 3Y dilution). "
-                f"Value creation is powered by durable compounding cash flows rather than macro cycles. Suitable as core 80% SAA compounding anchor."
-            )
-            diagnosis_hy = (
-                f"{company} 判定为【种树资产 (Tree)】：具备 {moat}，ROIC 达 {roic_display}，自由现金流规模 {fcf_display} {curr}，无恶性稀释。内在价值由内生现金流复利驱动，定位为 80% Core SAA 核心底仓，穿越周期长期持有。"
-            )
+            diagnosis_zh = f"【种树资产 • 80% 核心底仓】{moat} | ROIC {roic_display} | 年化 FCF {fcf_display} {curr} | 3年稀释 {dilution_val}% — 内生现金流复利驱动，宜跨周期持有。"
+            diagnosis_en = f"[Tree • 80% Core SAA] {moat} | ROIC {roic_display} | FCF {fcf_display} {curr} | 3Y Dilution {dilution_val}% — Secular cash compounder for cross-cycle holding."
+            diagnosis_hy = f"【种树资产 (Tree • 80% Core SAA)】{moat} | ROIC {roic_display} | FCF {fcf_display} {curr} — 内生现金流复利驱动，跨周期持有。"
         elif taxonomy == "GRAIN":
-            diagnosis_zh = (
-                f"{company} 判定为【种粮资产】：年产自由现金流规模达 {fcf_display} {curr}，综合股东回报率（股息+净回购）达 {total_sh_yield}%，但盈利能力强依赖大宗商品价格或宏观周期波动。"
-                f"投资策略严格遵循‘春播秋收’纪律：在估值折价与周期低谷建仓吃股息，在估值中枢修复进入过热期必须果断兑现收割，切忌将其误判为长青树而承受剧烈回撤。"
-            )
-            diagnosis_en = (
-                f"{company} diagnosed as [Grain Asset]: Generates {fcf_display} {curr} in cash flow with {total_sh_yield}% total shareholder return, but remains structurally cyclical. "
-                f"Follow 'Spring Sowing, Autumn Harvest' discipline: accumulate during valuation troughs for dividends, harvest into valuation peaks; never mistake cyclicals for secular compounders."
-            )
-            diagnosis_hy = (
-                f"{company} 判定为【种粮资产 (Grain)】：现金流规模达 {fcf_display} {curr}，股东综合回报率 {total_sh_yield}%，盈利受宏观周期约束。恪守‘春播秋收’纪律：估值折价期低估买入享股息，估值中枢修复时果断止盈收割。"
-            )
+            diagnosis_zh = f"【种粮资产 • 春播秋收】年化 FCF {fcf_display} {curr} | 股东综合回报率 {total_sh_yield}% — 周期折价期建仓收息，景气与估值高点果断兑现。"
+            diagnosis_en = f"[Grain • Cyclical Value] FCF {fcf_display} {curr} | Shareholder Yield {total_sh_yield}% — Accumulate at cycle troughs for yield; harvest into valuation peaks."
+            diagnosis_hy = f"【种粮资产 (Grain • 春播秋收)】FCF {fcf_display} {curr} | 股东回报 {total_sh_yield}% — 周期低谷买折价，景气高点果断收割。"
         else:
-            veg_reason_zh = "自由现金流尚未转正或存在股权稀释" if fcf_val <= 0 else "估值倍数严重透支远期预期，缺乏 DCF 安全垫"
-            veg_reason_en = "unprofitable FCF or ongoing share dilution" if fcf_val <= 0 else "elevated valuation multiple lacking durable DCF anchor"
-            diagnosis_zh = (
-                f"{company} 判定为【种菜资产】：当前{veg_reason_zh}（年化FCF {fcf_display} {curr}）。标的无长期确定性自由现金流锚，不能左侧越跌越买死扛。"
-                f"策略严格定位为 20% 战术卫星轻仓（试仓上限2%）：依托技术均线温度进行右侧顺势博弈，必须预设硬止损底线，破位果断离场。"
-            )
-            diagnosis_en = (
-                f"{company} diagnosed as [Vegetable Asset]: Reflects {veg_reason_en} (FCF {fcf_display} {curr}). Lacks a predictable long-term FCF anchor. "
-                f"Restricted to 20% tactical satellite TAA: follow right-side trend momentum with mandatory hard stop-loss; never average down on negative momentum."
-            )
-            diagnosis_hy = (
-                f"{company} 判定为【种菜资产 (Vegetable)】：现金流尚未稳固（FCF {fcf_display} {curr}）且缺乏 DCF 价值锚。定位为 20% Satellite 战术卫星仓位，严格顺应右侧趋势温度并预设硬止损，严禁左侧加仓抄底。"
-            )
+            veg_reason_zh = "FCF未转正或股权稀释" if fcf_val <= 0 else "估值透支且缺乏DCF安全垫"
+            veg_reason_en = "unprofitable FCF or dilution" if fcf_val <= 0 else "extended multiple without DCF anchor"
+            diagnosis_zh = f"【种菜资产 • 20% 战术卫星】FCF {fcf_display} {curr}（{veg_reason_zh}）— 仅限右侧顺势博弈（单票上限 2%），破位硬止损离场。"
+            diagnosis_en = f"[Vegetable • 20% Satellite TAA] FCF {fcf_display} {curr} ({veg_reason_en}) — Right-side trend trades only (max 2% weight) with strict hard stop."
+            diagnosis_hy = f"【种菜资产 (Vegetable • 20% Satellite)】FCF {fcf_display} {curr}（{veg_reason_zh}）— 仅限右侧顺势交易（上限 2%），严禁左侧死扛。"
         tax_diagnosis = diagnosis_zh if lang == "zh" else (diagnosis_hy if lang == "hybrid" else diagnosis_en)
 
-        # 7. 👨‍⚖️ CIO Agent Executive Verdict & Position Sizing (No static checklist duplication)
+        # 7. 👨‍⚖️ CIO Agent Executive Verdict & Position Sizing (Tight, non-redundant executive summary)
         if is_prosperity_trap:
             verdict = "PASS_PROSPERITY_TRAP" if lang == "en" else ("景气度陷阱否决" if lang == "zh" else "景气度陷阱否决 (PASS - Trap)")
-            position_size = "0% (Multiple compression risk due to terminal saturation)." if lang == "en" else "0% 仓位（触发景气度陷阱，高增速无法外推，估值面临大幅压缩）。"
-            rationale_zh = (
-                f"综合多空审议，{company} ({symbol}) 当前估值过度透支远期预期，逆向DCF隐含利润倍数达 {ceiling_mult}x，已触发终局景气度陷阱预警（{trap_reason or '高增速外推不可持续'}）。"
-                f"尽管当前财务报表短期亮眼，但未来面临估值中枢大幅下修风险，投委会一致决定一票否决暂不建仓。"
-            )
-            rationale_en = (
-                f"Weighing the debate, {company} ({symbol}) triggered a terminal saturation prosperity trap warning ({trap_reason or 'growth multiple compression'}). "
-                f"Reverse-DCF implies an elevated 10Y ceiling multiple of {ceiling_mult}x. The CIO committee recommends passing to protect against valuation multiple derating."
-            )
-            rationale_hy = (
-                f"综合多空审议，{company} ({symbol}) 触发 Prosperity Trap 景气度陷阱预警（{trap_reason or '终局增速见顶'}）。"
-                f"逆向DCF隐含天花板倍数达 {ceiling_mult}x，估值存在大幅压缩风险，投委会决定 Pass 暂不建仓。"
-            )
+            position_size = "0% (Prosperity Trap — Multiple Compression Risk)" if lang == "en" else "0% 仓位（触发景气度陷阱，防范估值下修）"
+            rationale_zh = f"逆向 DCF 隐含 10年利润扩张达 {ceiling_mult}x，触发终局景气度陷阱（{trap_reason or '高增速外推不可持续'}），暂不建仓以规避估值压缩。"
+            rationale_en = f"Reverse-DCF implies an elevated {ceiling_mult}x 10Y earnings ceiling ({trap_reason or 'terminal growth saturation'}). Pass to avoid multiple derating."
+            rationale_hy = f"逆向 DCF 隐含 10Y 倍数达 {ceiling_mult}x，触发 Prosperity Trap（{trap_reason or '终局增速见顶'}），Pass 规避估值压缩。"
         elif str(pricing_data.get("action_status") or "") in ["LEFT_SIDE_WATCH", "左侧观察期", "左侧观察期 (LEFT_SIDE_WATCH)"] or (has_buy_bracket and price <= buy_max and hitting_zone != "RIGHT_SIDE"):
-            # PL-725.3: Dual-Gated Guardrail — In buy bracket but Left-Side momentum (0% immediate allocation)
             verdict = "WATCH / AWAIT RIGHT-SIDE REVERSAL" if lang == "en" else ("左侧观察 (等待企稳)" if lang == "zh" else "左侧观察 (LEFT_SIDE - Await Turn)")
-            position_size = "0% Immediate Allocation: Stock is in value buy bracket, but trend is Left-Side falling. Await right-side trend stabilization before deploying capital." if lang == "en" else "0% 即时仓位（处于估值买入区间，但属于左侧下跌趋势，等待右侧企稳确认再行建仓）。"
+            position_size = "0% Immediate Allocation — Await Right-Side Pivot" if lang == "en" else "0% 即时仓位（等待右侧企稳信号）"
             ret_5d_display = f"{pricing_data.get('ret_5d_pct', 0.0):+.1f}%"
-            rationale_zh = (
-                f"综合多空审议，{company} ({symbol}) 当前实时股价 ${price} {curr} 已进入估值买入区间 (${buy_min} - ${buy_max} {curr})，"
-                f"但近期价格动量处于左侧探底/下跌形态（量价温度: {trend_temp}，5日涨跌幅: {ret_5d_display}）。"
-                f"投委会恪守双重闸门铁律：基本面安全边际充足，但左侧禁止盲目接飞刀。建议预设价格预警于 ${buy_max} {curr}，保持 0% 仓位观望，等待右侧企稳信号再行建仓。"
-            )
-            rationale_en = (
-                f"Synthesizing the debate, {company} (${price} {curr}) is trading in the valuation buy bracket (${buy_min} - ${buy_max} {curr}), "
-                f"but technical momentum is in a Left-Side falling pattern (Trend: {trend_temp}, 5D Return: {ret_5d_display}). "
-                f"The CIO committee enforces dual-gated discipline: fundamental valuation is attractive, but left-side knife-catching is strictly barred. "
-                f"Maintain 0% immediate allocation; wait for confirmed Right-Side stabilization before deploying capital."
-            )
-            rationale_hy = (
-                f"综合多空审议，{company} 实时价格 ${price} {curr} 进入估值区间 (${buy_min} - ${buy_max} {curr})，"
-                f"但处于左侧下跌/探底形态（{trend_temp}，5D: {ret_5d_display}）。投委会执行 Dual-Gated 纪律：0% 即时仓位，等待右侧企稳信号确认再行介入。"
-            )
+            rationale_zh = f"现价 ${price} {curr} 已入估值击球区，但受制于左侧下跌动能（温度: {trend_temp}，5D: {ret_5d_display}）。执行双重闸门纪律：维持 0% 观望，待右侧企稳确认后再建仓。"
+            rationale_en = f"Valuation is inside the buy bracket at ${price} {curr}, but Left-Side momentum ({trend_temp}, 5D {ret_5d_display}) blocks entry. Hold 0% until a Right-Side pivot confirms."
+            rationale_hy = f"现价 ${price} {curr} 已入估值区间，但处于左侧下跌形态（{trend_temp}，5D: {ret_5d_display}）。维持 0% 观望，待右侧拐点确认后介入。"
         elif has_buy_bracket and price <= buy_max and hitting_zone == "RIGHT_SIDE":
-            # Dual-Gated Qualification: BOTH Fundamental Gate AND Momentum Gate satisfied!
             verdict = "ACCUMULATE IN BRACKETS" if lang == "en" else ("建议买入 (分批建仓)" if lang == "zh" else "建议买入 (BUY - Accumulate)")
             if taxonomy == "TREE":
                 if right_side_path in ("SUPPORT_BOUNCE", "BOTTOM_REVERSAL"):
-                    position_size = "80/20 Core SAA (Right-Side Pivot): Deploy 1.5% - 2.5% pilot tranche now; scale to 3% - 5% core compounding weight on trend continuation." if lang == "en" else "80/20 哑铃策略（右侧拐点初现）：先行建立 1.5% - 2.5% 试仓底仓，趋势延续确认后加满至 3% - 5% 核心复利仓位。"
+                    position_size = "1.5%–2.5% Pilot Tranche → Scale to 3%–5% Core SAA" if lang == "en" else "1.5%–2.5% 右侧试仓 → 趋势确认后加至 3%–5% 核心仓"
                 else:
-                    position_size = "80/20 Core SAA: Allocate 3% - 5% core compounding weight." if lang == "en" else "80/20 哑铃策略：配置 3% - 5% 核心 SAA 种树复利仓位。"
+                    position_size = "3%–5% Core SAA Compounding Weight" if lang == "en" else "3%–5% 核心 SAA 种树复利仓位"
             elif taxonomy == "GRAIN":
                 if right_side_path in ("SUPPORT_BOUNCE", "BOTTOM_REVERSAL"):
-                    position_size = "80/20 Core/Satellite (Right-Side Pivot): Deploy 1.5% - 2.0% pilot tranche now; scale to 2% - 4% cyclical/dividend value position." if lang == "en" else "春播秋收策略（右侧拐点初现）：先行建立 1.5% - 2.0% 试仓底仓，后续加至 2% - 4% 种粮周期高股息仓位。"
+                    position_size = "1.5%–2.0% Pilot Tranche → Scale to 2%–4% Cyclical Value" if lang == "en" else "1.5%–2.0% 右侧试仓 → 后续加至 2%–4% 周期高股息仓"
                 else:
-                    position_size = "80/20 Core/Satellite: Allocate 2% - 4% cyclical/dividend value position." if lang == "en" else "春播秋收策略：配置 2% - 4% 种粮周期高股息仓位，估值达到上限及时收割。"
+                    position_size = "2%–4% Core/Satellite Cyclical Weight" if lang == "en" else "2%–4% 春播秋收周期高股息仓位"
             else:
-                position_size = "Satellite TAA: Max 2% trial position with right-side trend & hard stop." if lang == "en" else "种菜股卫星仓位：试仓上限 2%，严格依托右侧温度与 -7% 硬止损。"
+                position_size = "Max 2% Satellite TAA (Hard Stop Required)" if lang == "en" else "上限 2% 战术卫星仓（预设 -7% 硬止损）"
 
-            rationale_zh = (
-                f"综合多空审议，{company} ({symbol}) 当前实时股价 ${price} {curr} 稳居理想买入区间 (${buy_min} - ${buy_max} {curr}) 内，风险收益比达 {rr_ratio}:1。"
-                f"公司具备 {moat} 竞争壁垒与 {fcf_quality}，量价处于右侧击球区（{trend_temp}），投委会建议按纪律分批建仓吸纳。"
-            )
-            rationale_en = (
-                f"Synthesizing the debate, {company} (${price} {curr}) is trading favorably within the safe buy bracket (${buy_min} - ${buy_max} {curr}) with an attractive {rr_ratio}:1 Risk-Reward ratio. "
-                f"Backed by {moat} and {fcf_quality}, entry at current levels is confirmed by Right-Side trend momentum ({trend_temp})."
-            )
-            rationale_hy = (
-                f"综合多空研报，{company} 实时价格 ${price} {curr} 稳居安全买入区间 (${buy_min} - ${buy_max} {curr})，Risk-Reward 为 {rr_ratio}:1。"
-                f"依托 {moat} 护城河与 {fcf_quality}，当前价位具备右侧支撑 ({trend_temp})，投委会建议按纪律分批建仓。"
-            )
+            rationale_zh = f"现价 ${price} {curr} 处于安全买入区间且右侧动能确认（温度: {trend_temp}），基本面与技术面双重闸门共振，建议按纪律分批吸纳。"
+            rationale_en = f"Price (${price} {curr}) is inside the safe buy zone with confirmed Right-Side momentum ({trend_temp}). Dual fundamental and technical gates align for staged accumulation."
+            rationale_hy = f"现价 ${price} {curr} 位于安全买入区间且右侧趋势确认 ({trend_temp})，双重闸门共振，建议分批建仓。"
         elif not has_buy_bracket:
             verdict = "TREND_ONLY_NO_DCF" if lang == "en" else ("仅限趋势交易" if lang == "zh" else "仅限趋势 (TREND_ONLY)")
-            position_size = "Satellite TAA: Max 2% satellite position strictly with hard stop-loss." if lang == "en" else "卫星仓位上限2%，严格按趋势温度与硬止损操作。"
-            rationale_zh = f"{pricing_data.get('timing_advice', '')} 该标的当前缺乏确定性长期自由现金流估值模型，投委会建议仅限顺势战术交易，严格依托技术均线与止损纪律执行，严禁左侧盲目死扛。"
-            rationale_en = f"{pricing_data.get('timing_advice', '')} The stock lacks a predictable long-term DCF model. Capital allocation must remain tactical and disciplined, strictly anchored to moving averages and risk parameters."
-            rationale_hy = f"{pricing_data.get('timing_advice', '')} 标的缺乏确定性 DCF 模型，投委会建议仅限顺势战术交易，严格执行均线与止损纪律。"
+            position_size = "Max 2% Satellite TAA (Strict Hard Stop)" if lang == "en" else "上限 2% 卫星仓（严格执行均线止损）"
+            rationale_zh = f"缺乏确定性长期 DCF 估值锚。{pricing_data.get('timing_advice', '')} 仅限顺势战术博弈，严禁左侧死扛。"
+            rationale_en = f"Lacks a predictable DCF valuation anchor. {pricing_data.get('timing_advice', '')} Restrict to tactical trend trading with a hard stop."
+            rationale_hy = f"缺乏确定性 DCF 估值锚。{pricing_data.get('timing_advice', '')} 仅限右侧战术交易并预设硬止损。"
         elif price <= pricing_data.get("fifty_day_sma", price * 1.05):
             verdict = "HOLD / WATCH PULLBACK" if lang == "en" else ("观望等待 (等待回调)" if lang == "zh" else "观望等待 (HOLD - Watch)")
-            position_size = "0% new capital (Hold existing position if owned)." if lang == "en" else "0% 新增资金（已持仓者按纪律继续持有）。"
-            rationale_zh = (
-                f"{company} 当前股价 ${price} {curr} 高于安全买入上限 (${buy_max} {curr})，风险收益比为 {rr_ratio}:1。"
-                f"尽管基本面 ({moat}) 依然稳健，但当前缺乏足够估值折价，投委会建议保持耐心，等待价格回调至理想区间 (${buy_min} - ${buy_max} {curr}) 再行分批建仓。"
-            )
-            rationale_en = (
-                f"Price ${price} {curr} for {company} is above safe buy zone (${buy_max} {curr}). Risk-Reward Ratio is {rr_ratio}:1. "
-                f"While fundamental quality ({moat}) remains sound, the CIO committee advises patience: wait for price consolidation back into target zone (${buy_min} - ${buy_max} {curr}) before expanding position."
-            )
-            rationale_hy = (
-                f"{company} 当前股价 ${price} {curr} 高于安全买入上限 (${buy_max} {curr})，R/R 为 {rr_ratio}:1。"
-                f"基本面虽然扎实，但当前缺乏足够安全垫，投委会建议耐心等待价格回调企稳至安全区间 (${buy_min} - ${buy_max} {curr}) 再行介入。"
-            )
+            position_size = "0% New Capital (Hold Existing Position)" if lang == "en" else "0% 新增资金（底仓继续持有）"
+            rationale_zh = f"现价 ${price} {curr} 高于买入上限 (${buy_max} {curr})，安全垫不足。建议底仓持有，等待回调至 ${buy_min}–${buy_max} {curr} 区间再行加仓。"
+            rationale_en = f"Trading above the ${buy_max} {curr} buy ceiling with insufficient margin of safety. Hold existing shares; await pullback into ${buy_min}–${buy_max} {curr}."
+            rationale_hy = f"现价 ${price} {curr} 高于买入上限 (${buy_max} {curr})，安全边际不足。底仓持有，待回调至 ${buy_min}–${buy_max} {curr} 再介入。"
         else:
             verdict = "PASS / OVERVALUED" if lang == "en" else ("暂不建仓 (估值偏高)" if lang == "zh" else "暂不建仓 (PASS - Overvalued)")
-            position_size = "0% (Avoid buying at current extended valuation)." if lang == "en" else "0% 仓位（避免在当前过度拉升的估值位追高）。"
+            position_size = "0% Allocation (Avoid Chasing Extended Valuation)" if lang == "en" else "0% 仓位（规避高位追涨）"
             if is_above_200:
-                rationale_zh = (
-                    f"{company} 股价在 200日均线 (${two_hundred_sma} {curr}) 上方过度拉升，风险收益比为 {rr_ratio}:1。"
-                    f"当前估值倍数偏高且缺乏足够安全边际，投委会建议暂不追高建仓，等待估值中枢理性回调至 ${buy_max} {curr} 附近。"
-                )
-                rationale_en = (
-                    f"Stock {company} is overextended above 200D SMA (${two_hundred_sma} {curr}) with Risk-Reward Ratio of {rr_ratio}:1. "
-                    f"Current multiple lacks sufficient margin of safety against potential mean-reversion pullbacks. The committee recommends passing at current extended levels."
-                )
-                rationale_hy = (
-                    f"{company} 当前股价在 200D SMA (${two_hundred_sma} {curr}) 上方过度拉升，R/R 为 {rr_ratio}:1。"
-                    f"缺乏安全边际，投委会建议暂不建仓，等待估值中枢理性回归。"
-                )
+                rationale_zh = f"现价高于安全买入上限 (${buy_max} {curr}) 且距 200日均线 (${two_hundred_sma} {curr}) 显著偏离。暂不追高，待估值理性回落。"
+                rationale_en = f"Trading above safe buy ceiling (${buy_max} {curr}) and extended above 200D SMA (${two_hundred_sma} {curr}). Pass on chasing; wait for mean reversion."
+                rationale_hy = f"现价高于买入上限 (${buy_max} {curr}) 且偏离 200D SMA (${two_hundred_sma} {curr})。暂不建仓，等待估值回归。"
             else:
-                rationale_zh = (
-                    f"{company} 股价高于安全买入上限 (${buy_max} {curr}) 且受制于 200日均线阻力位 (${two_hundred_sma} {curr})，风险收益比为 {rr_ratio}:1。"
-                    f"投委会建议暂不建仓，耐心等待上方均线阻力消化或价格企稳于 ${buy_max} {curr}。"
-                )
-                rationale_en = (
-                    f"Stock {company} is trading above safe buy ceiling (${buy_max} {curr}) while below 200D SMA resistance (${two_hundred_sma} {curr}). Risk-Reward Ratio is {rr_ratio}:1. "
-                    f"Wait for price stabilization near ${buy_max} {curr} before considering position entry."
-                )
-                rationale_hy = (
-                    f"{company} 股价高于安全买入上限且受制于 200D SMA 阻力位 (${two_hundred_sma} {curr})，R/R 为 {rr_ratio}:1。"
-                    f"投委会建议暂不建仓，等待上方均线阻力化解或价格企稳。"
-                )
+                rationale_zh = f"现价高于买入上限 (${buy_max} {curr}) 且受制于 200日均线阻力 (${two_hundred_sma} {curr})。暂不建仓，待阻力消化或回稳于 ${buy_max} {curr}。"
+                rationale_en = f"Trading above safe buy ceiling (${buy_max} {curr}) below 200D SMA resistance (${two_hundred_sma} {curr}). Wait for stabilization near ${buy_max} {curr}."
+                rationale_hy = f"现价高于买入上限 (${buy_max} {curr}) 且受制于 200D SMA 阻力 (${two_hundred_sma} {curr})。暂不建仓，等待阻力化解或企稳。"
 
         judge_summary = rationale_zh if lang == "zh" else (rationale_hy if lang == "hybrid" else rationale_en)
 
@@ -660,6 +659,9 @@ class MultiAgentArena:
             "position_sizing_advice": position_size,
             "recommended_buy_bracket": f"${buy_min} - ${buy_max} {curr}" if has_buy_bracket else "TREND_ONLY_NO_DCF",
             "risk_reward_ratio": rr_ratio,
+            "bottom_fishing_threshold": bottom_threshold,
+            "is_falsified": is_falsified,
+            "floor_type": floor_type,
             "judge_summary": judge_summary,
             "empirical_proof_verified": True,
             "mianji_framework": {
@@ -679,6 +681,8 @@ class MultiAgentArena:
                     "mandatory_falsification_trigger": falsification_en if lang == "en" else falsification_zh,
                     "bottom_threshold": bottom_threshold,
                     "is_falsified": is_falsified,
+                    "floor_type": floor_type,
+                    "buy_in_price": buy_in_val,
                     "threshold_currency": curr,
                     "implied_ceiling_mult": ceiling_mult,
                     "is_prosperity_trap": is_prosperity_trap

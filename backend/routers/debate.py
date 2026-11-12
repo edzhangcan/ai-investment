@@ -19,12 +19,16 @@ from backend.engines.macro_engine import MacroEngine
 from backend.engines.pricing_engine import PricingEngine
 from backend.engines.fundamental_engine import FundamentalEngine
 from backend.agents.agent_arena import MultiAgentArena
+from backend.services.alert_engine import PriceAlertEngine
+from backend.services.alert_engine import PriceAlertEngine
 
 router = APIRouter(tags=["Multi-Agent Debate Streaming"])
 
 def _run_debate_for_ticker(ticker: str, lang: str = "en", force_refresh: bool = False) -> dict:
     stock_data = DataProviderManager.get_stock_data(ticker, force_refresh=force_refresh)
     symbol = ticker.strip().upper()
+    PriceAlertEngine.hydrate_holding_context(stock_data, symbol)
+    PriceAlertEngine.hydrate_holding_context(stock_data, symbol)
     is_ca = (
         stock_data.get("market") == "CA"
         or stock_data.get("currency") == "CAD"

@@ -13,9 +13,10 @@ interface DebateArenaProps {
   pricing?: PricingData | any;
   onRefreshDebate?: (forceRefresh?: boolean) => Promise<void> | void;
   isHolding?: boolean;
+  buyInPrice?: number | null;
 }
 
-export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pricing, onRefreshDebate, isHolding }) => {
+export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pricing, onRefreshDebate, isHolding, buyInPrice }) => {
   const { t, language } = useLanguage();
   const [localDebate, setLocalDebate] = useState<any>(null);
   const [isVerifyingFiling, setIsVerifyingFiling] = useState(false);
@@ -26,6 +27,11 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
   const [isSyncingWatchlist, setIsSyncingWatchlist] = useState(false);
   const [watchlistSynced, setWatchlistSynced] = useState(false);
   const [isHoldingState, setIsHoldingState] = useState<boolean>(Boolean(isHolding));
+  const [buyInPriceState, setBuyInPriceState] = useState<number | null>(buyInPrice ?? null);
+
+  useEffect(() => {
+    setBuyInPriceState(buyInPrice ?? null);
+  }, [buyInPrice]);
 
   useEffect(() => {
     if (typeof isHolding === 'boolean') {
@@ -34,11 +40,16 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
       const sym = stock?.symbol || debateData?.symbol;
       if (sym) {
         fetchStockBucketStatusApi(sym)
-          .then(res => setIsHoldingState(res.bucket === 'HOLDING'))
+          .then(res => {
+            setIsHoldingState(res.bucket === 'HOLDING');
+            if (buyInPrice === undefined && res.data?.buy_in_price) {
+              setBuyInPriceState(Number(res.data.buy_in_price));
+            }
+          })
           .catch(() => setIsHoldingState(false));
       }
     }
-  }, [isHolding, stock?.symbol, debateData?.symbol]);
+  }, [isHolding, buyInPrice, stock?.symbol, debateData?.symbol]);
 
   useEffect(() => {
     setLocalDebate(null);
@@ -284,19 +295,52 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
           {cio.judge_summary || "Ground-truth audit confirms solid FCF conversion and wide economic moat, supporting disciplined DCA allocation."}
         </p>
 
-        {/* Consolidated Thesis Falsification Kill-Switch & Breach Guard */}
+        {/* Consolidated Thesis Falsification Kill-Switch & Breach Guard (Holdings Only) */}
         {(() => {
-          const currPrice = Number(stock?.current_price ?? pricing?.current_price ?? 0);
-          const rawFloor = debateData.falsification_price_level ?? cio?.mianji_framework?.soul_check?.bottom_threshold ?? (stock?.two_hundred_day_sma ? stock.two_hundred_day_sma * 0.97 : null);
-          const bottomFloor = rawFloor ? Number(rawFloor) : null;
-          const isFalsified = Boolean(
-            cio?.mianji_framework?.soul_check?.is_falsified || 
-            (bottomFloor && currPrice > 0 && currPrice < bottomFloor)
-          );
-          const currency = cio?.mianji_framework?.soul_check?.threshold_currency || stock?.currency || 'USD';
-          const falsificationCondition = debateData.falsification_trigger_condition || cio?.mianji_framework?.soul_check?.mandatory_falsification_trigger;
-
           if (!isHoldingState) return null;
+
+          const soulCheck = cio?.mianji_framework?.soul_check || {};
+          const currPrice = Number(stock?.current_price ?? pricing?.current_price ?? 0);
+          const twoHundredSma = Number(pricing?.two_hundred_day_sma ?? stock?.two_hundred_day_sma ?? 0);
+          const structural200dFloor = twoHundredSma > 0 ? Number((twoHundredSma * 0.97).toFixed(2)) : 0;
+          const effectiveBuyIn = Number(buyInPriceState ?? soulCheck.buy_in_price ?? stock?.buy_in_price ?? 0);
+
+          const rawBackendFloor = soulCheck.bottom_threshold ?? activeDebate.falsification_price_level ?? cio.bottom_fishing_threshold;
+          let bottomFloor: number | null = rawBackendFloor ? Number(rawBackendFloor) : null;
+          let floorType: string = String(soulCheck.floor_type || cio.floor_type || (structural200dFloor > 0 ? 'STRUCTURAL_200D_STOP' : 'TRAILING_PCT_STOP'));
+
+          // Purchased-under-floor guard: if bought or trading under 200D floor, anchor floor strictly below cost/spot
+          if (effectiveBuyIn > 0 && structural200dFloor > 0 && effectiveBuyIn < twoHundredSma) {
+            if (!bottomFloor || bottomFloor >= effectiveBuyIn) {
+              bottomFloor = Number((effectiveBuyIn * 0.92).toFixed(2));
+            }
+            floorType = 'COST_BASIS_ATR_STOP';
+          } else if (currPrice > 0 && structural200dFloor > 0 && currPrice < structural200dFloor) {
+            if (!bottomFloor || bottomFloor >= currPrice) {
+              bottomFloor = Number((currPrice * 0.92).toFixed(2));
+              floorType = effectiveBuyIn > 0 ? 'COST_BASIS_ATR_STOP' : 'RECOVERY_SUPPORT_STOP';
+            }
+          } else if (!bottomFloor && structural200dFloor > 0) {
+            bottomFloor = structural200dFloor;
+          }
+
+          const isFalsified = Boolean(bottomFloor && currPrice > 0 && currPrice < bottomFloor);
+          const currency = soulCheck.threshold_currency || stock?.currency || 'USD';
+          const falsificationCondition = activeDebate.falsification_trigger_condition || soulCheck.mandatory_falsification_trigger;
+          const floorBadgeLabel = bottomFloor === null
+            ? ''
+            : floorType === 'COST_BASIS_ATR_STOP'
+            ? (language === 'zh'
+                ? `成本止损: $${bottomFloor.toFixed(2)} ${currency} (${effectiveBuyIn > 0 ? `成本 $${effectiveBuyIn.toFixed(2)} ` : ''}-8% / 2x ATR)`
+                : `Cost Stop: $${bottomFloor.toFixed(2)} ${currency} (-8% / 2x ATR${effectiveBuyIn > 0 ? ` vs $${effectiveBuyIn.toFixed(2)}` : ''})`)
+            : floorType === 'RECOVERY_SUPPORT_STOP'
+            ? (language === 'zh'
+                ? `波幅支撑: $${bottomFloor.toFixed(2)} ${currency} (200日均线下方防守位)`
+                : `Support Stop: $${bottomFloor.toFixed(2)} ${currency} (-8% / 2x ATR Guard)`)
+            : (language === 'zh'
+                ? `趋势止损: $${bottomFloor.toFixed(2)} ${currency} (-3% 200日均线)`
+                : `Floor: $${bottomFloor.toFixed(2)} ${currency} (-3% 200D MA)`);
+
           if (!bottomFloor && !falsificationCondition) return null;
 
           return (
@@ -350,7 +394,7 @@ export const DebateArena: React.FC<DebateArenaProps> = ({ debateData, stock, pri
                       ? 'bg-negative text-white border-negative'
                       : 'bg-surface border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
                   }`}>
-                    Floor: ${bottomFloor.toFixed(2)} {currency} (-3% 200D MA)
+                    {floorBadgeLabel}
                   </span>
                 )}
               </div>

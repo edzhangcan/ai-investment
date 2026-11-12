@@ -1,6 +1,6 @@
 """
-DisciplineEngine: Personal Investment Constitution Rule Engine & Trade Auditor.
-Evaluates trade proposals against the 《纪律.md》 Personal Investment Constitution,
+DisciplineEngine: Personal Investment Discipline Rule Engine & Trade Auditor.
+Evaluates trade proposals against the Discipline Guardrails (纪律原则),
 strictly enforcing the Four Horsemen of Ruin (反破产四铁律) and binary entry/exit guardrails.
 Multi-language support for 'en', 'zh', and 'hybrid' modes.
 """
@@ -40,7 +40,7 @@ class DisciplineEngine:
             except Exception as e:
                 logger.warning("Failed to read discipline constitution from %s: %s", path, e)
 
-        return "# 纪律.md (Personal Investment Constitution)\n- Default rules active."
+        return "# 纪律原则 (Personal Investment Discipline)\n- Default rules active."
 
     @classmethod
     def audit_trade(
@@ -168,14 +168,14 @@ class DisciplineEngine:
         is_compliant = len(veto_reasons_en) == 0
 
         audit_summary_en = (
-            "Discipline Audit Passed: Proposed trade strictly complies with all 《纪律.md》 constitutional guardrails."
+            "Discipline Audit Passed: Proposed trade complies with all Discipline guardrails."
             if is_compliant else
             f"DISCIPLINE BLOCKED: {len(veto_reasons_en)} constitutional vetoes triggered: {'; '.join(veto_reasons_en)}"
         )
         audit_summary_zh = (
-            "《纪律.md》宪法审查通过：交易提案符合定战场、定进出场、定仓位管理的全部风控准则。"
+            "纪律原则审查通过：交易提案符合风控准则。"
             if is_compliant else
-            f"《纪律.md》一票否决：触发 {len(veto_reasons_zh)} 项反破产违规准则：{'; '.join(veto_reasons_zh)}"
+            f"违反纪律原则（触发 {len(veto_reasons_zh)} 项风控否决）：{'; '.join(veto_reasons_zh)}"
         )
 
         return {

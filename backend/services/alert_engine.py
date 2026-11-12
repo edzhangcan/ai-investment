@@ -573,6 +573,84 @@ class PriceAlertEngine:
             "scheduled_alerts": scheduled_results
         }
 
+    @staticmethod
+    def hydrate_holding_context(
+        stock_data: Dict[str, Any],
+        symbol: str,
+        session: Optional[Session] = None
+    ) -> None:
+        """
+        Hydrates user tracking bucket, buy_in_price, and shares_held from UserWatchlistDB
+        so downstream pricing, discipline audit, and debate falsification floor calculations
+        accurately reflect whether the stock is a held position and its entry cost basis.
+        """
+        stock_data.setdefault("bucket", "NONE")
+        norm_sym = symbol.strip().upper()
+
+        def _apply(watch_rec: Optional[UserWatchlistDB]) -> None:
+            if not watch_rec:
+                return
+            stock_data["bucket"] = watch_rec.bucket or "WATCHLIST"
+            if watch_rec.buy_in_price is not None and watch_rec.buy_in_price > 0:
+                stock_data["buy_in_price"] = float(watch_rec.buy_in_price)
+            if watch_rec.shares_held is not None:
+                stock_data["shares_held"] = float(watch_rec.shares_held)
+
+        try:
+            if session and hasattr(session, "exec"):
+                rec = session.exec(
+                    select(UserWatchlistDB).where(UserWatchlistDB.symbol == norm_sym)
+                ).first()
+                _apply(rec)
+            else:
+                from backend.database import engine as db_engine
+                with Session(db_engine) as own_session:
+                    rec = own_session.exec(
+                        select(UserWatchlistDB).where(UserWatchlistDB.symbol == norm_sym)
+                    ).first()
+                    _apply(rec)
+        except Exception as exc:
+            logger.debug("Skipping holding context hydration for %s: %s", norm_sym, exc)
+
+    @staticmethod
+    def hydrate_holding_context(
+        stock_data: Dict[str, Any],
+        symbol: str,
+        session: Optional[Session] = None
+    ) -> None:
+        """
+        Hydrates user tracking bucket, buy_in_price, and shares_held from UserWatchlistDB
+        so downstream pricing, discipline audit, and debate falsification floor calculations
+        accurately reflect whether the stock is a held position and its entry cost basis.
+        """
+        stock_data.setdefault("bucket", "NONE")
+        norm_sym = symbol.strip().upper()
+
+        def _apply(watch_rec: Optional[UserWatchlistDB]) -> None:
+            if not watch_rec:
+                return
+            stock_data["bucket"] = watch_rec.bucket or "WATCHLIST"
+            if watch_rec.buy_in_price is not None and watch_rec.buy_in_price > 0:
+                stock_data["buy_in_price"] = float(watch_rec.buy_in_price)
+            if watch_rec.shares_held is not None:
+                stock_data["shares_held"] = float(watch_rec.shares_held)
+
+        try:
+            if session and hasattr(session, "exec"):
+                rec = session.exec(
+                    select(UserWatchlistDB).where(UserWatchlistDB.symbol == norm_sym)
+                ).first()
+                _apply(rec)
+            else:
+                from backend.database import engine as db_engine
+                with Session(db_engine) as own_session:
+                    rec = own_session.exec(
+                        select(UserWatchlistDB).where(UserWatchlistDB.symbol == norm_sym)
+                    ).first()
+                    _apply(rec)
+        except Exception as exc:
+            logger.debug("Skipping holding context hydration for %s: %s", norm_sym, exc)
+
     @classmethod
     def compute_adaptive_falsification_floor(
         cls,

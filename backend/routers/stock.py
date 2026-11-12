@@ -14,6 +14,8 @@ from backend.engines.pricing_engine import PricingEngine
 from backend.engines.fundamental_engine import FundamentalEngine
 from backend.engines.sec_text_miner import SECTextMiner
 from backend.agents.agent_arena import MultiAgentArena
+from backend.services.alert_engine import PriceAlertEngine
+from backend.services.alert_engine import PriceAlertEngine
 
 router = APIRouter(prefix="/api/stock", tags=["Stock Analyzer"])
 
@@ -45,6 +47,7 @@ def analyze_stock(ticker: str, lang: str = "en", force_refresh: bool = False, se
 
     custom_mos = None
     anchor_mode = "adaptive_balanced"
+    PriceAlertEngine.hydrate_holding_context(stock_data, symbol, session=session)
     if session and hasattr(session, "exec"):
         try:
             settings_rec = session.exec(select(ValuationAlertSettingsDB)).first()
