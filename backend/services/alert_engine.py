@@ -590,24 +590,39 @@ class PriceAlertEngine:
         """
         eff_atr = float(atr_14) if (atr_14 and float(atr_14) > 0) else round(max(current_price or 1.0, 1.0) * 0.022, 2)
         has_entry = (buy_in_price is not None and float(buy_in_price) > 0)
-        buy_p = float(buy_in_price) if has_entry else None
+        curr_p = float(current_price or 1.0)
+        ref_p = float(buy_in_price) if has_entry else curr_p
 
-        # Case A: Contrarian / Deep-Value entry below 200D SMA
-        if has_entry and sma_200 > 0 and buy_p < sma_200 * 0.985:
-            # Anchor to disciplined -7% or 2.0x ATR below cost basis, NEVER above cost basis
-            falsification_floor = round(max(buy_p * 0.93, buy_p - 2.0 * eff_atr), 2)
-            floor_type = "COST_BASIS_ATR_STOP"
+        # Case A: Position entered or trading below or near 200D SMA (Contrarian / Recovery regime)
+        # PL-729.4: Eliminates the Day-0 Falsification Paradox whenever ref_p < 200D SMA or when 50D < 200D
+        is_below_200d_recovery = bool(
+            sma_200 > 0 and (
+                ref_p < sma_200 * 0.985 or
+                (has_entry and ref_p < sma_200) or
+                (sma_50 > 0 and sma_50 < sma_200 and ref_p < sma_200 * 1.01)
+            )
+        )
+        if is_below_200d_recovery:
+            # Anchor to disciplined -7% to -8% or 2.0x ATR below cost basis / reference price, NEVER above reference price
+            cost_atr_floor = round(max(ref_p * 0.92, ref_p - 2.0 * eff_atr), 2)
+            # If 50D SMA is established below reference price, allow breathing room below 50D SMA
+            if sma_50 > 0 and sma_50 < ref_p:
+                sma50_floor = round(sma_50 - 0.8 * eff_atr, 2)
+                falsification_floor = min(cost_atr_floor, max(sma50_floor, ref_p * 0.90))
+            else:
+                falsification_floor = cost_atr_floor
+            floor_type = "COST_BASIS_ATR_STOP" if has_entry else "RECOVERY_SUPPORT_STOP"
         # Case B: Trend entry above 200D SMA or unspecified entry
         elif sma_200 > 0:
             structural_200d_floor = round(sma_200 * 0.97, 2)
             if has_entry:
-                cost_stop = round(max(buy_p * 0.92, buy_p - 2.5 * eff_atr), 2)
-                falsification_floor = round(max(structural_200d_floor, min(cost_stop, buy_p * 0.95)), 2)
+                cost_stop = round(max(ref_p * 0.92, ref_p - 2.5 * eff_atr), 2)
+                falsification_floor = round(max(structural_200d_floor, min(cost_stop, ref_p * 0.95)), 2)
             else:
-                falsification_floor = structural_200d_floor
+                falsification_floor = round(min(curr_p * 0.95, structural_200d_floor), 2)
             floor_type = "STRUCTURAL_200D_STOP"
         else:
-            falsification_floor = round(max(0.01, (buy_p * 0.93 if has_entry else current_price * 0.90)), 2)
+            falsification_floor = round(max(0.01, (ref_p * 0.93 if has_entry else curr_p * 0.90)), 2)
             floor_type = "TRAILING_PCT_STOP"
 
         # Tier-1 Early 50D SMA Breakdown Trim
@@ -825,11 +840,17 @@ class PriceAlertEngine:
             sma_50 > 0 and sma_200 > 0 and
             sma_50 >= sma_200 * 0.98 and
             curr_close >= sma_200 * 0.985 and
-            ret_20d >= -0.085
+            ret_20d >= -0.085 and
+            ((sma_50 * 0.97 <= curr_close <= sma_50 * 1.035) or (sma_200 * 0.985 <= curr_close <= sma_200 * 1.04))
         )
-        is_testing_structural_ma = bool(
-            (sma_50 * 0.97 <= curr_close <= sma_50 * 1.035) or
-            (sma_200 * 0.985 <= curr_close <= sma_200 * 1.04)
+        # PL-729.3: Intermediate Recovery Support Bounce (50D < 200D, bouncing off 50D or 20D SMA with room to 200D SMA)
+        is_recovery_support_bounce = bool(
+            sma_50 > 0 and sma_20 > 0 and sma_200 > 0 and
+            sma_50 < sma_200 and
+            curr_close >= min(sma_20, sma_50) * 0.985 and
+            curr_close <= max(sma_20, sma_50) * 1.045 and
+            curr_close <= sma_200 * 0.965 and
+            ret_20d >= -0.15
         )
         is_turn_confirmed = bool(
             anti_knife_passed and
@@ -841,23 +862,23 @@ class PriceAlertEngine:
             up_down_vol_ratio_10d >= 0.95
         )
         is_path_b_support_bounce = bool(
-            is_macro_uptrend_intact and
-            is_testing_structural_ma and
+            (is_macro_uptrend_intact or is_recovery_support_bounce) and
             is_turn_confirmed
         )
 
         # Path C: Bottom Reversal / Pocket Pivot Reclaiming 20D SMA (BOTTOM_REVERSAL)
+        # PL-729.3: Early pocket pivot right-side confirmation without lagging EMA10 crossover lockout
         is_path_c_bottom_reversal = bool(
             anti_knife_passed and
             sma_20 > 0 and
-            curr_close > sma_20 * 1.005 and
-            ema_10 >= sma_20 * 0.998 and
-            ret_5d >= 0.015 and
-            ret_10d >= 0.008 and
-            curr_close >= low_10d + 1.2 * atr_14 and
-            up_down_vol_ratio_10d >= 1.15 and
+            curr_close > sma_20 * 1.002 and
+            (ema_10 >= sma_20 * 0.995 or ret_3d >= 0.015) and
+            ret_5d >= 0.012 and
+            ret_10d >= 0.005 and
+            curr_close >= low_10d + 0.8 * atr_14 and
+            up_down_vol_ratio_10d >= 0.95 and
             45.0 <= rsi_14 <= 70.0 and
-            rsi_3d_delta > 0.0
+            rsi_3d_delta >= 0.0
         )
 
         if is_path_a_hot:
@@ -866,25 +887,25 @@ class PriceAlertEngine:
             is_recently_falling = False
             label_en = "HOT (Fat-Tail Momentum)"
             label_zh = "热（肥尾主升浪）"
-        elif is_path_a_warm:
-            state = "WARM"
-            right_side_path = "TREND_CONTINUATION"
-            is_recently_falling = False
-            label_en = "WARM (Right-Side Batting Zone)"
-            label_zh = "温（温转热右侧击球区）"
-        elif is_path_b_support_bounce:
-            state = "WARM"
-            right_side_path = "SUPPORT_BOUNCE"
-            is_recently_falling = False
-            label_en = "WARM (Right-Side Support Bounce)"
-            label_zh = "温（均线支撑右侧反弹拐点）"
         elif is_path_c_bottom_reversal:
             state = "WARM"
             right_side_path = "BOTTOM_REVERSAL"
             is_recently_falling = False
             label_en = "WARM (Right-Side Bottom Reversal)"
             label_zh = "温（底部站上20日线右侧拐点）"
-        elif curr_close < sma_200 and (z_trend < -0.4 or ret_20d < -0.025 or curr_close < sma_50):
+        elif is_path_b_support_bounce:
+            state = "WARM"
+            right_side_path = "SUPPORT_BOUNCE"
+            is_recently_falling = False
+            label_en = "WARM (Right-Side Support Bounce)"
+            label_zh = "温（均线支撑右侧反弹拐点）"
+        elif is_path_a_warm:
+            state = "WARM"
+            right_side_path = "TREND_CONTINUATION"
+            is_recently_falling = False
+            label_en = "WARM (Right-Side Batting Zone)"
+            label_zh = "温（温转热右侧击球区）"
+        elif curr_close < sma_200 and (curr_close < sma_20 or ret_5d < -0.005) and (z_trend < -0.4 or ret_20d < -0.025 or curr_close < sma_50):
             state = "FREEZE"
             right_side_path = "NONE"
             is_recently_falling = base_falling_guard
@@ -978,7 +999,7 @@ class PriceAlertEngine:
 
         # Fallback when historical_series is not available:
         # A stock is WARM (RIGHT_SIDE) only if holding around or above 50D & 200D SMA support.
-        if curr > 0 and sma200 > 0 and curr < sma200 * 0.94:
+        if curr > 0 and sma200 > 0 and curr < sma200 * 0.94 and (sma50 <= 0 or curr < sma50 * 0.96):
             state = "FREEZE"
             hitting_zone = "LEFT_SIDE"
             is_right_side = False

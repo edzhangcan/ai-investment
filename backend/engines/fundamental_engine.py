@@ -206,8 +206,9 @@ class FundamentalEngine:
             }
         )
 
+        sec_ind_text = (sector + " " + industry).lower()
         is_resource_cyclical = (
-            ("material" in sector or "mining" in industry or "energy" in sector or "copper" in industry) and
+            any(r in sec_ind_text for r in ["material", "mining", "energy", "copper", "gold", "metals", "mineral"]) and
             (operating_cf > 0 or fcf > 0)
         )
         is_dividend_harvest = (div_yield >= 2.5 or total_shareholder_yield_pct >= 2.5)

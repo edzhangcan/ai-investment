@@ -101,7 +101,7 @@ class PricingEngine:
     # 9. SENIOR METALS & MINING TIER-1 CHAMPIONS:
     # Global multi-asset producers with large reserves, low-cost Tier-1 mining complexes, and decades of mine life.
     SENIOR_MINING_CHAMPIONS: frozenset = frozenset({
-        "AEM.TO", "AEM", "ABX.TO", "ABX", "GOLD", "FCX", "SCCO", "BHP", "RIO", "VALE", "NEM",
+        "AEM.TO", "AEM", "ABX.TO", "ABX", "GOLD", "FCX", "SCCO", "BHP", "RIO", "VALE", "NEM", "AA",
         "FM.TO", "FM", "HBM.TO", "HBM", "LUN.TO", "LUN", "NTR.TO", "NTR", "CCO.TO", "CCO", "IVN.TO"
     })
 
@@ -288,14 +288,14 @@ class PricingEngine:
             any(r in (stock_data.get("company_name") or "").lower() for r in ["royalty", "royalties"])
         )
 
+        sec_ind_text = (sector + " " + industry).lower()
         is_mining_materials = (
             symbol_upper in cls.SENIOR_MINING_CHAMPIONS or
-            any(m in industry for m in [
+            any(m in sec_ind_text for m in [
                 "gold", "copper", "silver", "metals", "mining", "other industrial metals & mining", 
                 "precious metals & mining", "aluminum", "steel", "coking coal", "mineral", "iron & steel",
-                "other precious metals & mining"
-            ]) or
-            any(m in sector for m in ["basic materials", "materials"])
+                "other precious metals & mining", "basic materials", "materials"
+            ])
         ) and not is_regulated_infrastructure and not is_utility and not is_midstream and not is_metals_royalty
 
         is_commodity_cyclical = (
@@ -779,7 +779,7 @@ class PricingEngine:
                 exit_multiple = 11.5
             elif symbol_upper in cls.SENIOR_MINING_CHAMPIONS or (is_wide_moat and roic >= 0.15):
                 exit_multiple = 10.5
-            elif any(g in industry for g in ["gold", "copper", "silver", "precious metals"]):
+            elif any(g in sec_ind_text for g in ["gold", "copper", "silver", "precious metals"]):
                 exit_multiple = 9.0
             else:
                 exit_multiple = 8.5
@@ -1283,6 +1283,7 @@ class PricingEngine:
         is_right_side = bool(trend_eval.get("is_right_side", batting_zone == "RIGHT_SIDE"))
         is_recently_falling = bool(trend_eval.get("is_recently_falling", False))
         ret_5d_pct = float(trend_eval.get("ret_5d_pct") or 0.0)
+        ret_10d_pct = float(trend_eval.get("ret_10d_pct") or 0.0)
         ret_20d_pct = float(trend_eval.get("ret_20d_pct") or 0.0)
         right_side_path = str(trend_eval.get("right_side_path") or ("TREND_CONTINUATION" if is_right_side else "NONE")).upper()
         transition_sig = str(trend_eval.get("transition") or "NONE").upper()
@@ -1304,8 +1305,16 @@ class PricingEngine:
                 structural_reclaim_ceiling = max(min(fifty_sma, two_hundred_sma) * 0.985, sma_20 * 1.005)
                 ideal_buy_max = round(min(dcf_target, structural_reclaim_ceiling), 2)
             else:
-                # Healthy pullback holding at/near MA support
-                ideal_buy_max = round(min(dcf_target, max(price * 1.01, min(pullback_support, fifty_sma * 1.02))), 2)
+                # PL-729.1: Anchor strictly to structural support + bounded pivot tolerance (NO floating price * 1.01)
+                if fifty_sma > 0 and two_hundred_sma > 0 and fifty_sma < two_hundred_sma:
+                    # Intermediate recovery regime below 200D SMA: anchor to 20D/50D support
+                    support_anchor = max(sma_20, fifty_sma) if (sma_20 > 0 and fifty_sma > 0) else (fifty_sma or sma_20)
+                    structural_ceiling = min(support_anchor * 1.025, two_hundred_sma * 0.975)
+                    ideal_buy_max = round(min(dcf_target, max(structural_ceiling, support_anchor * 1.01)), 2)
+                else:
+                    # Healthy bull pullback holding at/near MA support
+                    support_anchor = max(pullback_support, fifty_sma * 1.015)
+                    ideal_buy_max = round(min(dcf_target, support_anchor), 2)
         elif price <= dcf_fair_value * 1.12:
             # Regime 2: Fair-Value Consolidation (Price between DCF Target and +12% Fair Value)
             if price > dcf_fair_value:
@@ -1344,6 +1353,23 @@ class PricingEngine:
             batting_zone in ("LEFT_SIDE", "LEFT_SIDE_WATCH")
         )
 
+        # PL-729.2: Short-Term Anti-Chase & Overhead 200D Resistance Diagnostics
+        max_dist_20d = 1.08 if is_fresh_pivot else 1.065
+        is_extended_above_20d = bool(
+            sma_20 > 0 and (
+                price > sma_20 * max_dist_20d or
+                (ret_10d_pct >= 14.0 and price > sma_20 * 1.05) or
+                (not is_fresh_pivot and ret_10d_pct >= 10.0 and price > sma_20 * 1.04)
+            )
+        )
+        is_overhead_200d_resistance = bool(
+            fifty_sma > 0 and two_hundred_sma > 0 and
+            fifty_sma < two_hundred_sma and
+            (two_hundred_sma * 0.975 <= price <= two_hundred_sma * 1.015) and
+            (ret_5d_pct >= 3.0 or ret_10d_pct >= 10.0)
+        )
+        is_overheated_momentum = bool(trend_state == "HOT" or is_extended_above_20d or is_overhead_200d_resistance)
+
         if price <= ideal_buy_max:
             if is_left_side_or_falling:
                 if lang == "en":
@@ -1355,6 +1381,28 @@ class PricingEngine:
                 else:
                     action_status = "左侧观察期 (LEFT_SIDE_WATCH)"
                     advice = f"当前股价 ${price} {currency} 进入买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，但处于左侧下跌趋势（{trend_state}，5D: {ret_5d_pct:+.1f}%）。建议等待右侧企稳确认再建仓。"
+            elif is_overhead_200d_resistance:
+                # PL-729.2: Veto IN_BUY_ZONE when running into overhead 200D supply wall
+                if lang == "en":
+                    action_status = "PULLBACK_WATCH"
+                    advice = f"Current price ${price} {currency} has rallied directly into overhead 200D SMA resistance (${two_hundred_sma} {currency}). Do not chase into supply wall—await a healthy pullback to structural support near ${ideal_buy_max} {currency}."
+                elif lang == "zh":
+                    action_status = "回调观察期"
+                    advice = f"当前股价 ${price} {currency} 连续反弹正测试 200日均线阻力位 (${two_hundred_sma} {currency})。切勿在高位密集成交区追涨，建议等待回调至支撑区间 ${ideal_buy_max} {currency} 附近。"
+                else:
+                    action_status = "回调观察期 (PULLBACK_WATCH)"
+                    advice = f"当前股价 ${price} {currency} 经历快速反弹正测试 200日均线阻力位 (${two_hundred_sma} {currency})。切勿盲目追高，建议等待回调至支撑区间 ${ideal_buy_max} {currency} 附近。"
+            elif is_overheated_momentum:
+                # PL-729.2: Veto IN_BUY_ZONE when short-term overextended or HOT
+                if lang == "en":
+                    action_status = "PULLBACK_WATCH"
+                    advice = f"Price ${price} {currency} is short-term extended ({trend_state}, 5D: {ret_5d_pct:+.1f}%, 10D: {ret_10d_pct:+.1f}%). Avoid chasing fat-tail momentum; await a pullback toward ${ideal_buy_max} {currency} before entering."
+                elif lang == "zh":
+                    action_status = "回调观察期"
+                    advice = f"当前股价 ${price} {currency} 短期过度延伸（{trend_state}，5日: {ret_5d_pct:+.1f}%，10日: {ret_10d_pct:+.1f}%）。切勿盲目追涨主升浪，建议等待良性回踩至 ${ideal_buy_max} {currency} 附近再行建仓。"
+                else:
+                    action_status = "回调观察期 (PULLBACK_WATCH)"
+                    advice = f"当前股价 ${price} {currency} 短期过度延伸（{trend_state}，10D: {ret_10d_pct:+.1f}%）。建议等待良性回踩至 ${ideal_buy_max} {currency} 附近再行建仓。"
             else:
                 if right_side_path == "SUPPORT_BOUNCE":
                     if lang == "en":
@@ -1388,7 +1436,27 @@ class PricingEngine:
                         advice = f"当前股价 ${price} {currency} 处于安全买入区间 (${ideal_buy_min} - ${ideal_buy_max} {currency})，具 Safe Buy Bracket 与右侧支撑保护。"
         elif price <= dcf_fair_value or price <= two_hundred_sma * 1.05:
             # Fairly valued below DCF or consolidating at 200D SMA support: NEVER label OVEREXTENDED
-            if price <= dcf_fair_value * 1.15:
+            if is_overhead_200d_resistance:
+                if lang == "en":
+                    action_status = "PULLBACK_WATCH"
+                    advice = f"Price ${price} {currency} has rallied into overhead 200D SMA resistance (${two_hundred_sma} {currency}). Do not chase—await a pullback to structural support near ${ideal_buy_max} {currency}."
+                elif lang == "zh":
+                    action_status = "回调观察期"
+                    advice = f"当前股价 ${price} {currency} 经历快速反弹正测试 200日均线阻力位 (${two_hundred_sma} {currency})。切勿盲目追高，建议等待回调至支撑区间 ${ideal_buy_max} {currency} 附近。"
+                else:
+                    action_status = "回调观察期 (PULLBACK_WATCH)"
+                    advice = f"当前股价 ${price} {currency} 经历快速反弹正测试 200D SMA 阻力位 (${two_hundred_sma} {currency})。建议等待回调至 ${ideal_buy_max} {currency} 附近。"
+            elif is_extended_above_20d or trend_state == "HOT":
+                if lang == "en":
+                    action_status = "PULLBACK_WATCH"
+                    advice = f"Price ${price} {currency} is short-term extended above 20D SMA support ({trend_state}, 10D: {ret_10d_pct:+.1f}%). Accumulate on pullbacks toward ${ideal_buy_max} {currency} rather than chasing."
+                elif lang == "zh":
+                    action_status = "回调观察期"
+                    advice = f"当前股价 ${price} {currency} 经历快速上涨后偏离均线支撑（{trend_state}，10日: {ret_10d_pct:+.1f}%）。暂勿追高，建议等待良性回踩至 ${ideal_buy_max} {currency} 附近分批吸筹。"
+                else:
+                    action_status = "回调观察期 (PULLBACK_WATCH)"
+                    advice = f"当前股价 ${price} {currency} 经历快速上涨后偏离均线支撑（{trend_state}）。暂勿追高，建议等待回调至 ${ideal_buy_max} {currency} 附近。"
+            elif price <= dcf_fair_value * 1.15:
                 if lang == "en":
                     action_status = "PULLBACK_WATCH"
                     advice = f"Price ${price} {currency} is consolidating near technical support and intrinsic fair value (${dcf_fair_value} {currency}). Recommend setting price alert at ${ideal_buy_max} {currency}."
