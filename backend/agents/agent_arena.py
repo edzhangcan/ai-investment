@@ -11,7 +11,17 @@ from backend.config import settings
 logger = logging.getLogger(__name__)
 
 class MultiAgentArena:
-    """Orchestrates Bull vs. Bear debate refereed by CIO Agent, powered by live Gemini LLM with empirical fallback capabilities and multi-language support."""
+    """
+    Orchestrates Bull vs. Bear debate refereed by the CIO Agent (Gemini LLM + deterministic fallback).
+
+    Architectural Invariants (PL-725 through PL-730):
+    - Dual-Gated Sizing: Active allocation (1.5%-5%) requires BOTH `IN_BUY_ZONE` and `RIGHT_SIDE`.
+    - Discipline Guardrail (`纪律原则` / `Discipline`): `DisciplineEngine.audit_trade()` vetoes
+      override BUY verdicts to `DISCIPLINE_BLOCKED` with 0% allocation without duplicating summaries.
+    - Holdings-Only Adaptive Floor: Hydrates `buy_in_price` and enforces `compute_adaptive_falsification_floor`
+      on both LLM and fallback outputs so LLM hallucinations never trigger false Day-0 breaches.
+    - Concise CIO Copy: Enforces `<= 220` chars on `judge_summary` & `taxonomy_diagnosis`.
+    """
 
     @classmethod
     def run_debate(cls, stock_data: Dict[str, Any], macro_data: Dict[str, Any], pricing_data: Dict[str, Any], fundamental_data: Dict[str, Any], lang: str = "en", country: Optional[str] = None, verify_filings: bool = False) -> Dict[str, Any]:

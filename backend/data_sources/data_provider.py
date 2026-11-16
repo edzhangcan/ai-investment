@@ -34,7 +34,6 @@ from typing import Dict, Any, Optional, List
 import yfinance as yf
 from backend.data_sources.company_profiles import COMPANY_PROFILES_REGISTRY
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("DataProviderManager")
 
 _ASYNC_SEMAPHORE = asyncio.Semaphore(4)
@@ -974,15 +973,27 @@ import threading
 
 class DataProviderManager:
     """
-    High-Precision Real-Time Equity Data Provider with live exchange feeds.
-    Strictly fetches real-time market quotes (lastPrice, previousClose, SMAs, PE, FCF).
-    Maintains a high-frequency real-time price cache with a maximum 3-minute TTL (<= 180s).
-    Never serves fake or hash-fabricated stock prices.
+    High-Precision Real-Time Equity Data Provider with Two-Tier Caching (PL-731.3.1).
+
+    Architectural Invariants (Human & AI-Agent Reference):
+    1. Two-Tier Cache Separation:
+       - `_CACHE` (180s TTL): Real-time price, SMAs, volume, and 2Y daily OHLCV candles from
+         Yahoo Finance `v8/finance/chart` (<50ms, crumb-free).
+       - `_FUNDAMENTALS_CACHE` (86,400s / 24h TTL): Slow balance-sheet & filing metadata from
+         `yf.Ticker.info` (sharesOutstanding, totalDebt, totalCash, freeCashflow, earningsTimestamp).
+    2. FCF Decay & Corroboration Guard (PL-726.1):
+       - Preserves audited 10-K/SEDAR baselines when live yfinance FCF deviates outside [0.85, 1.50]
+         unless corroborated by live operating cash flow (`0.25 <= FCF/OCF <= 1.15`).
+    3. Zero-Hallucination Policy:
+       - Never fabricates prices; returns `is_valid=False` for unlisted/unverified symbols.
     """
 
     _CACHE: Dict[str, Dict[str, Any]] = {}
     _CACHE_TIMESTAMPS: Dict[str, float] = {}
     _CACHE_TTL_SECONDS = 180  # 3 minutes maximum cache lifetime (well below 5m requirement)
+    _FUNDAMENTALS_CACHE: Dict[str, Dict[str, Any]] = {}
+    _FUNDAMENTALS_TIMESTAMPS: Dict[str, float] = {}
+    _FUNDAMENTALS_TTL_SECONDS = 86400  # 24 hours TTL for slow balance-sheet / filing metadata
     _LOCK = threading.Lock()
 
     _REGIME_TAPE_CACHE: Dict[str, Dict[str, Any]] = {}
@@ -1436,27 +1447,47 @@ class DataProviderManager:
                     sector_val = None
                     industry_val = None
 
-                    # Always initialize ticker to extract accurate balance sheet, shares and sector
-                    if ticker is None:
-                        try:
-                            ticker = yf.Ticker(cand)
-                        except Exception:
-                            ticker = None
+                    # PL-731.3.1: Reuse 24-hour cached ticker.info metadata when available to avoid slow crumb scrapes every 3m
+                    cached_fund = None
+                    if not force_refresh:
+                        with cls._LOCK:
+                            f_ts = cls._FUNDAMENTALS_TIMESTAMPS.get(normalized_symbol, 0.0)
+                            if normalized_symbol in cls._FUNDAMENTALS_CACHE and (current_time - f_ts < cls._FUNDAMENTALS_TTL_SECONDS):
+                                cached_fund = cls._FUNDAMENTALS_CACHE[normalized_symbol]
 
-                    if ticker is not None:
-                        try:
-                            fi = getattr(ticker, "fast_info", None)
-                            if fi:
-                                shares_outstanding = fi.get("shares")
-                                market_cap = fi.get("marketCap")
-                        except Exception:
-                            pass
-                        try:
-                            info = ticker.info or {}
-                        except Exception:
-                            info = {}
+                    if cached_fund is not None:
+                        info = cached_fund.get("info") or {}
+                        shares_outstanding = cached_fund.get("shares_outstanding")
+                        market_cap = cached_fund.get("market_cap")
                     else:
-                        info = {}
+                        if ticker is None:
+                            try:
+                                ticker = yf.Ticker(cand)
+                            except Exception:
+                                ticker = None
+
+                        if ticker is not None:
+                            try:
+                                fi = getattr(ticker, "fast_info", None)
+                                if fi:
+                                    shares_outstanding = fi.get("shares")
+                                    market_cap = fi.get("marketCap")
+                            except Exception:
+                                pass
+                            try:
+                                info = ticker.info or {}
+                            except Exception:
+                                info = {}
+                        else:
+                            info = {}
+
+                        with cls._LOCK:
+                            cls._FUNDAMENTALS_CACHE[normalized_symbol] = {
+                                "info": info,
+                                "shares_outstanding": shares_outstanding,
+                                "market_cap": market_cap,
+                            }
+                            cls._FUNDAMENTALS_TIMESTAMPS[normalized_symbol] = time.time()
 
                     fcf_decay_warning = False
                     live_reported_fcf = None

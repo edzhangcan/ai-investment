@@ -11,6 +11,7 @@ from typing import Dict, Any, List, Set, Optional
 import logging
 import time
 import json
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from sqlmodel import Session, select, delete
 from backend.database import engine
@@ -111,6 +112,7 @@ for s in CA_GOLD_SYMBOLS:
     SYMBOL_CATEGORY_MAP[s] = "GOLD_NUGGET"
     SYMBOL_COUNTRY_MAP[s] = "CA"
 
+_RECOMMENDATION_LOCK = threading.RLock()
 _SNAPSHOT_LAST_UPDATE: Dict[str, float] = {}
 _SNAPSHOT_TTL_SECONDS = 7200  # 2 hours
 _LIVE_HYDRATION_TTL_SECONDS = 120  # 2 minutes live price hydration cache (PL-723.3)
@@ -405,10 +407,11 @@ class RecommendationEngine:
             "recommended_stocks": overall_leaders
         }
 
-        # Cache in memory
-        _MEM_RECOMMENDATION_CACHE[cache_key] = payload
-        if country == "US":
-            _MEM_RECOMMENDATION_CACHE[lang] = payload  # Legacy fallback
+        # Cache in memory (thread-safe)
+        with _RECOMMENDATION_LOCK:
+            _MEM_RECOMMENDATION_CACHE[cache_key] = payload
+            if country == "US":
+                _MEM_RECOMMENDATION_CACHE[lang] = payload  # Legacy fallback
 
         # Persist to SQLite Database
         try:
@@ -442,7 +445,8 @@ class RecommendationEngine:
         except Exception as e:
             logger.warning(f"Database persist fallback triggered for {country}/{lang}: {e}")
 
-        _SNAPSHOT_LAST_UPDATE[cache_key] = time.time()
+        with _RECOMMENDATION_LOCK:
+            _SNAPSHOT_LAST_UPDATE[cache_key] = time.time()
         return payload
 
     @classmethod
@@ -462,11 +466,11 @@ class RecommendationEngine:
 
         cache_key = f"{country}_{lang}"
         now = time.time()
-        last_update = _SNAPSHOT_LAST_UPDATE.get(cache_key, 0)
-        is_cache_fresh = (now - last_update < _LIVE_HYDRATION_TTL_SECONDS)
-
-        if not force_refresh and is_cache_fresh and cache_key in _MEM_RECOMMENDATION_CACHE:
-            return _MEM_RECOMMENDATION_CACHE[cache_key]
+        with _RECOMMENDATION_LOCK:
+            last_update = _SNAPSHOT_LAST_UPDATE.get(cache_key, 0)
+            is_cache_fresh = (now - last_update < _LIVE_HYDRATION_TTL_SECONDS)
+            if not force_refresh and is_cache_fresh and cache_key in _MEM_RECOMMENDATION_CACHE:
+                return _MEM_RECOMMENDATION_CACHE[cache_key]
 
         macro_summary = MacroEngine.analyze_macro_environment(lang=lang, country=country)
 
@@ -494,11 +498,17 @@ class RecommendationEngine:
                     elif row.category == "GOLD":
                         gold_stocks.append(payload)
 
-                if sector_stocks or overall_stocks:
-                    # PL-723.3: Hydrate picks with live real-time quote, DCF, and entry zone
-                    sector_stocks = cls._hydrate_live_pricing_for_stocks(sector_stocks, lang=lang)
-                    overall_stocks = cls._hydrate_live_pricing_for_stocks(overall_stocks, lang=lang)
-                    gold_stocks = cls._hydrate_live_pricing_for_stocks(gold_stocks, lang=lang)
+                if sector_stocks or overall_stocks or gold_stocks:
+                    # PL-723.3 / PL-731.3.3: Hydrate all 3 pools in one unified parallel batch
+                    n_sec = len(sector_stocks)
+                    n_ov = len(overall_stocks)
+                    combined_hydrated = cls._hydrate_live_pricing_for_stocks(
+                        sector_stocks + overall_stocks + gold_stocks,
+                        lang=lang,
+                    )
+                    sector_stocks = combined_hydrated[:n_sec]
+                    overall_stocks = combined_hydrated[n_sec:n_sec + n_ov]
+                    gold_stocks = combined_hydrated[n_sec + n_ov:]
 
                     res = {
                         "country": country,
@@ -515,10 +525,11 @@ class RecommendationEngine:
                         "gold_nugget_stocks": gold_stocks,
                         "recommended_stocks": overall_stocks
                     }
-                    _MEM_RECOMMENDATION_CACHE[cache_key] = res
-                    _SNAPSHOT_LAST_UPDATE[cache_key] = time.time()
-                    if country == "US":
-                        _MEM_RECOMMENDATION_CACHE[lang] = res
+                    with _RECOMMENDATION_LOCK:
+                        _MEM_RECOMMENDATION_CACHE[cache_key] = res
+                        _SNAPSHOT_LAST_UPDATE[cache_key] = time.time()
+                        if country == "US":
+                            _MEM_RECOMMENDATION_CACHE[lang] = res
                     return res
         except Exception as e:
             logger.warning(f"Error querying RecommendationSnapshotDB for {country}: {e}")

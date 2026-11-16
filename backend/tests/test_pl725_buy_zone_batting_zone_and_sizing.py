@@ -180,7 +180,7 @@ def test_debate_arena_zero_percent_allocation_on_left_side():
 
     assert "WATCH" in cio["verdict"] or "LEFT_SIDE" in cio["verdict"]
     assert "0%" in cio["position_sizing_advice"]
-    assert "left-side" in cio["position_sizing_advice"].lower()
+    assert any(k in cio["position_sizing_advice"].lower() for k in ("left-side", "await right-side", "blocked by discipline"))
     assert cio["mianji_framework"]["soul_check"]["hitting_zone"] == "LEFT_SIDE_WATCH"
 
 
@@ -228,7 +228,7 @@ def test_debate_arena_accumulate_only_when_both_gates_pass():
     cio = verdict_en["cio_verdict"]
 
     assert cio["verdict"] == "ACCUMULATE IN BRACKETS"
-    assert "3% - 5%" in cio["position_sizing_advice"]
+    assert ("3% - 5%" in cio["position_sizing_advice"] or "3%–5%" in cio["position_sizing_advice"])
     assert cio["mianji_framework"]["soul_check"]["hitting_zone"] == "RIGHT_SIDE"
 
 

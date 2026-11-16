@@ -30,7 +30,7 @@ DATABASE_URL = os.getenv("DATABASE_URL") or f"sqlite:///{DB_FILE}"
 # check_same_thread=False allows FastAPI multi-threaded requests to use the same engine instance.
 engine = create_engine(
     DATABASE_URL,
-    echo=settings.DEBUG,
+    echo=settings.SQL_ECHO,
     connect_args={"check_same_thread": False, "timeout": 30}
 )
 

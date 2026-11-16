@@ -3,25 +3,9 @@ import { StockRecommendation, CategorizedRecommendationsPayload } from '../types
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
 import { Sparkles, Award, Coins, Compass, Star, ChevronLeft, ChevronRight, RefreshCw, ArrowLeft, Filter } from 'lucide-react';
+import { formatStatusTag } from '../utils/formatters';
 
-// Helper to cleanly format action statuses and batting zone tags without any dashes or underscores in English
-export const formatStatusTag = (status?: string, lang: string = 'en'): string => {
-  if (!status) return '';
-  if (lang === 'zh') {
-    if (status === 'IN_BUY_ZONE') return '买入区间';
-    if (status === 'LEFT_SIDE_WATCH') return '左侧观察';
-    if (status === 'PULLBACK_WATCH') return '回调观察';
-    if (status === 'GROWTH_PREMIUM') return '成长溢价';
-    if (status === 'OVEREXTENDED') return '估值偏高';
-    if (status === 'RIGHT_SIDE') return '右侧击球区';
-    if (status === 'LEFT_SIDE') return '左侧观察';
-    if (status === 'TREND_CONTINUATION') return '趋势延续';
-    if (status === 'SUPPORT_BOUNCE') return '均线支撑反弹';
-    if (status === 'BOTTOM_REVERSAL') return '底部反转突破';
-  }
-  // English: strictly remove all dashes and underscores
-  return status.replace(/[-_]/g, ' ').trim();
-};
+export { formatStatusTag };
 
 interface RecommendedStocksGridProps {
   recommendations: CategorizedRecommendationsPayload | StockRecommendation[];

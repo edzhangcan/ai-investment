@@ -21,6 +21,19 @@ logger = logging.getLogger(__name__)
 COOLDOWN_HOURS = 12  # Prevent spamming alerts for the same stock within 12 hours
 
 class PriceAlertEngine:
+    """
+    Price Alert, 3-Path Right-Side Batting Zone & Holdings Kill-Switch Engine.
+
+    Architectural Invariants (PL-721 through PL-731):
+    - 3-Bucket Isolation: Thesis Falsification alerts fire strictly for `bucket == 'HOLDING'`.
+    - 3-Path Right-Side Engine (`_compute_trend_temperature_from_series`):
+      Evaluated in pure Python (`<0.1ms`) with quote-level memoization (`_trend_eval_cache`):
+        Path A (`TREND_CONTINUATION`), Path B (`SUPPORT_BOUNCE`), Path C (`BOTTOM_REVERSAL`).
+    - Adaptive Kill-Switch Floor (`compute_adaptive_falsification_floor`):
+      Below-200D entries anchor to `COST_BASIS_ATR_STOP` / `RECOVERY_SUPPORT_STOP` (-8% / 2x ATR),
+      preventing false Day-0 breaches against overhead 200D SMA resistance.
+    """
+
     def __init__(self):
         self._last_scheduled_dispatch: Dict[str, str] = {}
 
@@ -612,45 +625,6 @@ class PriceAlertEngine:
         except Exception as exc:
             logger.debug("Skipping holding context hydration for %s: %s", norm_sym, exc)
 
-    @staticmethod
-    def hydrate_holding_context(
-        stock_data: Dict[str, Any],
-        symbol: str,
-        session: Optional[Session] = None
-    ) -> None:
-        """
-        Hydrates user tracking bucket, buy_in_price, and shares_held from UserWatchlistDB
-        so downstream pricing, discipline audit, and debate falsification floor calculations
-        accurately reflect whether the stock is a held position and its entry cost basis.
-        """
-        stock_data.setdefault("bucket", "NONE")
-        norm_sym = symbol.strip().upper()
-
-        def _apply(watch_rec: Optional[UserWatchlistDB]) -> None:
-            if not watch_rec:
-                return
-            stock_data["bucket"] = watch_rec.bucket or "WATCHLIST"
-            if watch_rec.buy_in_price is not None and watch_rec.buy_in_price > 0:
-                stock_data["buy_in_price"] = float(watch_rec.buy_in_price)
-            if watch_rec.shares_held is not None:
-                stock_data["shares_held"] = float(watch_rec.shares_held)
-
-        try:
-            if session and hasattr(session, "exec"):
-                rec = session.exec(
-                    select(UserWatchlistDB).where(UserWatchlistDB.symbol == norm_sym)
-                ).first()
-                _apply(rec)
-            else:
-                from backend.database import engine as db_engine
-                with Session(db_engine) as own_session:
-                    rec = own_session.exec(
-                        select(UserWatchlistDB).where(UserWatchlistDB.symbol == norm_sym)
-                    ).first()
-                    _apply(rec)
-        except Exception as exc:
-            logger.debug("Skipping holding context hydration for %s: %s", norm_sym, exc)
-
     @classmethod
     def compute_adaptive_falsification_floor(
         cls,
@@ -743,103 +717,105 @@ class PriceAlertEngine:
         rs = avg_gain / avg_loss
         return round(100.0 - (100.0 / (1.0 + rs)), 2)
 
+    @staticmethod
+    def _empty_trend_temperature() -> Dict[str, Any]:
+        return {
+            "state": "FLAT",
+            "state_label_en": "FLAT (Consolidation)",
+            "state_label_zh": "平（震荡整理）",
+            "hitting_zone": "LEFT_SIDE",
+            "is_right_side": False,
+            "is_recently_falling": False,
+            "right_side_path": "NONE",
+            "z_trend": 0.0,
+            "ret_3d_pct": 0.0,
+            "ret_5d_pct": 0.0,
+            "ret_10d_pct": 0.0,
+            "ret_20d_pct": 0.0,
+            "vol_20d_pct": 0.0,
+            "vol_ratio": 1.0,
+            "sma_20": 0.0,
+            "sma_50": 0.0,
+            "sma_200": 0.0,
+            "ema_10": 0.0,
+            "low_10d": 0.0,
+            "rsi_14": 54.0,
+            "rsi_3d_delta": 0.0,
+            "atr_14": 0.0,
+            "up_down_vol_ratio_10d": 1.0,
+            "is_high_volume_distribution": False,
+            "has_recent_3d_shock": False,
+            "is_post_shock_unsettled": False,
+            "sma_50_slope_5d_pct": 0.0,
+            "transition": "NONE",
+            "is_fresh_right_side_pivot": False,
+        }
+
     @classmethod
-    def compute_trend_temperature(
+    def _compute_trend_temperature_from_series(
         cls,
-        df_ohlcv: Any,
+        closes_list: List[float],
+        vols_list: List[float],
+        highs_list: Optional[List[float]] = None,
+        lows_list: Optional[List[float]] = None,
         current_price: Optional[float] = None,
-        _compute_transition: bool = True
+        _compute_transition: bool = True,
     ) -> Dict[str, Any]:
-        """
-        Computes 4-state Trend Temperature: FREEZE (冻), FLAT (平), WARM (温), HOT (热).
-        Grounded in multi-horizon momentum (3D, 5D, 10D, 20D), volatility Z-score, and 3-Path Right-Side Engine:
-          Path A: TREND_CONTINUATION (primary uptrend continuation)
-          Path B: SUPPORT_BOUNCE (healthy pullback bounce holding 50D/200D SMA support)
-          Path C: BOTTOM_REVERSAL (pocket pivot reclaiming 20D SMA)
-        """
-        import pandas as pd
-        import numpy as np
+        """Pure-Python O(N) core for 4-state Trend Temperature & 3-Path Right-Side Engine (zero Pandas overhead)."""
+        import math
 
-        if df_ohlcv is None or (isinstance(df_ohlcv, pd.DataFrame) and df_ohlcv.empty):
-            return {
-                "state": "FLAT",
-                "state_label_en": "FLAT (Consolidation)",
-                "state_label_zh": "平（震荡整理）",
-                "hitting_zone": "LEFT_SIDE",
-                "is_right_side": False,
-                "is_recently_falling": False,
-                "right_side_path": "NONE",
-                "z_trend": 0.0,
-                "ret_3d_pct": 0.0,
-                "ret_5d_pct": 0.0,
-                "ret_10d_pct": 0.0,
-                "ret_20d_pct": 0.0,
-                "vol_20d_pct": 0.0,
-                "vol_ratio": 1.0,
-                "sma_20": 0.0,
-                "sma_50": 0.0,
-                "sma_200": 0.0,
-                "ema_10": 0.0,
-                "low_10d": 0.0,
-                "rsi_14": 54.0,
-                "rsi_3d_delta": 0.0,
-                "atr_14": 0.0,
-                "up_down_vol_ratio_10d": 1.0,
-                "is_high_volume_distribution": False,
-                "has_recent_3d_shock": False,
-                "is_post_shock_unsettled": False,
-                "sma_50_slope_5d_pct": 0.0,
-                "transition": "NONE",
-                "is_fresh_right_side_pivot": False
-            }
+        if not closes_list:
+            return cls._empty_trend_temperature()
 
-        # Normalize column names
-        close_col = "Close" if "Close" in df_ohlcv.columns else ("close" if "close" in df_ohlcv.columns else df_ohlcv.columns[0])
-        close_series = df_ohlcv[close_col].dropna().astype(float).copy()
+        closes = list(closes_list)
+        if current_price is not None and float(current_price) > 0:
+            closes[-1] = float(current_price)
 
-        vol_col = "Volume" if "Volume" in df_ohlcv.columns else ("volume" if "volume" in df_ohlcv.columns else None)
-        vol_series = df_ohlcv[vol_col].dropna().astype(float) if vol_col else pd.Series([1000000.0] * len(close_series), index=close_series.index)
-
-        if current_price is not None and float(current_price) > 0 and len(close_series) > 0:
-            close_series.iloc[-1] = float(current_price)
-
-        curr_close = float(close_series.iloc[-1])
-        n_pts = len(close_series)
-        sma_20 = float(close_series.rolling(min(20, n_pts)).mean().iloc[-1])
-        sma_50 = float(close_series.rolling(min(50, n_pts)).mean().iloc[-1])
-        sma_200 = float(close_series.rolling(min(200, n_pts)).mean().iloc[-1])
+        n_pts = len(closes)
+        curr_close = float(closes[-1])
+        w20 = min(20, n_pts)
+        w50 = min(50, n_pts)
+        w200 = min(200, n_pts)
+        sma_20 = sum(closes[-w20:]) / w20
+        sma_50 = sum(closes[-w50:]) / w50
+        sma_200 = sum(closes[-w200:]) / w200
 
         # Multi-horizon returns
-        ret_3d = float((curr_close / close_series.iloc[-min(4, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
-        ret_5d = float((curr_close / close_series.iloc[-min(6, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
-        ret_10d = float((curr_close / close_series.iloc[-min(11, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
-        ret_20d = float((curr_close / close_series.iloc[-min(21, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
+        ret_3d = ((curr_close / closes[-min(4, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
+        ret_5d = ((curr_close / closes[-min(6, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
+        ret_10d = ((curr_close / closes[-min(11, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
+        ret_20d = ((curr_close / closes[-min(21, n_pts)]) - 1.0) if n_pts >= 2 else 0.0
 
-        ema_10 = float(close_series.ewm(span=min(10, max(2, n_pts)), adjust=False).mean().iloc[-1])
-        low_10d = float(close_series.tail(min(10, n_pts)).min())
+        # Exponential Moving Average (span=min(10, max(2, n_pts)), adjust=False)
+        span = min(10, max(2, n_pts))
+        alpha = 2.0 / (span + 1.0)
+        ema_10 = closes[0]
+        one_minus_alpha = 1.0 - alpha
+        for val in closes[1:]:
+            ema_10 = alpha * val + one_minus_alpha * ema_10
 
-        closes_list = close_series.tolist()
-        vols_list = vol_series.tolist()
-        rsi_14 = cls._compute_wilder_rsi_from_list(closes_list)
-        rsi_14_prev = cls._compute_wilder_rsi_from_list(closes_list[:-3]) if len(closes_list) >= 18 else rsi_14
+        low_10d = min(closes[-min(10, n_pts):])
+
+        rsi_14 = cls._compute_wilder_rsi_from_list(closes)
+        rsi_14_prev = cls._compute_wilder_rsi_from_list(closes[:-3]) if n_pts >= 18 else rsi_14
         rsi_3d_delta = round(rsi_14 - rsi_14_prev, 2)
 
-        # 14-day ATR approximation from series
-        high_col = "High" if "High" in df_ohlcv.columns else ("high" if "high" in df_ohlcv.columns else None)
-        low_col = "Low" if "Low" in df_ohlcv.columns else ("low" if "low" in df_ohlcv.columns else None)
-        if high_col and low_col:
-            high_s = df_ohlcv[high_col].dropna().astype(float)
-            low_s = df_ohlcv[low_col].dropna().astype(float)
-            tr_s = (high_s - low_s).abs().tail(min(14, len(high_s)))
-            atr_14 = float(tr_s.mean()) if len(tr_s) > 0 and float(tr_s.mean()) > 0 else round(curr_close * 0.022, 2)
+        # 14-day ATR approximation
+        if highs_list and lows_list and len(highs_list) == len(lows_list):
+            w_atr = min(14, len(highs_list))
+            tr_vals = [abs(h - l) for h, l in zip(highs_list[-w_atr:], lows_list[-w_atr:])]
+            tr_mean = (sum(tr_vals) / len(tr_vals)) if tr_vals else 0.0
+            atr_14 = float(tr_mean) if tr_mean > 0 else round(curr_close * 0.022, 2)
         else:
-            diffs = close_series.diff().abs().dropna().tail(min(14, max(1, n_pts - 1)))
-            atr_14 = float(diffs.mean() * 1.35) if len(diffs) > 0 and float(diffs.mean()) > 0 else round(curr_close * 0.022, 2)
+            diffs = [abs(closes[i] - closes[i - 1]) for i in range(1, n_pts)][-min(14, max(1, n_pts - 1)):]
+            diff_mean = (sum(diffs) / len(diffs)) if diffs else 0.0
+            atr_14 = float(diff_mean * 1.35) if diff_mean > 0 else round(curr_close * 0.022, 2)
 
         # 10D Up vs Down volume ratio
-        if len(closes_list) >= 11 and len(vols_list) >= 11:
-            up_vol = sum(vols_list[i] for i in range(-10, 0) if closes_list[i] >= closes_list[i - 1])
-            down_vol = sum(vols_list[i] for i in range(-10, 0) if closes_list[i] < closes_list[i - 1])
+        vols = vols_list if vols_list else [1000000.0] * n_pts
+        if n_pts >= 11 and len(vols) >= 11:
+            up_vol = sum(vols[i] for i in range(-10, 0) if closes[i] >= closes[i - 1])
+            down_vol = sum(vols[i] for i in range(-10, 0) if closes[i] < closes[i - 1])
             if down_vol <= 0.0:
                 up_down_vol_ratio_10d = 2.0 if up_vol > 0 else 1.0
             else:
@@ -847,21 +823,32 @@ class PriceAlertEngine:
         else:
             up_down_vol_ratio_10d = 1.0
 
-        daily_returns = close_series.pct_change().dropna().tail(min(20, max(2, n_pts - 1)))
-        daily_std = float(daily_returns.std()) if len(daily_returns) > 1 else 0.015
+        # Daily returns & 20D annualized volatility (sample std ddof=1)
+        all_rets = [
+            (closes[i] / closes[i - 1]) - 1.0
+            for i in range(1, n_pts)
+            if closes[i - 1] != 0.0
+        ]
+        daily_returns = all_rets[-min(20, max(2, n_pts - 1)):]
+        if len(daily_returns) > 1:
+            mean_r = sum(daily_returns) / len(daily_returns)
+            var_r = sum((r - mean_r) ** 2 for r in daily_returns) / (len(daily_returns) - 1)
+            daily_std = math.sqrt(max(0.0, var_r))
+        else:
+            daily_std = 0.015
         vol_20d = daily_std * (252.0 ** 0.5)
 
-        # Volatility-normalized Z score
         z_trend = round(ret_20d / max(0.005, vol_20d / (12.0 ** 0.5)), 2)
 
         # Volume confirmation ratio (last 5D vs last 20D)
-        vol_5d_mean = float(vol_series.tail(min(5, len(vol_series))).mean()) if len(vol_series) > 0 else 1.0
-        vol_20d_mean = float(vol_series.tail(min(20, len(vol_series))).mean()) if len(vol_series) > 0 else 1.0
+        n_vol = len(vols)
+        vol_5d_mean = (sum(vols[-min(5, n_vol):]) / min(5, n_vol)) if n_vol > 0 else 1.0
+        vol_20d_mean = (sum(vols[-min(20, n_vol):]) / min(20, n_vol)) if n_vol > 0 else 1.0
         vol_ratio = round(vol_5d_mean / max(1.0, vol_20d_mean), 2)
 
         # PL-726.3.1: 50D SMA 5-day slope and volume distribution veto
         if n_pts >= 55:
-            sma50_prev = float(close_series.iloc[-55:-5].mean())
+            sma50_prev = sum(closes[-55:-5]) / 50.0
             sma_50_slope_5d_pct = round(((sma_50 - sma50_prev) / sma50_prev) * 100.0, 3) if sma50_prev > 0 else 0.0
         else:
             sma_50_slope_5d_pct = 0.0
@@ -870,15 +857,15 @@ class PriceAlertEngine:
 
         # PL-726.3.2: 3-Day Post-Shock Stabilization Rule
         recent_daily_rets = [
-            (float(close_series.iloc[-k]) - float(close_series.iloc[-k - 1])) / float(close_series.iloc[-k - 1])
+            (closes[-k] - closes[-k - 1]) / closes[-k - 1]
             for k in range(1, min(4, n_pts))
-            if float(close_series.iloc[-k - 1]) > 0
+            if closes[-k - 1] > 0
         ]
         has_recent_3d_shock = any(r <= -0.035 for r in recent_daily_rets)
         is_post_shock_unsettled = bool(has_recent_3d_shock and (curr_close < sma_20 or ret_5d < 0.0))
 
         # PL-727.2: Anti-Knife Pre-Filter: Must pass before ANY Right-Side path can activate
-        last_1d_ret = float((curr_close - close_series.iloc[-2]) / close_series.iloc[-2]) if n_pts >= 2 and float(close_series.iloc[-2]) > 0 else 0.0
+        last_1d_ret = ((curr_close - closes[-2]) / closes[-2]) if n_pts >= 2 and closes[-2] > 0 else 0.0
         anti_knife_passed = bool(
             not is_high_volume_distribution and
             not is_post_shock_unsettled and
@@ -886,7 +873,6 @@ class PriceAlertEngine:
             last_1d_ret >= -0.008
         )
 
-        # Base short-term roll-over check for Path A (Primary Trend Continuation)
         base_falling_guard = bool(
             (ret_5d < -0.008) or
             (ret_10d < -0.012) or
@@ -913,7 +899,6 @@ class PriceAlertEngine:
         )
 
         # Path B: Pullback Bounce off 50D / 200D SMA Structural Support (SUPPORT_BOUNCE)
-        # Solves the Catch-22 where a healthy pullback has ret_20d < 0 or curr_close < sma_20
         is_macro_uptrend_intact = bool(
             sma_50 > 0 and sma_200 > 0 and
             sma_50 >= sma_200 * 0.98 and
@@ -921,7 +906,6 @@ class PriceAlertEngine:
             ret_20d >= -0.085 and
             ((sma_50 * 0.97 <= curr_close <= sma_50 * 1.035) or (sma_200 * 0.985 <= curr_close <= sma_200 * 1.04))
         )
-        # PL-729.3: Intermediate Recovery Support Bounce (50D < 200D, bouncing off 50D or 20D SMA with room to 200D SMA)
         is_recovery_support_bounce = bool(
             sma_50 > 0 and sma_20 > 0 and sma_200 > 0 and
             sma_50 < sma_200 and
@@ -945,7 +929,6 @@ class PriceAlertEngine:
         )
 
         # Path C: Bottom Reversal / Pocket Pivot Reclaiming 20D SMA (BOTTOM_REVERSAL)
-        # PL-729.3: Early pocket pivot right-side confirmation without lagging EMA10 crossover lockout
         is_path_c_bottom_reversal = bool(
             anti_knife_passed and
             sma_20 > 0 and
@@ -1001,9 +984,14 @@ class PriceAlertEngine:
         # 5-Day State Transition Detection
         transition = "NONE"
         if _compute_transition and n_pts >= 15:
-            df_prev = df_ohlcv.iloc[:-5]
-            if len(df_prev) >= 5:
-                prev_eval = cls.compute_trend_temperature(df_prev, current_price=None, _compute_transition=False)
+            prev_closes = closes_list[:-5]
+            if len(prev_closes) >= 5:
+                prev_vols = vols_list[:-5] if len(vols_list) == len(closes_list) else vols_list
+                prev_highs = highs_list[:-5] if highs_list and len(highs_list) == len(closes_list) else highs_list
+                prev_lows = lows_list[:-5] if lows_list and len(lows_list) == len(closes_list) else lows_list
+                prev_eval = cls._compute_trend_temperature_from_series(
+                    prev_closes, prev_vols, prev_highs, prev_lows, current_price=None, _compute_transition=False
+                )
                 prev_state = str(prev_eval.get("state") or "FLAT")
                 if prev_state in ("FREEZE", "FLAT") and state in ("WARM", "HOT"):
                     transition = f"{prev_state}_TO_{state}"
@@ -1046,32 +1034,107 @@ class PriceAlertEngine:
             "is_post_shock_unsettled": is_post_shock_unsettled,
             "sma_50_slope_5d_pct": sma_50_slope_5d_pct,
             "transition": transition,
-            "is_fresh_right_side_pivot": is_fresh_right_side_pivot
+            "is_fresh_right_side_pivot": is_fresh_right_side_pivot,
         }
+
+    @classmethod
+    def compute_trend_temperature(
+        cls,
+        df_ohlcv: Any,
+        current_price: Optional[float] = None,
+        _compute_transition: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Computes 4-state Trend Temperature: FREEZE (冻), FLAT (平), WARM (温), HOT (热).
+        Supports both raw `list[dict]` (fast path) and `pd.DataFrame` inputs identically.
+        Grounded in multi-horizon momentum (3D, 5D, 10D, 20D), volatility Z-score, and 3-Path Right-Side Engine:
+          Path A: TREND_CONTINUATION (primary uptrend continuation)
+          Path B: SUPPORT_BOUNCE (healthy pullback bounce holding 50D/200D SMA support)
+          Path C: BOTTOM_REVERSAL (pocket pivot reclaiming 20D SMA)
+        """
+        if df_ohlcv is None:
+            return cls._empty_trend_temperature()
+
+        if isinstance(df_ohlcv, list):
+            if not df_ohlcv:
+                return cls._empty_trend_temperature()
+            closes_list: List[float] = []
+            vols_list: List[float] = []
+            highs_list: List[float] = []
+            lows_list: List[float] = []
+            has_vol = False
+            has_hl = False
+            for row in df_ohlcv:
+                c = row.get("Close") if "Close" in row else row.get("close")
+                if c is not None:
+                    closes_list.append(float(c))
+                v = row.get("Volume") if "Volume" in row else row.get("volume")
+                if v is not None:
+                    has_vol = True
+                    vols_list.append(float(v))
+                h = row.get("High") if "High" in row else row.get("high")
+                l = row.get("Low") if "Low" in row else row.get("low")
+                if h is not None and l is not None:
+                    has_hl = True
+                    highs_list.append(float(h))
+                    lows_list.append(float(l))
+            if not has_vol:
+                vols_list = [1000000.0] * len(closes_list)
+            return cls._compute_trend_temperature_from_series(
+                closes_list,
+                vols_list,
+                highs_list if has_hl else None,
+                lows_list if has_hl else None,
+                current_price=current_price,
+                _compute_transition=_compute_transition,
+            )
+
+        import pandas as pd
+        if isinstance(df_ohlcv, pd.DataFrame):
+            if df_ohlcv.empty:
+                return cls._empty_trend_temperature()
+            close_col = "Close" if "Close" in df_ohlcv.columns else ("close" if "close" in df_ohlcv.columns else df_ohlcv.columns[0])
+            close_series = df_ohlcv[close_col].dropna().astype(float)
+            closes_list = close_series.tolist()
+            vol_col = "Volume" if "Volume" in df_ohlcv.columns else ("volume" if "volume" in df_ohlcv.columns else None)
+            vols_list = df_ohlcv[vol_col].dropna().astype(float).tolist() if vol_col else [1000000.0] * len(closes_list)
+            high_col = "High" if "High" in df_ohlcv.columns else ("high" if "high" in df_ohlcv.columns else None)
+            low_col = "Low" if "Low" in df_ohlcv.columns else ("low" if "low" in df_ohlcv.columns else None)
+            highs_list = df_ohlcv[high_col].dropna().astype(float).tolist() if (high_col and low_col) else None
+            lows_list = df_ohlcv[low_col].dropna().astype(float).tolist() if (high_col and low_col) else None
+            return cls._compute_trend_temperature_from_series(
+                closes_list,
+                vols_list,
+                highs_list,
+                lows_list,
+                current_price=current_price,
+                _compute_transition=_compute_transition,
+            )
+
+        return cls._empty_trend_temperature()
 
     @classmethod
     def evaluate_symbol_trend_temperature(cls, quote: Dict[str, Any]) -> Dict[str, Any]:
         """
         Evaluates trend temperature and batting zone for a given stock quote.
-        Uses historical_series if available to compute multi-horizon momentum and volatility Z-score,
-        otherwise falls back to moving-average relationships.
+        Uses historical_series fast-path with quote-level memoization to avoid redundant recomputation.
         PL-725: Strictly prevents falling prices from being marked RIGHT_SIDE.
         """
-        import pandas as pd
         curr = float(quote.get("current_price") or 0.0)
         sma50 = float(quote.get("fifty_day_sma") or 0.0)
         sma200 = float(quote.get("two_hundred_day_sma") or 0.0)
 
         hist = quote.get("historical_series")
         if hist and isinstance(hist, list) and len(hist) >= 5:
+            last_close = hist[-1].get("close") if isinstance(hist[-1], dict) else None
+            cache_sig = (curr, len(hist), last_close)
+            cached_pair = quote.get("_trend_eval_cache")
+            if isinstance(cached_pair, tuple) and len(cached_pair) == 2 and cached_pair[0] == cache_sig:
+                return dict(cached_pair[1])
             try:
-                df = pd.DataFrame(hist)
-                trend_res = cls.compute_trend_temperature(df, current_price=curr)
-                if sma50 <= 0:
-                    sma50 = float(trend_res.get("sma_50") or 0.0)
-                if sma200 <= 0:
-                    sma200 = float(trend_res.get("sma_200") or 0.0)
-                return trend_res
+                trend_res = cls.compute_trend_temperature(hist, current_price=curr)
+                quote["_trend_eval_cache"] = (cache_sig, trend_res)
+                return dict(trend_res)
             except Exception:
                 pass
 

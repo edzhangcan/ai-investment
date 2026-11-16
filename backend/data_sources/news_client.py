@@ -6,6 +6,7 @@ with 15-minute TTL caching and credible source citations.
 
 import time
 import logging
+import threading
 import urllib.request
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -15,10 +16,10 @@ import re
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("NewsClient")
 
-# In-memory TTL Cache Store (15-minute TTL)
+# In-memory TTL Cache Store (15-minute TTL) guarded by RLock
+_NEWS_LOCK = threading.RLock()
 _NEWS_CACHE: Dict[str, Dict[str, Any]] = {}
 CACHE_TTL_SECONDS = 900  # 15 minutes
 
@@ -531,18 +532,19 @@ class NewsClient:
 
     @staticmethod
     def _get_from_cache(key: str) -> Optional[List[Dict[str, Any]]]:
-        if key in _NEWS_CACHE:
-            entry = _NEWS_CACHE[key]
-            if time.time() - entry["timestamp"] < CACHE_TTL_SECONDS:
+        with _NEWS_LOCK:
+            entry = _NEWS_CACHE.get(key)
+            if entry and (time.time() - entry["timestamp"] < CACHE_TTL_SECONDS):
                 return entry["data"]
         return None
 
     @staticmethod
     def _set_cache(key: str, data: List[Dict[str, Any]]):
-        _NEWS_CACHE[key] = {
-            "timestamp": time.time(),
-            "data": data
-        }
+        with _NEWS_LOCK:
+            _NEWS_CACHE[key] = {
+                "timestamp": time.time(),
+                "data": data
+            }
 
     @classmethod
     def classify_credibility_tier(cls, source_name: str) -> str:
