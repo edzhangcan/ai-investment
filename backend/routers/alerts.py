@@ -4,7 +4,7 @@ Exposes trigger history logs and trigger evaluation endpoints.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, select, delete
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -39,10 +39,18 @@ def get_alert_history(session: Session = Depends(get_session)):
     from backend.models.db_models import UserWatchlistDB
 
     watchlist_map = {w.symbol.upper(): w for w in session.exec(select(UserWatchlistDB)).all()}
+    unique_syms = list(dict.fromkeys([log.symbol.upper() for log in logs if log.symbol]))
+    quotes_map = {}
+    if unique_syms:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(8, len(unique_syms))) as executor:
+            fetched = list(executor.map(DataProviderManager.get_stock_data, unique_syms))
+        quotes_map = dict(zip(unique_syms, fetched))
+
     enriched = []
     for log in logs:
         sym = log.symbol.upper()
-        stock_data = DataProviderManager.get_stock_data(sym) if sym else None
+        stock_data = quotes_map.get(sym) if sym else None
         curr_p = float(stock_data.get("current_price")) if (stock_data and stock_data.get("current_price")) else float(log.current_price)
         w_item = watchlist_map.get(sym)
         target_p = float(w_item.target_buy_price) if (w_item and w_item.target_buy_price) else float(log.target_buy_price)
@@ -119,13 +127,10 @@ async def notify_falsification(payload: FalsificationNotifyRequest, session: Ses
 
 @router.delete("/history")
 def clear_all_alert_history(session: Session = Depends(get_session)):
-    """Clears all triggered price alert history records."""
-    logs = session.exec(select(PriceAlertLogDB)).all()
-    count = len(logs)
-    for log in logs:
-        session.delete(log)
+    """Clears all triggered price alert history records in a single bulk SQL statement."""
+    result = session.exec(delete(PriceAlertLogDB))
     session.commit()
-    return {"status": "ok", "deleted_count": count}
+    return {"status": "ok", "deleted_count": int(getattr(result, "rowcount", 0) or 0)}
 
 @router.delete("/history/{alert_id}")
 def delete_alert_history_item(alert_id: int, session: Session = Depends(get_session)):

@@ -1,13 +1,28 @@
-import { 
-  StockAnalysisResponse, 
-  MacroData, 
+import {
+  StockAnalysisResponse,
+  MacroData,
+  MacroDashboardResponse,
+  RefreshRecommendationsResponse,
+  SecFilingsResponse,
+  DebateData,
+  PortfolioCalculatePayload,
+  PortfolioCalculateResponse,
+  KellySizePayload,
+  KellyResult,
   CentralBankSpeechMetadata,
   StockBucket,
   StockTrackingItem,
   SetBucketPayload,
   SellHoldingPayload,
+  AddWatchlistPayload,
   StockBucketStatusResponse,
-  PortfolioNewsAnalysisResponse
+  PortfolioNewsAnalysisResponse,
+  ApiStatusResponse,
+  PushAlertConfigResponse,
+  DiscordAlertDispatchResponse,
+  ValuationAlertSettings,
+  ResetValuationSettingsResponse,
+  PriceAlertHistoryItem,
 } from '../types';
 
 export const getApiBaseUrl = () => {
@@ -18,283 +33,345 @@ export const getApiBaseUrl = () => {
   return 'http://127.0.0.1:8000';
 };
 
-export async function fetchMacroAnalysis(lang: string = "en", country: string = "US", signal?: AbortSignal): Promise<MacroData> {
-  const url = `${getApiBaseUrl()}/api/macro?lang=${lang}&country=${country.toUpperCase()}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Macro API failed: ${res.statusText}`);
-  return res.json();
+export async function requestJson<T>(
+  url: string,
+  init?: RequestInit,
+  fallbackErrorMsg: string = 'API request failed'
+): Promise<T> {
+  const res = await fetch(url, init);
+  if (!res.ok) {
+    let detail = res.statusText || fallbackErrorMsg;
+    try {
+      const errBody = await res.json();
+      if (errBody && typeof errBody.detail === 'string') {
+        detail = errBody.detail;
+      }
+    } catch {
+      // Ignore non-JSON error body
+    }
+    throw new Error(`${fallbackErrorMsg}: ${detail}`);
+  }
+  return res.json() as Promise<T>;
 }
 
-export async function fetchMacroDashboard(lang: string = "en", forceRefresh: boolean = false, country: string = "US", signal?: AbortSignal): Promise<any> {
-  const url = `${getApiBaseUrl()}/api/macro/dashboard?lang=${lang}&force_refresh=${forceRefresh}&country=${country.toUpperCase()}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Macro Dashboard API failed: ${res.statusText}`);
-  return res.json();
-}
-
-export async function refreshRecommendationsApi(category?: string, offset: number = 0, lang: string = "en", country: string = "US", signal?: AbortSignal): Promise<any> {
-  const url = `${getApiBaseUrl()}/api/macro/recommendations/refresh`;
-  const res = await fetch(url, {
+function jsonPostInit(body: unknown, signal?: AbortSignal): RequestInit {
+  return {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ category, offset, lang, country: country.toUpperCase() }),
-    signal
-  });
-  if (!res.ok) throw new Error(`Refresh recommendations API failed: ${res.statusText}`);
-  return res.json();
+    body: JSON.stringify(body),
+    signal,
+  };
 }
 
-export async function fetchStockAnalysis(symbol: string, lang: string = "en", signal?: AbortSignal, forceRefresh: boolean = false): Promise<StockAnalysisResponse> {
+export async function fetchMacroAnalysis(
+  lang: string = 'en',
+  country: string = 'US',
+  signal?: AbortSignal
+): Promise<MacroData> {
+  const url = `${getApiBaseUrl()}/api/macro?lang=${lang}&country=${country.toUpperCase()}`;
+  return requestJson<MacroData>(url, { signal }, 'Macro API failed');
+}
+
+export async function fetchMacroDashboard(
+  lang: string = 'en',
+  forceRefresh: boolean = false,
+  country: string = 'US',
+  signal?: AbortSignal
+): Promise<MacroDashboardResponse> {
+  const url = `${getApiBaseUrl()}/api/macro/dashboard?lang=${lang}&force_refresh=${forceRefresh}&country=${country.toUpperCase()}`;
+  return requestJson<MacroDashboardResponse>(url, { signal }, 'Macro Dashboard API failed');
+}
+
+export async function refreshRecommendationsApi(
+  category?: string,
+  offset: number = 0,
+  lang: string = 'en',
+  country: string = 'US',
+  signal?: AbortSignal
+): Promise<RefreshRecommendationsResponse> {
+  const url = `${getApiBaseUrl()}/api/macro/recommendations/refresh`;
+  return requestJson<RefreshRecommendationsResponse>(
+    url,
+    jsonPostInit({ category, offset, lang, country: country.toUpperCase() }, signal),
+    'Refresh recommendations API failed'
+  );
+}
+
+export async function fetchStockAnalysis(
+  symbol: string,
+  lang: string = 'en',
+  signal?: AbortSignal,
+  forceRefresh: boolean = false
+): Promise<StockAnalysisResponse> {
   const normalizedSymbol = symbol.trim().toUpperCase();
   const url = `${getApiBaseUrl()}/api/stock/${normalizedSymbol}?lang=${lang}&force_refresh=${forceRefresh}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Stock API failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<StockAnalysisResponse>(url, { signal }, 'Stock API failed');
 }
 
-export async function fetchSecTextMining(symbol: string, lang: string = "en", signal?: AbortSignal): Promise<any> {
+export async function fetchSecTextMining(
+  symbol: string,
+  lang: string = 'en',
+  signal?: AbortSignal
+): Promise<SecFilingsResponse> {
   const normalizedSymbol = symbol.trim().toUpperCase();
   const url = `${getApiBaseUrl()}/api/stock/${normalizedSymbol}/filings/mining?lang=${lang}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`SEC Text Mining API failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<SecFilingsResponse>(url, { signal }, 'SEC Text Mining API failed');
 }
 
-export async function runDebateApi(symbol: string, lang: string = "en", signal?: AbortSignal, forceRefresh: boolean = false): Promise<any> {
+export async function runDebateApi(
+  symbol: string,
+  lang: string = 'en',
+  signal?: AbortSignal,
+  forceRefresh: boolean = false
+): Promise<DebateData> {
   const normalizedSymbol = symbol.trim().toUpperCase();
   const url = `${getApiBaseUrl()}/api/debate/${normalizedSymbol}?lang=${lang}&force_refresh=${forceRefresh}`;
-  const res = await fetch(url, { method: 'POST', signal });
-  if (!res.ok) throw new Error(`Debate API failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<DebateData>(url, { method: 'POST', signal }, 'Debate API failed');
 }
 
-export async function calculatePortfolioAllocation(payload: any, signal?: AbortSignal): Promise<any> {
+export async function calculatePortfolioAllocation(
+  payload: PortfolioCalculatePayload,
+  signal?: AbortSignal
+): Promise<PortfolioCalculateResponse> {
   const url = `${getApiBaseUrl()}/api/portfolio/calculate`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal
-  });
-  if (!res.ok) throw new Error(`Portfolio calculate failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<PortfolioCalculateResponse>(
+    url,
+    jsonPostInit(payload, signal),
+    'Portfolio calculate failed'
+  );
 }
 
-export async function calculateKellySizeApi(payload: any, signal?: AbortSignal): Promise<any> {
+export async function calculateKellySizeApi(
+  payload: KellySizePayload,
+  signal?: AbortSignal
+): Promise<KellyResult> {
   const url = `${getApiBaseUrl()}/api/portfolio/kelly-size`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal
-  });
-  if (!res.ok) throw new Error(`Kelly sizing failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<KellyResult>(
+    url,
+    jsonPostInit(payload, signal),
+    'Kelly sizing failed'
+  );
 }
 
-export async function fetchWatchlistApi(bucket?: StockBucket | 'ALL', signal?: AbortSignal): Promise<StockTrackingItem[]> {
+export async function fetchWatchlistApi(
+  bucket?: StockBucket | 'ALL',
+  signal?: AbortSignal
+): Promise<StockTrackingItem[]> {
   const query = bucket && bucket !== 'ALL' ? `?bucket=${bucket}` : '';
   const url = `${getApiBaseUrl()}/api/watchlist${query}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Watchlist API failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<StockTrackingItem[]>(url, { signal }, 'Watchlist API failed');
 }
 
-export async function fetchStockBucketStatusApi(symbol: string, signal?: AbortSignal): Promise<StockBucketStatusResponse> {
+export async function fetchStockBucketStatusApi(
+  symbol: string,
+  signal?: AbortSignal
+): Promise<StockBucketStatusResponse> {
   const url = `${getApiBaseUrl()}/api/watchlist/status/${encodeURIComponent(symbol.toUpperCase())}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Stock bucket status API failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<StockBucketStatusResponse>(url, { signal }, 'Stock bucket status API failed');
 }
 
-export async function setStockBucketApi(payload: SetBucketPayload, signal?: AbortSignal): Promise<StockTrackingItem> {
+export async function setStockBucketApi(
+  payload: SetBucketPayload,
+  signal?: AbortSignal
+): Promise<StockTrackingItem> {
   const url = `${getApiBaseUrl()}/api/watchlist/set-bucket`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal
-  });
-  if (!res.ok) throw new Error(`Set stock bucket failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<StockTrackingItem>(
+    url,
+    jsonPostInit(payload, signal),
+    'Set stock bucket failed'
+  );
 }
 
-export async function sellHoldingApi(payload: SellHoldingPayload, signal?: AbortSignal): Promise<any> {
+export async function sellHoldingApi(
+  payload: SellHoldingPayload,
+  signal?: AbortSignal
+): Promise<ApiStatusResponse> {
   const url = `${getApiBaseUrl()}/api/watchlist/sell-holding`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal
-  });
-  if (!res.ok) throw new Error(`Sell holding failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<ApiStatusResponse>(
+    url,
+    jsonPostInit(payload, signal),
+    'Sell holding failed'
+  );
 }
 
-export async function addWatchlistApi(payload: any, signal?: AbortSignal): Promise<any> {
+export async function addWatchlistApi(
+  payload: AddWatchlistPayload,
+  signal?: AbortSignal
+): Promise<StockTrackingItem> {
   const url = `${getApiBaseUrl()}/api/watchlist`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal
-  });
-  if (!res.ok) throw new Error(`Add watchlist failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<StockTrackingItem>(
+    url,
+    jsonPostInit(payload, signal),
+    'Add watchlist failed'
+  );
 }
 
-export async function deleteWatchlistApi(symbol: string, signal?: AbortSignal): Promise<any> {
+export async function deleteWatchlistApi(
+  symbol: string,
+  signal?: AbortSignal
+): Promise<ApiStatusResponse> {
   const url = `${getApiBaseUrl()}/api/watchlist/${encodeURIComponent(symbol.toUpperCase())}`;
-  const res = await fetch(url, { method: 'DELETE', signal });
-  if (!res.ok) throw new Error(`Delete watchlist failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<ApiStatusResponse>(url, { method: 'DELETE', signal }, 'Delete watchlist failed');
 }
 
-export async function syncWatchlistTargetsApi(signal?: AbortSignal): Promise<any> {
+export async function syncWatchlistTargetsApi(
+  signal?: AbortSignal
+): Promise<StockTrackingItem[]> {
   const url = `${getApiBaseUrl()}/api/watchlist/sync-targets`;
-  const res = await fetch(url, { method: 'POST', signal });
-  if (!res.ok) throw new Error(`Sync watchlist targets failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<StockTrackingItem[]>(url, { method: 'POST', signal }, 'Sync watchlist targets failed');
 }
 
-export async function fetchPushAlertConfig(signal?: AbortSignal): Promise<any> {
+export async function fetchPushAlertConfig(
+  signal?: AbortSignal
+): Promise<PushAlertConfigResponse> {
   const url = `${getApiBaseUrl()}/api/push-alerts/config`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Fetch push alert config failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<PushAlertConfigResponse>(url, { signal }, 'Fetch push alert config failed');
 }
 
-export async function savePushAlertConfig(discordWebhookUrl: string, isDiscordEnabled: boolean, signal?: AbortSignal): Promise<any> {
+export async function savePushAlertConfig(
+  discordWebhookUrl: string,
+  isDiscordEnabled: boolean,
+  signal?: AbortSignal
+): Promise<PushAlertConfigResponse> {
   const url = `${getApiBaseUrl()}/api/push-alerts/config`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      discord_webhook_url: discordWebhookUrl,
-      is_discord_enabled: isDiscordEnabled
-    }),
-    signal
-  });
-  if (!res.ok) throw new Error(`Save push alert config failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<PushAlertConfigResponse>(
+    url,
+    jsonPostInit(
+      {
+        discord_webhook_url: discordWebhookUrl,
+        is_discord_enabled: isDiscordEnabled,
+      },
+      signal
+    ),
+    'Save push alert config failed'
+  );
 }
 
-export async function testDiscordWebhook(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+export async function testDiscordWebhook(
+  discordWebhookUrl: string,
+  lang: string = 'en',
+  signal?: AbortSignal
+): Promise<DiscordAlertDispatchResponse> {
   const url = `${getApiBaseUrl()}/api/push-alerts/test`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, lang }),
-    signal
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Discord test failed');
-  }
-  return res.json();
+  return requestJson<DiscordAlertDispatchResponse>(
+    url,
+    jsonPostInit({ discord_webhook_url: discordWebhookUrl, lang }, signal),
+    'Discord test failed'
+  );
 }
 
-export async function dispatchMultiTypeDiscordAlert(discordWebhookUrl: string, alertType: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+export async function dispatchMultiTypeDiscordAlert(
+  discordWebhookUrl: string,
+  alertType: string,
+  lang: string = 'en',
+  signal?: AbortSignal
+): Promise<DiscordAlertDispatchResponse> {
   const url = `${getApiBaseUrl()}/api/push-alerts/dispatch`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ discord_webhook_url: discordWebhookUrl, alert_type: alertType, lang }),
-    signal
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Dispatch alert failed');
-  }
-  return res.json();
+  return requestJson<DiscordAlertDispatchResponse>(
+    url,
+    jsonPostInit({ discord_webhook_url: discordWebhookUrl, alert_type: alertType, lang }, signal),
+    'Dispatch alert failed'
+  );
 }
 
-export async function testMacroDigestAlert(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+export async function testMacroDigestAlert(
+  discordWebhookUrl: string,
+  lang: string = 'en',
+  signal?: AbortSignal
+): Promise<DiscordAlertDispatchResponse> {
   return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'macro_digest', lang, signal);
 }
 
-export async function testBundledBuyAlert(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+export async function testBundledBuyAlert(
+  discordWebhookUrl: string,
+  lang: string = 'en',
+  signal?: AbortSignal
+): Promise<DiscordAlertDispatchResponse> {
   return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'bundled_buy', lang, signal);
 }
 
-export async function testSellDangerAlert(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+export async function testSellDangerAlert(
+  discordWebhookUrl: string,
+  lang: string = 'en',
+  signal?: AbortSignal
+): Promise<DiscordAlertDispatchResponse> {
   return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'sell_danger', lang, signal);
 }
 
-export async function testGoldNuggetsAlert(discordWebhookUrl: string, lang: string = 'en', signal?: AbortSignal): Promise<any> {
+export async function testGoldNuggetsAlert(
+  discordWebhookUrl: string,
+  lang: string = 'en',
+  signal?: AbortSignal
+): Promise<DiscordAlertDispatchResponse> {
   return dispatchMultiTypeDiscordAlert(discordWebhookUrl, 'gold_nuggets', lang, signal);
 }
 
-export async function fetchValuationAlertSettings(signal?: AbortSignal): Promise<any> {
+export async function fetchValuationAlertSettings(
+  signal?: AbortSignal
+): Promise<ValuationAlertSettings> {
   const url = `${getApiBaseUrl()}/api/settings/valuation-alerts`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Fetch valuation settings failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<ValuationAlertSettings>(url, { signal }, 'Fetch valuation settings failed');
 }
 
-export async function saveValuationAlertSettings(payload: {
-  global_mos_pct: number;
-  technical_anchor_mode: string;
-  ticker_overrides: Record<string, { target_buy?: number | null; target_sell?: number | null }>;
-}, signal?: AbortSignal): Promise<any> {
+export async function saveValuationAlertSettings(
+  payload: ValuationAlertSettings,
+  signal?: AbortSignal
+): Promise<ValuationAlertSettings> {
   const url = `${getApiBaseUrl()}/api/settings/valuation-alerts`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Failed to save valuation settings');
-  }
-  return res.json();
+  return requestJson<ValuationAlertSettings>(
+    url,
+    jsonPostInit(payload, signal),
+    'Failed to save valuation settings'
+  );
 }
 
-export async function resetValuationAlertSettings(signal?: AbortSignal): Promise<any> {
+export async function resetValuationAlertSettings(
+  signal?: AbortSignal
+): Promise<ResetValuationSettingsResponse> {
   const url = `${getApiBaseUrl()}/api/settings/valuation-alerts/reset`;
-  const res = await fetch(url, { method: 'POST', signal });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Failed to reset settings');
-  }
-  return res.json();
+  return requestJson<ResetValuationSettingsResponse>(
+    url,
+    { method: 'POST', signal },
+    'Failed to reset settings'
+  );
 }
 
-export async function fetchAlertHistoryApi(signal?: AbortSignal): Promise<any[]> {
+export async function fetchAlertHistoryApi(
+  signal?: AbortSignal
+): Promise<PriceAlertHistoryItem[]> {
   const url = `${getApiBaseUrl()}/api/alerts/history`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Fetch alert history failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<PriceAlertHistoryItem[]>(url, { signal }, 'Fetch alert history failed');
 }
 
-export async function deleteAlertHistoryItemApi(alertId: number, signal?: AbortSignal): Promise<any> {
+export async function deleteAlertHistoryItemApi(
+  alertId: number,
+  signal?: AbortSignal
+): Promise<ApiStatusResponse> {
   const url = `${getApiBaseUrl()}/api/alerts/history/${alertId}`;
-  const res = await fetch(url, { method: 'DELETE', signal });
-  if (!res.ok) throw new Error(`Delete alert item failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<ApiStatusResponse>(url, { method: 'DELETE', signal }, 'Delete alert item failed');
 }
 
-export async function clearAllAlertHistoryApi(signal?: AbortSignal): Promise<any> {
+export async function clearAllAlertHistoryApi(
+  signal?: AbortSignal
+): Promise<ApiStatusResponse> {
   const url = `${getApiBaseUrl()}/api/alerts/history`;
-  const res = await fetch(url, { method: 'DELETE', signal });
-  if (!res.ok) throw new Error(`Clear all alert history failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<ApiStatusResponse>(url, { method: 'DELETE', signal }, 'Clear all alert history failed');
 }
 
-export async function triggerPriceAlertCheckApi(signal?: AbortSignal): Promise<any> {
+export async function triggerPriceAlertCheckApi(
+  signal?: AbortSignal
+): Promise<ApiStatusResponse> {
   const url = `${getApiBaseUrl()}/api/alerts/trigger-check`;
-  const res = await fetch(url, { method: 'POST', signal });
-  if (!res.ok) throw new Error(`Trigger price alert check failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<ApiStatusResponse>(url, { method: 'POST', signal }, 'Trigger price alert check failed');
 }
 
-export async function fetchCentralBankSpeeches(country?: 'US' | 'CA', signal?: AbortSignal): Promise<CentralBankSpeechMetadata[]> {
+export async function fetchCentralBankSpeeches(
+  country?: 'US' | 'CA',
+  signal?: AbortSignal
+): Promise<CentralBankSpeechMetadata[]> {
   const query = country ? `?country=${country}` : '';
   const url = `${getApiBaseUrl()}/api/macro/speeches${query}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Fetch speeches failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<CentralBankSpeechMetadata[]>(url, { signal }, 'Fetch speeches failed');
 }
 
 export function getSpeechStreamUrl(speechId: string, speed: number = 1.0, lang: string = 'en'): string {
@@ -307,10 +384,9 @@ export async function fetchPortfolioNewsAnalysis(
   signal?: AbortSignal
 ): Promise<PortfolioNewsAnalysisResponse> {
   const url = `${getApiBaseUrl()}/api/news-portfolio/analysis?market=${market}&force_refresh=${forceRefresh}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Fetch portfolio news analysis failed: ${res.statusText}`);
-  return res.json();
+  return requestJson<PortfolioNewsAnalysisResponse>(
+    url,
+    { signal },
+    'Fetch portfolio news analysis failed'
+  );
 }
-
-
-

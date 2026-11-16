@@ -149,6 +149,18 @@ class PricingEngine:
         custom_mos_pct: Optional[float] = None,
         anchor_mode: str = "adaptive_balanced"
     ) -> Dict[str, Any]:
+        """
+        Synthesizes Intrinsic DCF Fair Value, Balanced Buy Zone, and Right-Side Timing Gates.
+
+        Key Invariants (PL-711 through PL-729):
+        - Multi-Archetype Valuation: Routes tickers across 14 sector sub-models (Banks PB-ROE,
+          Regulated DDM, Midstream DCF, Streaming OCF, Copper CapEx, Rule-of-40, Serial Acquirers).
+        - EV-to-Equity Bridge: Deducts SBC from Owner FCF and bridges Net Debt to Equity Value.
+        - Structural Buy Ceiling (PL-729.1): Anchors `ideal_buy_max` to 20D/50D/200D SMA support and
+          DCF Margin of Safety (`ideal_buy_min = 0.90 * ideal_buy_max`), never floating `price * 1.01`.
+        - Momentum & Anti-Chase Vetoes (PL-726 / PL-729.2): `IN_BUY_ZONE` requires Right-Side batting
+          zone (`WARM`, not `HOT`) and vetoes >6.5% 20D extensions or overhead 200D SMA supply walls.
+        """
         symbol = stock_data.get("symbol", "UNKNOWN")
 
         # 0. Check validity
@@ -377,6 +389,8 @@ class PricingEngine:
             symbol_upper in {"CGY.TO", "CGY", "CACI", "LDOS", "SAIC"}
         )
 
+        is_marine_terminal = symbol_upper in {"WTE.TO", "WTE"}
+
         # Determine market_cap & implied_shares
         market_cap = stock_data.get("market_cap")
         shares_outstanding = stock_data.get("shares_outstanding") or stock_data.get("implied_shares")
@@ -575,6 +589,10 @@ class PricingEngine:
         elif is_defense_contractor:
             rev_growth = min(max(raw_rev_growth, 0.03), 0.07)
             target_fcf_margin = None
+        elif is_marine_terminal:
+            # Marine bulk export terminals: throughput-capped tollbooths (2%-4.5% secular growth)
+            rev_growth = min(max(raw_rev_growth, 0.02), 0.045)
+            target_fcf_margin = None
         elif is_retail_or_grocery:
             if is_wide_moat and (roic >= 0.18 or symbol_upper in {"DOL.TO", "COST"}):
                 # Wide Moat retail champions compound store counts and market share secularly
@@ -668,8 +686,8 @@ class PricingEngine:
         if market_cap and market_cap >= 400_000_000_000 and raw_fcf >= 25_000_000_000:
             growth_capex_credit = min(growth_capex_credit, total_capex * 0.15)
 
-        # PL-726.2.2: Disable growth capex credit if live reported FCF has collapsed or turned negative
-        if fcf_decay_warning and live_reported_fcf is not None and float(live_reported_fcf) <= 0:
+        # PL-726.2.2 / PL-731: Disable growth capex credit if live reported FCF is negative or marine terminal baseline already normalized
+        if is_marine_terminal or (live_reported_fcf is not None and float(live_reported_fcf) <= 0 and (fcf_decay_warning or symbol_upper in {"WTE.TO", "WTE", "SLB", "SLB.TO"})):
             growth_capex_credit = 0.0
 
         # Deduct SBC from FCF: if company executes net buybacks, offset SBC deduction
@@ -798,6 +816,8 @@ class PricingEngine:
             exit_multiple = 11.5
         elif is_defense_contractor:
             exit_multiple = 13.5
+        elif is_marine_terminal:
+            exit_multiple = 14.5
         elif is_wide_moat and roic >= 0.20:
             exit_multiple = 25.0
         elif is_wide_moat or (("Narrow" in str(moat_rating) or "窄" in str(moat_rating)) and roic >= 0.15):

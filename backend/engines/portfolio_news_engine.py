@@ -22,7 +22,6 @@ from backend.models.schemas import (
     PortfolioNewsAnalysisResponseSchema,
     DataProvenanceSchema,
 )
-from backend.routers.watchlist import enrich_item_quote, get_portfolio_total_value
 from backend.data_sources.news_client import (
     NewsClient,
     calculate_news_age_days,
@@ -113,7 +112,17 @@ class PortfolioNewsEngine:
         watchlist_symbols = [it.symbol.upper() for it in working_items if it.bucket == "WATCHLIST"]
         all_tracked_symbols = holding_symbols + watchlist_symbols
 
-        # Step 2: Compute Position Pulse Telemetry
+        # Step 2: Pre-warm uncached quotes concurrently before building position pulse telemetry
+        uncached_syms = []
+        with DataProviderManager._LOCK:
+            for sym in dict.fromkeys(all_tracked_symbols):
+                if sym not in DataProviderManager._CACHE:
+                    uncached_syms.append(sym)
+        if uncached_syms:
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=min(8, len(uncached_syms))) as executor:
+                list(executor.map(data_provider_manager.get_stock_quote, uncached_syms))
+
         tracked_positions: List[Dict[str, Any]] = []
         total_portfolio_value = 0.0
 

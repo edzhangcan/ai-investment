@@ -26,10 +26,6 @@ import {
   Newspaper
 } from 'lucide-react';
 import { MacroDashboard } from './components/MacroDashboard';
-import { NewsPortfolioAnalysis } from './components/NewsPortfolioAnalysis';
-import { RecommendedStocksGrid } from './components/RecommendedStocksGrid';
-import { PricingChart } from './components/PricingChart';
-import { DebateArena } from './components/DebateArena';
 import { BilingualHoverCard } from './components/BilingualHoverCard';
 import { MacroScannerBar } from './components/MacroScannerBar';
 import { NotificationCenter } from './components/NotificationCenter';
@@ -61,6 +57,10 @@ const ExportMemoModal = lazy(() => import('./components/ExportMemoModal').then(m
 const SecTextMiningViewer = lazy(() => import('./components/SecTextMiningViewer').then(m => ({ default: m.SecTextMiningViewer })));
 const BacktestViewer = lazy(() => import('./components/BacktestViewer').then(m => ({ default: m.BacktestViewer })));
 const PreTradeSoulCheckModal = lazy(() => import('./components/PreTradeSoulCheckModal').then(m => ({ default: m.PreTradeSoulCheckModal })));
+const NewsPortfolioAnalysis = lazy(() => import('./components/NewsPortfolioAnalysis').then(m => ({ default: m.NewsPortfolioAnalysis })));
+const RecommendedStocksGrid = lazy(() => import('./components/RecommendedStocksGrid').then(m => ({ default: m.RecommendedStocksGrid })));
+const PricingChart = lazy(() => import('./components/PricingChart').then(m => ({ default: m.PricingChart })));
+const DebateArena = lazy(() => import('./components/DebateArena').then(m => ({ default: m.DebateArena })));
 
 export const App: React.FC = () => {
   const { t, language } = useLanguage();
@@ -446,16 +446,19 @@ export const App: React.FC = () => {
 
         {/* TAB 2: NEWS & PORTFOLIO ANALYSIS */}
         {activeTab === 'news' && (
-          <NewsPortfolioAnalysis
-            onSelectTicker={handleSelectRecommendedStock}
-            onOpenWatchlistDrawer={() => setIsWatchlistOpen(true)}
-            watchlistCount={watchlistSymbols.size}
-          />
+          <Suspense fallback={<div className="prism-card p-8 text-center text-sm text-slate-400 animate-pulse">Loading module...</div>}>
+            <NewsPortfolioAnalysis
+              onSelectTicker={handleSelectRecommendedStock}
+              onOpenWatchlistDrawer={() => setIsWatchlistOpen(true)}
+              watchlistCount={watchlistSymbols.size}
+            />
+          </Suspense>
         )}
 
         {/* TAB 3: STOCK PICKS (RECOMMENDED STOCKS GRID) */}
         {activeTab === 'picks' && (
-          loadingDashboard ? (
+          <Suspense fallback={<div className="prism-card p-8 text-center text-sm text-slate-400 animate-pulse">Loading module...</div>}>
+          {loadingDashboard ? (
             <div className="flex flex-col items-center justify-center py-20 text-content-muted gap-3">
               <RefreshCw className="w-8 h-8 animate-spin text-emerald-600" />
               <p className="text-xs">Fetching Macro-Driven Stock Recommendations...</p>
@@ -510,12 +513,14 @@ export const App: React.FC = () => {
                 <span>Retry Connection</span>
               </button>
             </div>
-          )
+          )}
+          </Suspense>
         )}
 
         {/* TAB 4: SINGLE STOCK DEEP-DIVE ANALYSIS */}
         {activeTab === 'stock' && (
-          loadingStock ? (
+          <Suspense fallback={<div className="prism-card p-8 text-center text-sm text-slate-400 animate-pulse">Loading module...</div>}>
+          {loadingStock ? (
             <div className="flex flex-col items-center justify-center py-20 text-content-muted gap-3">
               <RefreshCw className="w-8 h-8 animate-spin text-brand" />
               <p className="text-xs">Fetching real-time market data & running debate for ${ticker}...</p>
@@ -817,7 +822,8 @@ export const App: React.FC = () => {
                 </>
               )
             )
-          )
+          )}
+          </Suspense>
         )}
         
         {/* Suspended Lazy Modals & Drawers */}

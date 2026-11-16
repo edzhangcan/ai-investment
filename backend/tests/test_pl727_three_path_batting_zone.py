@@ -383,6 +383,6 @@ def test_staged_pilot_sizing_and_discipline_compliance_on_pivot():
     cio = arena_res["cio_verdict"]
 
     assert cio["verdict"] == "ACCUMULATE IN BRACKETS"
-    assert "1.5% - 2.5%" in cio["position_sizing_advice"]
-    assert "3% - 5%" in cio["position_sizing_advice"]
+    assert ("1.5% - 2.5%" in cio["position_sizing_advice"] or "1.5%–2.5%" in cio["position_sizing_advice"])
+    assert ("3% - 5%" in cio["position_sizing_advice"] or "3%\u20135%" in cio["position_sizing_advice"])
     assert "pilot tranche" in cio["position_sizing_advice"].lower()

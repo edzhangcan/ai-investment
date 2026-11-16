@@ -94,3 +94,38 @@ export const formatDate = (dateInput?: string | Date | null): string => {
   }
   return dateInput.split('T')[0];
 };
+
+/**
+ * Formats action status and batting-zone tag strings for UI badges.
+ *
+ * Invariant (PL-728): English output MUST NOT contain dashes (`-`) or underscores (`_`);
+ * all separator characters are normalized to spaces and trimmed.
+ *
+ * Chinese (`lang === 'zh'`) mappings:
+ * - `IN_BUY_ZONE` -> `买入区间`
+ * - `LEFT_SIDE_WATCH` / `LEFT_SIDE` -> `左侧观察`
+ * - `PULLBACK_WATCH` -> `回调观察`
+ * - `GROWTH_PREMIUM` -> `成长溢价`
+ * - `OVEREXTENDED` -> `估值偏高`
+ * - `RIGHT_SIDE` -> `右侧击球区`
+ * - `TREND_CONTINUATION` -> `趋势延续`
+ * - `SUPPORT_BOUNCE` -> `均线支撑反弹`
+ * - `BOTTOM_REVERSAL` -> `底部反转突破`
+ */
+export const formatStatusTag = (status?: string, lang: string = 'en'): string => {
+  if (!status) return '';
+  if (lang === 'zh') {
+    if (status === 'IN_BUY_ZONE') return '买入区间';
+    if (status === 'LEFT_SIDE_WATCH') return '左侧观察';
+    if (status === 'PULLBACK_WATCH') return '回调观察';
+    if (status === 'GROWTH_PREMIUM') return '成长溢价';
+    if (status === 'OVEREXTENDED') return '估值偏高';
+    if (status === 'RIGHT_SIDE') return '右侧击球区';
+    if (status === 'LEFT_SIDE') return '左侧观察';
+    if (status === 'TREND_CONTINUATION') return '趋势延续';
+    if (status === 'SUPPORT_BOUNCE') return '均线支撑反弹';
+    if (status === 'BOTTOM_REVERSAL') return '底部反转突破';
+  }
+  // English: strictly remove all dashes and underscores
+  return status.replace(/[-_]/g, ' ').trim();
+};

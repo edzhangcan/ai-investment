@@ -788,3 +788,106 @@ export interface PortfolioNewsAnalysisResponse {
 
 
 
+// PL-731.4.2: Typed API Request / Response Contracts
+export interface ApiStatusResponse {
+  status?: string;
+  success?: boolean;
+  message?: string;
+  symbol?: string;
+  [key: string]: unknown;
+}
+
+export interface RefreshRecommendationsResponse extends CategorizedRecommendationsPayload {
+  stocks?: StockRecommendation[];
+  recommendations?: StockRecommendation[];
+  category?: string;
+  offset?: number;
+}
+
+export interface SecFilingTimelineEntry {
+  year: string;
+  similarity_score: number;
+  severity: string;
+  added_disclaimer: string;
+  removed_disclaimer: string;
+  keywords_trend: Array<{ keyword: string; count: number; trend: string }>;
+}
+
+export interface SecFilingsResponse {
+  symbol: string;
+  filing_repository: string;
+  historical_years_parsed: number;
+  summary_note: string;
+  text_mining_timeline: SecFilingTimelineEntry[];
+  source_mode?: string;
+  provenance?: DataProvenance;
+  earnings_quality?: EarningsQuality;
+}
+
+export interface PortfolioCalculatePayload {
+  cash_balance: number;
+  risk_profile: string;
+  currency?: string;
+  lang?: string;
+  [key: string]: unknown;
+}
+
+export interface KellySizePayload {
+  win_prob: number;
+  upside_pct: number;
+  stop_loss_pct: number;
+  same_sector_count?: number;
+  [key: string]: unknown;
+}
+
+export interface AddWatchlistPayload {
+  symbol: string;
+  company_name?: string;
+  target_buy_price?: number | null;
+  target_sell_price?: number | null;
+  portfolio_allocation_pct?: number;
+  bucket?: StockBucket;
+}
+
+export interface PushAlertConfigResponse {
+  discord_webhook_url?: string | null;
+  is_discord_enabled: boolean;
+  status?: string;
+}
+
+export interface DiscordAlertDispatchResponse {
+  status?: string;
+  success?: boolean;
+  details?: { success?: boolean; [key: string]: unknown };
+  error?: string;
+  detail?: string;
+  message?: string;
+}
+
+export interface ValuationTickerOverride {
+  target_buy?: number | null;
+  target_sell?: number | null;
+}
+
+export interface ValuationAlertSettings {
+  global_mos_pct: number;
+  technical_anchor_mode: string;
+  ticker_overrides: Record<string, ValuationTickerOverride>;
+}
+
+export interface ResetValuationSettingsResponse {
+  status?: string;
+  settings?: ValuationAlertSettings;
+}
+
+export interface PriceAlertHistoryItem {
+  id: number;
+  symbol: string;
+  company_name: string;
+  current_price: number;
+  target_buy_price: number;
+  status?: string;
+  message?: string;
+  triggered_at?: string;
+  notification_channel?: string;
+}

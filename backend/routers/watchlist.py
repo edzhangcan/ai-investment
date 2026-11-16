@@ -89,9 +89,6 @@ def enrich_item_quote(
     holding_days_override: Optional[int] = None
 ) -> WatchlistResponseSchema:
     """Helper to attach live quote, unrealized P&L, dynamic DCF, entry zone, and trend telemetry to an item."""
-    from backend.data_sources.data_provider import DataProviderManager, FALLBACK_STOCK_DATA
-    from backend.engines.pricing_engine import PricingEngine
-    from backend.services.alert_engine import PriceAlertEngine
     norm = item.symbol.upper().strip()
     stock_data = None
     if allow_network:
@@ -114,7 +111,6 @@ def enrich_item_quote(
     sma200 = float(quote.get("two_hundred_day_sma") or 0.0)
 
     # PL-726.5.1: Compute adaptive falsification floor
-    from backend.services.alert_engine import PriceAlertEngine
     adaptive_eval = PriceAlertEngine.compute_adaptive_falsification_floor(
         current_price=curr_price,
         sma_50=sma50,
@@ -127,6 +123,7 @@ def enrich_item_quote(
     floor = adaptive_eval["falsification_floor"]
 
     # PL-723.4: Evaluate dynamic DCF and balanced buy zone
+    pricing: Optional[dict] = None
     dcf_val = None
     buy_min = None
     buy_max = None
@@ -169,15 +166,23 @@ def enrich_item_quote(
     holding_days = holding_days_override
     if holding_days is None and item.buy_in_date:
         try:
-            d_buy = datetime.strptime(item.buy_in_date, "%Y-%m-%d")
-            d_ref = datetime.strptime(item.last_sell_date, "%Y-%m-%d") if item.last_sell_date else datetime.now(timezone.utc)
+            d_buy = datetime.strptime(str(item.buy_in_date)[:10], "%Y-%m-%d").date()
+            d_ref = (
+                datetime.strptime(str(item.last_sell_date)[:10], "%Y-%m-%d").date()
+                if item.last_sell_date
+                else datetime.now(timezone.utc).date()
+            )
             holding_days = max(0, (d_ref - d_buy).days)
         except Exception:
             holding_days = None
 
-    trend_eval = PriceAlertEngine.evaluate_symbol_trend_temperature(quote) if quote else {}
-    batting_zone = trend_eval.get("hitting_zone", "RIGHT_SIDE")
-    trend_state = trend_eval.get("state", "WARM")
+    if pricing and pricing.get("is_valid", True) and pricing.get("batting_zone") and pricing.get("trend_temperature"):
+        batting_zone = str(pricing["batting_zone"])
+        trend_state = str(pricing["trend_temperature"])
+    else:
+        trend_eval = PriceAlertEngine.evaluate_symbol_trend_temperature(quote) if quote else {}
+        batting_zone = trend_eval.get("hitting_zone", "RIGHT_SIDE")
+        trend_state = trend_eval.get("state", "WARM")
 
     return WatchlistResponseSchema(
         id=item.id,
