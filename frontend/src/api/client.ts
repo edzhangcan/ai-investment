@@ -23,6 +23,13 @@ import {
   ValuationAlertSettings,
   ResetValuationSettingsResponse,
   PriceAlertHistoryItem,
+  TooBusyRegimeResponse,
+  TooBusyCrossBorderDuet,
+  TooBusyRebalancePayload,
+  TooBusyRebalanceResponse,
+  TooBusyDailyAdviceResponse,
+  TooBusyBacktestResponse,
+  TooBusyStrategyMode,
 } from '../types';
 
 export const getApiBaseUrl = () => {
@@ -389,4 +396,62 @@ export async function fetchPortfolioNewsAnalysis(
     { signal },
     'Fetch portfolio news analysis failed'
   );
+}
+
+export async function fetchTooBusyRegimeApi(
+  strategyMode: TooBusyStrategyMode = 'TOO_BUSY_LONG_ONLY',
+  market: 'US' | 'CA' = 'US',
+  lang: string = 'en',
+  forceRefresh: boolean = false,
+  signal?: AbortSignal
+): Promise<TooBusyRegimeResponse> {
+  const url = `${getApiBaseUrl()}/api/too-busy/regime?strategy_mode=${strategyMode}&market=${market}&lang=${lang}&force_refresh=${forceRefresh}`;
+  return requestJson<TooBusyRegimeResponse>(url, { signal, cache: 'no-store' }, 'Fetch Too Busy regime failed');
+}
+
+export async function fetchTooBusyCrossBorderDuetApi(
+  usdCapital: number = 4000,
+  cadCapital: number = 4000,
+  lang: string = 'en',
+  forceRefresh: boolean = false,
+  signal?: AbortSignal
+): Promise<TooBusyCrossBorderDuet> {
+  const url = `${getApiBaseUrl()}/api/too-busy/cross-border-duet?usd_capital=${usdCapital}&cad_capital=${cadCapital}&lang=${lang}&force_refresh=${forceRefresh}`;
+  return requestJson<TooBusyCrossBorderDuet>(url, { signal, cache: 'no-store' }, 'Fetch Cross-Border Duet failed');
+}
+
+export async function fetchTooBusyDailyAdviceApi(
+  payload: TooBusyRebalancePayload,
+  signal?: AbortSignal
+): Promise<TooBusyDailyAdviceResponse> {
+  const url = `${getApiBaseUrl()}/api/too-busy/daily-advice`;
+  return requestJson<TooBusyDailyAdviceResponse>(
+    url,
+    { ...jsonPostInit(payload, signal), cache: 'no-store' },
+    'Fetch Too Busy daily advice failed'
+  );
+}
+
+export async function calculateTooBusyTicketApi(
+  payload: TooBusyRebalancePayload,
+  signal?: AbortSignal
+): Promise<TooBusyRebalanceResponse> {
+  const url = `${getApiBaseUrl()}/api/too-busy/rebalance-ticket`;
+  return requestJson<TooBusyRebalanceResponse>(
+    url,
+    { ...jsonPostInit(payload, signal), cache: 'no-store' },
+    'Calculate Too Busy rebalance ticket failed'
+  );
+}
+
+export async function fetchTooBusyBacktestApi(
+  horizon: '16Y_POST_2010' | '40Y_FULL_1986' | '5Y_RECENT' = '16Y_POST_2010',
+  strategyMode: TooBusyStrategyMode = 'TOO_BUSY_LONG_ONLY',
+  hysteresisPct: number = 10.0,
+  lang: string = 'en',
+  forceRefresh: boolean = false,
+  signal?: AbortSignal
+): Promise<TooBusyBacktestResponse> {
+  const url = `${getApiBaseUrl()}/api/too-busy/backtest?horizon=${horizon}&strategy_mode=${strategyMode}&hysteresis_pct=${hysteresisPct}&lang=${lang}&force_refresh=${forceRefresh}`;
+  return requestJson<TooBusyBacktestResponse>(url, { signal, cache: 'no-store' }, 'Fetch Too Busy backtest failed');
 }

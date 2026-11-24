@@ -460,5 +460,181 @@
     "favor_direction": "clear_classification",
     "favor_explanation_en": "Accurately diagnosing the asset engine prevents the catastrophic error of treating a cyclical or speculative stock as a forever compounder.",
     "favor_explanation_zh": "精准定性资产最有利：绝不把周期股误当成长股死扛，也绝不把纯投机题材当成百年老店重仓，因材施策才能稳健盈利。"
+  },
+  "TooBusyStrategy": {
+    "term_en": "Long-Only 3x Growth + Safe T-Bill Cash Shield (Core <$10K Strategy)",
+    "term_zh": "3倍顺势做多 + 国债现金护盾 (新手首选 <$10K 主策略)",
+    "definition_en": "Our recommended core strategy for <$10,000 accounts: holds leveraged Nasdaq growth (TQQQ or HQU.TO) during confirmed uptrends, trims early when speed slows down, and parks 100% in safe government Treasury Bills (SGOV or CASH.TO) during market downturns—never using risky shorting.",
+    "definition_zh": "专为 <$10,000 账户打造的核心策略：在纳指确认为健康上升趋势时持有杠杆成长 ETF (TQQQ 或 HQU.TO)，过热减速时提前减仓锁利，下跌熊市时 100% 转入安全国债或高息现金 ETF (SGOV 或 CASH.TO)，绝不触碰高风险反向做空。",
+    "analogy_en": "Driving on the highway in sunny weather to reach your destination faster, and pulling into a warm, interest-paying rest stop whenever a winter blizzard hits.",
+    "analogy_zh": "就像天气晴朗时在高速公路顺畅巡航，遇到暴风雪路面结冰时立刻驶入温暖且能领利息的高速服务区休息，等天晴再出发。",
+    "favor_direction": "regime_aligned",
+    "favor_explanation_en": "Achieves higher long-term return (+28.66% CAGR from 2010–2026) and lower drawdown (-47.87%) than dual long/short trading because it eliminates bear-market short-squeeze wipeouts.",
+    "favor_explanation_zh": "2010–2026 实盘周期内年化收益 (+28.66%) 与回撤控制 (-47.87%) 均优于多空双工模式，彻底消除了熊市暴力反弹轧空风险。"
+  },
+  "NDXIndex": {
+    "term_en": "Nasdaq-100 Index (^NDX — The Underlying Signal Thermometer)",
+    "term_zh": "纳斯达克100指数 (^NDX — 底层无杠杆信号温度计)",
+    "definition_en": "The unleveraged index of the 100 largest non-financial companies on Nasdaq (Apple, Microsoft, Nvidia, Amazon, etc.). We calculate all moving averages and speed signals on ^NDX rather than on TQQQ directly so leverage decay never distorts the trend lines.",
+    "definition_zh": "由纳斯达克市值最大的 100 家非金融科技与成长龙头组成的无杠杆基准指数。系统所有均线与动量信号均在 ^NDX 原指数上计算，避免 3 倍杠杆 ETF 的波动率损耗扭曲长期均线位置。",
+    "analogy_en": "Reading the actual outdoor air thermometer (^NDX) to decide how to dress, rather than measuring the temperature inside a heated greenhouse (TQQQ).",
+    "analogy_zh": "就像穿衣出门前看室外真实气温计 (^NDX)，而不是看温室大棚里被放大扭曲的温度 (TQQQ)。",
+    "favor_direction": "above_trend",
+    "favor_explanation_en": "When ^NDX is above both its 50-day and 250-day moving averages, the primary bull trend is healthy and favors holding growth exposure.",
+    "favor_explanation_zh": "当 ^NDX 同时站稳 50日 与 250日均线上方时，代表大级别牛市趋势健康，适合持有进攻多头仓位。"
+  },
+  "TQQQ_ETF": {
+    "term_en": "TQQQ / HQU.TO (Leveraged Nasdaq-100 Growth ETF)",
+    "term_zh": "TQQQ / HQU.TO (纳指100杠杆进攻多头 ETF)",
+    "definition_en": "An exchange-traded fund designed to return 3x (TQQQ in US) or 2x (HQU.TO in Canada) the single-day percentage move of the Nasdaq-100 Index. Used as our growth engine only when the trend is favorable.",
+    "definition_zh": "追踪纳斯达克100指数单日涨幅 3倍（美股 TQQQ）或 2倍（加股 HQU.TO）的杠杆进攻型 ETF。仅在趋势明确向上或触发极端超卖反弹信号时持有。",
+    "analogy_en": "A 3-speed turbo e-bike: it climbs sunny hills three times faster than a regular bike, but you must step off it before going down a steep icy cliff.",
+    "analogy_zh": "就像一辆 3 倍动力的涡轮助力车：上坡顺风时速度是普通自行车的 3 倍，但遇到结冰下坡路段前必须提前下车推行。",
+    "favor_direction": "uptrend_only",
+    "favor_explanation_en": "Compounds rapidly during sustained multi-month uptrends above the 50D & 250D averages, but must never be held passively through a bear market.",
+    "favor_explanation_zh": "在站稳 50日 与 250日均线的持续主升浪中具有极强的复利爆发力，但绝不能在跌破年线的熊市中死扛。"
+  },
+  "SGOV_TBill": {
+    "term_en": "SGOV / CASH.TO (Safe T-Bill & High-Interest Cash Shield ETF)",
+    "term_zh": "SGOV / CASH.TO (短期国债与高息现金护盾 ETF)",
+    "definition_en": "An ultra-safe ETF holding 0–3 month US Treasury Bills (SGOV) or Canadian high-interest bank deposits (CASH.TO), paying ~4.5% annualized interest while keeping principal virtually immune to stock market crashes.",
+    "definition_zh": "投资于 0–3 个月美国短期国债（美股 SGOV）或加拿大四大行高息存款（加股 CASH.TO）的避险生息 ETF，在保护本金不受股市暴跌冲击的同时提供约 4.5% 年化利息。",
+    "analogy_en": "A government-insured storm shelter that actually pays you daily rent (~4.5%/yr) while you wait out a hurricane outside.",
+    "analogy_zh": "就像一座不仅坚固防风、而且每天还会给你发约 4.5% 年化租金的政府避风港，让你安心等待外面的股市暴风雨过去。",
+    "favor_direction": "defensive_shield",
+    "favor_explanation_en": "Eliminates the -82.9% bear-market crash risk of TQQQ and the -30% short-squeeze risk of SQQQ while earning risk-free yield.",
+    "favor_explanation_zh": "既能完美规避 TQQQ 在熊市暴跌 80%+ 的毁灭性回撤，又能杜绝做空 SQQQ 被暴力轧空的风险，还能稳拿无风险利息。"
+  },
+  "SMA250_Trend": {
+    "term_en": "250-Day Moving Average (250D SMA — 1-Year Bull/Bear Freeze Line)",
+    "term_zh": "250日简单移动平均线 (250D SMA — 一年期牛熊分界年线)",
+    "definition_en": "The average closing price of the Nasdaq-100 over the last 250 trading days (exactly 1 full calendar year). Historically, no major market crash has ever occurred while price stayed above the 250D SMA, and no major bull run happens below it.",
+    "definition_zh": "过去 250 个交易日（恰好完整一年）纳指收盘价的平均值，俗称‘年线’。历史上所有大牛市主升浪均发生在 250日线上方，而所有毁灭性股灾均发生在跌破 250日线之后。",
+    "analogy_en": "The 0°C / 32°F freeze line on a weather thermometer: above it is Summer (water flows, safe for growth); below it is Winter (black ice—switch to your T-Bill snow tires).",
+    "analogy_zh": "就像温度计上的 0°C 冰点线：冰点以上是万物生长的夏天（适合进攻做多）；冰点以下是路面结冰的寒冬（必须切入国债避险防滑）。",
+    "favor_direction": "price_above",
+    "favor_explanation_en": "Price > 250D SMA is the #1 green light for holding growth exposure. Price < 250D SMA warns of bear-market regime risk.",
+    "favor_explanation_zh": "指数位于 250日年线上方是做多的第一道安全绿灯；跌破 250日年线则拉响熊市防御警报。"
+  },
+  "SMA50_Trend": {
+    "term_en": "50-Day Moving Average (50D SMA — 2-Month Medium Trend Line)",
+    "term_zh": "50日简单移动平均线 (50D SMA — 两个月中期趋势线)",
+    "definition_en": "The average closing price over the past 50 trading days (~10 weeks or 2.5 calendar months). Confirms whether the medium-term momentum agrees with the 1-year trend.",
+    "definition_zh": "过去 50 个交易日（约两个半月）的平均收盘价。用于确认中期趋势是否与一年期年线同向共振。",
+    "analogy_en": "An airplane's cruising altitude line: flying above both the 1-year ground floor (250D) and the 2-month cruising altitude (50D) means smooth full-throttle flight.",
+    "analogy_zh": "就像飞机的巡航高度线：当飞机同时处于安全地面高度（250日线）和巡航高度（50日线）上方时，即可全速平稳飞行。",
+    "favor_direction": "price_above",
+    "favor_explanation_en": "When ^NDX is above both the 50D and 250D SMAs, core trend strategy S1 + S2 scales up to 70%–100% growth exposure.",
+    "favor_explanation_zh": "当 ^NDX 同时站上 50日 与 250日均线时，核心顺势子策略 S1 + S2 将开启 70%–100% 的主升浪仓位。"
+  },
+  "MA_Extension": {
+    "term_en": "Moving Average Extension % (Ext 50D / 250D — Leash Distance)",
+    "term_zh": "均线偏离度百分比 (Ext 50D / 250D — 牵引绳距离)",
+    "definition_en": "Measures how far today's live index price has stretched above or below its 50-day or 250-day average in percentage terms.",
+    "definition_zh": "衡量今日最新指数价格偏离 50日 或 250日均线的百分比距离，用于判断市场是否短期冲得太猛、透支了涨幅。",
+    "analogy_en": "A dog walking on a stretchy leash with its owner (the 50-day average): if the dog sprints >10% ahead of the owner and starts getting tired, the leash pulls it back toward the owner.",
+    "analogy_zh": "就像主人（50日均线）牵着小狗（每日价格）散步：小狗跑在前面很正常，但如果狂奔领先主人超过 +10% 且开始喘气减速，牵引绳就会把它拽回主人身边。",
+    "favor_direction": "moderate_positive",
+    "favor_explanation_en": "A +1% to +8% extension above the 50D SMA is a healthy uptrend; >+10% above 50D SMA (or >+22% above 250D SMA) with slowing speed triggers a profit-lock trim to 30%.",
+    "favor_explanation_zh": "高于50日线 +1% 至 +8% 属于健康温和上涨；若偏离超 +10%（或高于年线 +22%）且伴随动量减速，系统将自动减仓至 30% 锁定胜果。"
+  },
+  "Velocity_ROC": {
+    "term_en": "Velocity Rate-of-Change (ROC) & Deceleration (ΔROC / dROC)",
+    "term_zh": "动量车速 (ROC) 与加速度变化 (ΔROC / 踩刹车指标)",
+    "definition_en": "ROC(5D/10D) measures how fast the market moved over the last 5 or 10 days (% speed). dROC(5D) compares the last 5 days' speed against the prior 5 days' speed to detect whether the market is accelerating or hitting the brakes.",
+    "definition_zh": "ROC(5日/10日) 测量过去5天或10天的涨跌速度（车速表）；dROC(5日) 对比最近5天与前5天的速度差，用来捕捉趋势是在‘踩油门加速’还是‘踩刹车减速’。",
+    "analogy_en": "Watching a car's speedometer: going from 40 -> 50 -> 60 mph means accelerating (stay 100% invested); slowing from 60 -> 40 -> 20 mph while way ahead of traffic means hitting the brakes (trim to 30% and lock in profit).",
+    "analogy_zh": "看汽车时速表：车速从 40 升到 50 再到 60 代表踩油门加速（满仓乘胜追击）；冲得太远后车速从 60 降到 40 再到 20 代表踩刹车减速（果断减仓至 30% 落袋为安）。",
+    "favor_direction": "positive_acceleration",
+    "favor_explanation_en": "Positive 10D speed (>= +1.5%) with steady/rising 5D acceleration confirms a strong breakout; negative speed delta while overextended warns of an imminent pullback.",
+    "favor_explanation_zh": "10日车速 >= +1.5% 且 5日加速度不衰减代表主升浪强劲；高位出现明显减速转负则是见顶回调的先行信号。"
+  },
+  "Wilder_RSI": {
+    "term_en": "Wilder's Short-Term RSI (RSI 5D & 10D — Rubber-Band Gauge 0–100)",
+    "term_zh": "威尔德短期相对强弱指标 (RSI 5日/10日 — 橡皮筋拉伸计 0–100)",
+    "definition_en": "A momentum gauge from 0 to 100 measuring recent buying vs. selling pressure over 5 or 10 days. Below 40 in an uptrend signals a healthy dip to buy; below 18 in a crash signals extreme panic exhaustion; above 76 signals an overheated market.",
+    "definition_zh": "刻度在 0 到 100 之间的短期买卖力度温度计。牛市中低于 40 代表健康回调买点；暴跌中低于 18 代表恐慌抛售到了极限；高于 76 则代表短期买盘过热。",
+    "analogy_en": "A rubber band rated from 0 to 100: around 40–65 it has normal tension; pulled down below 18 it is stretched so tight in one direction that it almost always snaps back sharply.",
+    "analogy_zh": "就像一根标有 0 到 100 刻度的橡皮筋：40–65 是正常松紧；一旦向下死拽到 18 以下，橡皮筋紧绷到极限，往往会爆发强烈的V型回弹。",
+    "favor_direction": "context_dependent",
+    "favor_explanation_en": "Used by S3 (RSI_10 < 40 uptrend dip-buy), S4 (RSI_5 < 18 extreme V-bottom bounce), and S5 (RSI_10 > 76 overbought profit trim).",
+    "favor_explanation_zh": "同时赋能三大均值回归子策略：S3 牛市回头低吸 (RSI_10 < 40)、S4 极端恐慌反抽 (RSI_5 < 18) 以及 S5 高位过热减仓 (RSI_10 > 76)。"
+  },
+  "Bollinger_Z": {
+    "term_en": "20-Day Bollinger Band Z-Score (Z_BB20 — Highway Lane Boundaries)",
+    "term_zh": "20日布林带标准差偏离值 (Z_BB20 — 高速公路车道边界)",
+    "definition_en": "Measures how many standard deviations (σ) today's price is above or below its 20-day average. 95% of normal trading stays between -2.0σ and +2.0σ.",
+    "definition_zh": "衡量今日价格偏离 20日均线多少个标准差 (σ)。正常情况下 95% 的价格波动都处于 -2.0σ 到 +2.0σ 的车道线以内。",
+    "analogy_en": "Painted lane lines on a highway: 0σ is the center line, and -2.1σ means the car has swerved two full lanes off the left shoulder into emergency territory.",
+    "analogy_zh": "就像高速公路的车道线：0σ 是道路中线，跌到 -2.1σ 以下意味着车子已经冲出左侧护栏两个车身，属于罕见的极端超跌区。",
+    "favor_direction": "within_bands",
+    "favor_explanation_en": "When Z_BB20 drops below -2.1σ alongside RSI_10 < 26 and today's price stabilizes, S4 triggers a 50% mean-reversion rebound position.",
+    "favor_explanation_zh": "当价格跌破 -2.1σ 护栏且 RSI_10 < 26 并在当日尾盘企稳时，S4 子策略将触发 50% 仓位的超跌反弹博弈。"
+  },
+  "EOD_1550_Window": {
+    "term_en": "15:50 EST 10-Minute End-of-Day Execution Window",
+    "term_zh": "15:50 EST 收盘前10分钟尾盘执行窗口",
+    "definition_en": "The 10-minute window from 3:50 PM to 4:00 PM US Eastern Time right before the stock market closes. We preview live signals all day, but only place actual trades during this 10-minute window.",
+    "definition_zh": "美东时间下午 3:50 至 4:00（股市正式收盘前最后 10 分钟）的唯一实盘下单窗口。盘中全天提供实时预览，但仅在 15:50 EST 统一下单。",
+    "analogy_en": "Waiting until the final 2 minutes of the 4th quarter in a basketball game before calling the winner, instead of overreacting to a 1st-quarter lead change.",
+    "analogy_zh": "就像看篮球比赛等到第四节最后两分钟比分定局时再做决定，彻底避开第一节早盘的假动作与情绪折腾。",
+    "favor_direction": "disciplined_timing",
+    "favor_explanation_en": "Requires only 10 minutes a day while working a full-time job, acts on today's confirmed live price (never outdated), and avoids intraday fake-outs.",
+    "favor_explanation_zh": "上班族每天只需在收盘前花 10 分钟看一眼即可，既使用的是当日最新确认价格（绝不滞后），又完美避开盘中震荡洗盘。"
+  },
+  "PDT_Exemption": {
+    "term_en": "100% PDT-Exempt ($25,000 Pattern Day Trader Rule Immunity)",
+    "term_zh": "100% 豁免 $25,000 PDT 日内交易限制 (隔夜持仓机制)",
+    "definition_en": "US FINRA rules block margin accounts under $25,000 from making more than 3 'day trades' (buying and selling on the exact same calendar day) in 5 business days. Because Too Busy only trades at 15:50 EST once per day, every purchase is held at least overnight until the next day's 15:50 EST window—generating 0 day trades.",
+    "definition_zh": "美国监管规定净值低于 $25,000 的账户 5 个交易日内不能进行超过 3 次‘日内回转交易’（同一天内买进又卖出）。由于本系统每天仅在 15:50 EST 尾盘操作一次并隔夜持有至次日尾盘，因此产生 0 次日内交易，任何几千美元的迷你账户均可合法无限制运行。",
+    "analogy_en": "Checking into a hotel at 3:50 PM and checking out the next afternoon at 3:50 PM counts as a legitimate 1-night stay—never an hourly same-day turnover penalty.",
+    "analogy_zh": "就像下午 3:50 办理酒店入住、第二天下午 3:50 退房，属于标准的隔夜住宿，绝不会触发‘当日频繁进出罚款’。",
+    "favor_direction": "always_exempt",
+    "favor_explanation_en": "Makes the strategy 100% usable for tiny portfolios ($1,000 to $10,000) without ever getting locked by a broker PDT freeze.",
+    "favor_explanation_zh": "让 $1,000 至 $10,000 的小微资金账户彻底摆脱券商 $25,000 门槛束缚，零违规风险。"
+  },
+  "Hysteresis_Band": {
+    "term_en": "10% Hysteresis Rebalance Filter (Anti-Churn Deadband)",
+    "term_zh": "10% 迟滞防磨损过滤阈值 (温控器防抖死区)",
+    "definition_en": "A smart filter that only generates a buy or sell order when your current portfolio weight differs from today's target weight by at least 10 percentage points (e.g., 100% -> 30%). Minor daily drifts (like 30% -> 34%) are ignored.",
+    "definition_zh": "只有当您的当前持仓比例与今日目标比例相差达到或超过 10%（例如从 100% 降至 30%）时才触发调仓指令；若仅因日常股价波动偏离 2%–5% 则按兵不动。",
+    "analogy_en": "Your home thermostat's built-in buffer: if set to 70°F, it doesn't violently click the AC compressor on and off every 5 seconds at 70.1°F and 69.9°F.",
+    "analogy_zh": "就像家里空调恒温器的防抖缓冲区：设定 24°C 时，不会因为温度变成 24.1°C 就频繁启停压缩机，既省电又保护机器。",
+    "favor_direction": "reduces_churn",
+    "favor_explanation_en": "Cuts unnecessary micro-trades by ~35% (down to ~44 trades/year, or <1 trade/week), saving small accounts from bid-ask spread and tax drag.",
+    "favor_explanation_zh": "每年可减少约 35% 的无效碎股折腾（全年仅约 44 次调仓，平均每周不到 1 次），大幅降低小账户的买卖点差与税务磨损。"
+  },
+  "Financing_Drag_Audit": {
+    "term_en": "Realistic Net CAGR vs. Naive Backtest Financing Drag",
+    "term_zh": "真实净年化收益 (Realistic Net CAGR) vs. 未扣息天真回测",
+    "definition_en": "A 3x leveraged ETF (TQQQ) must borrow 2x notional exposure overnight, paying 2x the Federal Funds interest rate plus a 0.95% annual management fee. Many online backtests ignore this cost prior to 2010, inflating 40-year returns. Our Honest Backtester deducts 100% of historical borrowing costs and slippage.",
+    "definition_zh": "3倍杠杆 ETF (TQQQ) 每天需借入 2倍资金并支付 2倍联邦基金利率的融资利息及 0.95% 年管理费。网上许多宣传‘40年80%年化’的回测漏算了1985-2010年的高额借贷利息。本系统的真实回测全额扣除了历史融资利息与滑点。",
+    "analogy_en": "Comparing your real take-home paycheck after taxes, mortgage interest, and fees (Realistic Net CAGR) vs. a gross lottery headline before deductions (Naive CAGR).",
+    "analogy_zh": "就像对比扣除税费、房贷利息后的‘实际到手净收入’（真实净年化）与未扣任何成本的‘账面毛收入’（天真回测），绝不自欺欺人。",
+    "favor_direction": "transparent_net",
+    "favor_explanation_en": "Shows why even after deducting -9.3%/yr of historical leverage borrowing drag, Long-Only TQQQ + SGOV still delivered +28.66% net CAGR from 2010–2026.",
+    "favor_explanation_zh": "让你看清扣除每年真实杠杆借贷成本后，纯多头 TQQQ + SGOV 在 2010–2026 依然实现了 +28.66% 的硬核真实净年化回报。"
+  },
+  "SQQQ_ETF": {
+    "term_en": "SQQQ / HQD.TO (Inverse Bear Attack ETF with RSI >= 30 Safety Floor)",
+    "term_zh": "SQQQ / HQD.TO (纳指反向做空进攻 ETF • 含 RSI >= 30 防轧空底线)",
+    "definition_en": "An inverse leveraged ETF designed to return -3x (SQQQ in US) or -2x (HQD.TO in Canada) the single-day move of the Nasdaq-100—rising when the market drops. In our Dual Bull & Bear Attack mode, SQQQ is capped at 50%–80% during confirmed bear breakdowns (<50D & <250D SMA) and automatically exits if RSI(10) drops below 30 to avoid violent bear-market short squeezes.",
+    "definition_zh": "追踪纳斯达克100指数单日反向 -3倍（美股 SQQQ）或 -2倍（加股 HQD.TO）的做空进攻 ETF，市场下跌时反而上涨盈利。在多空双工进攻模式下，仅在确认熊市破位（跌破50日与250日线）时配置 50%–80% SQQQ，并严守 RSI(10) >= 30 防轧空安全底线，一旦超跌即刻平仓转入国债。",
+    "analogy_en": "An automatic parachute and downhill regenerative brake that turns a steep market drop into upward profit, with an automatic release latch (RSI < 30) before the ground bounces back.",
+    "analogy_zh": "就像下坡时的能量回收刹车与降落伞，把市场暴跌转化为正收益；同时装有自动脱钩锁（RSI < 30 保护线），防止触底反弹时被拖拽。",
+    "favor_direction": "bear_breakdown_only",
+    "favor_explanation_en": "Boosted 2021–2026 5-Year Net CAGR from +21.34% to +29.02% by profiting during the 2022 bear market while keeping 20%–50% in SGOV T-Bill reserve.",
+    "favor_explanation_zh": "在 2021–2026 包含2022大熊市的5年周期中，将净年化回报从 +21.34% 提升至 +29.02%，同时保留 20%–50% 国债底仓缓冲。"
+  },
+  "CrossBorderBarbell": {
+    "term_en": "US USD 3x Attack + Canada CAD 2x Smooth Anchor Barbell",
+    "term_zh": "美股 USD 3倍多空进攻 + 加股 CAD 2倍稳健锚定跨国双账户哑铃",
+    "definition_en": "A cross-border two-account allocation architecture for investors holding both USD and CAD accounts: runs Aggressive Dual 3x (TQQQ + SQQQ + SGOV) in the US USD account for maximum bull & bear velocity, while running Long-Only 2x (HQU.TO + CASH.TO) in the Canadian CAD account to avoid illiquid HQD.TO spreads, eliminate 1.5% CAD/USD broker FX conversion fees, and cushion short squeezes.",
+    "definition_zh": "专为同时拥有美元 (USD) 与加元 (CAD) 账户的投资者设计的跨国双账户哑铃架构：在美元账户运行 3倍多空双工进攻 (TQQQ + SQQQ + SGOV) 捕捉牛熊双向爆发力；在加元账户运行 2倍纯多头防守 (HQU.TO + CASH.TO)，既避开加股 HQD.TO 流动性点差与 1.5% 换汇手续费陷阱，又能在熊市逼空反弹时充当稳健收益锚。",
+    "analogy_en": "A twin-engine hybrid powertrain: the USD account is the 3x twin-turbo V8 engine that attacks both uphill and downhill, while the CAD account is the smooth 2x electric cruiser that keeps the ride stable and never wastes fuel on currency conversion tolls.",
+    "analogy_zh": "就像双引擎混动系统的前后驱配比：美元账户是 3倍双涡轮进攻引擎（牛熊通吃），加元账户是 2倍平顺混动巡航锚（熊市稳拿高息且零换汇损耗），两套账户协同达到约 2.5x 黄金综合杠杆。",
+    "favor_direction": "cross_border_synergy",
+    "favor_explanation_en": "Delivers ~2.5x blended bull leverage and -1.2x to -1.5x buffered bear protection with $0 currency conversion drag across USD and CAD accounts.",
+    "favor_explanation_zh": "实现牛市约 +2.5倍综合进攻杠杆、熊市约 -1.2倍至 -1.5倍安全缓冲做空，且美加双币账户各自闭环运行、零换汇摩擦损耗。"
   }
 }

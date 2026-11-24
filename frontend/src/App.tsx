@@ -23,7 +23,8 @@ import {
   ChevronRight,
   Compass,
   Menu,
-  Newspaper
+  Newspaper,
+  Clock
 } from 'lucide-react';
 import { MacroDashboard } from './components/MacroDashboard';
 import { BilingualHoverCard } from './components/BilingualHoverCard';
@@ -61,15 +62,17 @@ const NewsPortfolioAnalysis = lazy(() => import('./components/NewsPortfolioAnaly
 const RecommendedStocksGrid = lazy(() => import('./components/RecommendedStocksGrid').then(m => ({ default: m.RecommendedStocksGrid })));
 const PricingChart = lazy(() => import('./components/PricingChart').then(m => ({ default: m.PricingChart })));
 const DebateArena = lazy(() => import('./components/DebateArena').then(m => ({ default: m.DebateArena })));
+const TooBusyView = lazy(() => import('./components/TooBusyView').then(m => ({ default: m.TooBusyView })));
+const TooBusyLaunchBanner = lazy(() => import('./components/TooBusyLaunchBanner').then(m => ({ default: m.TooBusyLaunchBanner })));
 
 export const App: React.FC = () => {
   const { t, language } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState<'macro' | 'news' | 'picks' | 'stock'>(() => {
+  const [activeTab, setActiveTab] = useState<'macro' | 'news' | 'picks' | 'stock' | 'toobusy'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
-      if (tab === 'news' || tab === 'picks' || tab === 'stock' || tab === 'macro') return tab;
+      if (tab === 'news' || tab === 'picks' || tab === 'stock' || tab === 'macro' || tab === 'toobusy') return tab;
     }
     return 'macro';
   });
@@ -315,6 +318,14 @@ export const App: React.FC = () => {
           </div>
         </header>
 
+        {/* App-Launch Daily Advice & Action Signal Banner */}
+        <Suspense fallback={null}>
+          <TooBusyLaunchBanner
+            isTooBusyTabActive={activeTab === 'toobusy'}
+            onOpenTooBusyTab={() => setActiveTab('toobusy')}
+          />
+        </Suspense>
+
         {/* Navigation Tabs Bar with Multi-Color Selected States */}
         <div className="flex items-center justify-between gap-2 mb-8 bg-surface border border-border-subtle p-1.5 rounded-2xl shadow-sm">
           <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
@@ -369,6 +380,19 @@ export const App: React.FC = () => {
             >
               <LineChart className="w-4 h-4" />
               <span>4. {t.tabStock} (${ticker})</span>
+            </button>
+
+            {/* Tab 5: Too Busy — Standalone 10-Min EOD Systematic Tool (Violet Signature) */}
+            <button
+              onClick={() => setActiveTab('toobusy')}
+              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
+                activeTab === 'toobusy'
+                  ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-md ring-2 ring-violet-400/40 border border-violet-600'
+                  : 'bg-surface-subtle text-content-secondary hover:text-violet-600 hover:bg-surface border border-border-subtle'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              <span>5. {t.tabTooBusy}</span>
             </button>
           </div>
         </div>
@@ -826,6 +850,13 @@ export const App: React.FC = () => {
           </Suspense>
         )}
         
+        {/* TAB 5: TOO BUSY — STANDALONE 10-MINUTE EOD SYSTEMATIC INDEX TOOL */}
+        {activeTab === 'toobusy' && (
+          <Suspense fallback={<div className="prism-card p-8 text-center text-sm text-slate-400 animate-pulse">Loading Too Busy 10-Min EOD Engine...</div>}>
+            <TooBusyView />
+          </Suspense>
+        )}
+
         {/* Suspended Lazy Modals & Drawers */}
         <Suspense fallback={null}>
           {/* Responsive Left-Side Navigation Drawer (Workstation Hub) */}

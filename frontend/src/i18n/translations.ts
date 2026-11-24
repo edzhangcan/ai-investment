@@ -10,6 +10,7 @@ export interface Translations {
   tabNewsPortfolio: string;
   tabPicks: string;
   tabStock: string;
+  tabTooBusy: string;
   plainTalkOn: string;
   plainTalkOff: string;
   watchlistDrawerTitle: string;
@@ -53,6 +54,44 @@ export interface Translations {
   filterKeyInvestors: string;
   refreshIntelligence: string;
   demoPortfolioBanner: string;
+  marketAll: string;
+  marketUS: string;
+  marketCA: string;
+  kpiActiveHoldings: string;
+  kpiWatchlistMonitored: string;
+  kpiPortfolioValue: string;
+  kpiActiveCatalysts: string;
+  manageWatchlistBtn: string;
+  synthesizingBriefing: string;
+  recentWindowBadge: string;
+  fiveBizDayBadge: string;
+  signalTagsGuideBtn: string;
+  signalTagsGuideTitle: string;
+  signalTagsGuideSub: string;
+  hoverOrClickToPin: string;
+  actionAdviceHeroTitleSuffix: string;
+  actionAdviceHeroSub: string;
+  activePositionsLabel: string;
+  noActionItems: string;
+  noOpportunities5d: string;
+  noRisks5d: string;
+  telemetryPrice: string;
+  telemetryPnlCost: string;
+  telemetryKillFloor: string;
+  telemetryBuyCeiling: string;
+  telemetryBattingTrend: string;
+  deepDiveBtn: string;
+  weightShort: string;
+  keyInvestorStreamTitle: string;
+  usCaDesksBadge: string;
+  keyTakeawayLabel: string;
+  relatedLabel: string;
+  officialDisclosure: string;
+  corporateNewsStreamTitle: string;
+  whyItMattersLabel: string;
+  sourceLabel: string;
+  readSource: string;
+  noFilterMatches: string;
 
   // Startup Loading Screen
   loadingSubtitle: string;
@@ -477,6 +516,44 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     filterKeyInvestors: "Key Investors",
     refreshIntelligence: "Refresh Intelligence",
     demoPortfolioBanner: "Demo Bellwether Mode: You currently have 0 stocks in Holdings or Watchlist. Showing analysis for core US & CA bellwethers (NVDA, MSFT, COST, RY.TO, SHOP.TO, CNQ.TO). Mark any stock as Holding or Watchlist to personalize this module.",
+    marketAll: "🌎 All Markets",
+    marketUS: "🇺🇸 US",
+    marketCA: "🇨🇦 CA (TSX)",
+    kpiActiveHoldings: "Active Holdings",
+    kpiWatchlistMonitored: "Watchlist Monitored",
+    kpiPortfolioValue: "Portfolio Total Value",
+    kpiActiveCatalysts: "Active Catalysts",
+    manageWatchlistBtn: "Manage Watchlist",
+    synthesizingBriefing: "Synthesizing US & Canadian market intelligence and portfolio briefing...",
+    recentWindowBadge: "Recent Window: Past 1 Month (≤30D)",
+    fiveBizDayBadge: "Latest 5 Business Days • Portfolio-Tied",
+    signalTagsGuideBtn: "Signal Tags Guide",
+    signalTagsGuideTitle: "Key Action Signal Tags Guide (Execution Discipline)",
+    signalTagsGuideSub: "Execution discipline definitions and quantitative trigger formulas",
+    hoverOrClickToPin: "Hover or Click to Pin",
+    actionAdviceHeroTitleSuffix: "& Portfolio Direction",
+    actionAdviceHeroSub: "Consolidated portfolio telemetry, directional signals, entry/floor thresholds & actionable opportunities",
+    activePositionsLabel: "Active Positions",
+    noActionItems: "No tracked holdings or watchlist triggers active today.",
+    noOpportunities5d: "No portfolio-tied opportunities in the past 5 business days.",
+    noRisks5d: "No portfolio-tied risk flags in the past 5 business days.",
+    telemetryPrice: "Price",
+    telemetryPnlCost: "P&L / Cost",
+    telemetryKillFloor: "Kill Floor",
+    telemetryBuyCeiling: "Buy Ceiling",
+    telemetryBattingTrend: "Batting / Trend",
+    deepDiveBtn: "Deep Dive",
+    weightShort: "wt",
+    keyInvestorStreamTitle: "Key Institutional Investor & Superinvestor Commentary",
+    usCaDesksBadge: "US & Canadian (CA) Institutional Desks",
+    keyTakeawayLabel: "Key Takeaway: ",
+    relatedLabel: "Related:",
+    officialDisclosure: "Official Disclosure",
+    corporateNewsStreamTitle: "Recent Corporate Disclosures & Financial Coverage",
+    whyItMattersLabel: "Why It Matters: ",
+    sourceLabel: "Source:",
+    readSource: "Read Source",
+    noFilterMatches: "No headlines matching the active filter.",
 
     loadingSubtitle: "Initializing real-time market intelligence systems...",
     loadingStep1: "Connecting to Federal Reserve (FRED) & Bank of Canada Economic Data...",
@@ -833,6 +910,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     sellOffBtn: "Sell Off",
     buyInBtn: "Buy In",
     daysUnit: "days",
+    tabTooBusy: "Too Busy (10-Min EOD)",
   },
 
   zh: {
@@ -844,6 +922,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     tabNewsPortfolio: "资讯与持仓研判",
     tabPicks: "精选股票池",
     tabStock: "个股深度研报",
+    tabTooBusy: "Too Busy (10分钟尾盘)",
     plainTalkOn: "通俗白话模式: 开",
     plainTalkOff: "专业机构模式",
     watchlistDrawerTitle: "自选股与价格提醒",
@@ -887,6 +966,44 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     filterKeyInvestors: "投资大佬观点",
     refreshIntelligence: "刷新研判资讯",
     demoPortfolioBanner: "演示风向标模式：您当前暂无持仓或关注标的，当前展示美加核心风向标组合 (NVDA, MSFT, COST, RY.TO, SHOP.TO, CNQ.TO) 的实时资讯与研判。将任意股票加入持仓或关注即可定制专属研判。",
+    marketAll: "🌎 全部市场",
+    marketUS: "🇺🇸 美股 (US)",
+    marketCA: "🇨🇦 加股 (TSX)",
+    kpiActiveHoldings: "当前持仓",
+    kpiWatchlistMonitored: "关注监控",
+    kpiPortfolioValue: "持仓总市值",
+    kpiActiveCatalysts: "活跃催化剂",
+    manageWatchlistBtn: "管理持仓与关注",
+    synthesizingBriefing: "正在合成美加市场情报与持仓战术简报...",
+    recentWindowBadge: "资讯扫描窗口：近 1 个月 (≤30天)",
+    fiveBizDayBadge: "近 5 个交易日 • 绑定持仓与关注",
+    signalTagsGuideBtn: "信号标签指南",
+    signalTagsGuideTitle: "核心操作信号标签指南 (交易纪律)",
+    signalTagsGuideSub: "执行纪律定义与量化触发公式说明",
+    hoverOrClickToPin: "悬停预览或点击固定",
+    actionAdviceHeroTitleSuffix: "与持仓方向指导",
+    actionAdviceHeroSub: "整合持仓核心遥测、操作方向信号、买入/止损阈值与可执行机会",
+    activePositionsLabel: "个活跃追踪仓位",
+    noActionItems: "今日暂无活跃持仓或关注触发操作。",
+    noOpportunities5d: "近 5 个交易日暂无与持仓/关注直接相关的看涨催化剂。",
+    noRisks5d: "近 5 个交易日暂无与持仓/关注直接相关的风险预警。",
+    telemetryPrice: "现价",
+    telemetryPnlCost: "浮盈 / 成本",
+    telemetryKillFloor: "证伪底线",
+    telemetryBuyCeiling: "买入上限",
+    telemetryBattingTrend: "击球区 / 趋势",
+    deepDiveBtn: "深度研判",
+    weightShort: "仓位",
+    keyInvestorStreamTitle: "顶级机构与超级投资人观点评论",
+    usCaDesksBadge: "美加两地顶级机构投资席位",
+    keyTakeawayLabel: "核心要义：",
+    relatedLabel: "关联标的:",
+    officialDisclosure: "官方披露原文",
+    corporateNewsStreamTitle: "近期上市公司公告与权威财经报道",
+    whyItMattersLabel: "持仓影响研判：",
+    sourceLabel: "来源:",
+    readSource: "阅读原文",
+    noFilterMatches: "暂无符合当前筛选条件的资讯或观点。",
 
     loadingSubtitle: "正在初始化实时市场情报系统...",
     loadingStep1: "正在连接美联储 (FRED) 与加拿大央行宏观数据...",
@@ -1254,6 +1371,7 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     tabNewsPortfolio: "资讯与持仓研判 (News & Portfolio)",
     tabPicks: "精选股票池 (Stock Picks)",
     tabStock: "个股深度研报 (Stock Deep-Dive)",
+    tabTooBusy: "Too Busy (10分钟尾盘策略)",
     plainTalkOn: "通俗白话模式: 开",
     plainTalkOff: "专业机构模式 (Pro)",
     watchlistDrawerTitle: "自选股与价格提醒 (Watchlist & Price Alerts)",
@@ -1297,6 +1415,44 @@ export const TRANSLATIONS: Record<LanguageMode, Translations> = {
     filterKeyInvestors: "投资大佬 (Key Investors)",
     refreshIntelligence: "刷新研判 (Refresh)",
     demoPortfolioBanner: "演示风向标模式 (Demo Bellwether Mode)：暂无持仓或关注标的，当前展示美加核心风向标 (NVDA, MSFT, COST, RY.TO, SHOP.TO, CNQ.TO) 的资讯与研判。将任意标的设为持仓或关注即可定制。",
+    marketAll: "🌎 全部市场 (All Markets)",
+    marketUS: "🇺🇸 美股 (US)",
+    marketCA: "🇨🇦 加股 CA (TSX)",
+    kpiActiveHoldings: "当前持仓 (Holdings)",
+    kpiWatchlistMonitored: "关注监控 (Watchlist)",
+    kpiPortfolioValue: "持仓市值 (Total Value)",
+    kpiActiveCatalysts: "活跃催化 (Catalysts)",
+    manageWatchlistBtn: "管理关注 (Watchlist)",
+    synthesizingBriefing: "正在合成美加情报与战术简报 (Synthesizing US & CA Briefing)...",
+    recentWindowBadge: "扫描窗口：近1个月 (Past 1 Month ≤30D)",
+    fiveBizDayBadge: "近5交易日 • 持仓联动 (Latest 5 Biz Days • Portfolio-Tied)",
+    signalTagsGuideBtn: "信号标签指南 (Signal Guide)",
+    signalTagsGuideTitle: "核心操作信号指南 (Action Signal Tags Guide)",
+    signalTagsGuideSub: "执行纪律定义与量化触发公式 (Execution Discipline Formulas)",
+    hoverOrClickToPin: "悬停/点击固定 (Hover or Click)",
+    actionAdviceHeroTitleSuffix: "与持仓方向 (Direction & Telemetry)",
+    actionAdviceHeroSub: "整合持仓遥测、操作信号、买点/止损阈值与机会方向 (Consolidated Telemetry & Opportunities)",
+    activePositionsLabel: "活跃仓位 (Active Positions)",
+    noActionItems: "今日暂无触发操作 (No active action triggers today).",
+    noOpportunities5d: "近5交易日暂无持仓相关机会 (No 5-biz-day portfolio opportunities).",
+    noRisks5d: "近5交易日暂无持仓相关风险 (No 5-biz-day portfolio risks).",
+    telemetryPrice: "现价 (Price)",
+    telemetryPnlCost: "浮盈 (P&L)",
+    telemetryKillFloor: "证伪底线 (Floor)",
+    telemetryBuyCeiling: "买入上限 (Ceiling)",
+    telemetryBattingTrend: "击球区 (Batting)",
+    deepDiveBtn: "深度研判 (Deep Dive)",
+    weightShort: "仓位 wt",
+    keyInvestorStreamTitle: "顶级机构与投资大师观点 (Key Investor Commentary)",
+    usCaDesksBadge: "美加两地机构席位 (US & CA Desks)",
+    keyTakeawayLabel: "核心要义 (Key Takeaway)：",
+    relatedLabel: "关联 (Related):",
+    officialDisclosure: "官方披露 (Disclosure)",
+    corporateNewsStreamTitle: "上市公司公告与财经报道 (Corporate Disclosures)",
+    whyItMattersLabel: "持仓影响 (Why It Matters)：",
+    sourceLabel: "来源 (Source):",
+    readSource: "阅读原文 (Read Source)",
+    noFilterMatches: "暂无匹配资讯 (No matching headlines).",
 
     loadingSubtitle: "正在初始化市场情报系统 (Initializing Market Intelligence)...",
     loadingStep1: "正在连接美联储 FRED & 央行数据 (Connecting Macro Data)...",

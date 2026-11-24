@@ -25,9 +25,12 @@ from backend.models.schemas import (
 from backend.data_sources.news_client import (
     NewsClient,
     calculate_news_age_days,
+    calculate_business_days_age,
     MAX_NEWS_SCAN_DAYS,
     MAX_NEWS_RETENTION_DAYS,
     MAX_RECOMMENDATION_NEWS_DAYS,
+    MAX_CATALYST_RISK_BUSINESS_DAYS,
+    MAX_CATALYST_RISK_CALENDAR_DAYS,
 )
 from backend.data_sources.data_provider import data_provider_manager, FALLBACK_STOCK_DATA, DataProviderManager
 from backend.engines.pricing_engine import PricingEngine
@@ -462,7 +465,40 @@ class PortfolioNewsEngine:
         eligible_news = [n for n in news_feed if cls._is_eligible_for_recommendation(n)]
         eligible_investors = [inv for inv in investor_posts if cls._is_eligible_for_recommendation(inv)]
 
-        # 1. Action Advice from Tracked Positions
+        # PL-732: 5-business-day recency window & held-portfolio tracking sets for Opportunities / Risks
+        holding_syms = {p["symbol"] for p in tracked_positions if p.get("bucket") == "HOLDING"}
+        watchlist_syms = {p["symbol"] for p in tracked_positions if p.get("bucket") == "WATCHLIST"}
+        portfolio_syms = holding_syms | watchlist_syms
+
+        def _is_within_5_business_days(item: Dict[str, Any]) -> bool:
+            cal_age = item.get("age_days")
+            pub_at = item.get("published_at")
+            if cal_age is None and pub_at:
+                cal_age = calculate_news_age_days(str(pub_at))
+            if cal_age is not None and cal_age > MAX_CATALYST_RISK_CALENDAR_DAYS:
+                return False
+            if pub_at:
+                return calculate_business_days_age(str(pub_at)) <= MAX_CATALYST_RISK_BUSINESS_DAYS
+            return (cal_age or 0) <= MAX_CATALYST_RISK_BUSINESS_DAYS
+
+        def _with_position_telemetry(advice: Dict[str, Any], pos: Dict[str, Any]) -> Dict[str, Any]:
+            advice.update({
+                "company_name": pos.get("company_name") or pos.get("symbol"),
+                "currency": pos.get("currency", "USD"),
+                "current_price": pos.get("current_price"),
+                "buy_in_price": pos.get("buy_in_price"),
+                "unrealized_pnl_pct": pos.get("unrealized_pnl_pct"),
+                "portfolio_allocation_pct": pos.get("portfolio_allocation_pct"),
+                "falsification_floor": pos.get("falsification_floor"),
+                "target_buy_price": pos.get("target_buy_price"),
+                "distance_to_target_pct": pos.get("distance_to_target_pct"),
+                "batting_zone": pos.get("batting_zone"),
+                "trend_state": pos.get("trend_state"),
+                "related_news_count": pos.get("related_news_count", 0),
+            })
+            return advice
+
+        # 1. Action Advice from Tracked Positions (Consolidated Pulse + Tactical Direction)
         for pos in tracked_positions:
             sym = pos["symbol"]
             bucket = pos["bucket"]
@@ -486,17 +522,18 @@ class PortfolioNewsEngine:
                 act_source_url = f"https://finance.yahoo.com/quote/{sym}/news"
                 act_source_name = f"{sym} Financial Disclosures"
 
+            pnl_str = f"{pnl:+.1f}%" if pnl is not None else "0.0%"
             if bucket == "HOLDING":
                 if floor and curr_p <= floor * 1.03:
-                    action_advice.append({
+                    action_advice.append(_with_position_telemetry({
                         "symbol": sym,
                         "bucket": "HOLDING",
                         "market": pos["market"],
                         "category": "ACTION",
                         "urgency": "HIGH",
                         "headline": f"{sym}: Defend Falsification Floor (${floor:.2f})",
-                        "rationale": f"Price is within 3% of or below the 200D SMA x 0.97 floor (${floor:.2f}). Current price is ${curr_p:.2f} ({pnl:+.1f}% P&L).",
-                        "tactical_instruction": "Per discipline rules, do not average down on the left side. Prepare defensive stop-loss execution if the daily close decisively breaks below the floor.",
+                        "rationale": f"Price is within 3% of or below the adaptive floor (${floor:.2f}). Current price is ${curr_p:.2f} ({pnl_str} P&L).",
+                        "tactical_instruction": "Per Discipline rules, do not average down on the left side. Prepare mechanical stop-loss exit if the daily close decisively breaks below the floor.",
                         "time_horizon": "Today & Tomorrow",
                         "reference_price": curr_p,
                         "threshold_price": floor,
@@ -504,9 +541,9 @@ class PortfolioNewsEngine:
                         "source_name": act_source_name,
                         "action_tag": day_sig,
                         "action_tag_explanation": sig_expl,
-                    })
+                    }, pos))
                 elif pnl is not None and pnl >= 25.0:
-                    action_advice.append({
+                    action_advice.append(_with_position_telemetry({
                         "symbol": sym,
                         "bucket": "HOLDING",
                         "market": pos["market"],
@@ -514,7 +551,7 @@ class PortfolioNewsEngine:
                         "urgency": "MEDIUM",
                         "headline": f"{sym}: Protect Open Gains ({pnl:+.1f}%)",
                         "rationale": f"Position shows significant unrealized appreciation at ${curr_p:.2f} against your ${pos.get('buy_in_price', curr_p):.2f} cost basis.",
-                        "tactical_instruction": "Maintain core holding. Consider raising your mental stop-loss or rebalancing back to target allocation if position exceeds your maximum satellite risk budget.",
+                        "tactical_instruction": "Maintain core holding. Raise your trailing stop-loss floor or trim excess weight if allocation exceeds your 4% finite-bet cap.",
                         "time_horizon": "Today & Tomorrow",
                         "reference_price": curr_p,
                         "threshold_price": floor,
@@ -522,9 +559,9 @@ class PortfolioNewsEngine:
                         "source_name": act_source_name,
                         "action_tag": day_sig,
                         "action_tag_explanation": sig_expl,
-                    })
+                    }, pos))
                 else:
-                    action_advice.append({
+                    action_advice.append(_with_position_telemetry({
                         "symbol": sym,
                         "bucket": "HOLDING",
                         "market": pos["market"],
@@ -540,10 +577,10 @@ class PortfolioNewsEngine:
                         "source_name": act_source_name,
                         "action_tag": day_sig,
                         "action_tag_explanation": sig_expl,
-                    })
+                    }, pos))
             elif bucket == "WATCHLIST":
                 if target and curr_p <= target and pos["batting_zone"] == "RIGHT_SIDE":
-                    action_advice.append({
+                    action_advice.append(_with_position_telemetry({
                         "symbol": sym,
                         "bucket": "WATCHLIST",
                         "market": pos["market"],
@@ -551,7 +588,7 @@ class PortfolioNewsEngine:
                         "urgency": "HIGH",
                         "headline": f"{sym}: Right-Side Entry Triggered (<= ${target:.2f})",
                         "rationale": f"Price (${curr_p:.2f}) has pulled back into the 95% buy zone ceiling (${target:.2f}) with right-side momentum ({pos['trend_state']} trend).",
-                        "tactical_instruction": "Consider initiating a disciplined 2.0% satellite entry. Complete the Pre-Trade Soul Check before executing.",
+                        "tactical_instruction": "Opportunity Window Open: Initiate a disciplined 2.0%-4.0% satellite entry after completing the Pre-Trade Soul Check.",
                         "time_horizon": "Today & Tomorrow",
                         "reference_price": curr_p,
                         "threshold_price": target,
@@ -559,10 +596,10 @@ class PortfolioNewsEngine:
                         "source_name": act_source_name,
                         "action_tag": day_sig,
                         "action_tag_explanation": sig_expl,
-                    })
+                    }, pos))
                 else:
                     dist_str = f"{pos.get('distance_to_target_pct', 0):+.1f}%"
-                    action_advice.append({
+                    action_advice.append(_with_position_telemetry({
                         "symbol": sym,
                         "bucket": "WATCHLIST",
                         "market": pos["market"],
@@ -578,77 +615,159 @@ class PortfolioNewsEngine:
                         "source_name": act_source_name,
                         "action_tag": day_sig,
                         "action_tag_explanation": sig_expl,
-                    })
+                    }, pos))
 
-        # 2. Opportunities Radar (Strictly derived from news/commentary <= 1 month old)
-        bullish_news = [n for n in eligible_news if n["sentiment"] == "BULLISH"][:3]
+        # Keep most urgent actions and holdings prioritized at the top of Hero Action Advice (up to 12 cards)
+        urgency_rank = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+        bucket_rank = {"HOLDING": 0, "WATCHLIST": 1, "PORTFOLIO": 2}
+        action_advice.sort(key=lambda a: (urgency_rank.get(a.get("urgency", "LOW"), 2), bucket_rank.get(a.get("bucket", "WATCHLIST"), 1)))
+        action_advice = action_advice[:12]
+
+        # Strict 5-Business-Day Catalyst & Risk Window, Tied to Held/Tracked Portfolio
+        fresh_news = [n for n in eligible_news if _is_within_5_business_days(n)]
+        fresh_investors = [inv for inv in eligible_investors if _is_within_5_business_days(inv)]
+
+        def _news_portfolio_priority(n: Dict[str, Any]) -> tuple[int, int]:
+            b = n.get("bucket", "MARKET")
+            if n.get("symbol") in holding_syms or b == "HOLDING":
+                p_tier = 0
+            elif n.get("symbol") in watchlist_syms or b == "WATCHLIST":
+                p_tier = 1
+            else:
+                p_tier = 2
+            return (p_tier, n.get("age_days", 0))
+
+        # 2. Opportunities Radar (Strictly <= 5 business days & prioritized by Held/Watchlist Portfolio tie)
+        bullish_news_all = sorted(
+            [n for n in fresh_news if n["sentiment"] == "BULLISH"],
+            key=_news_portfolio_priority,
+        )
+        bullish_portfolio = [
+            n for n in bullish_news_all
+            if n.get("symbol") in portfolio_syms or n.get("bucket") in ["HOLDING", "WATCHLIST"]
+        ]
+        bullish_news = bullish_portfolio[:3] if len(bullish_portfolio) >= 2 else bullish_news_all[:3]
         for n in bullish_news:
+            is_held = n.get("symbol") in holding_syms or n.get("bucket") == "HOLDING"
+            tie_label = "Held Position" if is_held else ("Watchlist Target" if n.get("bucket") == "WATCHLIST" else "Portfolio Benchmark")
+            age_label = f"{n.get('age_days', 0)}d ago"
             opportunities.append({
                 "symbol": n["symbol"],
                 "bucket": n["bucket"] if n["bucket"] in ["HOLDING", "WATCHLIST"] else "PORTFOLIO",
                 "market": n["market"],
                 "category": "OPPORTUNITY",
-                "urgency": "MEDIUM",
-                "headline": f"{n['symbol']}: {n['title'][:65]}...",
-                "rationale": n["summary"][:140] + ("..." if len(n["summary"]) > 140 else ""),
+                "urgency": "HIGH" if is_held else "MEDIUM",
+                "headline": f"[{tie_label}] {n['symbol']}: {n['title'][:60]}...",
+                "rationale": f"({age_label}) {n['summary'][:130]}" + ("..." if len(n["summary"]) > 130 else ""),
                 "tactical_instruction": n["portfolio_impact_note"],
-                "time_horizon": "Today & Tomorrow",
+                "time_horizon": f"Past 5 Business Days ({age_label})",
                 "reference_price": None,
                 "threshold_price": None,
                 "source_url": n["url"],
                 "source_name": n["source"],
             })
 
-        # Augment opportunities with key investor stance (<= 1 month old)
-        bullish_investors = [inv for inv in eligible_investors if inv["stance"] in ["BULLISH", "HIGH_CONVICTION"]][:2]
-        for inv in bullish_investors:
+        # Augment opportunities with fresh key investor commentary matched to held/tracked holdings (<= 5 biz days)
+        bullish_inv_candidates = [inv for inv in fresh_investors if inv["stance"] in ["BULLISH", "HIGH_CONVICTION"]]
+        bullish_inv_candidates.sort(
+            key=lambda inv: (
+                0 if any(s in holding_syms for s in inv.get("related_symbols", [])) else (
+                    1 if any(s in watchlist_syms for s in inv.get("related_symbols", [])) else 2
+                ),
+                inv.get("age_days", 0),
+            )
+        )
+        for inv in bullish_inv_candidates[:2]:
+            matched_held = [s for s in inv.get("related_symbols", []) if s in portfolio_syms]
+            matched_preview = ", ".join(matched_held[:3] or inv["related_symbols"][:3]) or "NORTH_AMERICA"
+            age_label = f"{inv.get('age_days', 0)}d ago"
             opportunities.append({
-                "symbol": ", ".join(inv["related_symbols"][:3]) or "NORTH_AMERICA",
-                "bucket": "PORTFOLIO",
+                "symbol": matched_preview,
+                "bucket": "HOLDING" if any(s in holding_syms for s in inv.get("related_symbols", [])) else "PORTFOLIO",
                 "market": inv["market"] if inv["market"] in ["US", "CA"] else "US",
                 "category": "OPPORTUNITY",
                 "urgency": "LOW",
-                "headline": f"{inv['investor_name']} ({inv['institution']}): {inv['title'][:55]}...",
-                "rationale": inv["key_takeaway"],
-                "tactical_instruction": f"Institutional Conviction: {inv['commentary'][:150]}...",
-                "time_horizon": "Multi-Week Outlook",
+                "headline": f"{inv['investor_name']} ({inv['institution']}): {inv['title'][:52]}...",
+                "rationale": f"({age_label}) {inv['key_takeaway']}",
+                "tactical_instruction": (
+                    f"Portfolio Tie ({', '.join(matched_held)}): {inv['commentary'][:135]}..."
+                    if matched_held
+                    else f"Institutional Conviction: {inv['commentary'][:145]}..."
+                ),
+                "time_horizon": f"Past 5 Business Days ({age_label})",
                 "reference_price": None,
                 "threshold_price": None,
                 "source_url": inv["source_url"],
                 "source_name": f"{inv['investor_name']} ({inv['institution']})",
             })
 
-        # 3. Risks & Falsification Watchouts (Strictly derived from news/commentary <= 1 month old)
-        bearish_news = [n for n in eligible_news if n["sentiment"] in ["BEARISH", "RISK_ALERT"]][:3]
+        # 3. Risks & Falsification Watchouts (Strictly <= 5 business days & prioritized by Held/Watchlist Portfolio tie)
+        bearish_news_all = sorted(
+            [n for n in fresh_news if n["sentiment"] in ["BEARISH", "RISK_ALERT"]],
+            key=_news_portfolio_priority,
+        )
+        bearish_portfolio = [
+            n for n in bearish_news_all
+            if n.get("symbol") in portfolio_syms or n.get("bucket") in ["HOLDING", "WATCHLIST"]
+        ]
+        bearish_news = bearish_portfolio[:3] if len(bearish_portfolio) >= 1 else bearish_news_all[:3]
         for n in bearish_news:
+            is_held = n.get("symbol") in holding_syms or n.get("bucket") == "HOLDING"
+            tie_label = "Held Position" if is_held else ("Watchlist Target" if n.get("bucket") == "WATCHLIST" else "Macro / WACC Tie")
+            age_label = f"{n.get('age_days', 0)}d ago"
+            held_preview = ", ".join(sorted(holding_syms)[:3])
+            risk_instruction = (
+                "Evaluate corporate disclosure against your holding's falsification floor. Do not average down if thesis breaks."
+                if is_held
+                else (
+                    f"Affects held positions ({held_preview}) via discount-rate/sector headwinds. Preserve cash buffer."
+                    if held_preview
+                    else "Evaluate disclosure against your margin of safety before committing capital."
+                )
+            )
             risks.append({
                 "symbol": n["symbol"],
                 "bucket": n["bucket"] if n["bucket"] in ["HOLDING", "WATCHLIST"] else "PORTFOLIO",
                 "market": n["market"],
                 "category": "RISK",
-                "urgency": "HIGH" if n["bucket"] == "HOLDING" else "MEDIUM",
-                "headline": f"{n['symbol']}: {n['title'][:65]}...",
-                "rationale": n["summary"][:140] + ("..." if len(n["summary"]) > 140 else ""),
-                "tactical_instruction": "Evaluate corporate disclosure against your margin of safety. If fundamental premise deteriorates, refrain from adding capital.",
-                "time_horizon": "Immediate",
+                "urgency": "HIGH" if is_held else "MEDIUM",
+                "headline": f"[{tie_label}] {n['symbol']}: {n['title'][:60]}...",
+                "rationale": f"({age_label}) {n['summary'][:130]}" + ("..." if len(n["summary"]) > 130 else ""),
+                "tactical_instruction": risk_instruction,
+                "time_horizon": f"Past 5 Business Days ({age_label})",
                 "reference_price": None,
                 "threshold_price": None,
                 "source_url": n["url"],
                 "source_name": n["source"],
             })
 
-        cautious_investors = [inv for inv in eligible_investors if inv["stance"] in ["DEFENSIVE", "CAUTIOUS"]][:2]
-        for inv in cautious_investors:
+        cautious_inv_candidates = [inv for inv in fresh_investors if inv["stance"] in ["DEFENSIVE", "CAUTIOUS"]]
+        cautious_inv_candidates.sort(
+            key=lambda inv: (
+                0 if any(s in holding_syms for s in inv.get("related_symbols", [])) else (
+                    1 if any(s in watchlist_syms for s in inv.get("related_symbols", [])) else 2
+                ),
+                inv.get("age_days", 0),
+            )
+        )
+        for inv in cautious_inv_candidates[:2]:
+            matched_held = [s for s in inv.get("related_symbols", []) if s in portfolio_syms]
+            matched_preview = ", ".join(matched_held[:3] or inv["related_symbols"][:3]) or "MACRO"
+            age_label = f"{inv.get('age_days', 0)}d ago"
             risks.append({
-                "symbol": ", ".join(inv["related_symbols"][:3]) or "MACRO",
-                "bucket": "PORTFOLIO",
+                "symbol": matched_preview,
+                "bucket": "HOLDING" if any(s in holding_syms for s in inv.get("related_symbols", [])) else "PORTFOLIO",
                 "market": inv["market"] if inv["market"] in ["US", "CA"] else "US",
                 "category": "RISK",
                 "urgency": "MEDIUM",
-                "headline": f"{inv['investor_name']}: {inv['title'][:60]}...",
-                "rationale": inv["key_takeaway"],
-                "tactical_instruction": "Preserve liquidity buffer. Avoid taking speculative equity bets with borrowed capital or high net debt companies.",
-                "time_horizon": "Today & Tomorrow",
+                "headline": f"{inv['investor_name']}: {inv['title'][:58]}...",
+                "rationale": f"({age_label}) {inv['key_takeaway']}",
+                "tactical_instruction": (
+                    f"Portfolio Tie ({', '.join(matched_held)}): Audit net debt and falsification floors; avoid leveraged speculation."
+                    if matched_held
+                    else "Preserve liquidity buffer. Avoid taking speculative equity bets with high net debt or stretched multiples."
+                ),
+                "time_horizon": f"Past 5 Business Days ({age_label})",
                 "reference_price": None,
                 "threshold_price": None,
                 "source_url": inv["source_url"],

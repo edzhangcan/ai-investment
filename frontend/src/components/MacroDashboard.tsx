@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { MacroData, PolicyNewsItem, SupportingFact } from '../types';
 import { BilingualHoverCard } from './BilingualHoverCard';
 import { useLanguage } from '../context/LanguageContext';
@@ -20,7 +20,9 @@ import {
   DollarSign,
   Radio
 } from 'lucide-react';
-import { CentralBankSpeechStreamer } from './CentralBankSpeechStreamer';
+const CentralBankSpeechStreamer = lazy(() =>
+  import('./CentralBankSpeechStreamer').then((m) => ({ default: m.CentralBankSpeechStreamer }))
+);
 
 
 interface MacroDashboardProps {
@@ -45,7 +47,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
   const { t, language } = useLanguage();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshToast, setRefreshToast] = useState<string | null>(null);
-  const [showSpeechStreamer, setShowSpeechStreamer] = useState<boolean>(true);
+  const [showSpeechStreamer, setShowSpeechStreamer] = useState<boolean>(false);
 
   const activeCountry: 'US' | 'CA' = selectedCountry || (macroData.country as 'US' | 'CA') || 'US';
   const isCA = activeCountry === 'CA';
@@ -291,7 +293,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
             }`}
           >
             <Radio className={`w-3.5 h-3.5 ${showSpeechStreamer ? 'animate-pulse text-brand' : ''}`} />
-            <span>{isZh ? (showSpeechStreamer ? '收起央行发言流' : '实时央行发言流') : (showSpeechStreamer ? 'Hide Speech Stream' : 'Live Speech Stream')}</span>
+            <span>{isZh ? (showSpeechStreamer ? '收起发言评估' : '央行发言按需评估') : language === 'hybrid' ? (showSpeechStreamer ? '收起评估 (Hide NLP)' : '按需评估 (Speech NLP)') : (showSpeechStreamer ? 'Hide Speech NLP' : 'On-Demand Speech NLP')}</span>
           </button>
         </div>
       </div>
@@ -309,9 +311,65 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
         <p className="text-content-secondary">{macroData.plain_explanation}</p>
       </div>
 
-      {/* Central Bank Speech Streaming & Real-Time NLP Section (PL-705) */}
-      {showSpeechStreamer && (
-        <CentralBankSpeechStreamer country={activeCountry} />
+      {/* On-Demand Central Bank Policy Speech NLP Assessment Add-On (PL-732.2) */}
+      {!showSpeechStreamer ? (
+        <div
+          data-testid="cb-speech-on-demand-card"
+          className="mb-6 prism-surface-subtle border border-border-subtle hover:border-brand/40 rounded-2xl px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-brand/10 border border-brand/20 text-brand shrink-0">
+              <Radio className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-extrabold text-content-primary">
+                  {isZh
+                    ? '央行政策声明按需 NLP 评估服务 (Fed & BoC)'
+                    : 'Central Bank Policy Speech NLP Assessment'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider prism-badge-brand">
+                  {isZh
+                    ? '按需服务 • 季度/议息周期'
+                    : 'On-Demand Add-On • Quarterly / FOMC / BoC Cycle'}
+                </span>
+              </div>
+              <p className="text-[11px] text-content-muted mt-0.5 leading-relaxed">
+                {isZh
+                  ? '货币政策声明按季度或议息周期更新；点击右侧按钮按需拉取最新美联储与加拿大央行逐句鹰鸽评分及资产定调。'
+                  : 'Policy statements update on a quarterly / FOMC / BoC cadence. Click to run on-demand hawkish/dovish NLP sentence scoring and latest market impact assessment.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            data-testid="launch-cb-speech-assessment-btn"
+            onClick={() => setShowSpeechStreamer(true)}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-brand/10 hover:bg-brand/20 text-brand border border-brand/30 transition-all flex items-center gap-2 shrink-0 self-start sm:self-center cursor-pointer"
+          >
+            <Radio className="w-3.5 h-3.5" />
+            <span>{isZh ? '获取最新央行评估' : 'Get Latest Speech Assessment'}</span>
+          </button>
+        </div>
+      ) : (
+        <Suspense
+          fallback={
+            <div className="mb-6 prism-surface-subtle border border-brand/25 rounded-2xl p-6 text-center text-xs text-content-muted animate-pulse">
+              {isZh ? '正在按需加载央行发言 NLP 评估服务...' : 'Loading On-Demand Central Bank Speech NLP Service...'}
+            </div>
+          }
+        >
+          <div className="mb-2 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowSpeechStreamer(false)}
+              className="text-[11px] font-bold text-content-muted hover:text-content-primary cursor-pointer underline decoration-dotted underline-offset-2"
+            >
+              {isZh ? '收起央行语音流服务' : 'Collapse Speech Assessment Service'}
+            </button>
+          </div>
+          <CentralBankSpeechStreamer country={activeCountry} />
+        </Suspense>
       )}
 
 
