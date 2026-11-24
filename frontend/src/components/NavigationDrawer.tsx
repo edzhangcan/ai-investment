@@ -16,7 +16,8 @@ import {
   Globe,
   ExternalLink,
   ShieldCheck,
-  Newspaper
+  Newspaper,
+  Clock
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -33,8 +34,8 @@ interface NavigationDrawerProps {
   onOpenCalculator: () => void;
   onOpenCommandPalette: () => void;
   // Navigation tabs
-  activeTab: 'macro' | 'news' | 'picks' | 'stock';
-  onSelectTab: (tab: 'macro' | 'news' | 'picks' | 'stock') => void;
+  activeTab: 'macro' | 'news' | 'picks' | 'stock' | 'toobusy';
+  onSelectTab: (tab: 'macro' | 'news' | 'picks' | 'stock' | 'toobusy') => void;
   currentTicker: string;
   // Badges & Metrics
   watchlistCount: number;
@@ -414,6 +415,25 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   <span>4. {t.tabStock} (${currentTicker})</span>
                 </div>
                 {activeTab === 'stock' && <ShieldCheck className="w-4 h-4" />}
+              </button>
+
+              {/* Tab 5: Too Busy (10-Min EOD) */}
+              <button
+                onClick={() => {
+                  onSelectTab('toobusy');
+                  onClose();
+                }}
+                className={`p-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                  activeTab === 'toobusy'
+                    ? 'bg-violet-600 text-white shadow-sm'
+                    : 'bg-surface hover:bg-surface-subtle text-content-secondary hover:text-content-primary border border-border-subtle'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  <span>5. {t.tabTooBusy}</span>
+                </div>
+                {activeTab === 'toobusy' && <ShieldCheck className="w-4 h-4" />}
               </button>
             </div>
           </div>

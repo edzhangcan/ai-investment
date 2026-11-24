@@ -51,6 +51,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
   const [newBuyPrice, setNewBuyPrice] = useState('');
   const [newAlloc, setNewAlloc] = useState('3.0');
   const [newShares, setNewShares] = useState('10');
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Modal states for item actions
   const [activeModalItem, setActiveModalItem] = useState<StockTrackingItem | null>(null);
@@ -170,7 +171,17 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     if (!newSymbol.trim()) return;
+
+    let sharesNum: number | undefined;
+    if (newBucket === 'HOLDING') {
+      sharesNum = parseFloat(newShares);
+      if (isNaN(sharesNum) || sharesNum <= 0) {
+        setFormError(language === 'zh' ? '请输入大于 0 的持股数量。' : 'Please enter a valid number of shares greater than 0.');
+        return;
+      }
+    }
 
     const sym = newSymbol.trim().toUpperCase();
     const payload = {
@@ -179,7 +190,7 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
       bucket: newBucket,
       target_buy_price: newTarget ? parseFloat(newTarget) : undefined,
       buy_in_price: newBuyPrice ? parseFloat(newBuyPrice) : undefined,
-      shares_held: newBucket === 'HOLDING' ? (parseFloat(newShares) || 10) : undefined,
+      shares_held: sharesNum,
       portfolio_allocation_pct: newBucket === 'WATCHLIST' ? (parseFloat(newAlloc) || 3.0) : undefined,
     };
 
@@ -333,20 +344,32 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
               <div className="flex items-center gap-1 text-[11px]">
                 <button
                   type="button"
-                  onClick={() => setNewBucket('HOLDING')}
+                  onClick={() => {
+                    setNewBucket('HOLDING');
+                    setFormError(null);
+                  }}
                   className={`px-2 py-0.5 rounded-md ${newBucket === 'HOLDING' ? 'bg-brand text-white' : 'text-content-muted'}`}
                 >
                   Holding
                 </button>
                 <button
                   type="button"
-                  onClick={() => setNewBucket('WATCHLIST')}
+                  onClick={() => {
+                    setNewBucket('WATCHLIST');
+                    setFormError(null);
+                  }}
                   className={`px-2 py-0.5 rounded-md ${newBucket === 'WATCHLIST' ? 'bg-warning/20 text-warning font-bold' : 'text-content-muted'}`}
                 >
                   Watchlist
                 </button>
               </div>
             </div>
+
+            {formError && (
+              <div className="p-2 rounded-xl bg-negative/10 border border-negative/20 text-negative text-[11px] font-semibold">
+                {formError}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -379,8 +402,8 @@ export const WatchlistDrawer: React.FC<WatchlistDrawerProps> = ({
                   />
                   <input
                     type="number"
-                    step="1"
-                    min="0.001"
+                    step="any"
+                    min="0"
                     value={newShares}
                     onChange={(e) => setNewShares(e.target.value)}
                     placeholder="Shares to Buy"

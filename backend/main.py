@@ -33,7 +33,7 @@ from sqlmodel import Session, select, func
 from backend.config import settings
 from backend.database import init_db, engine
 from backend.models.db_models import RecommendationSnapshotDB
-from backend.routers import macro, stock, debate, watchlist, alerts, portfolio, backtest, push_alerts, valuation_settings, news_portfolio
+from backend.routers import macro, stock, debate, watchlist, alerts, portfolio, backtest, push_alerts, valuation_settings, news_portfolio, too_busy
 
 # Configure logging format for production and development debugging
 logging.basicConfig(
@@ -146,6 +146,7 @@ app.include_router(backtest.router)
 app.include_router(push_alerts.router)
 app.include_router(valuation_settings.router)
 app.include_router(news_portfolio.router)
+app.include_router(too_busy.router)
 
 @app.get("/api/health")
 def health_check():

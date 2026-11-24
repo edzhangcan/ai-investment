@@ -430,6 +430,19 @@ class TacticalAdviceItemSchema(BaseModel):
     source_name: str = "Financial Media"
     action_tag: Optional[Literal["HOLD_CORE", "SCALE_IN_READY", "DEFEND_FLOOR", "WATCH_PULLBACK", "TRIM_EXTENDED"]] = None
     action_tag_explanation: Optional[str] = None
+    # PL-732: Consolidated position pulse telemetry inside Hero Action Advice
+    company_name: Optional[str] = None
+    currency: str = "USD"
+    current_price: Optional[float] = None
+    buy_in_price: Optional[float] = None
+    unrealized_pnl_pct: Optional[float] = None
+    portfolio_allocation_pct: Optional[float] = None
+    falsification_floor: Optional[float] = None
+    target_buy_price: Optional[float] = None
+    distance_to_target_pct: Optional[float] = None
+    batting_zone: Optional[str] = None
+    trend_state: Optional[str] = None
+    related_news_count: int = 0
 
 class DailyPortfolioBriefingSchema(BaseModel):
     date_label: str

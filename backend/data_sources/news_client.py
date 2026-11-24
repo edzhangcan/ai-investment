@@ -27,6 +27,8 @@ CACHE_TTL_SECONDS = 900  # 15 minutes
 MAX_NEWS_SCAN_DAYS = 30          # Active scan window: only scan news within past 1 month (30 days)
 MAX_NEWS_RETENTION_DAYS = 90     # Hard retention cutoff: do not retain or include info older than 3 months (90 days)
 MAX_RECOMMENDATION_NEWS_DAYS = 30 # Recommendation gate: do not make recommendations based on news older than 1 month
+MAX_CATALYST_RISK_BUSINESS_DAYS = 5  # PL-732: Focus Opportunities & Risks strictly on latest news within 5 business days
+MAX_CATALYST_RISK_CALENDAR_DAYS = 7  # Calendar span bound covering 5 business days including a weekend
 
 def parse_published_date(published_at_str: str) -> Optional[datetime]:
     """Parses diverse published_at strings into a timezone-aware UTC datetime."""
@@ -80,6 +82,30 @@ def calculate_news_age_days(published_at: str, reference_dt: Optional[datetime] 
         return 0
     delta = ref - dt
     return max(0, delta.days)
+
+
+def calculate_business_days_age(published_at: str, reference_dt: Optional[datetime] = None) -> int:
+    """
+    Calculates number of business days (Mon-Fri) elapsed between `published_at` and `reference_dt`.
+    Used by PortfolioNewsEngine to enforce the 5-business-day cutoff on Opportunities & Risks.
+    """
+    ref = reference_dt or datetime.now(timezone.utc)
+    dt = parse_published_date(published_at)
+    if not dt:
+        return 0
+    start_date = dt.date()
+    end_date = ref.date()
+    if start_date >= end_date:
+        return 0
+    total_days = (end_date - start_date).days
+    if total_days > 365:
+        return total_days
+    biz_days = 0
+    for offset in range(1, total_days + 1):
+        day = start_date + timedelta(days=offset)
+        if day.weekday() < 5:  # Monday=0 .. Friday=4
+            biz_days += 1
+    return biz_days
 
 def _recent_date(days_ago: int = 2) -> str:
     """Returns dynamic ISO date string anchored to UTC today minus days_ago."""
@@ -148,7 +174,7 @@ BASELINE_MACRO_NEWS_CA = [
         "title": "TMX TSX Composite Highlights Robust Free Cash Flow Across Oil Sands and Tier-1 Banks",
         "source": "Toronto Stock Exchange / TMX",
         "url": "https://www.tmx.com/news",
-        "published_at": _recent_date(6),
+        "published_at": _recent_date(4),
         "summary": "Canadian institutional benchmark shows strong balance sheet resilience and sustained return of capital through share buybacks and dividends.",
         "credibility_tier": "Tier-1 Financial Exchange",
         "relevance": "MACRO_CA"
@@ -324,7 +350,7 @@ BASELINE_STOCK_NEWS = {
     ]
 }
 
-# Verified Key Institutional Investor & Superinvestor Commentary Registry
+# Verified Key Institutional Investor & Superinvestor Commentary Registry (18 US & CA Desks)
 KEY_INVESTOR_COMMENTARY_REGISTRY: List[Dict[str, Any]] = [
     {
         "id": "buffett-berkshire-cash-discipline",
@@ -349,7 +375,7 @@ KEY_INVESTOR_COMMENTARY_REGISTRY: List[Dict[str, Any]] = [
         "key_takeaway": "Screen strictly for positive operating free cash flow and minimal net debt maturities over the next 3 years.",
         "related_symbols": ["SPY", "TLT", "JPM", "BAC"],
         "stance": "CAUTIOUS",
-        "published_at": _recent_date(5),
+        "published_at": _recent_date(4),
         "source_url": "https://www.oaktreecapital.com/insights/memos"
     },
     {
@@ -388,8 +414,60 @@ KEY_INVESTOR_COMMENTARY_REGISTRY: List[Dict[str, Any]] = [
         "key_takeaway": "Anchor every purchase to audited balance-sheet Net Debt and owner cash flows after deducting stock-based compensation.",
         "related_symbols": ["COST", "WMT", "JNJ", "SLB"],
         "stance": "DEFENSIVE",
-        "published_at": _recent_date(6),
+        "published_at": _recent_date(4),
         "source_url": "https://www.baupost.com"
+    },
+    {
+        "id": "inv-terry-smith-2026",
+        "investor_name": "Terry Smith",
+        "institution": "Fundsmith Equity Fund",
+        "market": "US",
+        "title": "Just Three Steps: Buy Good Companies, Don't Overpay, Do Nothing",
+        "commentary": "Fundsmith's latest letter emphasizes gross margin resilience above 60%, sustained return on capital employed (ROCE > 25%), and cash conversion discipline across dominant enterprise software, payment network, and healthcare compounders.",
+        "key_takeaway": "High-ROIC compounders with pricing power and low capital intensity outperform across both inflationary and disinflationary regimes.",
+        "related_symbols": ["MSFT", "META", "V", "MA", "LLY", "PEP", "IDXX"],
+        "stance": "HIGH_CONVICTION",
+        "published_at": _recent_date(2),
+        "source_url": "https://www.fundsmith.co.uk/news/"
+    },
+    {
+        "id": "inv-chuck-akre-2026",
+        "investor_name": "Chuck Akre & John Neff",
+        "institution": "Akre Focus Fund",
+        "market": "US",
+        "title": "The Three-Legged Stool of Compounding & Reinvestment Runway",
+        "commentary": "Akre highlights mission-critical tollbooth businesses with extraordinary returns on owners' capital, ethical capital allocators, and long reinvestment runways across payment rails, specialty insurance, and aftermarket distribution.",
+        "key_takeaway": "Avoid interrupting compounding in businesses that can reinvest free cash flow at >20% incremental ROIC.",
+        "related_symbols": ["MA", "V", "ORLY", "COST", "ROP", "DHR", "BN.TO"],
+        "stance": "BULLISH",
+        "published_at": _recent_date(3),
+        "source_url": "https://www.akrefund.com/letters/"
+    },
+    {
+        "id": "inv-li-lu-2026",
+        "investor_name": "Li Lu",
+        "institution": "Himalaya Capital",
+        "market": "US",
+        "title": "Semiconductor Foundry Moats, Cloud Hyperscalers & Capital Discipline",
+        "commentary": "Himalaya Capital's portfolio strategy underscores deep margin-of-safety investing in irreplaceable silicon manufacturing ecosystems, cloud compute monopolies, and fortress money-center banks.",
+        "key_takeaway": "Concentrate capital when dominant ecosystem moats trade at a discount to normalized owner earnings.",
+        "related_symbols": ["GOOGL", "BAC", "BRK-B", "AAPL", "TSM", "NVDA", "MU"],
+        "stance": "HIGH_CONVICTION",
+        "published_at": _recent_date(1),
+        "source_url": "https://www.himcap.com/"
+    },
+    {
+        "id": "inv-pat-dorsey-2026",
+        "investor_name": "Pat Dorsey",
+        "institution": "Dorsey Asset Management",
+        "market": "US",
+        "title": "Structural Economic Moats, Switching Costs & Two-Sided Network Effects",
+        "commentary": "Dorsey examines why enterprise workflow software and global digital advertising platforms maintain durable pricing power and expanding free cash flow margins despite macro capex cycles.",
+        "key_takeaway": "Prioritize wide-moat businesses where customer switching costs allow price increases above inflation without unit churn.",
+        "related_symbols": ["META", "GOOGL", "AMZN", "NOW", "CRM", "ASML", "ADBE"],
+        "stance": "BULLISH",
+        "published_at": _recent_date(3),
+        "source_url": "https://www.dorseyasset.com/"
     },
     {
         "id": "watsa-fairfax-canadian-deep-value",
@@ -429,6 +507,84 @@ KEY_INVESTOR_COMMENTARY_REGISTRY: List[Dict[str, Any]] = [
         "stance": "BULLISH",
         "published_at": _recent_date(2),
         "source_url": "https://www.rbccm.com/en/insights/macro-research.page"
+    },
+    {
+        "id": "inv-mark-leonard-csu-2026",
+        "investor_name": "Mark Leonard & Constellation Capital Desk",
+        "institution": "Constellation Software",
+        "market": "CA",
+        "title": "Decentralized Vertical Market Software M&A & Hurdle-Rate Capital Allocation",
+        "commentary": "Disciplined decentralized serial acquisition of mission-critical vertical market software franchises generates superior long-term ROIC when hurdle rates are defended against cheap private equity competition.",
+        "key_takeaway": "Compound free cash flow through specialized software carve-outs and decentralized spinouts across North America and Europe.",
+        "related_symbols": ["CSU.TO", "TOI.V", "LMN.V", "OTEX.TO", "DSG.TO"],
+        "stance": "HIGH_CONVICTION",
+        "published_at": _recent_date(4),
+        "source_url": "https://www.csisoftware.com/category/pres-letters"
+    },
+    {
+        "id": "inv-francois-rochon-2026",
+        "investor_name": "François Rochon",
+        "institution": "Giverny Capital (Montreal)",
+        "market": "CA",
+        "title": "The Rule of Three & North American Owner-Operator Compounders",
+        "commentary": "Giverny Capital highlights Montreal and TSX compounders alongside US quality leaders, emphasizing intrinsic value growth above 12% annually, conservative leverage, and owner-operator capital stewardship.",
+        "key_takeaway": "Stock prices follow EPS growth over multi-year horizons; hold superior TSX and US compounders through temporary macro noise.",
+        "related_symbols": ["CSU.TO", "DOL.TO", "ATD.TO", "TOI.V", "LMN.V", "BRK-B", "SHOP.TO"],
+        "stance": "BULLISH",
+        "published_at": _recent_date(2),
+        "source_url": "https://www.givernycapital.com/en/annual-letters/"
+    },
+    {
+        "id": "inv-mawer-ca-2026",
+        "investor_name": "Mawer Canadian Equity Desk",
+        "institution": "Mawer Investment Management (Calgary)",
+        "market": "CA",
+        "title": "Be Boring, Make Money: Wealth-Creating Canadian Compounders",
+        "commentary": "Mawer's institutional desk focuses on wealth-creating Canadian companies earning ROIC consistently above WACC across property & casualty insurance, waste management, engineering services, and vertical market software.",
+        "key_takeaway": "Favor recurring-revenue Canadian compounders with pricing power and disciplined bolt-on M&A track records.",
+        "related_symbols": ["IFC.TO", "WCN.TO", "TRI.TO", "CSU.TO", "STN.TO", "WSP.TO", "FFH.TO"],
+        "stance": "HIGH_CONVICTION",
+        "published_at": _recent_date(3),
+        "source_url": "https://www.mawer.com/the-art-of-boring/"
+    },
+    {
+        "id": "inv-edgepoint-ca-2026",
+        "investor_name": "Tye Bousada & Geoff MacDonald",
+        "institution": "EdgePoint Wealth Management (Toronto)",
+        "market": "CA",
+        "title": "Proprietary Growth Insights Without Paying for Consensus Growth",
+        "commentary": "EdgePoint highlights North American industrial, logistics, collision repair, and aerospace leaders where operational efficiency and market-share gains are not yet priced into consensus multiples.",
+        "key_takeaway": "Acquire misunderstood mid- and large-cap TSX compounders where proprietary volume growth drives multi-year FCF expansion.",
+        "related_symbols": ["TFII.TO", "BYD.TO", "CAE.TO", "DOO.TO", "ATZ.TO", "CCL-B.TO", "MG.TO"],
+        "stance": "BULLISH",
+        "published_at": _recent_date(2),
+        "source_url": "https://www.edgepointwealth.com/en/Insights"
+    },
+    {
+        "id": "inv-cppib-otpp-2026",
+        "investor_name": "CPPIB & OTPP Canadian Pension Strategy",
+        "institution": "CPP Investments & Ontario Teachers' Real Assets",
+        "market": "CA",
+        "title": "Long-Duration Tollbooths, Midstream Energy & Critical Minerals",
+        "commentary": "CPPIB and OTPP real-asset strategists detail why regulated North American natural gas pipelines, Class-1 transcontinental railways, and tier-1 uranium/copper mines anchor inflation-protected institutional portfolios.",
+        "key_takeaway": "Irreplaceable North American energy pipelines, rail corridors, and uranium supply offer contractual inflation pass-through.",
+        "related_symbols": ["ENB.TO", "TRP.TO", "PPL.TO", "CNQ.TO", "CP.TO", "CNR.TO", "CCO.TO", "TECK-B.TO"],
+        "stance": "HIGH_CONVICTION",
+        "published_at": _recent_date(1),
+        "source_url": "https://www.cppinvestments.com/insights/"
+    },
+    {
+        "id": "inv-burgundy-ca-2026",
+        "investor_name": "Burgundy Asset Management",
+        "institution": "Burgundy Canadian Quality Value Desk (Toronto)",
+        "market": "CA",
+        "title": "Fortress Canadian Financials, Grocers & Consumer Staples Margin of Safety",
+        "commentary": "Burgundy evaluates capital adequacy (CET1 > 13%), dividend coverage, and domestic oligopoly moats across Canadian Big-6 banks, lifecos, and essential food/pharmacy retailers.",
+        "key_takeaway": "Accumulate fortress Canadian franchises when dividend yields and FCF yields offer a wide margin of safety against credit cycles.",
+        "related_symbols": ["RY.TO", "TD.TO", "NA.TO", "BMO.TO", "MFC.TO", "MRU.TO", "L.TO"],
+        "stance": "DEFENSIVE",
+        "published_at": _recent_date(3),
+        "source_url": "https://www.burgundyasset.com/viewpoints/"
     }
 ]
 

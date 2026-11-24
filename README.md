@@ -1,107 +1,87 @@
-# Prism Loop: Multi-Spectrum Equity Intelligence Workstation
+# Prism Loop: Multi-Spectrum Equity & Systematic Index Intelligence Workstation
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-[![Release](https://img.shields.io/badge/release-v13.0.0-sky.svg)](https://github.com/edzhangcan/ai-investment/tags)
-[![Tests](https://img.shields.io/badge/pytest-195%2F195%20passing-brightgreen.svg)](backend/tests)
+[![Release](https://img.shields.io/badge/release-v15.0.0-sky.svg)](https://github.com/edzhangcan/ai-investment/tags)
+[![Tests](https://img.shields.io/badge/pytest-262_automated_cases-brightgreen.svg)](backend/tests)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Accessibility](https://img.shields.io/badge/accessibility-WCAG%20AAA-purple.svg)](#)
 [![Theme](https://img.shields.io/badge/theme-Light%20%2F%20Dark-slate.svg)](#)
 [![Markets](https://img.shields.io/badge/markets-US%20%26%20Canada-amber.svg)](#)
 
-Prism Loop is a desktop-grade equity research workstation built for self-directed investors in US and Canadian markets. It integrates live exchange price feeds, macroeconomic indicators, 5-year SEC 10-K and SEDAR+ filing text diffs, multi-agent AI debates, real-time central bank speech streaming, discounted cash flow (DCF) valuation, and disciplined portfolio tracking into a single interface.
+Prism Loop is a desktop-grade equity research and systematic portfolio workstation built for self-directed investors across US (NYSE/NASDAQ) and Canadian (TSX/TSXV) markets. It combines fundamental valuation, 5-year SEC 10-K / SEDAR+ text mining, real-time FOMC & Bank of Canada speech streaming, multi-agent adversarial debates, 3-bucket portfolio tracking, and a **100% decoupled 10-Minute End-of-Day Index Navigator (`Too Busy`)** designed for busy schedules and small accounts (`<$10K`).
 
-Rather than reading hundreds of pages of boilerplate filings or relying on ungrounded AI summaries that invent financial metrics, investors use Prism Loop to compute mathematical buy zones, test bear theses, and enforce clear holding discipline before deploying capital.
-
----
-
-## Why Prism Loop
-
-Most retail tools provide backward-looking accounting ratios or generic AI chat prompts that cannot verify numbers. Professional investment desks analyze assets across multiple independent dimensions:
-
-1. **Macro cycle alignment**: Is the business operating with or against prevailing interest rate and inflation cycles?
-2. **Central bank policy trajectory**: How do Federal Reserve and Bank of Canada policy announcements influence systemic liquidity and discount rates?
-3. **Disclosure changes**: Did management quietly drop forward revenue guidance or introduce new litigation liabilities in its latest annual report?
-4. **Adversarial stress testing**: What is the most credible bear thesis, and what happens if valuation multiples revert to their historical mean?
-5. **Valuation margin of safety**: What is the highest entry price that still produces an acceptable risk-adjusted return?
-6. **Holding discipline**: When should an investor sell rather than average down on a broken business?
-
-Prism Loop automates this workflow across 135+ benchmark North American equities and any custom ticker you search.
+Rather than reading hundreds of pages of boilerplate filings or relying on ungrounded AI summaries that invent metrics, investors use Prism Loop to compute mathematical buy zones, surface 5-business-day portfolio catalysts, enforce clear holding discipline, and manage systematic `15:50 EST` index allocations in under 10 minutes a day.
 
 ---
 
 ## Workstation Previews
 
-### Macro Scanner and Central Bank Speech Streamer
-Real-time central bank policy streaming with sentence-by-sentence NLP sentiment scoring, 4-layer gold topology, and empirical macroeconomic indicators from the Federal Reserve and the Bank of Canada.
+### Tab 1: Macro Dashboard & On-Demand Central Bank Speech Streamer
+Live macroeconomic cycle classification, Big Picture systemic metrics (Modified Buffett Indicator, AIAE, ERP), 4-layer gold topology, and on-demand FOMC / Bank of Canada policy speech NLP streaming.
 
 ![Macro Economic Scanner and Central Bank Streamer](docs/screenshots/workstation-full.png)
 
-### 3-Bucket Stock Tracking and Dynamic Portfolio Valuation
-Lifecycle management divided into Holdings, Watchlist, and Regular Discoveries with live valuations, total return tracking, and real-time portfolio weight calculations.
+### Tab 3: 3-Bucket Stock Tracking & Dynamic Portfolio Valuation
+Lifecycle management divided into **Holdings**, **Watchlist**, and **Regular Discoveries** with live valuations, integer & fractional share support, total return tracking, and real-time portfolio weighting.
 
 ![Top Stock Recommendations and 3-Bucket Management](docs/screenshots/workstation-picks.png)
 
-### Technical Overlay, Buy Zones, and Reverse-DCF
-Interactive price charts showing 50-day and 200-day moving averages, DCF fair value bands, and Reverse-DCF calculations showing the 10-year implied earnings multiple and required compound annual growth rate.
+### Tab 4: Technical Overlay, Holdings-Aware Kill-Switch & Reverse-DCF
+Interactive price charts overlaying 50-day / 200-day SMAs, DCF fair value brackets, adaptive stop floors, and Reverse-DCF implied 10-year earnings expectations.
 
 ![Single Stock Deep-Dive and Valuation Overlay](docs/screenshots/workstation-deepdive.png)
 
+### Tab 5: Standalone "Too Busy" 10-Min EOD Index Navigator (`PL-733` / `PL-734`)
+Beginner-first decision cockpit featuring an App-Launch Daily Signal Banner, side-by-side **Balanced Long-Only (`TQQQ + SGOV`)** vs. **Aggressive Dual Attack (`TQQQ + SQQQ + SGOV`)** tracks, Plain-Talk everyday analogies, a high-school `3:50 PM Today → Tomorrow` timeline, and a 4-Key-Signal traffic-light checklist synced to live Yahoo Finance quotes.
+
+![Too Busy Standalone 10-Min EOD Decision Cockpit](docs/screenshots/workstation-too-busy.png)
+
+### Cross-Border Two-Account Barbell & 5-Family ETF Matrix
+Combines a US `3x Dual` pod (`USD`, 0% FX) and a Canadian `2x Long-Only` pod (`CAD` native `HQU.TO / CASH.TO` in TFSA/RRSP) alongside 5 alternative index/sector ETF families and a `<$10K` SELL-before-BUY whole-share ticket solver.
+
+![Cross-Border Two-Account Barbell and S1-S7 Breakdown](docs/screenshots/workstation-too-busy-duet.png)
+
 ---
 
-## Core Architecture
+## Core Architecture (5-Tab Workstation)
 
-### 1. 3-Bucket Stock Lifecycle and Portfolio Valuation
-Organizes monitored equities into three explicit operational states:
-- **Holdings**: Tracks actively held positions. Users specify total shares owned and purchase price. The system continuously recalculates position market value, unrealized profit and loss percentage, and portfolio allocation weighting ($\text{Stock Market Value} / \text{Portfolio Total Market Value}$). Investors can add shares to existing holdings at any time without artificial suggested allocation limits.
-- **Watchlist**: Monitored candidates with defined target purchase prices. The alert engine triggers an entry notification when the market price comes within 5% of the target purchase price (95% proximity threshold). Moving an equity into the Watchlist automatically removes it from the unvetted discoveries list.
-- **Regular (Deep Value Discoveries)**: System-generated candidate opportunities identified by fundamental filters. Alerts require a 10% discount below fair value (90% threshold) and technical stabilization above moving averages to avoid falling-knife traps.
+### 1. Macro Cycle Scanner & On-Demand Central Bank Policy Streamer (Tab 1)
+- **On-Demand Central Bank Speech Streaming**: Streams Federal Reserve (FOMC) and Bank of Canada (BoC) policy remarks via Server-Sent Events (SSE) on request with sentence-level NLP sentiment scoring.
+- **Business Cycle Classification**: Maps CPI inflation, policy rates, and 10Y–2Y spreads into Expansion, Slowdown, Contraction, or Recovery.
+- **Systemic & Gold Telemetry**: Tracks the Modified Buffett Indicator, AIAE, ERP, and 4-layer Gold Topology (spot momentum, TIPS decoupling, sovereign central bank reserve buying, geopolitical risk).
 
-### 2. Holding Discipline and Falsification Kill-Switch
-Protects capital by replacing emotional reactions with predetermined mathematical rules:
-- **Structural Exit Floor**: Flags an urgent exit alert if a holding breaks below its 200-day simple moving average multiplied by 0.97 ($200\text{D SMA} \times 0.97$).
-- **Anti-Averaging Down Guardrail**: Blocks recommendations to add capital to a position whose core fundamental thesis or technical floor has failed.
-- **Pre-Trade Thesis Commitment**: Interactive check dialog requires investors to write down their core investment premise, expected catalysts, and explicit falsification conditions before executing an entry.
+### 2. News & Portfolio Intelligence Briefing (`PL-732` — Tab 2)
+- **5-Business-Day Portfolio Catalysts & Risks**: Filters actionable catalysts and risks strictly within `<= 5` business days tied to `HOLDING` and `WATCHLIST` positions across US and Canadian markets.
+- **18 US & Canadian Institutional Investor Desks**: Curated coverage including major Canadian (Giverny, Mawer, EdgePoint, CPPIB, OTPP, Burgundy) and US fundamental managers, with clickable source attribution links.
+- **Full-Width Hero Action Advice**: Consolidates per-position pulse cards (`HOLD CORE`, `WATCH PULLBACK`, `DEFEND FLOOR`, `SCALE IN READY`, `TRIM EXTENDED`) across English, Simplified Chinese, and Hybrid views.
 
-### 3. Macro Cycle Scanner and Central Bank Policy Streamer
-Tracks systemic market conditions across both the United States and Canada:
-- **Central Bank Speech Streaming**: Transmits live transcripts from the Federal Reserve (FOMC) and the Bank of Canada (BoC) over Server-Sent Events (SSE). Applies natural language processing to assign sentence-level sentiment scores and track policy stance shifts against prior baselines.
-- **Business Cycle Classification**: Categorizes the macroeconomic backdrop into Expansion, Slowdown, Contraction, or Recovery using FRED and Bank of Canada economic series (CPI inflation, policy rates, 10Y-2Y yield curve spreads).
-- **Big Picture Macro Indicators**: Evaluates systemic equity valuations using the Modified Buffett Indicator (expanded to account for post-QE central bank balance sheet assets), Aggregate Equity Ratio (AIAE), and Equity Risk Premium (ERP).
-- **4-Layer Gold Topology**: Evaluates gold price drivers across spot momentum, TIPS real yield decoupling, foreign central bank gold accumulation, and sovereign geopolitical tail risk.
+### 3. 3-Bucket Stock Lifecycle & Dynamic Portfolio Valuation (Tab 3)
+- **Holdings**: Supports both integer and fractional share counts, calculating live market value, unrealized P&L, and real-time portfolio weights without arbitrary allocation ceilings.
+- **Watchlist & Regular Discoveries**: Alerts at 95% proximity for Watchlist targets and 90% fair-value discount with moving-average stabilization guards to prevent falling-knife entries.
+- **Holdings-Only Adaptive Kill-Switch (`PL-730`)**: Enforces adaptive falsification stops (`COST_BASIS_ATR_STOP`, `RECOVERY_SUPPORT_STOP`, `STRUCTURAL_200D_STOP`) and pre-trade commitment checks.
 
-### 4. Universal Valuation Engine 2.0 and Reverse-DCF
-Tailors valuation models to distinct corporate business structures:
-- **Capital Goods and Cyclicals**: Normalized mid-cycle operating cash flows with replacement capital expenditure adjustments.
-- **Payment Networks**: High-conversion cash tollbooth models with minimal reinvestment requirements.
-- **Financial Institutions**: PB-ROE and Excess Return models that treat customer deposits as raw inventory rather than financial debt.
-- **Regulated Utilities and Infrastructure**: Rate-base Dividend Discount Models (DDM) pegged to authorized return on equity.
-- **Secular Growth Platforms**: Multi-stage discounted cash flow models with margin expansion curves.
-- **200-Day SMA Support Guardrail**: Anchors buy brackets to institutional cost basis levels when quality compounders consolidate near major moving averages.
-- **Reverse-DCF Narrative Reality Check**: Computes the 10-year implied earnings multiple ($E_0 \times (E_{10}/E_0) = E_{10}$) and 10-year required earnings CAGR needed to justify the current stock price, identifying cases where market expectations exceed realistic business limits.
+### 4. Universal Valuation Engine 2.0, Multi-Agent Debate & Filing Miner (Tab 4)
+- **Business-Model-Matched Valuation**: Tailors DCF, PB-ROE, Excess Return, Normalized Mid-Cycle FCF, and Regulated Utility DDM formulas by corporate archetype, plus 24h fundamentals caching (`PL-731`).
+- **Reverse-DCF Penetration**: Derives the 10-year implied earnings multiple and required CAGR baked into current share prices.
+- **Multi-Agent Debate & 5-Year Text Miner**: Runs structured Bull vs. Bear vs. CIO verdicts and compares 5 years of SEC EDGAR / SEDAR+ MD&A disclosures for hidden guidance deletions or litigation risks.
 
-### 5. Multi-Agent Bull vs. Bear Debate Arena
-Subject each analyzed company to a structured debate between specialized AI personas:
-- **Bull Case Advocate**: Formulates the growth thesis, focusing on competitive advantages, unit economics, return on invested capital, and secular industry tailwinds.
-- **Bear Case Prosecutor**: Identifies vulnerabilities, including customer concentration, refinancing risks, margin erosion, and technical breakdown patterns.
-- **Chief Investment Officer (CIO)**: Reviews both presentations, calculates an authentic risk-reward ratio, and issues a final verdict (BUY, ACCUMULATE, WATCHLIST, or PASS) along with maximum portfolio allocation boundaries.
-
-### 6. Longitudinal Filing Text Miner (SEC EDGAR and SEDAR+)
-Conducts longitudinal word count and sentiment comparisons across five consecutive years of annual MD&A filings:
-- Detects newly inserted risk factors and legal disclosures.
-- Identifies guidance deletions where management quietly removed previous revenue or margin targets.
-- Measures executive tone shifts across reporting periods.
+### 5. Standalone "Too Busy" 10-Min EOD Systematic Tool (`PL-733` / `PL-734` — Tab 5)
+Built **100% outside and decoupled from core single-stock engines** (`too_busy_engine.py`, `too_busy_guide.py`, `too_busy.py`):
+- **Single-Source `S1`–`S7` Engine**: Evaluates `^NDX` daily price-action across trend (`50D/250D SMA`), momentum velocity (`ROC/dROC`), oversold dips (`Wilder RSI`), 20D reclaim pivots, parabolic deceleration trims (`S5`), and tactical bear shorts (`S6`/`S7` with `RSI(10) >= 30` anti-squeeze floor).
+- **Beginner Explanation Mode**: Toggleable **`Beginner Plain-Talk Guide: ON / OFF`** with `<BilingualHoverCard>` tooltips and daily-life analogies across 16 entries in `frontend/data/jargon_dictionary.json`.
+- **Real-Time Feeds & No-Cache Refresh**: `30s`/`60s` live quote TTLs, `Cache-Control: no-store` headers, one-click **Refresh Live Prices** (on both Tab 5 and the App-Launch Daily Signal Banner), and `60s` open-market auto-polling.
+- **Small-Account (`<$10K`) Whole-Share Solver**: Sequences `SELL` orders before `BUY` orders, applies a `10%` hysteresis filter to curb churn, verifies `$25K` PDT exemption (all trades occur once daily at `15:50 EST` and hold overnight), and audits US Taxable wash-sale and Canadian `1.5%` FX conversion traps.
+- **US + Canada Cross-Border Barbell & Honest Backtester**: Models dual-account exposure (`USD 3x Dual` + `CAD 2x Long-Only`) and runs multi-decade `^NDX` backtests deducting `2x` historical Fed Funds borrowing drag, `0.95%` expense ratio, and `5 bps` turnover slippage.
 
 ---
 
 ## Additional Capabilities
 
-- **Sub-50ms Live Market Feeds**: Direct ingestion for US (NYSE, NASDAQ) and Canadian (TSX, TSXV) stocks with a 3-minute in-memory cache.
-- **Notification Center**: Bell icon with real-time unread badges, item dismissal, and one-click navigation directly to affected stock analysis tabs.
-- **Direct Discord Webhooks**: Delivers daily macro briefs and target price alerts directly to a designated Discord channel without external cloud subscriptions.
-- **Bilingual Interface and Terminology Cards**: Instant toggling between English (`EN`), Simplified Chinese (`中`), and Hybrid (`中/EN`). Financial metrics include interactive hover cards with clear plain-language explanations.
-- **Clean A4 Research Memo Printing**: Generates white-background research memos without navigation chrome, formatted for PDF archiving and physical printing.
-- **Lean Dependency Footprint**: Built with Vite and native browser animations, ensuring rapid page loads and minimal bundle sizes.
+- **App-Launch Daily Signal Banner**: Surfaces today's `15:50 EST` action signal, exact order preview, live market freshness stamp, and inline refresh trigger immediately on app startup.
+- **Trilingual Interface (`EN` / `中` / `中/EN`)**: Instant switching with plain-talk tooltips and WCAG AAA high-contrast Light & Dark themes.
+- **Discord Webhooks & A4 Print Memos**: Push daily macro briefs and valuation triggers directly to Discord, or export clean white-background A4 research memos.
+- **Lazy Code-Splitting (`PL-731`)**: Tab-level `React.lazy` bundles keep initial entry chunks small and responsive.
 
 ---
 
@@ -110,13 +90,13 @@ Conducts longitudinal word count and sentiment comparisons across five consecuti
 ### Prerequisites
 - **Python**: 3.11 or newer
 - **Node.js**: 18.0 or newer
-- **Supported Operating Systems**: Windows, macOS, or Linux
+- **Operating Systems**: Windows, macOS, or Linux
 
 ### Option 1: 1-Click Launch (Recommended)
 
 #### Windows
 1. Double-click `install.bat` once to install backend and frontend dependencies.
-2. Double-click `start.bat` to launch both backend and frontend servers. Your default browser will open `http://localhost:3000`.
+2. Double-click `start.bat` to launch both backend and frontend servers. Open `http://localhost:3000`.
 
 #### macOS / Linux
 ```bash
@@ -132,61 +112,67 @@ chmod +x install.sh start.sh
 python -m venv backend/venv
 .\backend\venv\Scripts\pip install -r backend/requirements.txt
 $env:PYTHONPATH="."
-.\backend\venv\Scripts\python backend/main.py
+.\backend\venv\Scripts\python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 
-# 2. In a second terminal window, start the React dev server (http://localhost:3000)
+# 2. In a second terminal window, start the Vite React dev server (http://localhost:3000)
 cd frontend
 npm install
-npm run dev
+npx vite --port 3000 --host
 ```
 
 ---
 
 ## Project Structure
 
-```
+```text
 ai-investment/
-├── backend/                  # FastAPI service and analytical engines
+├── backend/
 │   ├── agents/               # Multi-Agent Debate Arena (Bull, Bear, CIO)
-│   ├── data_sources/         # Real-time exchange feeds, SEC EDGAR, SEDAR+, Profiles
-│   ├── engines/              # Macro, DCF Pricing, Fundamentals, Filing Miner, Central Bank Streamer
-│   ├── routers/              # REST and SSE API endpoints (macro, stock, debate, speech, alerts)
-│   └── tests/                # 195 automated pytest verification test cases
-├── frontend/                 # React 18, TypeScript, and Vite user interface
+│   ├── data_sources/         # Live market feeds, news/investor feeds, SEC EDGAR, SEDAR+
+│   ├── engines/              # Macro, DCF Pricing, News Portfolio, TooBusyEngine & TooBusyGuide
+│   ├── routers/              # REST & SSE endpoints (macro, news_portfolio, stock, debate, too_busy, alerts)
+│   └── tests/                # 262 automated pytest cases across core & standalone suites
+├── frontend/
+│   ├── data/                 # Bilingual glossary & everyday analogies (jargon_dictionary.json)
 │   ├── src/
-│   │   ├── components/       # UI cards, debate arena, charts, modals, notification center
-│   │   ├── context/          # Language and global workstation context providers
-│   │   ├── utils/            # Memo printing, export utilities, math formatters
-│   │   └── types/            # TypeScript interfaces and API contract models
-│   └── vite.config.ts        # Vite configuration and Rollup chunk splitting
-├── docs/                     # Specifications, design system guidelines, and architecture diagrams
-│   └── screenshots/          # Workstation interface captures and design assets
-├── install.bat / install.sh  # Automated dependency installation scripts
-└── start.bat / start.sh      # Automated workstation startup scripts
+│   │   ├── components/       # Workstation tabs, TooBusyView + too-busy/*, Launch Banner, Charts, Modals
+│   │   ├── api/              # Typed no-store API clients
+│   │   ├── i18n/             # EN / ZH / Hybrid translations
+│   │   ├── utils/            # Memo printing, formatters, math helpers
+│   │   └── types/            # TypeScript contracts
+│   └── vite.config.ts
+├── docs/
+│   ├── too_busy_analysis/    # Standalone "Too Busy" analysis, PRD, and roadmap suite
+│   └── screenshots/          # Workstation interface screenshots
+├── install.bat / install.sh
+└── start.bat / start.sh
 ```
 
 ---
 
 ## Automated Verification
 
-Run backend regression tests:
+Run backend verification suites:
 ```powershell
 $env:PYTHONPATH="."
-.\backend\venv\Scripts\python -m pytest backend/tests/ -v
+.\backend\venv\Scripts\python.exe -m pytest backend/tests/test_pl733_too_busy_engine.py -v
+.\backend\venv\Scripts\python.exe -m pytest backend/tests/ -v
 ```
 
 Validate frontend TypeScript types and build production bundles:
 ```powershell
-npm --prefix frontend run build
+cd frontend
+node .\node_modules\typescript\bin\tsc --noEmit
+npm run build
 ```
 
 ---
 
 ## Methodology Acknowledgments
 
-The investment principles, risk guardrails, and valuation frameworks in Prism Loop draw inspiration from:
-- **《面基》 (Mianji Podcast)**: Concepts for the Qualified Holder framework (*只做合格持有人*), Bayesian updating (*贝叶斯更新*), the Three-Part Equity Taxonomy (*树/粮/菜: Trees, Grain, Vegetables*), and pre-trade rules (*《纪律.md》*).
-- **老钱日日谈与开源投研资料库**: Methodologies for Reverse-DCF narrative penetration (*穿透叙事*), macroeconomic tracking frameworks (*美股看板*), and the 4-layer gold topology (*黄金看板*).
+Core value-investing principles and valuation guardrails in Prism Loop draw inspiration from:
+- **《面基》 (Mianji Podcast)**: Concepts for the Qualified Holder framework (*只做合格持有人*), Bayesian updating (*贝叶斯更新*), the Three-Part Equity Taxonomy (*树/粮/菜*), and pre-trade rules (*《纪律.md》*).
+- **老钱日日谈 & Open Research Repositories**: Reverse-DCF narrative penetration (*穿透叙事*), systemic macro indicator boards (*美股看板*), and 4-layer gold topology (*黄金看板*).
 
 ---
 

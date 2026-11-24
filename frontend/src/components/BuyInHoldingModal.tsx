@@ -191,9 +191,10 @@ export const BuyInHoldingModal: React.FC<BuyInHoldingModalProps> = ({
               )}
             </label>
             <input
+              id="holding-shares-input"
               type="number"
-              step="1"
-              min="0.001"
+              step="any"
+              min="0"
               required
               value={shares}
               onChange={(e) => setShares(e.target.value)}

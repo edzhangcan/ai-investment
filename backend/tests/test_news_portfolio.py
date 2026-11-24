@@ -437,3 +437,155 @@ def test_no_recommendation_based_on_news_older_than_1_month():
     assert "https://example.com/stale-risk-45d" not in risk_urls
 
 
+
+
+def test_key_investor_registry_includes_expanded_us_and_ca_investors(client: TestClient, session: Session):
+    """
+    PL-732.3: Credible News & Key Investor Stream includes the expanded 18-desk
+    pool spanning both US and Canadian (CA) superinvestors & pension institutions.
+    """
+    from backend.data_sources.news_client import KEY_INVESTOR_COMMENTARY_REGISTRY
+
+    assert len(KEY_INVESTOR_COMMENTARY_REGISTRY) >= 17
+    ca_desks = [inv for inv in KEY_INVESTOR_COMMENTARY_REGISTRY if inv.get("market") == "CA"]
+    us_desks = [inv for inv in KEY_INVESTOR_COMMENTARY_REGISTRY if inv.get("market") in ("US", "NORTH_AMERICA")]
+    assert len(ca_desks) >= 8
+    assert len(us_desks) >= 9
+
+    names = {inv["investor_name"] for inv in KEY_INVESTOR_COMMENTARY_REGISTRY}
+    for expected in [
+        "Terry Smith",
+        "François Rochon",
+        "Mawer Canadian Equity Desk",
+        "CPPIB & OTPP Canadian Pension Strategy",
+        "Burgundy Asset Management",
+    ]:
+        assert expected in names
+
+    # Confirm API returns expanded CA investors when filtering by market=CA
+    res_ca = client.get("/api/news-portfolio/analysis?market=CA")
+    assert res_ca.status_code == 200
+    ca_names = {p["investor_name"] for p in res_ca.json()["investor_posts"]}
+    assert "François Rochon" in ca_names
+    assert "Mawer Canadian Equity Desk" in ca_names
+
+
+def test_opportunities_and_risks_strictly_within_5_business_days_and_portfolio_tied():
+    """
+    PL-732.3: Opportunities & Catalysts and Risks & Falsification Watchouts must strictly
+    exclude articles older than 5 business days (even if <= 30 days) and prioritize holdings.
+    """
+    from datetime import datetime, timezone, timedelta
+    from backend.engines.portfolio_news_engine import PortfolioNewsEngine
+
+    now = datetime.now(timezone.utc)
+    fresh_3d = (now - timedelta(days=3)).strftime("%Y-%m-%d")
+    stale_12d = (now - timedelta(days=12)).strftime("%Y-%m-%d")
+
+    tracked_positions = [
+        {
+            "symbol": "AAPL",
+            "company_name": "Apple Inc.",
+            "market": "US",
+            "currency": "USD",
+            "bucket": "HOLDING",
+            "current_price": 225.0,
+            "buy_in_price": 200.0,
+            "target_buy_price": None,
+            "falsification_floor": 195.0,
+            "unrealized_pnl_pct": 12.5,
+            "portfolio_allocation_pct": 3.5,
+            "batting_zone": "RIGHT_SIDE",
+            "trend_state": "WARM",
+            "day_signal": "HOLD_CORE",
+            "related_news_count": 2,
+        }
+    ]
+
+    news_feed = [
+        {
+            "id": "aapl-fresh-3d",
+            "symbol": "AAPL",
+            "company_name": "Apple Inc.",
+            "market": "US",
+            "bucket": "HOLDING",
+            "title": "AAPL Record Services Growth Accelerates Within 5 Business Days",
+            "summary": "Fresh 3-day-old catalyst directly tied to held AAPL shares.",
+            "portfolio_impact_note": "Held Position (AAPL): Positive free cash flow catalyst.",
+            "source": "Apple SEC 10-Q",
+            "url": "https://example.com/aapl-fresh-3d",
+            "published_at": fresh_3d,
+            "sentiment": "BULLISH",
+            "age_days": 3,
+            "is_recent": True,
+        },
+        {
+            "id": "aapl-12d-outside-5biz",
+            "symbol": "AAPL",
+            "company_name": "Apple Inc.",
+            "market": "US",
+            "bucket": "HOLDING",
+            "title": "AAPL 12-Day Old Record Growth Must Be Excluded From 5-Biz-Day Catalysts",
+            "summary": "Within 30d scan window, but outside 5 business days.",
+            "portfolio_impact_note": "Should not appear in Opportunities.",
+            "source": "Old Weekly Digest",
+            "url": "https://example.com/aapl-12d-opp",
+            "published_at": stale_12d,
+            "sentiment": "BULLISH",
+            "age_days": 12,
+            "is_recent": True,
+        },
+        {
+            "id": "aapl-12d-risk-outside-5biz",
+            "symbol": "AAPL",
+            "company_name": "Apple Inc.",
+            "market": "US",
+            "bucket": "HOLDING",
+            "title": "AAPL 12-Day Old Warning Risk Outside 5 Business Days",
+            "summary": "Older than 5 business days; must not clutter 5-business-day risks.",
+            "portfolio_impact_note": "Old risk.",
+            "source": "Old Weekly Risk",
+            "url": "https://example.com/aapl-12d-risk",
+            "published_at": stale_12d,
+            "sentiment": "RISK_ALERT",
+            "age_days": 12,
+            "is_recent": True,
+        },
+    ]
+
+    briefing = PortfolioNewsEngine._synthesize_daily_briefing(
+        date_label="Monday, November 16, 2026",
+        market="US",
+        tracked_positions=tracked_positions,
+        news_feed=news_feed,
+        investor_posts=[],
+    )
+
+    opp_urls = [o["source_url"] for o in briefing["opportunities"]]
+    risk_urls = [r["source_url"] for r in briefing["risks"]]
+
+    assert "https://example.com/aapl-fresh-3d" in opp_urls
+    assert "https://example.com/aapl-12d-opp" not in opp_urls
+    assert "https://example.com/aapl-12d-risk" not in risk_urls
+
+
+def test_action_advice_includes_consolidated_position_pulse_telemetry(client: TestClient, session: Session):
+    """
+    PL-732.4: Action Advice items carry consolidated Tracked Position Pulse telemetry
+    (current_price, currency, buy_in_price/target_buy_price, batting_zone, trend_state)
+    so the UI can display a unified Hero Action Advice without a duplicate sidebar.
+    """
+    res = client.get("/api/news-portfolio/analysis?market=ALL")
+    assert res.status_code == 200
+    briefing = res.json()["briefing"]
+    assert len(briefing["action_advice"]) >= 1
+
+    for act in briefing["action_advice"]:
+        assert act["current_price"] is not None and act["current_price"] > 0
+        assert act["currency"] in ("USD", "CAD")
+        assert act["company_name"] is not None
+        assert act["batting_zone"] is not None
+        assert act["trend_state"] is not None
+        if act["bucket"] == "HOLDING":
+            assert act["buy_in_price"] is not None
+            assert act["falsification_floor"] is not None

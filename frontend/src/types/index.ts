@@ -732,6 +732,19 @@ export interface TacticalAdviceItem {
   source_name?: string;
   action_tag?: ActionSignalTag | null;
   action_tag_explanation?: string | null;
+  // PL-732: Consolidated position pulse telemetry inside Hero Action Advice
+  company_name?: string | null;
+  currency?: string;
+  current_price?: number | null;
+  buy_in_price?: number | null;
+  unrealized_pnl_pct?: number | null;
+  portfolio_allocation_pct?: number | null;
+  falsification_floor?: number | null;
+  target_buy_price?: number | null;
+  distance_to_target_pct?: number | null;
+  batting_zone?: string | null;
+  trend_state?: string | null;
+  related_news_count?: number;
 }
 
 export interface DailyPortfolioBriefing {
@@ -890,4 +903,394 @@ export interface PriceAlertHistoryItem {
   message?: string;
   triggered_at?: string;
   notification_channel?: string;
+}
+
+// PL-733 & PL-734: Standalone "Too Busy" 10-Min EOD Systematic Tool & Beginner Decision Clarity Types
+export type TooBusyStrategyMode = 'TOO_BUSY_LONG_ONLY' | 'CORE_1X' | 'TOO_BUSY_DUAL';
+
+export interface TooBusyExecutionClock {
+  window_state: 'PRE_WINDOW' | 'ACTION_WINDOW_OPEN' | 'MARKET_CLOSED' | string;
+  current_time_est: string;
+  is_action_window_live: boolean;
+  label_en: string;
+  label_zh: string;
+}
+
+export interface TooBusyDataFreshness {
+  source?: string;
+  is_live_intraday?: boolean;
+  last_updated_est?: string;
+  latest_bar_date?: string;
+  signal_basis_en?: string;
+  signal_basis_zh?: string;
+  timing_why_1550_en?: string;
+  timing_why_1550_zh?: string;
+}
+
+export interface TooBusyKeySignalItem {
+  id: string;
+  term_key: string;
+  title_en: string;
+  title_zh: string;
+  traffic_light: 'GREEN' | 'AMBER' | 'RED' | 'NEUTRAL' | string;
+  status_badge_en: string;
+  status_badge_zh: string;
+  current_reading: string;
+  plain_explanation_en: string;
+  plain_explanation_zh: string;
+  analogy_en: string;
+  analogy_zh: string;
+}
+
+export interface TooBusyExecutionTimelineStep {
+  step?: string;
+  time_est?: string;
+  title_en: string;
+  title_zh: string;
+  detail_en: string;
+  detail_zh: string;
+}
+
+export interface TooBusyExecutionTimelineReason {
+  title_en: string;
+  title_zh: string;
+  detail_en: string;
+  detail_zh: string;
+}
+
+export interface TooBusyExecutionTimelineExplainer {
+  headline_en?: string;
+  headline_zh?: string;
+  steps?: TooBusyExecutionTimelineStep[];
+  why_today_predicts_tomorrow?: TooBusyExecutionTimelineReason[];
+  honest_lag_note_en?: string;
+  honest_lag_note_zh?: string;
+}
+
+export interface TooBusyBeginnerDecisionGuide {
+  recommended_strategy?: {
+    mode?: string;
+    badge_en?: string;
+    badge_zh?: string;
+    title_en?: string;
+    title_zh?: string;
+    why_en?: string;
+    why_zh?: string;
+    analogy_en?: string;
+    analogy_zh?: string;
+    aggressive_dual_track?: {
+      mode?: string;
+      badge_en?: string;
+      badge_zh?: string;
+      title_en?: string;
+      title_zh?: string;
+      why_en?: string;
+      why_zh?: string;
+      today_target_en?: string;
+      today_target_zh?: string;
+    };
+    balanced_long_only_track?: {
+      mode?: string;
+      badge_en?: string;
+      badge_zh?: string;
+      title_en?: string;
+      title_zh?: string;
+      why_en?: string;
+      why_zh?: string;
+      today_target_en?: string;
+      today_target_zh?: string;
+    };
+  };
+  execution_timeline_explainer?: TooBusyExecutionTimelineExplainer;
+  action_verdict: {
+    verdict_color?: 'GREEN' | 'AMBER' | 'SKY' | 'ROSE' | string;
+    headline_en: string;
+    headline_zh: string;
+    why_plain_en: string;
+    why_plain_zh: string;
+    analogy_en: string;
+    analogy_zh: string;
+  };
+  key_signals_checklist: TooBusyKeySignalItem[];
+}
+
+export interface TooBusyEquivalentEtfFamily {
+  family_id: string;
+  index_name_en: string;
+  index_name_zh: string;
+  leverage: string;
+  market: 'US' | 'CA' | string;
+  currency: 'USD' | 'CAD' | string;
+  long_etf: string;
+  short_etf: string;
+  cash_etf: string;
+  best_for_en: string;
+  best_for_zh: string;
+}
+
+export interface TooBusyStructuralDifferenceItem {
+  id?: string;
+  title_en: string;
+  title_zh: string;
+  detail_en: string;
+  detail_zh: string;
+}
+
+export interface TooBusyEquivalentEtfMatrix {
+  families: TooBusyEquivalentEtfFamily[];
+  us_vs_canada_differences: TooBusyStructuralDifferenceItem[];
+}
+
+export interface TooBusyCrossBorderDuet {
+  usd_account_equity?: number;
+  cad_account_equity?: number;
+  usd_pod?: {
+    role_en: string;
+    role_zh: string;
+    strategy_mode: string;
+    vehicles: string;
+    target_long_pct: number;
+    target_short_pct: number;
+    target_cash_pct: number;
+    allocation_summary_en: string;
+    allocation_summary_zh: string;
+    rationale_en?: string;
+    rationale_zh?: string;
+  };
+  cad_pod?: {
+    role_en: string;
+    role_zh: string;
+    strategy_mode: string;
+    vehicles: string;
+    target_long_pct: number;
+    target_short_pct: number;
+    target_cash_pct: number;
+    allocation_summary_en: string;
+    allocation_summary_zh: string;
+    rationale_en?: string;
+    rationale_zh?: string;
+  };
+  blended_summary?: {
+    effective_bull_leverage?: string;
+    effective_bear_leverage?: string;
+    today_effective_leverage?: number | string;
+    synergy_note_en?: string;
+    synergy_note_zh?: string;
+  };
+  [key: string]: any;
+}
+
+export interface TooBusySubStrategyItem {
+  id: string;
+  code: string;
+  term_key?: string;
+  name_en: string;
+  name_zh: string;
+  category: string;
+  status: 'ACTIVE' | 'ACTIVE_TRIM' | 'STANDBY' | string;
+  status_human_en?: string;
+  status_human_zh?: string;
+  weight_pct: number;
+  effect_label: string;
+  telemetry: string;
+  rule_en: string;
+  rule_zh: string;
+  why_status_en?: string;
+  why_status_zh?: string;
+  analogy_en?: string;
+  analogy_zh?: string;
+}
+
+export interface TooBusyRegimeResponse {
+  strategy_mode: TooBusyStrategyMode;
+  market: 'US' | 'CA' | string;
+  regime_code: string;
+  regime_label: string;
+  regime_label_en: string;
+  regime_label_zh: string;
+  target_long_pct: number;
+  target_short_pct: number;
+  target_cash_pct: number;
+  would_allocate_short_pct?: number;
+  vehicles: {
+    long_etf: string;
+    short_etf: string;
+    cash_etf: string;
+    leverage: number;
+    currency: string;
+  };
+  features: {
+    current_close: number;
+    sma_20: number;
+    sma_50: number;
+    sma_250: number;
+    ext_50_pct: number;
+    ext_250_pct: number;
+    roc_1_pct: number;
+    roc_5_pct: number;
+    roc_10_pct: number;
+    roc_20_pct: number;
+    d_roc_5_pct: number;
+    z_bb_20: number;
+    rsi_5: number;
+    rsi_10: number;
+    is_above_250d: boolean;
+    is_above_50d: boolean;
+    is_above_20d: boolean;
+  };
+  sub_strategies: TooBusySubStrategyItem[];
+  live_etf_prices: Record<string, number>;
+  as_of_date: string;
+  execution_window_est: string;
+  execution_clock: TooBusyExecutionClock;
+  pdt_exemption_note_en: string;
+  pdt_exemption_note_zh: string;
+  data_freshness?: TooBusyDataFreshness;
+  beginner_decision_guide?: TooBusyBeginnerDecisionGuide;
+  equivalent_etf_matrix?: TooBusyEquivalentEtfMatrix;
+  cross_border_duet?: TooBusyCrossBorderDuet;
+}
+
+export interface TooBusyOrderStep {
+  step_number: number;
+  action: 'BUY' | 'SELL';
+  symbol: string;
+  role: string;
+  shares: number;
+  estimated_price: number;
+  estimated_amount: number;
+  instruction_en: string;
+  instruction_zh: string;
+}
+
+export interface TooBusyRebalancePayload {
+  strategy_mode: TooBusyStrategyMode;
+  market: 'US' | 'CA';
+  account_type: 'ROTH_IRA' | 'TFSA' | 'RRSP' | 'TAXABLE';
+  has_usd_subaccount: boolean;
+  cash_balance: number;
+  current_long_shares: number;
+  current_short_shares: number;
+  current_cash_etf_shares: number;
+  hysteresis_pct: number;
+  opened_intraday_today: boolean;
+  lang?: string;
+  use_live?: boolean;
+  force_refresh?: boolean;
+}
+
+export interface TooBusyRebalanceResponse {
+  strategy_mode: TooBusyStrategyMode;
+  market: string;
+  account_type: string;
+  total_equity: number;
+  is_small_account_under_10k: boolean;
+  hysteresis_pct: number;
+  rebalance_required: boolean;
+  pdt_status: string;
+  current_allocation: {
+    long_etf: string;
+    long_shares: number;
+    long_value: number;
+    long_pct: number;
+    short_etf: string;
+    short_shares: number;
+    short_value: number;
+    short_pct: number;
+    cash_etf: string;
+    cash_etf_shares: number;
+    uninvested_cash: number;
+    cash_total_pct: number;
+  };
+  target_allocation: {
+    target_long_pct: number;
+    target_short_pct: number;
+    target_cash_pct: number;
+    target_long_shares: number;
+    target_short_shares: number;
+    target_cash_etf_shares: number;
+  };
+  order_steps: TooBusyOrderStep[];
+  friction_warnings: Array<{
+    code: string;
+    severity: string;
+    message_en: string;
+    message_zh: string;
+  }>;
+  action_summary_en: string;
+  action_summary_zh: string;
+}
+
+export interface TooBusyDailyAdviceResponse {
+  as_of_date: string;
+  strategy_mode: TooBusyStrategyMode;
+  market: string;
+  action_signal:
+    | 'STRONG_BUY_RISK_ON'
+    | 'ACCUMULATE_DIP_OR_PIVOT'
+    | 'TRIM_TAKE_PROFIT'
+    | 'ROTATE_TO_CASH_SHIELD'
+    | 'HOLD_NO_ACTION'
+    | string;
+  signal_label_en: string;
+  signal_label_zh: string;
+  daily_advice_en: string;
+  daily_advice_zh: string;
+  regime_code: string;
+  regime_label_en: string;
+  regime_label_zh: string;
+  target_long_pct: number;
+  target_cash_pct: number;
+  target_short_pct: number;
+  long_etf: string;
+  cash_etf: string;
+  rebalance_required: boolean;
+  order_steps: TooBusyOrderStep[];
+  friction_warnings: Array<{
+    code: string;
+    severity: string;
+    message_en: string;
+    message_zh: string;
+  }>;
+  execution_clock: TooBusyExecutionClock;
+  total_equity: number;
+  pdt_status: string;
+  data_freshness?: TooBusyDataFreshness;
+  beginner_decision_guide?: TooBusyBeginnerDecisionGuide;
+}
+
+export interface TooBusyBacktestResponse {
+  horizon: string;
+  strategy_mode: TooBusyStrategyMode;
+  start_year: string;
+  end_year: string;
+  years_tested: number;
+  initial_capital: number;
+  final_value_realistic: number;
+  final_value_qqq: number;
+  final_value_tqqq_bh: number;
+  realistic_net_cagr_pct: number;
+  naive_no_drag_cagr_pct: number;
+  annual_financing_drag_pct: number;
+  qqq_cagr_pct: number;
+  tqqq_bh_cagr_pct: number;
+  max_drawdown_pct: number;
+  qqq_max_drawdown_pct: number;
+  tqqq_bh_max_drawdown_pct: number;
+  calmar_ratio: number;
+  sharpe_ratio: number;
+  deflated_sharpe_ratio: number;
+  trades_per_year: number;
+  equity_curve: Array<{
+    year: string;
+    strategy_value: number;
+    qqq_value: number;
+    tqqq_bh_value: number;
+    strategy_return_pct: number;
+    qqq_return_pct: number;
+    tqqq_return_pct: number;
+    drawdown_pct: number;
+  }>;
+  audit_disclosure_en: string;
+  audit_disclosure_zh: string;
 }
