@@ -362,25 +362,25 @@ def build_sub_strategy_cards(
                 if is_dual
                 else f"Long-Only Shield Active (Dual would put +{int(s7_weight)}% {short_etf})"
             ),
-            "telemetry": f"ROC(20): {roc_20:+.2f}% | RSI(10): {rsi_10:.1f} (>=30 floor)",
-            "rule_en": "Allocates 50%–80% inverse ETF during bear breakdowns while enforcing an RSI(10) >= 30 anti-squeeze floor.",
-            "rule_zh": "熊市主跌段顺势配置 50%–80% 反向 ETF，并设有 RSI(10) >= 30 防轧空保护底线。",
+            "telemetry": f"Ext(50D): {ext_50:+.2f}% (>= -9% floor) | dROC(5): {d_roc_5:+.2f}% (<0) | RSI(10): {rsi_10:.1f} (>=35)",
+            "rule_en": "Allocates 30%–50% inverse ETF during accelerating bear breakdowns (dROC_5 < 0) while blocking shorts when stretched < -9% below 50D SMA or RSI(10) < 35.",
+            "rule_zh": "仅在熊市加速下破 (dROC_5 < 0) 且未过度乖离 (偏离50日线 >= -9%、RSI_10 >= 35) 时配置 30%–50% 反向 ETF；超跌或动能转正时立即退回 SGOV 防暴涨轧空。",
             "why_status_en": (
-                f"Downtrend breakdown confirmed (ROC_20 {roc_20:+.2f}%, <20/50/250D SMAs) while RSI_10 ({rsi_10:.1f}) stays safely >= 30 anti-squeeze floor."
+                f"Downtrend breakdown confirmed (Ext_50 {ext_50:+.2f}% >= -9%, dROC_5 {d_roc_5:+.2f}% < 0, RSI_10 {rsi_10:.1f} >= 35)."
                 if s7_weight > 0
                 else (
-                    f"Anti-squeeze guardrail paused shorts because RSI_10 ({rsi_10:.1f}) dipped below 30 (bounce risk too high)."
-                    if (c <= sma_250 and c <= sma_50 and rsi_10 < 30.0)
-                    else "Standby: Needs confirmed bear breakdown below 20D/50D/250D SMAs with negative momentum."
+                    f"Anti-squeeze guardrail blocked SQQQ: index is already stretched {ext_50:+.2f}% below 50D SMA (< -9% floor) or 5D velocity turned positive ({d_roc_5:+.2f}%), making bear-rally squeeze risk too high."
+                    if (c <= sma_250 and c <= sma_50 and (ext_50 < -9.0 or d_roc_5 >= 0.0 or rsi_10 < 35.0))
+                    else "Standby: Needs confirmed bear breakdown below 20D/50D/250D SMAs with negative acceleration."
                 )
             ),
             "why_status_zh": (
-                f"跌势确认（20日跌 {roc_20:+.2f}% 且均线空头排列），同时 RSI_10 ({rsi_10:.1f}) 高于 30 安全底线，无立即暴涨轧空信号。"
+                f"加速跌势确认（距50日线 {ext_50:+.2f}% >= -9%，5日加速度 {d_roc_5:+.2f}% < 0，RSI_10 {rsi_10:.1f} >= 35），适度配置 {int(s7_weight)}% 反向仓位。"
                 if s7_weight > 0
                 else (
-                    f"防轧空安全刹车触发：RSI_10 ({rsi_10:.1f}) 跌破 30 过于超卖，暂停追空以防暴力反弹。"
-                    if (c <= sma_250 and c <= sma_50 and rsi_10 < 30.0)
-                    else "待命中：仅在跌破20/50/250日所有均线且下跌动量确立时开启。"
+                    f"防轧空护栏已拦截 SQQQ：当前指数距 50日线已达 {ext_50:+.2f}%（突破 -9% 超跌红线）或 5日动量已减速转正 ({d_roc_5:+.2f}%)，极易发生双底暴力反弹，100% 泊入 SGOV 锁定安全。"
+                    if (c <= sma_250 and c <= sma_50 and (ext_50 < -9.0 or d_roc_5 >= 0.0 or rsi_10 < 35.0))
+                    else "待命中：仅在跌破20/50/250日所有均线且下跌加速度确立时开启。"
                 )
             ),
             "analogy_en": "Wearing spiked boots on an icy slope, with an automatic brake if the rubber band gets pulled too tight (RSI < 30).",

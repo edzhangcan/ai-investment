@@ -72,8 +72,22 @@ export const TooBusyLaunchBanner: React.FC<TooBusyLaunchBannerProps> = ({
 
   useEffect(() => {
     const controller = new AbortController();
-    loadDailyAdvice(false, controller.signal);
-    return () => controller.abort();
+    loadDailyAdvice(true, controller.signal);
+
+    const handleRefresh = () => {
+      if (document.visibilityState === 'visible') {
+        loadDailyAdvice(true);
+      }
+    };
+    const timer = window.setInterval(handleRefresh, 60_000);
+    window.addEventListener('focus', handleRefresh);
+    document.addEventListener('visibilitychange', handleRefresh);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+      window.removeEventListener('focus', handleRefresh);
+      document.removeEventListener('visibilitychange', handleRefresh);
+    };
   }, [loadDailyAdvice]);
 
   if (dismissed || isTooBusyTabActive || !advice) return null;

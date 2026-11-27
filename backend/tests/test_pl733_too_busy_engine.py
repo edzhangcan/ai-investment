@@ -98,8 +98,14 @@ def test_bear_regime_rotates_100_pct_to_tbill_cash_shield():
     assert res_long_only["vehicles"]["cash_etf"] == "CASH.TO"
 
     res_dual = TooBusyEngine.evaluate_from_features(features, strategy_mode="TOO_BUSY_DUAL", market="US")
-    assert res_dual["target_short_pct"] == 80.0
+    assert res_dual["target_short_pct"] == 50.0
     assert res_dual["target_long_pct"] == 0.0
+
+    # When overstretched < -9% below 50D SMA or dROC_5 >= 0 (rebounding double-bottom), S7 anti-squeeze blocks SQQQ
+    squeezed_features = dict(features, ext_50_pct=-10.38, d_roc_5_pct=0.49)
+    res_squeezed = TooBusyEngine.evaluate_from_features(squeezed_features, strategy_mode="TOO_BUSY_DUAL", market="US")
+    assert res_squeezed["target_short_pct"] == 0.0
+    assert res_squeezed["target_cash_pct"] == 100.0
 
 
 def test_small_account_rebalance_ticket_hysteresis_and_sell_first():

@@ -1121,6 +1121,8 @@ export interface TooBusyRegimeResponse {
   };
   features: {
     current_close: number;
+    previous_close?: number;
+    day_change_pts?: number;
     sma_20: number;
     sma_50: number;
     sma_250: number;
@@ -1146,6 +1148,18 @@ export interface TooBusyRegimeResponse {
   pdt_exemption_note_en: string;
   pdt_exemption_note_zh: string;
   data_freshness?: TooBusyDataFreshness;
+  after_hours_futures?: {
+    symbol: string;
+    futures_price: number;
+    reference_close: number;
+    futures_change_pct: number;
+    implied_ndx_open: number;
+    implied_tqqq_gap_pct: number;
+    implied_sqqq_gap_pct: number;
+    squeeze_warning_active: boolean;
+    warning_en: string;
+    warning_zh: string;
+  };
   beginner_decision_guide?: TooBusyBeginnerDecisionGuide;
   equivalent_etf_matrix?: TooBusyEquivalentEtfMatrix;
   cross_border_duet?: TooBusyCrossBorderDuet;
@@ -1256,6 +1270,18 @@ export interface TooBusyDailyAdviceResponse {
   total_equity: number;
   pdt_status: string;
   data_freshness?: TooBusyDataFreshness;
+  after_hours_futures?: {
+    symbol: string;
+    futures_price: number;
+    reference_close: number;
+    futures_change_pct: number;
+    implied_ndx_open: number;
+    implied_tqqq_gap_pct: number;
+    implied_sqqq_gap_pct: number;
+    squeeze_warning_active: boolean;
+    warning_en: string;
+    warning_zh: string;
+  };
   beginner_decision_guide?: TooBusyBeginnerDecisionGuide;
 }
 

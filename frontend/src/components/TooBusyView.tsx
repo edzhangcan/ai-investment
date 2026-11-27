@@ -157,21 +157,25 @@ export const TooBusyView: React.FC = () => {
   );
 
   useEffect(() => {
-    loadAll(false);
+    loadAll(true);
   }, [strategyMode, market, horizon, language]);
 
-  // Keep live market data fresh automatically every 60s when visible during US/CA market hours
+  // Keep live market data fresh every 60s and whenever the user focuses/returns to the tab (even across overnight sessions)
   useEffect(() => {
-    const isMarketOpen = regimeData?.execution_clock?.window_state !== 'MARKET_CLOSED';
-    if (!isMarketOpen) return;
-
-    const id = window.setInterval(() => {
+    const handleVisibilityOrFocus = () => {
       if (document.visibilityState === 'visible') {
         loadAll(true);
       }
-    }, AUTO_POLL_MS);
-    return () => window.clearInterval(id);
-  }, [regimeData?.execution_clock?.window_state, loadAll]);
+    };
+    const id = window.setInterval(handleVisibilityOrFocus, AUTO_POLL_MS);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+    };
+  }, [loadAll]);
 
   const handleRecalculateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,6 +270,22 @@ export const TooBusyView: React.FC = () => {
             <p className="text-xs text-content-secondary mt-1">
               {isZh ? data_freshness?.signal_basis_zh : data_freshness?.signal_basis_en}
             </p>
+            {regimeData.after_hours_futures && Math.abs(regimeData.after_hours_futures.futures_change_pct) >= 0.25 && (
+              <div
+                className={`mt-2 px-3 py-1.5 rounded-xl border text-xs font-extrabold flex items-center gap-2 ${
+                  regimeData.after_hours_futures.squeeze_warning_active
+                    ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-400 dark:border-amber-700 text-amber-900 dark:text-amber-200'
+                    : 'bg-sky-50 dark:bg-sky-950/40 border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200'
+                }`}
+              >
+                <span className="px-1.5 py-0.5 rounded bg-amber-600 text-white text-[10px] font-mono uppercase">
+                  NQ=F LIVE
+                </span>
+                <span>
+                  {isZh ? regimeData.after_hours_futures.warning_zh : regimeData.after_hours_futures.warning_en}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
@@ -403,15 +423,27 @@ export const TooBusyView: React.FC = () => {
         </div>
 
         <div className="lg:col-span-5 prism-card p-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <span className="text-xs font-black uppercase tracking-wider text-content-muted">
               <BilingualHoverCard termKey="NDXIndex">
                 <span>{isZh ? '底层无杠杆纳指100 (^NDX) 核心指标' : 'Underlying Nasdaq-100 (^NDX) Telemetry'}</span>
               </BilingualHoverCard>
             </span>
-            <span className="text-sm font-black font-mono text-content-primary">
-              ^NDX: {features.current_close.toLocaleString()}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-black font-mono text-content-primary">
+                ^NDX: {features.current_close.toLocaleString()}
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-extrabold ${
+                  features.roc_1_pct >= 0
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                    : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                }`}
+              >
+                {features.roc_1_pct >= 0 ? `+${features.roc_1_pct}%` : `${features.roc_1_pct}%`}
+                {features.previous_close ? ` (vs ${features.previous_close.toLocaleString()})` : ''}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 text-xs">

@@ -109,36 +109,62 @@ class TooBusyEngine:
         return mode if mode in cls.STRATEGY_MODES else "TOO_BUSY_LONG_ONLY"
 
     @staticmethod
-    def get_execution_clock_status(now_est: Optional[datetime.datetime] = None) -> Dict[str, Any]:
-        """Classifies NY market clock into PRE_WINDOW, live 15:50-16:00 EST ACTION_WINDOW_OPEN, or MARKET_CLOSED."""
+    def _is_us_early_close_day(dt: datetime.datetime) -> bool:
+        """Detects NYSE/NASDAQ 13:00 EST early-close sessions (Black Friday, Christmas Eve, July 3rd)."""
+        weekday = dt.weekday()
+        if weekday >= 5:
+            return False
+        # Black Friday: Friday after the 4th Thursday of November (Nov 23..29)
+        if dt.month == 11 and weekday == 4 and 23 <= dt.day <= 29:
+            return True
+        if dt.month == 12 and dt.day == 24:
+            return True
+        if dt.month == 7 and dt.day == 3:
+            return True
+        return False
+
+    @classmethod
+    def get_execution_clock_status(cls, now_est: Optional[datetime.datetime] = None) -> Dict[str, Any]:
+        """Classifies NY market clock into PRE_WINDOW, live EOD ACTION_WINDOW_OPEN (15:50 or 12:50 early-close), or MARKET_CLOSED."""
         if now_est is None:
             now_est = datetime.datetime.now(_get_ny_tz())
         weekday = now_est.weekday()
         hhmm = now_est.hour * 100 + now_est.minute
         time_str = now_est.strftime("%H:%M EST")
 
-        if weekday >= 5 or hhmm < 930 or hhmm >= 1600:
+        early_close = cls._is_us_early_close_day(now_est)
+        close_hhmm = 1300 if early_close else 1600
+        win_start_hhmm = 1250 if early_close else 1550
+        win_str = "12:50 EST (13:00 Early Close)" if early_close else "15:50 EST"
+
+        if weekday >= 5 or hhmm < 930 or hhmm >= close_hhmm:
             return {
                 "window_state": "MARKET_CLOSED",
                 "current_time_est": time_str,
                 "is_action_window_live": False,
-                "label_en": f"Market Closed ({time_str}) — Previewing Signal for Next 15:50 EST Session",
-                "label_zh": f"休市时段 ({time_str}) — 当前为下一交易日 15:50 EST 尾盘预览信号",
+                "is_early_close_session": early_close,
+                "action_window_est": win_str,
+                "label_en": f"Market Closed ({time_str}) — Previewing Signal for Next {win_str} Session",
+                "label_zh": f"休市时段 ({time_str}) — 当前为下一交易日 {win_str} 尾盘预览信号",
             }
-        if 1550 <= hhmm < 1600:
+        if win_start_hhmm <= hhmm < close_hhmm:
             return {
                 "window_state": "ACTION_WINDOW_OPEN",
                 "current_time_est": time_str,
                 "is_action_window_live": True,
-                "label_en": f"15:50 EST EOD Action Window LIVE ({time_str}) — Execute Rebalance Ticket Now",
-                "label_zh": f"15:50 EST 尾盘调仓窗口已开启 ({time_str}) — 可立即执行整数股调仓",
+                "is_early_close_session": early_close,
+                "action_window_est": win_str,
+                "label_en": f"{win_str} EOD Action Window LIVE ({time_str}) — Execute Rebalance Ticket Now",
+                "label_zh": f"{win_str} 尾盘调仓窗口已开启 ({time_str}) — 可立即执行整数股调仓",
             }
         return {
             "window_state": "PRE_WINDOW",
             "current_time_est": time_str,
             "is_action_window_live": False,
-            "label_en": f"Intraday Pre-Window ({time_str}) — Wait Until 15:50 EST Before Placing Orders",
-            "label_zh": f"盘中观察期 ({time_str}) — 请耐心等待至收盘前 15:50 EST 再统一下单",
+            "is_early_close_session": early_close,
+            "action_window_est": win_str,
+            "label_en": f"Intraday Pre-Window ({time_str}) — Wait Until {win_str} Before Placing Orders",
+            "label_zh": f"盘中观察期 ({time_str}) — 请耐心等待至收盘前 {win_str} 再统一下单",
         }
 
     # ------------------------------------------------------------------
@@ -170,6 +196,12 @@ class TooBusyEngine:
             logger.debug("TooBusyEngine Yahoo fetch failed for %s: %s", symbol, exc)
             return None
 
+    # Horizons ETFs rebranded 2x Nasdaq-100 TSX tickers on Yahoo Finance from HQU.TO/HQD.TO to QQU.TO/QQD.TO
+    _YAHOO_TICKER_ALIASES: Dict[str, str] = {
+        "HQU.TO": "QQU.TO",
+        "HQD.TO": "QQD.TO",
+    }
+
     @classmethod
     def fetch_live_price(cls, symbol: str, use_live: bool = True, force_refresh: bool = False) -> float:
         """Returns real-time regularMarketPrice (30s TTL unless force_refresh=True), or offline default."""
@@ -184,7 +216,8 @@ class TooBusyEngine:
                 if cached and (now - cached[0]) < _LIVE_PRICE_TTL_SECONDS:
                     return cached[1]
 
-        chart = cls._fetch_yahoo_chart_json(sym, "range=5d&interval=1d", timeout=3.5, force_refresh=force_refresh)
+        yahoo_sym = cls._YAHOO_TICKER_ALIASES.get(sym, sym)
+        chart = cls._fetch_yahoo_chart_json(yahoo_sym, "range=5d&interval=1d", timeout=3.5, force_refresh=force_refresh)
         if chart:
             meta_p = chart.get("meta", {}).get("regularMarketPrice")
             if meta_p and float(meta_p) > 0:
@@ -358,8 +391,13 @@ class TooBusyEngine:
         std_20 = math.sqrt(max(1e-9, sum((x - sma_20) ** 2 for x in series[-w20:]) / float(w20)))
         z_bb_20 = (curr - sma_20) / std_20
 
+        prev_close = float(series[-2]) if n >= 2 else curr
+        day_change_pts = curr - prev_close
+
         return {
             "current_close": round(curr, 2),
+            "previous_close": round(prev_close, 2),
+            "day_change_pts": round(day_change_pts, 2),
             "sma_20": round(sma_20, 2),
             "sma_50": round(sma_50, 2),
             "sma_250": round(sma_250, 2),
@@ -448,16 +486,27 @@ class TooBusyEngine:
             target_long_pct, s5_state, s5_effect = raw_long_pct, "STANDBY", "No Trim (Trend Healthy)"
 
         # S6/S7: Tactical bear shorts (only active in TOO_BUSY_DUAL when zero long exposure).
-        # The RSI(10) >= 30 floor prevents shorting directly into violently oversold bear-market squeezes.
+        # Anti-Squeeze Guardrails:
+        # 1. RSI(10) >= 35 & RSI(5) >= 28 floor prevents shorting into extreme oversold stretches.
+        # 2. Mirror of S5 overextension trimmer: blocks S7 when Ext(50D) < -9.0% (already rubber-band stretched below 50D SMA).
+        # 3. Requires downward velocity acceleration (d_roc_5 < 0.0) so we never short into rebounding double-bottom reversals.
+        # 4. Caps max SQQQ exposure at 50% (keeping >= 50% in SGOV T-Bill shield).
         s6_weight = 0.0
         s7_weight = 0.0
         if c <= sma_250 and c <= sma_50 and not is_panic_flush:
             if c >= sma_20 and rsi_5 > 65.0 and d_roc_5 < 0.0:
                 s6_weight = 40.0
-            if c < sma_20 and roc_10 <= -1.5 and rsi_10 >= 30.0:
-                s7_weight = 80.0 if (roc_20 <= -6.0 and rsi_10 >= 34.0) else 50.0
+            if (
+                c < sma_20
+                and roc_10 <= -1.5
+                and d_roc_5 < 0.0
+                and ext_50 >= -9.0
+                and rsi_10 >= 35.0
+                and rsi_5 >= 28.0
+            ):
+                s7_weight = 50.0 if (roc_20 <= -6.0 and ext_50 >= -7.5) else 30.0
 
-        raw_short_pct = min(80.0, s6_weight + s7_weight)
+        raw_short_pct = min(50.0, s6_weight + s7_weight)
         would_short_pct = round(raw_short_pct / 10.0) * 10.0 if raw_long_pct == 0.0 else 0.0
         target_short_pct = raw_short_pct if (mode == "TOO_BUSY_DUAL" and target_long_pct == 0.0) else 0.0
 
@@ -574,6 +623,71 @@ class TooBusyEngine:
         return closes, latest_bar_date
 
     @classmethod
+    def fetch_live_futures_gap(
+        cls,
+        last_ndx_close: float,
+        use_live: bool = True,
+        force_refresh: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Fetches Nasdaq-100 E-Mini Futures (NQ=F) to detect overnight/holiday/after-hours gaps
+        against the last regular ^NDX cash close and estimate 3x TQQQ/SQQQ opening impact.
+        """
+        if not use_live:
+            return {
+                "symbol": "NQ=F",
+                "futures_price": round(last_ndx_close, 2),
+                "reference_close": round(last_ndx_close, 2),
+                "futures_change_pct": 0.0,
+                "implied_ndx_open": round(last_ndx_close, 2),
+                "implied_tqqq_gap_pct": 0.0,
+                "implied_sqqq_gap_pct": 0.0,
+                "squeeze_warning_active": False,
+                "warning_en": "Offline deterministic mode — no live NQ=F futures divergence.",
+                "warning_zh": "离线模拟模式 — 无实时纳指期货偏离。",
+            }
+
+        chart = cls._fetch_yahoo_chart_json("NQ=F", "range=5d&interval=1d", timeout=3.5, force_refresh=force_refresh)
+        nq_live = last_ndx_close
+        nq_ref = last_ndx_close
+        if chart:
+            meta_p = chart.get("meta", {}).get("regularMarketPrice")
+            closes = [float(c) for c in chart.get("indicators", {}).get("quote", [{}])[0].get("close", []) if c is not None and float(c) > 0]
+            if meta_p and float(meta_p) > 0:
+                nq_live = float(meta_p)
+            elif closes:
+                nq_live = closes[-1]
+            if len(closes) >= 2:
+                nq_ref = closes[-2]
+            elif closes:
+                nq_ref = closes[-1]
+
+        chg_pct = round(((nq_live / nq_ref) - 1.0) * 100.0, 2) if nq_ref > 0 else 0.0
+        implied_ndx = round(last_ndx_close * (1.0 + chg_pct / 100.0), 2)
+        imp_tqqq = round(chg_pct * 3.0, 2)
+        imp_sqqq = round(-chg_pct * 3.0, 2)
+        squeeze_warn = bool(chg_pct >= 0.5)
+
+        return {
+            "symbol": "NQ=F",
+            "futures_price": round(nq_live, 2),
+            "reference_close": round(nq_ref, 2),
+            "futures_change_pct": chg_pct,
+            "implied_ndx_open": implied_ndx,
+            "implied_tqqq_gap_pct": imp_tqqq,
+            "implied_sqqq_gap_pct": imp_sqqq,
+            "squeeze_warning_active": squeeze_warn,
+            "warning_en": (
+                f"Overnight Futures Alert: NQ=F is trading at {nq_live:,.2f} ({chg_pct:+.2f}% vs last regular settle {nq_ref:,.2f}), "
+                f"implying ^NDX ~{implied_ndx:,.0f}, TQQQ {imp_tqqq:+.1f}%, and SQQQ {imp_sqqq:+.1f}% at next open."
+            ),
+            "warning_zh": (
+                f"盘后/夜盘纳指期货预警：NQ=F 现报 {nq_live:,.2f}（较前收盘 {nq_ref:,.2f} 变动 {chg_pct:+.2f}%），"
+                f"隐含下一交易日开盘 ^NDX 约 {implied_ndx:,.0f}，TQQQ 约 {imp_tqqq:+.1f}%，SQQQ 约 {imp_sqqq:+.1f}%。"
+            ),
+        }
+
+    @classmethod
     def evaluate_live_regime(
         cls,
         strategy_mode: str = "TOO_BUSY_LONG_ONLY",
@@ -602,20 +716,26 @@ class TooBusyEngine:
         }
         res["as_of_date"] = latest_bar_date
         res["execution_clock"] = cls.get_execution_clock_status(now_est=ny_now)
+        res["after_hours_futures"] = cls.fetch_live_futures_gap(
+            last_ndx_close=float(features["current_close"]), use_live=use_live, force_refresh=force_refresh
+        )
 
         today_est = ny_now.strftime("%Y-%m-%d")
+        prev_c = features.get("previous_close", live_ndx)
+        chg_pts = features.get("day_change_pts", 0.0)
+        chg_pct = features.get("roc_1_pct", 0.0)
         res["data_freshness"] = {
             "source": "YAHOO_FINANCE_LIVE" if is_live_source else "OFFLINE_DETERMINISTIC_FALLBACK",
             "is_live_intraday": is_live_source,
             "last_updated_est": ny_now.strftime("%Y-%m-%d %H:%M:%S EST"),
             "latest_bar_date": latest_bar_date,
             "signal_basis_en": (
-                f"Live today ({today_est}) ^NDX snapshot (${live_ndx:,.2f}) blended onto daily closes through {latest_bar_date} — zero stale cache."
+                f"Live today ({today_est}) ^NDX: ${live_ndx:,.2f} ({chg_pts:+,.2f} pts / {chg_pct:+.2f}% vs yesterday's ${prev_c:,.2f} close) — recalculated in real time."
                 if is_live_source
                 else "Using deterministic offline simulation bars (use_live=False or feed fallback)."
             ),
             "signal_basis_zh": (
-                f"基于今日 ({today_est}) ^NDX 实时现价 (${live_ndx:,.2f}) 与截至 {latest_bar_date} 的最新日K线实时重算，绝无过时数据。"
+                f"今日 ({today_est}) ^NDX 实时现价: ${live_ndx:,.2f}（较昨日收盘 ${prev_c:,.2f} 变动 {chg_pts:+,.2f} 点 / {chg_pct:+.2f}%）— 全量指标已按当前最新行情实时重算。"
                 if is_live_source
                 else "当前展示为离线确定性模拟行情（use_live=False 或网络降级）。"
             ),
