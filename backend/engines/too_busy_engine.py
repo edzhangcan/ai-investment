@@ -437,6 +437,8 @@ class TooBusyEngine:
         rsi_5 = float(features["rsi_5"])
         rsi_10 = float(features["rsi_10"])
 
+        is_golden_cross = bool(sma_50 > sma_250)
+
         # S1: Core trend-following floor (+70% in clean bull, +30% in controlled pullback or early recovery)
         s1_weight = 0.0
         if c > sma_250 and c > sma_50:
@@ -452,16 +454,17 @@ class TooBusyEngine:
         else:
             s2_weight, s2_state = 0.0, "STANDBY"
 
-        # S3: Bull-trend oversold pullback buyer (+30% above 250D SMA only)
+        # S3: Bull-Market Pullback (+30% above 250D) & Golden-Cross 250D Shakeout Rebound (+40% when 50D > 250D, RSI_10 < 45 & dROC_5 > 0)
         if c > sma_250 and c <= sma_50 and (rsi_10 < 40.0 or roc_5 <= -3.5):
             s3_weight, s3_state = 30.0, "ACTIVE"
+        elif is_golden_cross and c <= sma_250 and rsi_10 < 45.0 and d_roc_5 > 0.0:
+            s3_weight, s3_state = 40.0, "ACTIVE"
         else:
             s3_weight, s3_state = 0.0, "STANDBY"
 
-        # S4: Right-side 20D reclaim (+30%) or extreme panic capitulation stabilization (+50%)
+        # S4: Right-side 20D reclaim (+30%) or extreme panic capitulation V-bounce (+50% when RSI_5 < 18 or deep Z_BB flush)
         is_panic_flush = bool(
-            (rsi_5 < 18.0 or (rsi_10 < 26.0 and roc_5 <= -7.0 and z_bb_20 <= -2.1))
-            and roc_1 >= -1.2
+            rsi_5 < 18.0 or (rsi_10 < 24.5 and roc_5 <= -7.0 and z_bb_20 <= -2.2)
         )
         if c > sma_250 and c <= sma_50 and c > sma_20 and roc_5 >= 1.0:
             s4_weight, s4_state = 30.0, "ACTIVE"
@@ -485,15 +488,11 @@ class TooBusyEngine:
         else:
             target_long_pct, s5_state, s5_effect = raw_long_pct, "STANDBY", "No Trim (Trend Healthy)"
 
-        # S6/S7: Tactical bear shorts (only active in TOO_BUSY_DUAL when zero long exposure).
-        # Anti-Squeeze Guardrails:
-        # 1. RSI(10) >= 35 & RSI(5) >= 28 floor prevents shorting into extreme oversold stretches.
-        # 2. Mirror of S5 overextension trimmer: blocks S7 when Ext(50D) < -9.0% (already rubber-band stretched below 50D SMA).
-        # 3. Requires downward velocity acceleration (d_roc_5 < 0.0) so we never short into rebounding double-bottom reversals.
-        # 4. Caps max SQQQ exposure at 50% (keeping >= 50% in SGOV T-Bill shield).
+        # S6/S7: Tactical bear shorts (only active in TOO_BUSY_DUAL during a confirmed Death Cross: sma_50 <= sma_250).
+        # Over 40 years of ^NDX history, shorting below 250D while 50D > 250D (Golden Cross shakeout) has negative expectancy (46.4% win rate).
         s6_weight = 0.0
         s7_weight = 0.0
-        if c <= sma_250 and c <= sma_50 and not is_panic_flush:
+        if not is_golden_cross and c <= sma_250 and c <= sma_50 and not is_panic_flush:
             if c >= sma_20 and rsi_5 > 65.0 and d_roc_5 < 0.0:
                 s6_weight = 40.0
             if (
@@ -543,6 +542,8 @@ class TooBusyEngine:
             return ("RECOVERY_PIVOT", "Early Recovery Pivot (Reclaimed 50D Below 250D SMA)", "底部右侧复苏拐点（250日下方率先收复50日均线）")
         if scores["s4_weight"] > 0:
             return ("CAPITULATION_FLUSH_BOUNCE", "Extreme Oversold Flush Bounce (RSI Capitulation)", "极度超卖恐慌急跌反弹（RSI 极值博弈右侧反抽）")
+        if scores["s3_weight"] > 0:
+            return ("GOLDEN_CROSS_SHAKEOUT_REBOUND", "Golden-Cross 250D Shakeout Rebound (+40% Tactical Long)", "牛市金叉深蹲企稳反弹（50日>250日均线，动量转正右侧回补 +40%）")
         return ("BEAR_CASH_SHIELD", "Bear Market T-Bill Cash Shield (Below 50D & 250D SMA)", "熊市国债现金护盾期（跌破 50日与250日均线，100% 避险生息）")
 
     @classmethod

@@ -214,57 +214,57 @@ def build_sub_strategy_cards(
             "id": "S3",
             "code": "MR_LONG_UPTREND_DIP",
             "term_key": "Wilder_RSI",
-            "name_en": "S3: Bull-Market Pullback Dip Buyer",
-            "name_zh": "S3: 牛市回调超卖均值回归低吸",
+            "name_en": "S3: Bull-Market Pullback & Golden-Cross Shakeout Buyer",
+            "name_zh": "S3: 牛市回调与金叉深蹲企稳低吸",
             "category": "MEAN_REVERSION_LONG",
             "status": s3_state,
-            "status_human_en": "Active: Buying Healthy Bull Dip" if s3_state == "ACTIVE" else "Standby (Not a Bull-Trend Dip)",
-            "status_human_zh": "已触发：牛市回调打折低吸中" if s3_state == "ACTIVE" else "待命中（非牛市健康回调区间）",
+            "status_human_en": "Active: Buying Bull Dip / Golden-Cross Rebound" if s3_state == "ACTIVE" else "Standby (Not an Active Bull Dip)",
+            "status_human_zh": "已触发：牛市回调 / 金叉深蹲企稳低吸" if s3_state == "ACTIVE" else "待命中（非牛市回调或尚未企稳）",
             "weight_pct": s3_weight,
             "effect_label": f"+{int(s3_weight)}% {long_etf}",
-            "telemetry": f"RSI(10): {rsi_10:.1f} | ROC(5): {roc_5:+.2f}%",
-            "rule_en": "Buys oversold pullbacks (RSI_10 < 40 or 5D drop <= -3.5%) while macro uptrend (>250D SMA) remains intact.",
-            "rule_zh": "在250日牛市生命线上方回踩50日线且短期超卖 (RSI_10 < 40 或 5日跌 <= -3.5%) 时逆向低吸。",
+            "telemetry": f"50D vs 250D: {'Golden Cross' if sma_50 > sma_250 else 'Death Cross'} | RSI(10): {rsi_10:.1f} | dROC(5): {d_roc_5:+.2f}%",
+            "rule_en": "Buys oversold pullbacks (>250D SMA, +30%) or Golden-Cross 250D shakeout rebounds (50D > 250D, RSI_10 < 45 & dROC_5 > 0, +40%).",
+            "rule_zh": "在250日线上方超卖低吸 (+30%)，或在牛市金叉 (50日>250日线) 假摔跌破250日线且5日动量转正 (dROC_5 > 0) 时右侧回补 (+40%)。",
             "why_status_en": (
-                f"Active (+30%): Big bull trend (>250D SMA) is intact while short-term dip got oversold (RSI_10 {rsi_10:.1f})."
+                f"Active (+{int(s3_weight)}%): Macro Golden Cross (50D ${sma_50:,.0f} > 250D ${sma_250:,.0f}) is intact while 5-day velocity turned positive ({d_roc_5:+.2f}%) from oversold RSI_10 ({rsi_10:.1f})."
                 if s3_state == "ACTIVE"
-                else f"Standby (0%): Requires Index > 250D SMA (${sma_250:,.0f}) during a temporary pullback below 50D SMA; currently NDX is ${c:,.0f}."
+                else f"Standby (0%): Requires either Index > 250D SMA (${sma_250:,.0f}) on an oversold dip, or a Golden-Cross (50D > 250D) rebound with dROC_5 > 0 (currently {d_roc_5:+.2f}%)."
             ),
             "why_status_zh": (
-                f"已触发 (+30%)：250日大牛市仍在，趁短期跌深打折 (RSI_10 {rsi_10:.1f}) 逢低买入。"
+                f"已触发 (+{int(s3_weight)}%)：宏观牛市金叉 (50日 ${sma_50:,.0f} > 250日 ${sma_250:,.0f}) 完好，且短期超卖后 5日加速度已转正 ({d_roc_5:+.2f}%)，顺势捕捉反弹。"
                 if s3_state == "ACTIVE"
-                else f"待命中 (0%)：仅在指数处于 250日线 (${sma_250:,.0f}) 上方牛市中回调跌破50日线时才低吸，避免在熊市半山腰接飞刀。"
+                else f"待命中 (0%)：需处于250日线上方超卖回调，或在金叉结构下出现 5日动量转正 (当前 dROC_5 {d_roc_5:+.2f}%)。"
             ),
-            "analogy_en": "Black Friday sale in a great neighborhood: buy quality items on sale only when the main bull highway is unbroken.",
-            "analogy_zh": "好地段的周年庆打折：只有在牛市主干道没断的时候才趁打折扫货，不接熊市飞刀。",
+            "analogy_en": "Black Friday sale in a great neighborhood: when the macro Golden Cross is intact and momentum turns back up, buy the rebound instead of panicking.",
+            "analogy_zh": "好地段的黄金深蹲：只要50日线仍高于250日线（宏观金叉未破）且下杀动能转正回升，就是黄金坑右侧上车点。",
         },
         {
             "id": "S4",
             "code": "MR_LONG_PIVOT_AND_FLUSH",
             "term_key": "Bollinger_Z",
-            "name_en": "S4: 20D Pivot Reclaim & Panic Flush",
-            "name_zh": "S4: 20日线右侧收复与极端恐慌反抽",
+            "name_en": "S4: 20D Pivot Reclaim & Panic Capitulation V-Bounce",
+            "name_zh": "S4: 20日线右侧收复与极端恐慌 V 型反弹",
             "category": "MEAN_REVERSION_LONG",
             "status": s4_state,
-            "status_human_en": "Active: Bounce Window Open" if s4_state == "ACTIVE" else "Standby (No Capitulation Flush Yet)",
-            "status_human_zh": "已触发：企稳反抽窗口打开" if s4_state == "ACTIVE" else "待命中（尚未出现极端恐慌砸盘）",
+            "status_human_en": "Active: Capitulation / Pivot Bounce Open" if s4_state == "ACTIVE" else "Standby (No Extreme Panic Flush Today)",
+            "status_human_zh": "已触发：极值恐慌抄底 / 右侧拐点开启" if s4_state == "ACTIVE" else "待命中（今日非极端恐慌极值日）",
             "weight_pct": s4_weight,
             "effect_label": f"+{int(s4_weight)}% {long_etf}",
-            "telemetry": f"RSI(5): {rsi_5:.1f} | Z_BB(20): {z_bb_20:+.2f}σ",
-            "rule_en": "Adds +30% when a bull pullback reclaims 20D SMA, or +50% on stabilized extreme panic flushes (RSI_5 < 18).",
-            "rule_zh": "牛市回调重新站上20日线加仓 +30%；或极端恐慌超卖企稳 (RSI_5 < 18) 博弈 V 型反弹 +50%。",
+            "telemetry": f"RSI(5): {rsi_5:.1f} (<18 trigger) | Z_BB(20): {z_bb_20:+.2f}σ",
+            "rule_en": "Adds +30% when a bull pullback reclaims 20D SMA, or +50% immediately at 15:50 EST on extreme panic capitulation flushes (RSI_5 < 18 or RSI_10 < 24.5 with Z_BB <= -2.2σ).",
+            "rule_zh": "牛市回调重新站上20日线加仓 +30%；或当极端恐慌砸盘出现 (RSI_5 < 18 或 Z_BB <= -2.2σ) 时在当日尾盘立即抄底 +50% 博弈次日 V 型暴涨。",
             "why_status_en": (
-                f"Active (+{int(s4_weight)}%): Detected either a clean 20D bounce or extreme panic flush stabilization (RSI_5 {rsi_5:.1f})."
+                f"Active (+{int(s4_weight)}%): Extreme panic capitulation or 20D pivot reclaim triggered (RSI_5 {rsi_5:.1f}, Z_BB {z_bb_20:+.2f}σ)."
                 if s4_state == "ACTIVE"
-                else f"Standby (0%): Panic flush requires extreme fear (RSI_5 < 18.0, currently {rsi_5:.1f}). Today is orderly weakness, not panic capitulation."
+                else f"Standby (0%): Extreme panic flush fires when RSI_5 < 18.0 (currently {rsi_5:.1f}, as on Friday 2026-11-20 when RSI_5 hit 13.1 before Monday's +6.86% surge)."
             ),
             "why_status_zh": (
-                f"已触发 (+{int(s4_weight)}%)：满足20日线企稳或极度恐慌抛售后的反弹条件 (RSI_5 {rsi_5:.1f})。"
+                f"已触发 (+{int(s4_weight)}%)：满足极端恐慌抛售抄底或20日线收复条件 (RSI_5 {rsi_5:.1f}, Z_BB {z_bb_20:+.2f}σ)。"
                 if s4_state == "ACTIVE"
-                else f"待命中 (0%)：抄底极值需出现极度恐慌 (RSI_5 < 18，当前 {rsi_5:.1f})，今天只是常规走弱而非极端投降抛售。"
+                else f"待命中 (0%)：极值恐慌抄底需 RSI_5 < 18.0（当前 {rsi_5:.1f}；例如上周五 11-20 RSI_5 跌至 13.1 触发 +50% 抄底，次日周一纳指暴涨 +6.86%）。"
             ),
-            "analogy_en": "Rubber band pulled to breaking point: wait until sellers exhaust themselves before catching the snapback.",
-            "analogy_zh": "拉到极限的橡皮筋：必须等到空头情绪完全砸穿极限并出现企稳迹象时才出手接反弹。",
+            "analogy_en": "Rubber band pulled to breaking point (RSI_5 < 18): over 40 years, buying the close of extreme capitulation days wins 60% of the very next session (+2.64%/day on 3x).",
+            "analogy_zh": "拉到极限的橡皮筋 (RSI_5 < 18)：40年回测显示，在极端恐慌日尾盘入场，次日反弹胜率达 60%（3倍ETF次日平均收益 +2.64%）。",
         },
         {
             "id": "S5",
@@ -362,25 +362,25 @@ def build_sub_strategy_cards(
                 if is_dual
                 else f"Long-Only Shield Active (Dual would put +{int(s7_weight)}% {short_etf})"
             ),
-            "telemetry": f"Ext(50D): {ext_50:+.2f}% (>= -9% floor) | dROC(5): {d_roc_5:+.2f}% (<0) | RSI(10): {rsi_10:.1f} (>=35)",
-            "rule_en": "Allocates 30%–50% inverse ETF during accelerating bear breakdowns (dROC_5 < 0) while blocking shorts when stretched < -9% below 50D SMA or RSI(10) < 35.",
-            "rule_zh": "仅在熊市加速下破 (dROC_5 < 0) 且未过度乖离 (偏离50日线 >= -9%、RSI_10 >= 35) 时配置 30%–50% 反向 ETF；超跌或动能转正时立即退回 SGOV 防暴涨轧空。",
+            "telemetry": f"50D vs 250D: {'Golden Cross' if sma_50 > sma_250 else 'Death Cross'} | Ext(50D): {ext_50:+.2f}% | dROC(5): {d_roc_5:+.2f}%",
+            "rule_en": "Allocates 30%–50% inverse ETF only in confirmed Death Cross bear breakdowns (50D <= 250D, dROC_5 < 0, Ext_50 >= -9%, RSI_10 >= 35).",
+            "rule_zh": "仅在死叉确认的熊市加速下破 (50日<=250日线、dROC_5 < 0、偏离50日线 >= -9%、RSI_10 >= 35) 时配置 30%–50% 反向 ETF；牛市金叉深蹲或动量转正时严禁做空。",
             "why_status_en": (
-                f"Downtrend breakdown confirmed (Ext_50 {ext_50:+.2f}% >= -9%, dROC_5 {d_roc_5:+.2f}% < 0, RSI_10 {rsi_10:.1f} >= 35)."
+                f"Death Cross downtrend confirmed (50D <= 250D, Ext_50 {ext_50:+.2f}% >= -9%, dROC_5 {d_roc_5:+.2f}% < 0, RSI_10 {rsi_10:.1f} >= 35)."
                 if s7_weight > 0
                 else (
-                    f"Anti-squeeze guardrail blocked SQQQ: index is already stretched {ext_50:+.2f}% below 50D SMA (< -9% floor) or 5D velocity turned positive ({d_roc_5:+.2f}%), making bear-rally squeeze risk too high."
-                    if (c <= sma_250 and c <= sma_50 and (ext_50 < -9.0 or d_roc_5 >= 0.0 or rsi_10 < 35.0))
-                    else "Standby: Needs confirmed bear breakdown below 20D/50D/250D SMAs with negative acceleration."
+                    f"Anti-squeeze guardrail blocked SQQQ: macro Golden Cross is still intact (50D ${sma_50:,.0f} > 250D ${sma_250:,.0f}), index is stretched {ext_50:+.2f}% vs 50D SMA, or 5D velocity turned positive ({d_roc_5:+.2f}%)."
+                    if (c <= sma_250 and c <= sma_50 and (sma_50 > sma_250 or ext_50 < -9.0 or d_roc_5 >= 0.0 or rsi_10 < 35.0))
+                    else "Standby: Needs confirmed Death Cross bear breakdown below 20D/50D/250D SMAs with negative acceleration."
                 )
             ),
             "why_status_zh": (
-                f"加速跌势确认（距50日线 {ext_50:+.2f}% >= -9%，5日加速度 {d_roc_5:+.2f}% < 0，RSI_10 {rsi_10:.1f} >= 35），适度配置 {int(s7_weight)}% 反向仓位。"
+                f"死叉加速跌势确认（50日<=250日线，距50日线 {ext_50:+.2f}% >= -9%，5日加速度 {d_roc_5:+.2f}% < 0，RSI_10 {rsi_10:.1f} >= 35），适度配置 {int(s7_weight)}% 反向仓位。"
                 if s7_weight > 0
                 else (
-                    f"防轧空护栏已拦截 SQQQ：当前指数距 50日线已达 {ext_50:+.2f}%（突破 -9% 超跌红线）或 5日动量已减速转正 ({d_roc_5:+.2f}%)，极易发生双底暴力反弹，100% 泊入 SGOV 锁定安全。"
-                    if (c <= sma_250 and c <= sma_50 and (ext_50 < -9.0 or d_roc_5 >= 0.0 or rsi_10 < 35.0))
-                    else "待命中：仅在跌破20/50/250日所有均线且下跌加速度确立时开启。"
+                    f"防轧空护栏已拦截 SQQQ：当前宏观金叉未破 (50日 ${sma_50:,.0f} > 250日 ${sma_250:,.0f})、距 50日线已达 {ext_50:+.2f}% 或 5日动量已转正 ({d_roc_5:+.2f}%)，40年回测显示此时做空胜率仅 46.4%，极易遭遇暴力反弹。"
+                    if (c <= sma_250 and c <= sma_50 and (sma_50 > sma_250 or ext_50 < -9.0 or d_roc_5 >= 0.0 or rsi_10 < 35.0))
+                    else "待命中：仅在死叉确认且跌破20/50/250日所有均线并加速下行时开启。"
                 )
             ),
             "analogy_en": "Wearing spiked boots on an icy slope, with an automatic brake if the rubber band gets pulled too tight (RSI < 30).",

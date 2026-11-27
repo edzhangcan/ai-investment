@@ -107,6 +107,19 @@ def test_bear_regime_rotates_100_pct_to_tbill_cash_shield():
     assert res_squeezed["target_short_pct"] == 0.0
     assert res_squeezed["target_cash_pct"] == 100.0
 
+    # On extreme panic capitulation day (RSI_5 < 18 even on a -5.6% crash day), S4 buys +50% TQQQ
+    cap_features = dict(features, sma_50=29224.0, sma_250=27548.0, roc_1_pct=-5.61, rsi_5=13.1, rsi_10=22.9, z_bb_20=-2.49)
+    res_cap = TooBusyEngine.evaluate_from_features(cap_features, strategy_mode="TOO_BUSY_LONG_ONLY", market="US")
+    assert res_cap["target_long_pct"] == 50.0
+    assert res_cap["regime_code"] == "CAPITULATION_FLUSH_BOUNCE"
+
+    # On Golden-Cross 250D shakeout rebound (50D > 250D, c <= 250D, RSI_10 < 45, dROC_5 > 0), S3 buys +40% TQQQ and blocks SQQQ
+    gc_rebound = dict(features, current_close=26046.9, sma_50=29064.2, sma_250=27563.8, rsi_10=38.4, rsi_5=39.5, d_roc_5_pct=0.49)
+    res_gc = TooBusyEngine.evaluate_from_features(gc_rebound, strategy_mode="TOO_BUSY_DUAL", market="US")
+    assert res_gc["target_long_pct"] == 40.0
+    assert res_gc["target_short_pct"] == 0.0
+    assert res_gc["regime_code"] == "GOLDEN_CROSS_SHAKEOUT_REBOUND"
+
 
 def test_small_account_rebalance_ticket_hysteresis_and_sell_first():
     """<$10K Share-Delta Solver orders SELL before BUY and respects the 10% hysteresis filter."""
